@@ -1,0 +1,127 @@
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Shield, Star, Users, TrendingUp, GraduationCap } from 'lucide-react';
+
+const features = [
+  {
+    icon: Shield,
+    title: 'Evidence-Based Trust',
+    description: 'Build credibility through verified endorsements',
+  },
+  {
+    icon: Star,
+    title: '5-Pillar System',
+    description: 'Comprehensive profile across key life dimensions',
+  },
+  {
+    icon: Users,
+    title: 'Community Driven',
+    description: 'Earn recognition from people who know you',
+  },
+];
+
+export default function Onboarding() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col safe-top safe-bottom">
+      <div className="flex-1 flex flex-col justify-between px-6 py-12">
+        {/* Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center pt-8"
+        >
+          <motion.div
+            className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6"
+            initial={{ scale: 0.8, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.2, type: 'spring' }}
+          >
+            <TrendingUp className="w-10 h-10 text-primary" />
+          </motion.div>
+          <h1 className="text-4xl font-display font-bold text-foreground mb-3">
+            Levela
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xs mx-auto">
+            Build your Trust & Contribution profile
+          </p>
+        </motion.div>
+
+        {/* Features */}
+        <div className="space-y-4 my-12">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + index * 0.1 }}
+              className="flex items-start gap-4 p-4 bg-card rounded-xl shadow-soft"
+            >
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                <feature.icon className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Pillars preview */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="flex justify-center gap-2 mb-8"
+        >
+          {[
+            { color: 'bg-pillar-education', icon: GraduationCap },
+            { color: 'bg-pillar-culture', icon: Shield },
+            { color: 'bg-pillar-responsibility', icon: Shield },
+            { color: 'bg-pillar-environment', icon: Users },
+            { color: 'bg-pillar-economy', icon: TrendingUp },
+          ].map((pillar, i) => (
+            <motion.div
+              key={i}
+              className={`w-10 h-10 ${pillar.color} rounded-lg flex items-center justify-center`}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.7 + i * 0.05, type: 'spring' }}
+            >
+              <pillar.icon className="w-5 h-5 text-white" />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="space-y-3"
+        >
+          <Button
+            onClick={() => navigate('/signup')}
+            className="w-full gap-2"
+            size="lg"
+          >
+            Get Started
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => navigate('/login')}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            I already have an account
+          </Button>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

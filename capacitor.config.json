@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.9ec43fcd0f254fbfb582145cb330eb87",
+  "appName": "Levela",
+  "webDir": "dist",
+  "server": {
+    "url": "https://9ec43fcd-0f25-4fbf-b582-145cb330eb87.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
