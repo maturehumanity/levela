@@ -82,6 +82,11 @@ export default function Login() {
                   required
                 />
               </div>
+              <div className="flex justify-end">
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             {error && (
@@ -91,6 +96,15 @@ export default function Login() {
                 className="text-sm text-destructive"
               >
                 {error}
+                {error.toLowerCase().includes('invalid login credentials') && (
+                  <span className="block mt-1 text-muted-foreground">
+                    If you previously signed up, your password may be different — try{' '}
+                    <Link to="/forgot-password" className="text-primary hover:underline font-medium">
+                      resetting it
+                    </Link>
+                    .
+                  </span>
+                )}
               </motion.p>
             )}
 

@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Onboarding from "@/pages/Onboarding";
 import Login from "@/pages/auth/Login";
 import SignUp from "@/pages/auth/SignUp";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
+import ResetPassword from "@/pages/auth/ResetPassword";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
@@ -52,6 +54,9 @@ const App = () => (
             <Route path="/onboarding" element={<AuthRedirect><Onboarding /></AuthRedirect>} />
             <Route path="/login" element={<AuthRedirect><Login /></AuthRedirect>} />
             <Route path="/signup" element={<AuthRedirect><SignUp /></AuthRedirect>} />
+           <Route path="/forgot-password" element={<AuthRedirect><ForgotPassword /></AuthRedirect>} />
+           {/* Do NOT wrap recovery route with AuthRedirect (recovery link may create a session) */}
+           <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
