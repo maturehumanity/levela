@@ -21,26 +21,44 @@ export default function ResetPassword() {
 
   useEffect(() => {
     let isMounted = true;
+    let fallbackTimeout: ReturnType<typeof setTimeout>;
 
-    const sync = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!isMounted) return;
-      setHasSession(!!data.session);
-      setCheckingSession(false);
-    };
-
-    sync();
-
+    // Listen for auth state changes FIRST (Supabase will fire PASSWORD_RECOVERY after parsing hash)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
-      setHasSession(!!session);
-      setCheckingSession(false);
+      console.log("[ResetPassword] auth event:", event, !!session);
+      // PASSWORD_RECOVERY or TOKEN_REFRESHED means the hash was processed successfully
+      if (session) {
+        setHasSession(true);
+        setCheckingSession(false);
+      }
     });
+
+    // Give Supabase time to process hash fragments before concluding "no session"
+    const checkSession = async () => {
+      // Small delay to allow hash processing
+      await new Promise((r) => setTimeout(r, 500));
+      const { data } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      if (data.session) {
+        setHasSession(true);
+        setCheckingSession(false);
+      } else {
+        // Wait a bit more for slow networks / hash processing, then give up
+        fallbackTimeout = setTimeout(() => {
+          if (!isMounted) return;
+          setCheckingSession(false);
+        }, 2000);
+      }
+    };
+
+    checkSession();
 
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
   }, []);
