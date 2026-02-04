@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PILLARS, type PillarId, getPillarShortName, getScoreColor, getScoreLabel } from '@/lib/constants';
+import { PILLARS, type PillarId, getScoreColor, getScoreLabel } from '@/lib/constants';
 import { calculateLevelaScore, type Endorsement, formatScore } from '@/lib/scoring';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,20 +68,42 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  // Calculate positions for badges in a circular ring
-  // Badges positioned at: top, top-right, bottom-right, bottom-left, top-left
-  const getBadgePosition = (index: number) => {
-    // Custom angles for better horizontal pill badge placement
-    // Positions: top (0), right-top (1), right-bottom (2), left-bottom (3), left-top (4)
-    const angles = [-90, -18, 54, 126, 198]; // degrees, starting from top
-    const angle = angles[index] * (Math.PI / 180);
-    const radius = 180; // Distance from center to badge center
-    return {
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius,
-    };
+  // Create SVG arc path for ring segment
+  const createArcPath = (index: number, total: number, innerRadius: number, outerRadius: number) => {
+    const gapAngle = 4; // degrees gap between segments
+    const segmentAngle = (360 - gapAngle * total) / total;
+    const startAngle = index * (segmentAngle + gapAngle) - 90; // Start from top
+    const endAngle = startAngle + segmentAngle;
+    
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    const cx = 210, cy = 210;
+    
+    const x1 = cx + innerRadius * Math.cos(startRad);
+    const y1 = cy + innerRadius * Math.sin(startRad);
+    const x2 = cx + outerRadius * Math.cos(startRad);
+    const y2 = cy + outerRadius * Math.sin(startRad);
+    const x3 = cx + outerRadius * Math.cos(endRad);
+    const y3 = cy + outerRadius * Math.sin(endRad);
+    const x4 = cx + innerRadius * Math.cos(endRad);
+    const y4 = cy + innerRadius * Math.sin(endRad);
+    
+    return `M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 0 0 ${x1} ${y1}`;
   };
 
+  // Get badge position at center of each segment
+  const getBadgePosition = (index: number, total: number) => {
+    const gapAngle = 4;
+    const segmentAngle = (360 - gapAngle * total) / total;
+    const centerAngle = index * (segmentAngle + gapAngle) + segmentAngle / 2 - 90;
+    const radius = 157; // Middle of the ring band
+    const rad = (centerAngle * Math.PI) / 180;
+    
+    return {
+      x: Math.cos(rad) * radius,
+      y: Math.sin(rad) * radius,
+    };
+  };
 
   if (loading) {
     return (
@@ -96,51 +118,97 @@ export default function Profile() {
   return (
     <AppLayout>
       <div className="px-4 py-6 flex flex-col items-center min-h-[calc(100vh-80px)]">
-        {/* Badge Ring Container */}
+        {/* Segmented Identity Dial */}
         <motion.div
-          className="relative w-[420px] h-[420px] flex items-center justify-center mt-4"
-          initial={{ opacity: 0, scale: 0.8 }}
+          className="relative w-[420px] h-[420px] flex items-center justify-center mt-2"
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Dotted Guide Ring */}
+          {/* Ring Segments - The pillars ARE the ring */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 420 420">
-            <circle
-              cx="210"
-              cy="210"
-              r="150"
-              fill="none"
-              strokeWidth="2"
-              strokeDasharray="6 8"
-              className="stroke-muted-foreground/20"
-            />
+            {PILLARS.map((pillar, index) => (
+              <motion.path
+                key={pillar.id}
+                d={createArcPath(index, PILLARS.length, 115, 200)}
+                className="fill-muted/30 stroke-border/50 cursor-pointer hover:fill-muted/50 transition-colors"
+                strokeWidth="1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
+                onClick={() => navigate(`/pillar/${pillar.id}`)}
+              />
+            ))}
           </svg>
 
+          {/* Pill Badges Embedded in Ring Segments */}
+          {PILLARS.map((pillar, index) => {
+            const pos = getBadgePosition(index, PILLARS.length);
+            const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
+            const Icon = iconMap[pillar.icon];
+            
+            return (
+              <motion.button
+                key={pillar.id}
+                className="absolute flex items-center gap-1.5 px-2 py-1.5 rounded-full bg-card/90 backdrop-blur-sm border border-border/60 shadow-sm hover:shadow-md hover:bg-card transition-all z-10"
+                style={{
+                  left: `calc(50% + ${pos.x}px)`,
+                  top: `calc(50% + ${pos.y}px)`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 + index * 0.08, duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate(`/pillar/${pillar.id}`)}
+              >
+                <div className={`w-5 h-5 rounded-full ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">
+                  {pillar.shortName}
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
+                  {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
+                </span>
+              </motion.button>
+            );
+          })}
+
           {/* Central Avatar with Score Ring */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative">
-              {/* Score Ring */}
-              <svg className="absolute -inset-4 w-[144px] h-[144px] -rotate-90" viewBox="0 0 144 144">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative pointer-events-auto">
+              {/* Score Progress Ring */}
+              <svg className="absolute -inset-3 w-[136px] h-[136px] -rotate-90" viewBox="0 0 136 136">
                 <circle
-                  cx="72"
-                  cy="72"
-                  r="62"
+                  cx="68"
+                  cy="68"
+                  r="58"
                   fill="none"
-                  strokeWidth="6"
-                  className="stroke-muted/30"
+                  strokeWidth="5"
+                  className="stroke-background"
+                />
+                <circle
+                  cx="68"
+                  cy="68"
+                  r="58"
+                  fill="none"
+                  strokeWidth="4"
+                  className="stroke-muted/40"
                 />
                 <motion.circle
-                  cx="72"
-                  cy="72"
-                  r="62"
+                  cx="68"
+                  cy="68"
+                  r="58"
                   fill="none"
-                  strokeWidth="6"
+                  strokeWidth="4"
                   strokeLinecap="round"
                   className="stroke-primary"
-                  style={{ strokeDasharray: 2 * Math.PI * 62 }}
-                  initial={{ strokeDashoffset: 2 * Math.PI * 62 }}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 62 - (score.overall / 100) * 2 * Math.PI * 62 }}
-                  transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+                  style={{ strokeDasharray: 2 * Math.PI * 58 }}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 58 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 58 - (score.overall / 100) * 2 * Math.PI * 58 }}
+                  transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
                 />
               </svg>
               
@@ -160,41 +228,6 @@ export default function Profile() {
               )}
             </div>
           </div>
-
-          {/* Horizontal Pill Badges */}
-          {PILLARS.map((pillar, index) => {
-            const pos = getBadgePosition(index);
-            const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
-            const Icon = iconMap[pillar.icon];
-            
-            return (
-              <motion.button
-                key={pillar.id}
-                className="absolute flex items-center gap-2 px-3 py-2 rounded-full bg-card border border-border/50 shadow-soft hover:shadow-elevated transition-shadow"
-                style={{
-                  left: `calc(50% + ${pos.x}px)`,
-                  top: `calc(50% + ${pos.y}px)`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + index * 0.1, duration: 0.3 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate(`/pillar/${pillar.id}`)}
-              >
-                <div className={`w-7 h-7 rounded-full ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
-                  <Icon className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xs font-medium text-foreground whitespace-nowrap">
-                  {pillar.shortName}
-                </span>
-                <span className="text-xs font-bold text-muted-foreground">
-                  {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
-                </span>
-              </motion.button>
-            );
-          })}
         </motion.div>
 
         {/* User Info */}
