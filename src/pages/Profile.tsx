@@ -1,17 +1,22 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { LevelaScore } from '@/components/ui/LevelaScore';
-import { PillarBadge } from '@/components/ui/PillarBadge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PILLARS, type PillarId } from '@/lib/constants';
-import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
+import { PILLARS, type PillarId, getPillarShortName, getScoreColor, getScoreLabel } from '@/lib/constants';
+import { calculateLevelaScore, type Endorsement, formatScore } from '@/lib/scoring';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Edit, CheckCircle, Share2 } from 'lucide-react';
+import { CheckCircle, GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const iconMap: Record<string, LucideIcon> = {
+  GraduationCap,
+  Heart,
+  Shield,
+  Users,
+  TrendingUp,
+};
 
 export default function Profile() {
   const { profile, user } = useAuth();
@@ -63,6 +68,19 @@ export default function Profile() {
       .slice(0, 2);
   };
 
+  // Calculate positions for badges in a circular ring
+  const getBadgePosition = (index: number, total: number) => {
+    const angle = (index * (360 / total) - 90) * (Math.PI / 180); // Start from top
+    const radius = 130; // Distance from center
+    return {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+    };
+  };
+
+  const circumference = 2 * Math.PI * 58;
+  const strokeDashoffset = circumference - (score.overall / 100) * circumference;
+
   if (loading) {
     return (
       <AppLayout>
@@ -75,117 +93,157 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="px-4 py-6 space-y-6">
-        {/* Header */}
+      <div className="px-4 py-6 flex flex-col items-center min-h-[calc(100vh-80px)]">
+        {/* Badge Ring Container */}
         <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          className="relative w-[320px] h-[320px] flex items-center justify-center mt-8"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          <div className="relative inline-block mb-4">
-            <Avatar className="w-24 h-24 border-4 border-background shadow-elevated">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-display">
-                {getInitials(profile?.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            {profile?.is_verified && (
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-4 border-background">
-                <CheckCircle className="w-4 h-4 text-primary-foreground" />
-              </div>
-            )}
+          {/* Central Avatar with Score Ring */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative">
+              {/* Score Ring */}
+              <svg className="absolute -inset-3 w-[136px] h-[136px] -rotate-90" viewBox="0 0 136 136">
+                <circle
+                  cx="68"
+                  cy="68"
+                  r="58"
+                  fill="none"
+                  strokeWidth="6"
+                  className="stroke-muted/30"
+                />
+                <motion.circle
+                  cx="68"
+                  cy="68"
+                  r="58"
+                  fill="none"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  className="stroke-primary"
+                  style={{ strokeDasharray: circumference }}
+                  initial={{ strokeDashoffset: circumference }}
+                  animate={{ strokeDashoffset }}
+                  transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+                />
+              </svg>
+              
+              {/* Avatar */}
+              <Avatar className="w-28 h-28 border-4 border-background shadow-elevated">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-display">
+                  {getInitials(profile?.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Verified Badge */}
+              {profile?.is_verified && (
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-4 border-background">
+                  <CheckCircle className="w-4 h-4 text-primary-foreground" />
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Floating Pillar Badges */}
+          {PILLARS.map((pillar, index) => {
+            const pos = getBadgePosition(index, PILLARS.length);
+            const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
+            const Icon = iconMap[pillar.icon];
+            
+            return (
+              <motion.button
+                key={pillar.id}
+                className="absolute w-16 h-16 flex flex-col items-center justify-center"
+                style={{
+                  left: `calc(50% + ${pos.x}px - 32px)`,
+                  top: `calc(50% + ${pos.y}px - 32px)`,
+                }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 + index * 0.1, duration: 0.3 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate(`/pillar/${pillar.id}`)}
+              >
+                <div className={`w-12 h-12 rounded-full ${pillar.bgColorClass} shadow-elevated flex items-center justify-center`}>
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xs font-bold text-foreground mt-1">
+                  {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
+                </span>
+              </motion.button>
+            );
+          })}
+        </motion.div>
+
+        {/* User Info */}
+        <motion.div
+          className="text-center mt-4 space-y-1"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
           <h1 className="text-2xl font-display font-bold text-foreground">
             {profile?.full_name || 'Anonymous User'}
           </h1>
           {profile?.username && (
             <p className="text-muted-foreground">@{profile.username}</p>
           )}
-          {profile?.bio && (
-            <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-              {profile.bio}
-            </p>
-          )}
-
-          <div className="flex justify-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => navigate('/settings/profile')}
-            >
-              <Edit className="w-4 h-4" />
-              Edit Profile
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Share2 className="w-4 h-4" />
-              Share
-            </Button>
+          
+          {/* Score & Status */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className={`text-2xl font-display font-bold ${getScoreColor(score.overall)}`}>
+              {formatScore(score.overall)}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              · {getScoreLabel(score.overall)}
+            </span>
           </div>
         </motion.div>
 
-        {/* Levela Score */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="flex justify-center"
-        >
-          <Card className="p-6 bg-card shadow-soft border-border/50">
-            <LevelaScore score={score.overall} size="lg" />
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Based on {score.totalEndorsements} endorsement{score.totalEndorsements !== 1 ? 's' : ''}
-            </p>
-          </Card>
-        </motion.div>
+        {/* Bio */}
+        {profile?.bio && (
+          <motion.p
+            className="text-sm text-muted-foreground text-center max-w-xs mt-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            {profile.bio}
+          </motion.p>
+        )}
 
-        {/* Pillars Grid */}
+        {/* Primary CTA */}
         <motion.div
+          className="mt-8 w-full max-w-xs"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.6 }}
         >
-          <h2 className="text-lg font-semibold text-foreground mb-4">Your Pillars</h2>
-          <div className="grid grid-cols-3 gap-3">
-            {PILLARS.map((pillar, index) => {
-              const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
-              return (
-                <motion.div
-                  key={pillar.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
-                >
-                  <PillarBadge
-                    pillarId={pillar.id}
-                    score={pillarScore?.score}
-                    endorsementCount={pillarScore?.endorsementCount}
-                    size="sm"
-                    onClick={() => navigate(`/pillar/${pillar.id}`)}
-                  />
-                </motion.div>
-              );
-            })}
-          </div>
+          <Button
+            className="w-full gap-2"
+            size="lg"
+            onClick={() => navigate('/endorse/select')}
+          >
+            <Plus className="w-5 h-5" />
+            Request First Endorsement
+          </Button>
         </motion.div>
 
-        {/* How scoring works */}
-        <motion.div
+        {/* Endorsement count */}
+        <motion.p
+          className="text-xs text-muted-foreground mt-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.7 }}
         >
-          <Card className="p-4 bg-muted/50 border-border/50">
-            <h3 className="font-semibold text-foreground mb-2">How Your Score Works</h3>
-            <ul className="text-sm text-muted-foreground space-y-1.5">
-              <li>• Each endorsement rates you 1-5 stars on a pillar</li>
-              <li>• Pillar score = (avg stars ÷ 5) × 100</li>
-              <li>• Levela Score = average of all pillar scores</li>
-              <li>• More endorsements = more credibility</li>
-            </ul>
-          </Card>
-        </motion.div>
+          {score.totalEndorsements === 0 
+            ? 'No endorsements yet'
+            : `Based on ${score.totalEndorsements} endorsement${score.totalEndorsements !== 1 ? 's' : ''}`
+          }
+        </motion.p>
       </div>
     </AppLayout>
   );
