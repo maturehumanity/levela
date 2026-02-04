@@ -50,6 +50,42 @@ export const PILLARS = [
 
 export type PillarId = typeof PILLARS[number]['id'];
 
+export function getPillarName(pillarId: PillarId): string {
+  if (typeof window === 'undefined') {
+    // Server-side rendering fallback
+    const pillar = PILLARS.find(p => p.id === pillarId);
+    return pillar?.name || pillarId;
+  }
+  
+  const customCustomizations = JSON.parse(localStorage.getItem('customPillarCustomizations') || '{}');
+  const pillar = PILLARS.find(p => p.id === pillarId);
+  return customCustomizations[pillarId]?.categoryName || pillar?.name || pillarId;
+}
+
+export function getPillarShortName(pillarId: PillarId): string {
+  if (typeof window === 'undefined') {
+    // Server-side rendering fallback
+    const pillar = PILLARS.find(p => p.id === pillarId);
+    return pillar?.shortName || pillarId;
+  }
+  
+  const customCustomizations = JSON.parse(localStorage.getItem('customPillarCustomizations') || '{}');
+  const pillar = PILLARS.find(p => p.id === pillarId);
+  return customCustomizations[pillarId]?.displayName || pillar?.shortName || pillarId;
+}
+
+export function getPillarDescription(pillarId: PillarId): string {
+  if (typeof window === 'undefined') {
+    // Server-side rendering fallback
+    const pillar = PILLARS.find(p => p.id === pillarId);
+    return pillar?.description || '';
+  }
+  
+  const customCustomizations = JSON.parse(localStorage.getItem('customPillarCustomizations') || '{}');
+  const pillar = PILLARS.find(p => p.id === pillarId);
+  return customCustomizations[pillarId]?.description || pillar?.description || '';
+}
+
 export const ENDORSEMENT_COOLDOWN_DAYS = 30;
 
 export const SCORE_THRESHOLDS = {

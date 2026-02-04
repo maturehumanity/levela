@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
-import { PILLARS, type PillarId } from '@/lib/constants';
+import { PILLARS, type PillarId, getPillarShortName } from '@/lib/constants';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Users, TrendingUp, Star } from 'lucide-react';
 
@@ -96,7 +96,7 @@ export default function Home() {
   };
 
   const getPillarName = (id: PillarId) => {
-    return PILLARS.find(p => p.id === id)?.shortName || id;
+    return getPillarShortName(id);
   };
 
   if (loading) {

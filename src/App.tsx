@@ -20,6 +20,7 @@ import EndorseSelect from "@/pages/EndorseSelect";
 import EndorseFlow from "@/pages/EndorseFlow";
 import Settings from "@/pages/Settings";
 import EditProfile from "@/pages/settings/EditProfile";
+import Pillars from "@/pages/settings/Pillars";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/endorse/:userId" element={<ProtectedRoute><EndorseFlow /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/settings/profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+            <Route path="/settings/pillars" element={<ProtectedRoute><Pillars /></ProtectedRoute>} />
             
             {/* Fallback */}
             <Route path="*" element={<NotFound />} />

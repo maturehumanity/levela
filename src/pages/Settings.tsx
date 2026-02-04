@@ -12,7 +12,8 @@ import {
   LogOut, 
   ChevronRight,
   FileText,
-  Lock
+  Lock,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 const settingsItems = [
@@ -51,6 +52,12 @@ const settingsItems = [
     label: 'Help & Support',
     description: 'Get help with Levela',
     path: '/settings/help',
+  },
+  {
+    icon: SettingsIcon,
+    label: 'Pillars',
+    description: 'Manage growth pillars and their names',
+    path: '/settings/pillars',
   },
 ];
 

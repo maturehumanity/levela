@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StarRating } from '@/components/ui/StarRating';
 import { PillarBadge } from '@/components/ui/PillarBadge';
 import { supabase } from '@/integrations/supabase/client';
-import { PILLARS, type PillarId } from '@/lib/constants';
+import { PILLARS, type PillarId, getPillarName, getPillarDescription } from '@/lib/constants';
 import { canEndorse, type Endorsement } from '@/lib/scoring';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -237,10 +237,10 @@ export default function EndorseFlow() {
                         />
                         <div className="flex-1">
                           <h3 className="font-semibold text-foreground">
-                            {pillar.name}
+                            {getPillarName(pillar.id)}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {pillar.description}
+                            {getPillarDescription(pillar.id)}
                           </p>
                           {!isAvailable && (
                             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
@@ -275,10 +275,10 @@ export default function EndorseFlow() {
                 showDetails={false}
               />
               <h2 className="font-semibold text-foreground mt-3">
-                {PILLARS.find(p => p.id === selectedPillar)?.name}
+                {getPillarName(selectedPillar)}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {PILLARS.find(p => p.id === selectedPillar)?.description}
+                {getPillarDescription(selectedPillar)}
               </p>
             </Card>
 

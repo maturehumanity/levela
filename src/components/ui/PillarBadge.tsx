@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon } from 'lucide-react';
-import { PILLARS, type PillarId } from '@/lib/constants';
+import { PILLARS, type PillarId, getPillarShortName } from '@/lib/constants';
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
@@ -72,7 +72,7 @@ export function PillarBadge({
       {showDetails && (
         <div className="text-center">
           <p className={`font-medium ${classes.text} text-foreground`}>
-            {pillar.shortName}
+            {getPillarShortName(pillarId)}
           </p>
           {score !== undefined && (
             <p className={`font-display font-bold ${classes.text} ${pillar.colorClass}`}>
