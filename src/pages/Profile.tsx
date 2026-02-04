@@ -69,17 +69,19 @@ export default function Profile() {
   };
 
   // Calculate positions for badges in a circular ring
-  const getBadgePosition = (index: number, total: number) => {
-    const angle = (index * (360 / total) - 90) * (Math.PI / 180); // Start from top
-    const radius = 130; // Distance from center
+  // Badges positioned at: top, top-right, bottom-right, bottom-left, top-left
+  const getBadgePosition = (index: number) => {
+    // Custom angles for better horizontal pill badge placement
+    // Positions: top (0), right-top (1), right-bottom (2), left-bottom (3), left-top (4)
+    const angles = [-90, -18, 54, 126, 198]; // degrees, starting from top
+    const angle = angles[index] * (Math.PI / 180);
+    const radius = 180; // Distance from center to badge center
     return {
       x: Math.cos(angle) * radius,
       y: Math.sin(angle) * radius,
     };
   };
 
-  const circumference = 2 * Math.PI * 58;
-  const strokeDashoffset = circumference - (score.overall / 100) * circumference;
 
   if (loading) {
     return (
@@ -96,35 +98,48 @@ export default function Profile() {
       <div className="px-4 py-6 flex flex-col items-center min-h-[calc(100vh-80px)]">
         {/* Badge Ring Container */}
         <motion.div
-          className="relative w-[320px] h-[320px] flex items-center justify-center mt-8"
+          className="relative w-[420px] h-[420px] flex items-center justify-center mt-4"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
+          {/* Dotted Guide Ring */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 420 420">
+            <circle
+              cx="210"
+              cy="210"
+              r="150"
+              fill="none"
+              strokeWidth="2"
+              strokeDasharray="6 8"
+              className="stroke-muted-foreground/20"
+            />
+          </svg>
+
           {/* Central Avatar with Score Ring */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
               {/* Score Ring */}
-              <svg className="absolute -inset-3 w-[136px] h-[136px] -rotate-90" viewBox="0 0 136 136">
+              <svg className="absolute -inset-4 w-[144px] h-[144px] -rotate-90" viewBox="0 0 144 144">
                 <circle
-                  cx="68"
-                  cy="68"
-                  r="58"
+                  cx="72"
+                  cy="72"
+                  r="62"
                   fill="none"
                   strokeWidth="6"
                   className="stroke-muted/30"
                 />
                 <motion.circle
-                  cx="68"
-                  cy="68"
-                  r="58"
+                  cx="72"
+                  cy="72"
+                  r="62"
                   fill="none"
                   strokeWidth="6"
                   strokeLinecap="round"
                   className="stroke-primary"
-                  style={{ strokeDasharray: circumference }}
-                  initial={{ strokeDashoffset: circumference }}
-                  animate={{ strokeDashoffset }}
+                  style={{ strokeDasharray: 2 * Math.PI * 62 }}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 62 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 62 - (score.overall / 100) * 2 * Math.PI * 62 }}
                   transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
                 />
               </svg>
@@ -146,31 +161,35 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Floating Pillar Badges */}
+          {/* Horizontal Pill Badges */}
           {PILLARS.map((pillar, index) => {
-            const pos = getBadgePosition(index, PILLARS.length);
+            const pos = getBadgePosition(index);
             const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
             const Icon = iconMap[pillar.icon];
             
             return (
               <motion.button
                 key={pillar.id}
-                className="absolute w-16 h-16 flex flex-col items-center justify-center"
+                className="absolute flex items-center gap-2 px-3 py-2 rounded-full bg-card border border-border/50 shadow-soft hover:shadow-elevated transition-shadow"
                 style={{
-                  left: `calc(50% + ${pos.x}px - 32px)`,
-                  top: `calc(50% + ${pos.y}px - 32px)`,
+                  left: `calc(50% + ${pos.x}px)`,
+                  top: `calc(50% + ${pos.y}px)`,
+                  transform: 'translate(-50%, -50%)',
                 }}
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 + index * 0.1, duration: 0.3 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(`/pillar/${pillar.id}`)}
               >
-                <div className={`w-12 h-12 rounded-full ${pillar.bgColorClass} shadow-elevated flex items-center justify-center`}>
-                  <Icon className="w-5 h-5 text-white" />
+                <div className={`w-7 h-7 rounded-full ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xs font-bold text-foreground mt-1">
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">
+                  {pillar.shortName}
+                </span>
+                <span className="text-xs font-bold text-muted-foreground">
                   {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
                 </span>
               </motion.button>
