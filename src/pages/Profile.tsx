@@ -68,12 +68,20 @@ export default function Profile() {
       .slice(0, 2);
   };
 
+  // Shared angle calculation - each pillar owns one fixed angle
+  const getPillarAngle = (index: number, total: number) => {
+    // 72° spacing, starting from top (-90°)
+    return index * (360 / total) - 90;
+  };
+
   // Create SVG arc path for ring segment
   const createArcPath = (index: number, total: number, innerRadius: number, outerRadius: number) => {
-    const gapAngle = 4; // degrees gap between segments
-    const segmentAngle = (360 - gapAngle * total) / total;
-    const startAngle = index * (segmentAngle + gapAngle) - 90; // Start from top
-    const endAngle = startAngle + segmentAngle;
+    const gapAngle = 3; // degrees gap between segments
+    const segmentAngle = 360 / total; // 72° per segment
+    const centerAngle = getPillarAngle(index, total);
+    const halfSegment = (segmentAngle - gapAngle) / 2;
+    const startAngle = centerAngle - halfSegment;
+    const endAngle = centerAngle + halfSegment;
     
     const startRad = (startAngle * Math.PI) / 180;
     const endRad = (endAngle * Math.PI) / 180;
@@ -93,12 +101,10 @@ export default function Profile() {
 
   // Get badge position at center of each segment
   const getBadgePosition = (index: number, total: number) => {
-    // Evenly spaced at 72° intervals, starting from top (-90°)
-    const angleStep = 360 / total; // 72° for 5 pillars
-    const centerAngle = index * angleStep - 90;
     const innerRadius = 115;
     const outerRadius = 200;
-    const radius = (innerRadius + outerRadius) / 2; // Exact midline of the ring
+    const radius = (innerRadius + outerRadius) / 2; // Ring midline
+    const centerAngle = getPillarAngle(index, total); // Same angle as sector
     const rad = (centerAngle * Math.PI) / 180;
     
     return {
