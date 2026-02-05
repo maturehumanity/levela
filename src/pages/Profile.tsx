@@ -150,7 +150,7 @@ export default function Profile() {
             return (
               <motion.button
                 key={pillar.id}
-                className="absolute flex items-center gap-1.5 px-2 py-1.5 rounded-full bg-card/90 backdrop-blur-sm border border-border/60 shadow-sm hover:shadow-md hover:bg-card transition-all z-10"
+                className="absolute flex items-center gap-1.5 px-3 py-2 rounded-full bg-background/95 backdrop-blur-sm border-2 border-background shadow-none hover:bg-background transition-all z-10"
                 style={{
                   left: `calc(50% + ${pos.x}px)`,
                   top: `calc(50% + ${pos.y}px)`,
@@ -159,17 +159,17 @@ export default function Profile() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 + index * 0.08, duration: 0.3 }}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate(`/pillar/${pillar.id}`)}
               >
-                <div className={`w-5 h-5 rounded-full ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-6 h-6 rounded-full ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
                   <Icon className="w-3 h-3 text-white" />
                 </div>
-                <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">
+                <span className="text-xs font-semibold text-foreground whitespace-nowrap">
                   {pillar.shortName}
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
+                <span className="text-xs font-bold text-muted-foreground tabular-nums">
                   {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
                 </span>
               </motion.button>
