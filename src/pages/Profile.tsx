@@ -93,10 +93,12 @@ export default function Profile() {
 
   // Get badge position at center of each segment
   const getBadgePosition = (index: number, total: number) => {
-    const gapAngle = 4;
-    const segmentAngle = (360 - gapAngle * total) / total;
-    const centerAngle = index * (segmentAngle + gapAngle) + segmentAngle / 2 - 90;
-    const radius = 157; // Middle of the ring band
+    // Evenly spaced at 72° intervals, starting from top (-90°)
+    const angleStep = 360 / total; // 72° for 5 pillars
+    const centerAngle = index * angleStep - 90;
+    const innerRadius = 115;
+    const outerRadius = 200;
+    const radius = (innerRadius + outerRadius) / 2; // Exact midline of the ring
     const rad = (centerAngle * Math.PI) / 180;
     
     return {
