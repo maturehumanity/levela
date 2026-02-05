@@ -101,15 +101,13 @@ export default function Profile() {
 
   // Get badge position at center of each segment
   const getBadgePosition = (index: number, total: number) => {
-    const innerRadius = 115;
     const outerRadius = 200;
-    const radius = (innerRadius + outerRadius) / 2; // Ring midline
     const centerAngle = getPillarAngle(index, total); // Same angle as sector
     const rad = (centerAngle * Math.PI) / 180;
     
     return {
-      x: Math.cos(rad) * radius,
-      y: Math.sin(rad) * radius,
+      x: Math.cos(rad) * outerRadius,
+      y: Math.sin(rad) * outerRadius,
     };
   };
 
@@ -139,7 +137,7 @@ export default function Profile() {
               <motion.path
                 key={pillar.id}
                 d={createArcPath(index, PILLARS.length, 115, 200)}
-                className="fill-muted/40 stroke-border cursor-pointer hover:fill-muted/60 transition-colors"
+                className="fill-muted/30 stroke-border/50 cursor-pointer hover:fill-muted/50 transition-colors"
                 strokeWidth="1"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -147,6 +145,15 @@ export default function Profile() {
                 onClick={() => navigate(`/pillar/${pillar.id}`)}
               />
             ))}
+            {/* Outer guide circle */}
+            <circle
+              cx="210"
+              cy="210"
+              r="200"
+              fill="none"
+              strokeWidth="1"
+              className="stroke-border/30"
+            />
           </svg>
 
           {/* Pill Badges Embedded in Ring Segments */}
@@ -158,7 +165,7 @@ export default function Profile() {
             return (
               <motion.button
                 key={pillar.id}
-                className="absolute flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-background/50 transition-all z-10"
+                className="absolute flex items-center gap-1.5 px-2 py-1 rounded-full bg-card border border-border/60 shadow-sm hover:shadow-md hover:bg-card/90 transition-all z-10"
                 style={{
                   left: `calc(50% + ${pos.x}px)`,
                   top: `calc(50% + ${pos.y}px)`,
