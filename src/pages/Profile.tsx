@@ -85,7 +85,7 @@ export default function Profile() {
     
     const startRad = (startAngle * Math.PI) / 180;
     const endRad = (endAngle * Math.PI) / 180;
-    const cx = 210, cy = 210;
+    const cx = 250, cy = 250;
     
     const x1 = cx + innerRadius * Math.cos(startRad);
     const y1 = cy + innerRadius * Math.sin(startRad);
@@ -101,13 +101,14 @@ export default function Profile() {
 
   // Get badge position at center of each segment
   const getBadgePosition = (index: number, total: number) => {
-    const outerRadius = 200;
+    const outerRadius = 140;
+    const badgeOffset = 60; // Position badges just outside the ring
     const centerAngle = getPillarAngle(index, total); // Same angle as sector
     const rad = (centerAngle * Math.PI) / 180;
     
     return {
-      x: Math.cos(rad) * outerRadius,
-      y: Math.sin(rad) * outerRadius,
+      x: Math.cos(rad) * (outerRadius + badgeOffset),
+      y: Math.sin(rad) * (outerRadius + badgeOffset),
     };
   };
 
@@ -126,17 +127,17 @@ export default function Profile() {
       <div className="px-4 py-6 flex flex-col items-center min-h-[calc(100vh-80px)]">
         {/* Segmented Identity Dial */}
         <motion.div
-          className="relative w-[420px] h-[420px] flex items-center justify-center mt-2"
+          className="relative w-[500px] h-[500px] flex items-center justify-center mt-2"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
           {/* Ring Segments - The pillars ARE the ring */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 420 420">
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 500 500">
             {PILLARS.map((pillar, index) => (
               <motion.path
                 key={pillar.id}
-                d={createArcPath(index, PILLARS.length, 115, 200)}
+                d={createArcPath(index, PILLARS.length, 90, 140)}
                 className="fill-muted/30 stroke-border/50 cursor-pointer hover:fill-muted/50 transition-colors"
                 strokeWidth="1"
                 initial={{ opacity: 0 }}
@@ -147,16 +148,16 @@ export default function Profile() {
             ))}
             {/* Outer guide circle */}
             <circle
-              cx="210"
-              cy="210"
-              r="200"
+              cx="250"
+              cy="250"
+              r="140"
               fill="none"
               strokeWidth="1"
               className="stroke-border/30"
             />
           </svg>
 
-          {/* Pill Badges Embedded in Ring Segments */}
+          {/* Clock-style badges positioned outside the ring */}
           {PILLARS.map((pillar, index) => {
             const pos = getBadgePosition(index, PILLARS.length);
             const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
@@ -165,7 +166,7 @@ export default function Profile() {
             return (
               <motion.button
                 key={pillar.id}
-                className="absolute flex items-center gap-1.5 px-2 py-1 rounded-full bg-card border border-border/60 shadow-sm hover:shadow-md hover:bg-card/90 transition-all z-10"
+                className="absolute flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-card border border-border shadow-soft hover:shadow-elevated transition-all z-10"
                 style={{
                   left: `calc(50% + ${pos.x}px)`,
                   top: `calc(50% + ${pos.y}px)`,
