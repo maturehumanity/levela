@@ -131,7 +131,7 @@ export default function Profile() {
               <motion.path
                 key={pillar.id}
                 d={createArcPath(index, PILLARS.length, 115, 200)}
-                className="fill-muted/30 stroke-border/50 cursor-pointer hover:fill-muted/50 transition-colors"
+                className="fill-muted/40 stroke-border cursor-pointer hover:fill-muted/60 transition-colors"
                 strokeWidth="1"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -150,7 +150,7 @@ export default function Profile() {
             return (
               <motion.button
                 key={pillar.id}
-                className="absolute flex items-center gap-1.5 px-3 py-2 rounded-full bg-background/95 backdrop-blur-sm border-2 border-background shadow-none hover:bg-background transition-all z-10"
+                className="absolute flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-background/50 transition-all z-10"
                 style={{
                   left: `calc(50% + ${pos.x}px)`,
                   top: `calc(50% + ${pos.y}px)`,
@@ -159,17 +159,15 @@ export default function Profile() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 + index * 0.08, duration: 0.3 }}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
                 onClick={() => navigate(`/pillar/${pillar.id}`)}
               >
-                <div className={`w-6 h-6 rounded-full ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
-                  <Icon className="w-3 h-3 text-white" />
+                <div className={`w-5 h-5 rounded-md ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className="w-3 h-3 text-primary-foreground" />
                 </div>
-                <span className="text-xs font-semibold text-foreground whitespace-nowrap">
+                <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
                   {pillar.shortName}
                 </span>
-                <span className="text-xs font-bold text-muted-foreground tabular-nums">
+                <span className="text-[11px] font-bold text-muted-foreground tabular-nums">
                   {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
                 </span>
               </motion.button>
