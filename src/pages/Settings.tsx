@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   User, 
@@ -81,6 +82,23 @@ export default function Settings() {
           <h1 className="text-2xl font-display font-bold text-foreground">
             Settings
           </h1>
+        </motion.div>
+
+        {/* Theme Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">Appearance</h3>
+                <p className="text-sm text-muted-foreground">Choose your theme</p>
+              </div>
+              <ThemeToggle />
+            </div>
+          </Card>
         </motion.div>
 
         {/* Settings items */}
