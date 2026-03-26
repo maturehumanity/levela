@@ -48,6 +48,34 @@ npm run dev
 - Click on the "Code" button (green button) near the top right.
 - Select the "Codespaces" tab.
 - Click on "New codespace" to launch a new Codespace environment.
+
+## Hybrid Development Workflow
+
+This project supports development across multiple platforms:
+
+### Lovable Platform (Web)
+The default configuration works with Lovable for web deployment:
+```bash
+npm run dev          # Development server
+npm run build        # Production build for Lovable
+```
+
+### Android Development
+For Android app development:
+```bash
+npm run cap:android  # Build and open in Android Studio
+```
+
+### iOS Development
+For iOS app development:
+```bash
+npm run cap:ios      # Build and open in Xcode
+```
+
+### Configuration Files
+- `capacitor.config.json` - Lovable/web deployment
+- `capacitor.config.android.json` - Android-specific config
+- Platform directories (`android/`, `ios/`) are gitignored
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
 ## What technologies are used for this project?
