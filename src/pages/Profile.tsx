@@ -1,17 +1,22 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { LevelaScore } from '@/components/ui/LevelaScore';
-import { PillarBadge } from '@/components/ui/PillarBadge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PILLARS, type PillarId } from '@/lib/constants';
-import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
+import { PILLARS, type PillarId, getScoreColor, getScoreLabel } from '@/lib/constants';
+import { calculateLevelaScore, type Endorsement, formatScore } from '@/lib/scoring';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Edit, CheckCircle, Share2 } from 'lucide-react';
+import { CheckCircle, GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const iconMap: Record<string, LucideIcon> = {
+  GraduationCap,
+  Heart,
+  Shield,
+  Users,
+  TrendingUp,
+};
 
 export default function Profile() {
   const { profile, user } = useAuth();
@@ -63,6 +68,50 @@ export default function Profile() {
       .slice(0, 2);
   };
 
+  // Shared angle calculation - each pillar owns one fixed angle
+  const getPillarAngle = (index: number, total: number) => {
+    // 72° spacing, starting from top (-90°)
+    return index * (360 / total) - 90;
+  };
+
+  // Create SVG arc path for ring segment
+  const createArcPath = (index: number, total: number, innerRadius: number, outerRadius: number) => {
+    const gapAngle = 3; // degrees gap between segments
+    const segmentAngle = 360 / total; // 72° per segment
+    const centerAngle = getPillarAngle(index, total);
+    const halfSegment = (segmentAngle - gapAngle) / 2;
+    const startAngle = centerAngle - halfSegment;
+    const endAngle = centerAngle + halfSegment;
+    
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    const cx = 250, cy = 250;
+    
+    const x1 = cx + innerRadius * Math.cos(startRad);
+    const y1 = cy + innerRadius * Math.sin(startRad);
+    const x2 = cx + outerRadius * Math.cos(startRad);
+    const y2 = cy + outerRadius * Math.sin(startRad);
+    const x3 = cx + outerRadius * Math.cos(endRad);
+    const y3 = cy + outerRadius * Math.sin(endRad);
+    const x4 = cx + innerRadius * Math.cos(endRad);
+    const y4 = cy + innerRadius * Math.sin(endRad);
+    
+    return `M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 0 0 ${x1} ${y1}`;
+  };
+
+  // Get badge position at center of each segment
+  const getBadgePosition = (index: number, total: number) => {
+    const outerRadius = 140;
+    const badgeOffset = 60; // Position badges just outside the ring
+    const centerAngle = getPillarAngle(index, total); // Same angle as sector
+    const rad = (centerAngle * Math.PI) / 180;
+    
+    return {
+      x: Math.cos(rad) * (outerRadius + badgeOffset),
+      y: Math.sin(rad) * (outerRadius + badgeOffset),
+    };
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -75,117 +124,192 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="px-4 py-6 space-y-6">
-        {/* Header */}
+      <div className="px-4 py-6 flex flex-col items-center min-h-[calc(100vh-80px)]">
+        {/* Segmented Identity Dial */}
         <motion.div
-          className="text-center"
+          className="relative w-[500px] h-[500px] flex items-center justify-center mt-2"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Ring Segments - The pillars ARE the ring */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 500 500">
+            {PILLARS.map((pillar, index) => (
+              <motion.path
+                key={pillar.id}
+                d={createArcPath(index, PILLARS.length, 90, 140)}
+                className="fill-muted/30 stroke-border/50 cursor-pointer hover:fill-muted/50 transition-colors"
+                strokeWidth="1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
+                onClick={() => navigate(`/pillar/${pillar.id}`)}
+              />
+            ))}
+            {/* Outer guide circle */}
+            <circle
+              cx="250"
+              cy="250"
+              r="140"
+              fill="none"
+              strokeWidth="1"
+              className="stroke-border/30"
+            />
+          </svg>
+
+          {/* Clock-style badges positioned outside the ring */}
+          {PILLARS.map((pillar, index) => {
+            const pos = getBadgePosition(index, PILLARS.length);
+            const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
+            const Icon = iconMap[pillar.icon];
+            
+            return (
+              <motion.button
+                key={pillar.id}
+                className="absolute flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-card border border-border shadow-soft hover:shadow-elevated transition-all z-10"
+                style={{
+                  left: `calc(50% + ${pos.x}px)`,
+                  top: `calc(50% + ${pos.y}px)`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 + index * 0.08, duration: 0.3 }}
+                onClick={() => navigate(`/pillar/${pillar.id}`)}
+              >
+                <div className={`w-5 h-5 rounded-md ${pillar.bgColorClass} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className="w-3 h-3 text-primary-foreground" />
+                </div>
+                <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
+                  {pillar.shortName}
+                </span>
+                <span className="text-[11px] font-bold text-muted-foreground tabular-nums">
+                  {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
+                </span>
+              </motion.button>
+            );
+          })}
+
+          {/* Central Avatar with Score Ring */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative pointer-events-auto">
+              {/* Score Progress Ring */}
+              <svg className="absolute -inset-3 w-[136px] h-[136px] -rotate-90" viewBox="0 0 136 136">
+                <circle
+                  cx="68"
+                  cy="68"
+                  r="58"
+                  fill="none"
+                  strokeWidth="5"
+                  className="stroke-background"
+                />
+                <circle
+                  cx="68"
+                  cy="68"
+                  r="58"
+                  fill="none"
+                  strokeWidth="4"
+                  className="stroke-muted/40"
+                />
+                <motion.circle
+                  cx="68"
+                  cy="68"
+                  r="58"
+                  fill="none"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  className="stroke-primary"
+                  style={{ strokeDasharray: 2 * Math.PI * 58 }}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 58 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 58 - (score.overall / 100) * 2 * Math.PI * 58 }}
+                  transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
+                />
+              </svg>
+              
+              {/* Avatar */}
+              <Avatar className="w-28 h-28 border-4 border-background shadow-elevated">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-display">
+                  {getInitials(profile?.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Verified Badge */}
+              {profile?.is_verified && (
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-4 border-background">
+                  <CheckCircle className="w-4 h-4 text-primary-foreground" />
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* User Info */}
+        <motion.div
+          className="text-center mt-4 space-y-1"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
         >
-          <div className="relative inline-block mb-4">
-            <Avatar className="w-24 h-24 border-4 border-background shadow-elevated">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-display">
-                {getInitials(profile?.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            {profile?.is_verified && (
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-4 border-background">
-                <CheckCircle className="w-4 h-4 text-primary-foreground" />
-              </div>
-            )}
-          </div>
-
           <h1 className="text-2xl font-display font-bold text-foreground">
             {profile?.full_name || 'Anonymous User'}
           </h1>
           {profile?.username && (
             <p className="text-muted-foreground">@{profile.username}</p>
           )}
-          {profile?.bio && (
-            <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-              {profile.bio}
-            </p>
-          )}
-
-          <div className="flex justify-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => navigate('/settings/profile')}
-            >
-              <Edit className="w-4 h-4" />
-              Edit Profile
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Share2 className="w-4 h-4" />
-              Share
-            </Button>
+          
+          {/* Score & Status */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className={`text-2xl font-display font-bold ${getScoreColor(score.overall)}`}>
+              {formatScore(score.overall)}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              · {getScoreLabel(score.overall)}
+            </span>
           </div>
         </motion.div>
 
-        {/* Levela Score */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="flex justify-center"
-        >
-          <Card className="p-6 bg-card shadow-soft border-border/50">
-            <LevelaScore score={score.overall} size="lg" />
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Based on {score.totalEndorsements} endorsement{score.totalEndorsements !== 1 ? 's' : ''}
-            </p>
-          </Card>
-        </motion.div>
+        {/* Bio */}
+        {profile?.bio && (
+          <motion.p
+            className="text-sm text-muted-foreground text-center max-w-xs mt-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            {profile.bio}
+          </motion.p>
+        )}
 
-        {/* Pillars Grid */}
+        {/* Primary CTA */}
         <motion.div
+          className="mt-8 w-full max-w-xs"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.6 }}
         >
-          <h2 className="text-lg font-semibold text-foreground mb-4">Your Pillars</h2>
-          <div className="grid grid-cols-3 gap-3">
-            {PILLARS.map((pillar, index) => {
-              const pillarScore = score.pillars.find(p => p.pillar === pillar.id);
-              return (
-                <motion.div
-                  key={pillar.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
-                >
-                  <PillarBadge
-                    pillarId={pillar.id}
-                    score={pillarScore?.score}
-                    endorsementCount={pillarScore?.endorsementCount}
-                    size="sm"
-                    onClick={() => navigate(`/pillar/${pillar.id}`)}
-                  />
-                </motion.div>
-              );
-            })}
-          </div>
+          <Button
+            className="w-full gap-2"
+            size="lg"
+            onClick={() => navigate('/endorse/select')}
+          >
+            <Plus className="w-5 h-5" />
+            Request First Endorsement
+          </Button>
         </motion.div>
 
-        {/* How scoring works */}
-        <motion.div
+        {/* Endorsement count */}
+        <motion.p
+          className="text-xs text-muted-foreground mt-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.7 }}
         >
-          <Card className="p-4 bg-muted/50 border-border/50">
-            <h3 className="font-semibold text-foreground mb-2">How Your Score Works</h3>
-            <ul className="text-sm text-muted-foreground space-y-1.5">
-              <li>• Each endorsement rates you 1-5 stars on a pillar</li>
-              <li>• Pillar score = (avg stars ÷ 5) × 100</li>
-              <li>• Levela Score = average of all pillar scores</li>
-              <li>• More endorsements = more credibility</li>
-            </ul>
-          </Card>
-        </motion.div>
+          {score.totalEndorsements === 0 
+            ? 'No endorsements yet'
+            : `Based on ${score.totalEndorsements} endorsement${score.totalEndorsements !== 1 ? 's' : ''}`
+          }
+        </motion.p>
       </div>
     </AppLayout>
   );
