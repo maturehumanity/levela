@@ -128,9 +128,9 @@ export function ChatBar() {
     const messageContent = newMessage.trim();
     setNewMessage('');
 
-    // Create temporary message for immediate UI feedback
-    const tempMessage: Message = {
-      id: `temp-${Date.now()}`,
+    // Create message for UI (will persist even if DB fails)
+    const newMessageObj: Message = {
+      id: `local-${Date.now()}-${Math.random()}`,
       content: messageContent,
       created_at: new Date().toISOString(),
       sender_id: profile.id,
@@ -144,7 +144,7 @@ export function ChatBar() {
     };
 
     // Add message to UI immediately
-    setMessages(prev => [...prev, tempMessage]);
+    setMessages(prev => [...prev, newMessageObj]);
 
     try {
       const { error } = await supabase
@@ -156,19 +156,29 @@ export function ChatBar() {
 
       if (error) {
         console.error('ChatBar: Error sending message:', error);
-        // Remove the temporary message if insert failed
-        setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-        // Re-add the text to input so user can try again
-        setNewMessage(messageContent);
+        // Mark message as failed but keep it visible
+        setMessages(prev => prev.map(msg =>
+          msg.id === newMessageObj.id
+            ? { ...msg, id: `failed-${msg.id}` }
+            : msg
+        ));
       } else {
-        // Replace temp message with real one (subscription should handle this)
+        // Mark message as sent successfully
+        setMessages(prev => prev.map(msg =>
+          msg.id === newMessageObj.id
+            ? { ...msg, id: `sent-${Date.now()}` }
+            : msg
+        ));
         console.log('ChatBar: Message sent successfully');
       }
     } catch (err) {
       console.error('ChatBar: Unexpected error sending message:', err);
-      // Remove the temporary message if insert failed
-      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-      setNewMessage(messageContent);
+      // Mark message as failed but keep it visible
+      setMessages(prev => prev.map(msg =>
+        msg.id === newMessageObj.id
+          ? { ...msg, id: `failed-${msg.id}` }
+          : msg
+      ));
     }
   };
 
@@ -182,15 +192,32 @@ export function ChatBar() {
       .slice(0, 2);
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
+  const retryMessage = async (messageId: string) => {
+    const message = messages.find(msg => msg.id === messageId);
+    if (!message) return;
 
-    if (diff < 60000) return 'now'; // less than 1 minute
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m`; // minutes
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`; // hours
-    return date.toLocaleDateString(); // date
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: message.sender_id,
+          content: message.content,
+        });
+
+      if (error) {
+        console.error('ChatBar: Retry failed:', error);
+      } else {
+        // Mark as sent and update ID
+        setMessages(prev => prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, id: `sent-${Date.now()}` }
+            : msg
+        ));
+        console.log('ChatBar: Message retry successful');
+      }
+    } catch (err) {
+      console.error('ChatBar: Retry error:', err);
+    }
   };
 
   if (!user) {
@@ -201,14 +228,14 @@ export function ChatBar() {
   console.log('ChatBar: Rendering for user', user.id);
 
   return (
-    <div className="fixed bottom-28 right-4 z-40">
+    <div className="fixed bottom-28 right-4 z-40 max-w-md w-full">
       <AnimatePresence>
         {isExpanded ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-background border border-border rounded-lg shadow-glow max-w-md ml-auto"
+            className="bg-background border border-border rounded-lg shadow-glow w-full"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-border">
@@ -233,12 +260,15 @@ export function ChatBar() {
                 <div className="text-center text-muted-foreground py-4">
                   <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No messages yet</p>
-                  <p className="text-sm">Be the first to start the conversation!</p>
+                  <p className="text-sm">Start the conversation! Messages will appear here instantly.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {messages.map((message) => (
-                    <div key={message.id} className={`flex gap-2 ${message.id.startsWith('temp-') ? 'opacity-70' : ''}`}>
+                    <div key={message.id} className={`flex gap-2 ${
+                    message.id.startsWith('failed-') ? 'opacity-60' :
+                    message.id.startsWith('local-') ? 'opacity-80' : ''
+                  }`}>
                       <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={message.sender?.avatar_url || undefined} />
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -256,6 +286,14 @@ export function ChatBar() {
                         </div>
                         <p className="text-sm text-foreground break-words">
                           {message.content}
+                          {message.id.startsWith('failed-') && (
+                            <button
+                              onClick={() => retryMessage(message.id)}
+                              className="text-xs text-destructive ml-2 hover:text-destructive/80 underline"
+                            >
+                              Retry
+                            </button>
+                          )}
                         </p>
                       </div>
                     </div>
