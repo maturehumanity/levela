@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LevelaScore } from '@/components/ui/LevelaScore';
+import { ChatBar } from '@/components/ui/chat-bar';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -260,6 +261,9 @@ export default function Home() {
           )}
         </motion.div>
       </div>
+
+      {/* Community Chat */}
+      <ChatBar />
     </AppLayout>
   );
 }
