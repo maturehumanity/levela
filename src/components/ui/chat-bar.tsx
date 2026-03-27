@@ -51,23 +51,34 @@ export function ChatBar() {
   }, [messages]);
 
   const fetchMessages = async () => {
-    const { data, error } = await supabase
-      .from('messages')
-      .select(`
-        id,
-        content,
-        created_at,
-        sender_id,
-        is_edited,
-        sender:profiles!messages_sender_id_fkey(id, username, full_name, avatar_url)
-      `)
-      .order('created_at', { ascending: true })
-      .limit(50);
+    console.log('ChatBar: Fetching messages...');
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          created_at,
+          sender_id,
+          is_edited,
+          sender:profiles!messages_sender_id_fkey(id, username, full_name, avatar_url)
+        `)
+        .order('created_at', { ascending: true })
+        .limit(50);
 
-    if (error) {
-      console.error('Error fetching messages:', error);
-    } else {
-      setMessages(data || []);
+      if (error) {
+        console.error('ChatBar: Error fetching messages:', error);
+        if (error.code === 'PGRST116') {
+          console.log('ChatBar: Messages table does not exist');
+        }
+        setMessages([]);
+      } else {
+        console.log('ChatBar: Fetched messages:', data?.length || 0);
+        setMessages(data || []);
+      }
+    } catch (err) {
+      console.error('ChatBar: Unexpected error:', err);
+      setMessages([]);
     }
     setLoading(false);
   };
@@ -114,17 +125,22 @@ export function ChatBar() {
     e.preventDefault();
     if (!newMessage.trim() || !profile?.id) return;
 
-    const { error } = await supabase
-      .from('messages')
-      .insert({
-        sender_id: profile.id,
-        content: newMessage.trim(),
-      });
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: profile.id,
+          content: newMessage.trim(),
+        });
 
-    if (error) {
-      console.error('Error sending message:', error);
-    } else {
-      setNewMessage('');
+      if (error) {
+        console.error('ChatBar: Error sending message:', error);
+        // Could show a toast notification here
+      } else {
+        setNewMessage('');
+      }
+    } catch (err) {
+      console.error('ChatBar: Unexpected error sending message:', err);
     }
   };
 
@@ -149,10 +165,15 @@ export function ChatBar() {
     return date.toLocaleDateString(); // date
   };
 
-  if (!user) return null;
+  if (!user) {
+    console.log('ChatBar: No user, not rendering');
+    return null;
+  }
+
+  console.log('ChatBar: Rendering for user', user.id);
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50">
+    <div className="fixed bottom-20 left-4 right-4 z-40">
       <AnimatePresence>
         {isExpanded ? (
           <motion.div
