@@ -123,62 +123,73 @@ export function ChatBar() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !profile?.id) return;
+    e.stopPropagation();
 
-    const messageContent = newMessage.trim();
-    setNewMessage('');
-
-    // Create message for UI (will persist even if DB fails)
-    const newMessageObj: Message = {
-      id: `local-${Date.now()}-${Math.random()}`,
-      content: messageContent,
-      created_at: new Date().toISOString(),
-      sender_id: profile.id,
-      is_edited: null,
-      sender: {
-        id: profile.id,
-        username: profile.username,
-        full_name: profile.full_name,
-        avatar_url: profile.avatar_url,
-      },
-    };
-
-    // Add message to UI immediately
-    setMessages(prev => [...prev, newMessageObj]);
-
+    let messageContent = '';
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: profile.id,
-          content: messageContent,
-        });
+      if (!newMessage.trim() || !profile?.id) return;
 
-      if (error) {
-        console.error('ChatBar: Error sending message:', error);
+      messageContent = newMessage.trim();
+      setNewMessage('');
+
+      // Create message for UI (will persist even if DB fails)
+      const newMessageObj: Message = {
+        id: `local-${Date.now()}-${Math.random()}`,
+        content: messageContent,
+        created_at: new Date().toISOString(),
+        sender_id: profile.id,
+        is_edited: null,
+        sender: {
+          id: profile.id,
+          username: profile.username,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+        },
+      };
+
+      // Add message to UI immediately
+      setMessages(prev => [...prev, newMessageObj]);
+
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .insert({
+            sender_id: profile.id,
+            content: messageContent,
+          });
+
+        if (error) {
+          console.error('ChatBar: Error sending message:', error);
+          // Mark message as failed but keep it visible
+          setMessages(prev => prev.map(msg =>
+            msg.id === newMessageObj.id
+              ? { ...msg, id: `failed-${msg.id}` }
+              : msg
+          ));
+        } else {
+          // Mark message as sent successfully
+          setMessages(prev => prev.map(msg =>
+            msg.id === newMessageObj.id
+              ? { ...msg, id: `sent-${Date.now()}` }
+              : msg
+          ));
+          console.log('ChatBar: Message sent successfully');
+        }
+      } catch (dbError) {
+        console.error('ChatBar: Database error:', dbError);
         // Mark message as failed but keep it visible
         setMessages(prev => prev.map(msg =>
           msg.id === newMessageObj.id
             ? { ...msg, id: `failed-${msg.id}` }
             : msg
         ));
-      } else {
-        // Mark message as sent successfully
-        setMessages(prev => prev.map(msg =>
-          msg.id === newMessageObj.id
-            ? { ...msg, id: `sent-${Date.now()}` }
-            : msg
-        ));
-        console.log('ChatBar: Message sent successfully');
       }
-    } catch (err) {
-      console.error('ChatBar: Unexpected error sending message:', err);
-      // Mark message as failed but keep it visible
-      setMessages(prev => prev.map(msg =>
-        msg.id === newMessageObj.id
-          ? { ...msg, id: `failed-${msg.id}` }
-          : msg
-      ));
+    } catch (generalError) {
+      console.error('ChatBar: General error in sendMessage:', generalError);
+      // Re-add the text to input if something went wrong
+      if (messageContent) {
+        setNewMessage(messageContent);
+      }
     }
   };
 
