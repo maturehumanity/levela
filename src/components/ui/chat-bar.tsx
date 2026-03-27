@@ -121,75 +121,89 @@ export function ChatBar() {
     };
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSendMessage = (event?: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
 
-    let messageContent = '';
+    console.log('ChatBar: handleSendMessage called, newMessage:', newMessage, 'profile:', profile);
+
+    const trimmedMessage = newMessage.trim();
+    if (!trimmedMessage) {
+      console.log('ChatBar: No message content, returning');
+      return;
+    }
+
+    const sender = profile || {
+      id: `anonymous-${Date.now()}`,
+      username: 'anonymous',
+      full_name: 'Anonymous',
+      avatar_url: null,
+    };
+
+    const messageContent = trimmedMessage;
+    setNewMessage('');
+
+    const newMessageObj: Message = {
+      id: `local-${Date.now()}-${Math.random()}`,
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      sender_id: sender.id,
+      is_edited: null,
+      sender: {
+        id: sender.id,
+        username: sender.username,
+        full_name: sender.full_name,
+        avatar_url: sender.avatar_url,
+      },
+    };
+
+    console.log('ChatBar: Adding message to UI');
+    setMessages(prev => [...prev, newMessageObj]);
+    setIsExpanded(true);
+
+    if (profile?.id) {
+      sendToDatabase(newMessageObj, messageContent);
+    } else {
+      console.log('ChatBar: No profile ID - skipping DB send but keeping in local feed');
+    }
+  };
+
+  const sendToDatabase = async (messageObj: Message, content: string) => {
     try {
-      if (!newMessage.trim() || !profile?.id) return;
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: messageObj.sender_id,
+          content: content,
+        });
 
-      messageContent = newMessage.trim();
-      setNewMessage('');
-
-      // Create message for UI (will persist even if DB fails)
-      const newMessageObj: Message = {
-        id: `local-${Date.now()}-${Math.random()}`,
-        content: messageContent,
-        created_at: new Date().toISOString(),
-        sender_id: profile.id,
-        is_edited: null,
-        sender: {
-          id: profile.id,
-          username: profile.username,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-        },
-      };
-
-      // Add message to UI immediately
-      setMessages(prev => [...prev, newMessageObj]);
-
-      try {
-        const { error } = await supabase
-          .from('messages')
-          .insert({
-            sender_id: profile.id,
-            content: messageContent,
-          });
-
-        if (error) {
-          console.error('ChatBar: Error sending message:', error);
-          // Mark message as failed but keep it visible
-          setMessages(prev => prev.map(msg =>
-            msg.id === newMessageObj.id
-              ? { ...msg, id: `failed-${msg.id}` }
-              : msg
-          ));
-        } else {
-          // Mark message as sent successfully
-          setMessages(prev => prev.map(msg =>
-            msg.id === newMessageObj.id
-              ? { ...msg, id: `sent-${Date.now()}` }
-              : msg
-          ));
-          console.log('ChatBar: Message sent successfully');
-        }
-      } catch (dbError) {
-        console.error('ChatBar: Database error:', dbError);
+      if (error) {
+        console.error('ChatBar: Error sending message:', error);
         // Mark message as failed but keep it visible
         setMessages(prev => prev.map(msg =>
-          msg.id === newMessageObj.id
+          msg.id === messageObj.id
             ? { ...msg, id: `failed-${msg.id}` }
             : msg
         ));
+      } else {
+        // Mark message as sent successfully
+        setMessages(prev => prev.map(msg =>
+          msg.id === messageObj.id
+            ? { ...msg, id: `sent-${Date.now()}` }
+            : msg
+        ));
+        console.log('ChatBar: Message sent successfully');
       }
-    } catch (generalError) {
-      console.error('ChatBar: General error in sendMessage:', generalError);
-      // Re-add the text to input if something went wrong
-      if (messageContent) {
-        setNewMessage(messageContent);
-      }
+    } catch (dbError) {
+      console.error('ChatBar: Database error:', dbError);
+      // Mark message as failed but keep it visible
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageObj.id
+          ? { ...msg, id: `failed-${msg.id}` }
+          : msg
+      ));
     }
   };
 
@@ -232,11 +246,11 @@ export function ChatBar() {
   };
 
   if (!user) {
-    console.log('ChatBar: No user, not rendering');
-    return null;
+    console.log('ChatBar: No user; still rendering chat for anonymous input');
+    // We can still show chat for anonymous users (unoptimized), with local-only mode
   }
 
-  console.log('ChatBar: Rendering for user', user.id);
+  console.log('ChatBar: Rendering for', user ? `user ${user.id}` : 'anonymous');
 
   return (
     <div className="fixed bottom-28 right-4 z-40 max-w-md w-full">
@@ -314,25 +328,37 @@ export function ChatBar() {
             </ScrollArea>
 
             {/* Input */}
-            <form onSubmit={sendMessage} className="p-3 border-t border-border">
+            <div className="p-3 border-t border-border">
               <div className="flex gap-2">
                 <Input
+                  type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSendMessage();
+                    }
+                  }}
                   placeholder="Type a message..."
                   className="flex-1"
                   maxLength={500}
                 />
                 <Button
-                  type="submit"
-                  size="sm"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSendMessage();
+                  }}
                   disabled={!newMessage.trim()}
                   className="px-3"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-            </form>
+            </div>
           </motion.div>
         ) : (
           <motion.div
