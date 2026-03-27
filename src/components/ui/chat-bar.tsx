@@ -125,22 +125,50 @@ export function ChatBar() {
     e.preventDefault();
     if (!newMessage.trim() || !profile?.id) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage('');
+
+    // Create temporary message for immediate UI feedback
+    const tempMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      sender_id: profile.id,
+      is_edited: null,
+      sender: {
+        id: profile.id,
+        username: profile.username,
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+      },
+    };
+
+    // Add message to UI immediately
+    setMessages(prev => [...prev, tempMessage]);
+
     try {
       const { error } = await supabase
         .from('messages')
         .insert({
           sender_id: profile.id,
-          content: newMessage.trim(),
+          content: messageContent,
         });
 
       if (error) {
         console.error('ChatBar: Error sending message:', error);
-        // Could show a toast notification here
+        // Remove the temporary message if insert failed
+        setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+        // Re-add the text to input so user can try again
+        setNewMessage(messageContent);
       } else {
-        setNewMessage('');
+        // Replace temp message with real one (subscription should handle this)
+        console.log('ChatBar: Message sent successfully');
       }
     } catch (err) {
       console.error('ChatBar: Unexpected error sending message:', err);
+      // Remove the temporary message if insert failed
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+      setNewMessage(messageContent);
     }
   };
 
@@ -173,14 +201,14 @@ export function ChatBar() {
   console.log('ChatBar: Rendering for user', user.id);
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-40">
+    <div className="fixed bottom-28 right-4 z-40">
       <AnimatePresence>
         {isExpanded ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-background border border-border rounded-lg shadow-glow max-w-md mx-auto"
+            className="bg-background border border-border rounded-lg shadow-glow max-w-md ml-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-border">
@@ -210,7 +238,7 @@ export function ChatBar() {
               ) : (
                 <div className="space-y-3">
                   {messages.map((message) => (
-                    <div key={message.id} className="flex gap-2">
+                    <div key={message.id} className={`flex gap-2 ${message.id.startsWith('temp-') ? 'opacity-70' : ''}`}>
                       <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={message.sender?.avatar_url || undefined} />
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
@@ -262,7 +290,7 @@ export function ChatBar() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="flex justify-center"
+            className="flex justify-end"
           >
             <Button
               onClick={() => setIsExpanded(true)}
