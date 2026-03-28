@@ -99,9 +99,3 @@ export function getScoreColor(score: number): string {
   if (score < SCORE_THRESHOLDS.medium) return 'text-accent';
   return 'text-primary';
 }
-
-export function getScoreLabel(score: number): string {
-  if (score < SCORE_THRESHOLDS.low) return 'Building';
-  if (score < SCORE_THRESHOLDS.medium) return 'Growing';
-  return 'Established';
-}

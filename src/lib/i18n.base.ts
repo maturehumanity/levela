@@ -1,0 +1,1090 @@
+export const baseTranslations = {
+  "common": {
+    "appName": "Levela",
+    "loading": "Loading...",
+    "back": "Back",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "search": "Search",
+    "settings": "Settings",
+    "profile": "Profile",
+    "users": "Users",
+    "permissions": "Permissions",
+    "role": "Role",
+    "features": "Features",
+    "contribute": "Contribute",
+    "market": "Market",
+    "home": "Home",
+    "endorse": "Endorse",
+    "signOut": "Sign out",
+    "done": "Done",
+    "close": "Close",
+    "more": "More",
+    "toggleSidebar": "Toggle sidebar",
+    "changePhoto": "Change photo",
+    "uploadingPhoto": "Uploading photo...",
+    "photoUpdated": "Profile photo updated!",
+    "photoUploadTooLarge": "Please choose an image smaller than 5 MB.",
+    "photoUploadInvalidType": "Please choose an image file.",
+    "photoUploadFailed": "Could not upload photo.",
+    "previous": "Previous",
+    "next": "Next",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "morePages": "More pages",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "language": "Language",
+    "country": "Country",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "username": "Username",
+    "anonymous": "Anonymous",
+    "anonymousUser": "Anonymous User",
+    "thisPerson": "this person",
+    "endorsement": "endorsement",
+    "endorsements": "endorsements",
+    "countryDetected": "Detected from your browser",
+    "tryAgainMoment": "Please try again in a moment."
+  },
+  "onboarding": {
+    "title": "Levela",
+    "subtitle": "Build your trust and contribution profile",
+    "hero": "Build your trust profile",
+    "featureEvidenceTitle": "Evidence-backed trust",
+    "featureEvidenceDescription": "Build credibility with verified endorsements.",
+    "featurePillarsTitle": "Five-pillar system",
+    "featurePillarsDescription": "A complete profile across key life areas",
+    "featureCommunityTitle": "Community-powered",
+    "featureCommunityDescription": "Earn recognition from people who know you",
+    "getStarted": "Get Started",
+    "existingAccount": "I already have an account"
+  },
+  "auth": {
+    "loginTitle": "Levela",
+    "loginSubtitle": "Welcome back.",
+    "signupTitle": "Levela",
+    "signupSubtitle": "Build your trust and contribution profile",
+    "forgotTitle": "Levela",
+    "forgotSubtitle": "Reset your password.",
+    "resetTitle": "Levela",
+    "resetSubtitle": "Choose a new password.",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Jane Smith",
+    "username": "Username",
+    "usernamePlaceholder": "janesmith",
+    "email": "Email",
+    "emailPlaceholder": "jane@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "country": "Country",
+    "language": "Language",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating account...",
+    "termsOfUse": "Terms of Use",
+    "acceptTermsPrefix": "I have read and agree to the",
+    "acceptTermsDescription": "You must agree before creating your account.",
+    "mustAcceptTerms": "You must agree to the Terms of Use before signing up.",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "signUpLink": "Sign up",
+    "signInLink": "Sign in",
+    "forgotPassword": "Forgot password?",
+    "passwordRecoveryLink": "resetting it",
+    "backToLogin": "Back to sign in",
+    "checkEmailTitle": "Check your email",
+    "checkEmailMessage": "We've sent a verification link to {email}.",
+    "passwordRecoveryTitle": "Check your email",
+    "passwordRecoveryMessage": "We sent a password recovery link to {email}.",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending...",
+    "rememberedIt": "Remembered it?",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "updatePassword": "Update password",
+    "updating": "Updating...",
+    "passwordUpdated": "Password updated",
+    "passwordUpdatedMessage": "You can now log in with your new password.",
+    "openRecoveryLink": "Open the password recovery link from your email to continue.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "passwordsDoNotMatch": "Passwords do not match.",
+    "invalidCredentialsPrefix": "If you already signed up, your password may be different. Try",
+    "recoveryOnlyWorks": "This page only works from the recovery link we email you. If you did not request one, go to",
+    "forgotPasswordLink": "Forgot password",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearanceTitle": "Appearance",
+    "appearanceDescription": "Choose your theme",
+    "languageTitle": "Language",
+    "languageDescription": "Choose the app language.",
+    "languageHint": "Your language choice is saved to your profile.",
+    "editProfile": "Edit Profile",
+    "editProfileDescription": "Update your name, bio, and avatar",
+    "notifications": "Notifications",
+    "notificationsDescription": "Manage notification preferences",
+    "privacy": "Privacy",
+    "privacyDescription": "Control who can see your profile",
+    "safety": "Safety",
+    "safetyDescription": "View your reports and blocked users",
+    "termsPrivacy": "Terms of Use",
+    "termsPrivacyDescription": "Read the platform terms",
+    "helpSupport": "Help and support",
+    "helpSupportDescription": "Get help with Levela",
+    "pillars": "Pillars",
+    "pillarsDescription": "Edit pillar names and descriptions",
+    "adminTitle": "Admin",
+    "adminDescription": "Manage people, roles, and access rules.",
+    "adminUsers": "Users",
+    "adminUsersDescription": "Manage roles and person-by-person access",
+    "adminPermissions": "Permissions",
+    "adminPermissionsDescription": "Edit what each role can access",
+    "signOut": "Sign out",
+    "appInfoLine1": "Levela v1.0.0",
+    "appInfoLine2": "Build your trust and contribution profile"
+  },
+  "market": {
+    "title": "Market",
+    "subtitle": "Browse what’s coming to the Levela marketplace.",
+    "comingSoonTitle": "Marketplace coming soon",
+    "comingSoonDescription": "We’re preparing this space for future offers, tools, and opportunities."
+  },
+  "law": {
+    "title": "Law",
+    "subtitle": "Read the Law library in a structured format built for learning and contribution.",
+    "libraryBadge": "Knowledge library",
+    "libraryTitle": "Law, organized for reading",
+    "libraryDescription": "This page is the foundation for a structured law reference area. It starts from international source material, but it is organized so users can move from broad frameworks into sections and articles, then suggest improvements as the library grows.",
+    "backendUnavailableTitle": "Local law mode",
+    "backendUnavailableDescription": "The live Law tables are not connected yet, so the page is using the built-in starter catalog and storing contributions only on this device for now.",
+    "loadFailed": "Could not load the law library.",
+    "contributionsLoadFailed": "Could not load your law contributions.",
+    "actions": {
+      "suggestContribution": "Suggest contribution",
+      "openFeatures": "Open Features",
+      "openTerms": "Open Terms"
+    },
+    "searchPlaceholder": "Search by framework, domain, instrument, section, or article...",
+    "filters": {
+      "track": "Track",
+      "jurisdiction": "Jurisdiction",
+      "domain": "Domain",
+      "instrument": "Instrument"
+    },
+    "allTracks": "All tracks",
+    "allJurisdictions": "All jurisdictions",
+    "allDomains": "All domains",
+    "allInstruments": "All instruments",
+    "matchingSources": "{count} matching sources",
+    "sourcesTitle": "Sources",
+    "sourcesDescription": "Browse the current law catalog by track, domain, jurisdiction, and instrument.",
+    "noResults": "No law sources match these filters yet.",
+    "instrumentLabel": "Instrument",
+    "openSource": "Open source",
+    "copyArticleLink": "Copy article link",
+    "articleLinkCopied": "Article link copied.",
+    "articleLinkCopyFailed": "Could not copy the article link.",
+    "tracks": {
+      "civil": {
+        "title": "International Civil Law",
+        "description": "Track treaties, conventions, rights frameworks, and cross-border civil obligations in a clear reading order."
+      },
+      "criminal": {
+        "title": "International Criminal Law",
+        "description": "Study criminal responsibility, tribunals, offenses, procedure, and accountability frameworks across international instruments."
+      }
+    },
+    "resources": {
+      "frameworks": {
+        "title": "Frameworks and instruments",
+        "civil": "Browse conventions, treaties, and civil-law instruments by domain and jurisdiction.",
+        "criminal": "Browse statutes, tribunal frameworks, and criminal-law instruments by domain and jurisdiction."
+      },
+      "sections": {
+        "title": "Sections",
+        "civil": "Open each instrument by major section so long texts stay understandable and easy to navigate.",
+        "criminal": "Open each instrument by major section to follow jurisdiction, offenses, procedure, and enforcement."
+      },
+      "articles": {
+        "title": "Articles",
+        "civil": "Read article-level text and explanations inside each legal section.",
+        "criminal": "Read article-level text and explanations inside each criminal-law section."
+      }
+    },
+    "readingPathTitle": "Reading path",
+    "readingPathDescription": "The library is structured to help readers move from broad context into precise legal text without getting lost.",
+    "readingPath": {
+      "jurisdiction": {
+        "title": "Start with the jurisdiction or framework",
+        "description": "Choose the international body, treaty family, or legal framework you want to study."
+      },
+      "domain": {
+        "title": "Move into the legal domain",
+        "description": "Filter by civil or criminal material and then narrow further by topic."
+      },
+      "instrument": {
+        "title": "Open the instrument",
+        "description": "Choose the treaty, convention, statute, or framework document itself."
+      },
+      "section": {
+        "title": "Read by section",
+        "description": "Use section-level structure before going article by article."
+      },
+      "article": {
+        "title": "Study the article",
+        "description": "Read the relevant article, its organization, and future explanatory notes."
+      }
+    },
+    "contributionTitle": "Contribution workflow",
+    "contributionDescription": "Readers should be able to help improve the law library over time without disrupting the reading flow.",
+    "contributionSubmitted": "Your law contribution was submitted for review.",
+    "contributionSavedLocally": "Your contribution was saved locally for now.",
+    "contributionSubmitFailed": "Could not submit the contribution.",
+    "autoSaving": "Saving your contribution draft automatically...",
+    "autoSaveActive": "Contribution drafts save automatically.",
+    "autoSaveFailed": "Auto-save failed. Use Save draft to retry.",
+    "retrySave": "Save draft",
+    "draftSaved": "Draft saved.",
+    "draftSaveFailed": "Could not save the draft.",
+    "submitContribution": "Submit contribution",
+    "contributePermissionRequired": "You do not currently have permission to submit law contributions.",
+    "myContributionsTitle": "My contributions",
+    "myContributionsDescription": "Track the review status of the law suggestions you have submitted.",
+    "reviewQueueTitle": "Review queue",
+    "reviewQueueDescription": "Review pending law submissions and decide what should move forward.",
+    "reviewHistoryTitle": "Moderation history",
+    "reviewHistoryDescription": "Inspect past law-review decisions, notes, and outcomes after each submission leaves the active queue.",
+    "reviewHistoryCount": "{count} reviewed items",
+    "reviewUpdated": "The law contribution review was updated.",
+    "reviewUpdateFailed": "Could not update the review status.",
+    "reviewFilters": {
+      "status": "Status",
+      "type": "Type",
+      "track": "Track",
+      "allStatuses": "All statuses",
+      "allTypes": "All types",
+      "allTracks": "All tracks",
+      "matchingCount": "{count} matching review items",
+      "matchingHistoryCount": "{count} matching history items"
+    },
+    "reviewNoteLabel": "Reviewer note",
+    "reviewerNotesLabel": "Reviewer note",
+    "reviewNotePlaceholder": "Add context for the contributor so they understand the decision.",
+    "reviewNoteRequired": "Please add a reviewer note before requesting changes or rejecting a contribution.",
+    "noContributionsYet": "You have not submitted any law contributions yet.",
+    "noReviewItems": "There are no pending law contributions right now.",
+    "noFilteredReviewItems": "No law contributions match the current review filters.",
+    "noReviewHistoryItems": "There is no moderation history for the current filters yet.",
+    "contributionCount": "{count} contributions",
+    "generalContribution": "General law contribution",
+    "localStatus": "Local draft",
+    "statuses": {
+      "pending": "Pending review",
+      "approved": "Approved",
+      "changes_requested": "Changes requested",
+      "rejected": "Rejected"
+    },
+    "reviewActions": {
+      "approve": "Approve",
+      "requestChanges": "Request changes",
+      "reject": "Reject"
+    },
+    "contributionFields": {
+      "track": "Track",
+      "type": "Contribution type",
+      "title": "Title",
+      "source": "Source or reference",
+      "note": "Contribution note"
+    },
+    "contributionTypes": {
+      "source": "New source",
+      "structure": "Structure update",
+      "summary": "Summary improvement"
+    },
+    "contributionPlaceholders": {
+      "title": "Name the law, section, or issue you want to improve",
+      "source": "Paste the source title or URL if you have one",
+      "note": "Explain what should be added, corrected, or reorganized"
+    },
+    "contribution": {
+      "read": {
+        "title": "Read and identify gaps",
+        "description": "Study the current structure and note missing instruments, missing sections, or unclear organization."
+      },
+      "compare": {
+        "title": "Compare and verify",
+        "description": "Check the current entry against the original legal source or the intended article structure."
+      },
+      "suggest": {
+        "title": "Suggest a contribution",
+        "description": "Submit improvements for structure, coverage, summaries, or article-level organization."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "subtitle": "Read the principles, conduct rules, and governing terms that apply when using Levela.",
+    "acceptanceTitle": "Platform acceptance",
+    "acceptanceDescription": "By creating an account or continuing to use Levela, you agree to these terms and the operating principles they describe.",
+    "acceptanceBullets": [
+      "You agree to use Levela in good faith and contribute truthful, responsible information.",
+      "You accept the platform’s code of conduct, moderation model, and community standards.",
+      "You understand that Levela presents its own organizing law, conduct, and governance principles inside the platform."
+    ],
+    "sections": {
+      "purpose": {
+        "title": "Purpose",
+        "body": "Levela exists to help people build trust, contribution, and accountability profiles in a structured public-interest platform. The service is designed around evidence, endorsements, conduct, and community participation."
+      },
+      "conduct": {
+        "title": "Code of conduct",
+        "body": "Users must act honestly, avoid abusive or deceptive behavior, and refrain from using the platform to harass, mislead, exploit, or manipulate other people. Platform participation is conditional on respectful and responsible conduct."
+      },
+      "lawPrinciple": {
+        "title": "Law principle",
+        "body": "Levela’s operating principle is that the platform’s Laws, Code of Conduct, and governing principles become the ruling law for a country or territory once 51% of that country’s citizens join the platform. By accepting these terms, users acknowledge that this principle is part of the platform’s internal legal and governance model."
+      },
+      "contributions": {
+        "title": "Contributions and content",
+        "body": "Users are responsible for the accuracy and integrity of the information, endorsements, comments, legal suggestions, and other content they contribute. Levela may review, organize, restrict, or remove contributions to protect the integrity of the platform."
+      },
+      "enforcement": {
+        "title": "Enforcement and moderation",
+        "body": "Levela may limit visibility, suspend actions, remove content, or restrict accounts when conduct, content, or behavior conflicts with the platform’s rules, safety standards, or governance principles. Continued use of the platform means accepting that moderation and enforcement can occur when needed."
+      }
+    }
+  },
+  "contribute": {
+    "title": "Contribute",
+    "subtitle": "Choose how you want to strengthen your presence and support the community.",
+    "actions": {
+      "endorse": {
+        "title": "Endorse someone",
+        "description": "Recognize another person with a pillar-based endorsement."
+      },
+      "profile": {
+        "title": "Improve your profile",
+        "description": "Update your identity, bio, and country so your profile feels complete."
+      },
+      "share": {
+        "title": "Share an update",
+        "description": "Post to the Home feed to contribute thoughts, progress, or context."
+      },
+      "score": {
+        "title": "Review your score",
+        "description": "Check your profile to see how your trust signals and endorsements are evolving."
+      }
+    }
+  },
+  "features": {
+    "title": "Features",
+    "subtitle": "See what makes Levela work.",
+    "sectionsLabel": "Sections",
+    "pagesLabel": "Pages",
+    "allSections": "All sections",
+    "allPages": "All pages",
+    "matchingFeatures": "{count} matching features",
+    "clearFilters": "Clear filters",
+    "noResultsTitle": "No features match these filters",
+    "noResultsDescription": "Try a different section or page to explore more of the app.",
+    "workflowHeading": "Workflow",
+    "functionalityHeading": "Functionality",
+    "pillarsTitle": "The five-pillar foundation",
+    "pillarsDescription": "Levela helps people build a more complete trust profile across the parts of life that matter most.",
+    "sections": {
+      "administration": "Administration",
+      "home": "Home",
+      "discovery": "Discovery",
+      "knowledge": "Knowledge",
+      "contribution": "Contribution",
+      "identity": "Identity",
+      "marketplace": "Marketplace",
+      "preferences": "Preferences"
+    },
+    "pages": {
+      "contribute": "Contribute",
+      "home": "Home",
+      "features": "Features",
+      "law": "Law",
+      "terms": "Terms of Use",
+      "search": "Search",
+      "endorse": "Endorse",
+      "market": "Market",
+      "profile": "Profile",
+      "editProfile": "Edit Profile",
+      "settings": "Settings",
+      "pillars": "Pillars",
+      "messaging": "Messaging",
+      "adminUsers": "Users",
+      "adminPermissions": "Permissions"
+    },
+    "catalog": {
+      "accessControl": {
+        "title": "Role-based access control",
+        "summary": "The app now has a structured role and permission foundation for members, moderators, admins, and future staff tools.",
+        "workflow": [
+          "Create or load a profile with its assigned app role.",
+          "Resolve the effective permissions from the base role plus any explicit overrides.",
+          "Use those permissions in policies and future UI guards to decide what the user can do."
+        ],
+        "details": [
+          "Roles are modeled separately from permissions so the system can stay flexible as the app grows.",
+          "The database includes enum-backed roles and permissions for stronger consistency.",
+          "This foundation supports future moderation, admin, and marketplace controls without hardcoding one-off checks everywhere."
+        ]
+      },
+      "adminUsers": {
+        "title": "Manage users and roles",
+        "summary": "Use the admin Users page to review members, assign roles, and set person-by-person access overrides with autosave.",
+        "workflow": [
+          "Open Settings and move into the Admin area.",
+          "Open Users to review the current member list.",
+          "Create a user, choose a role, or open Manage access for an existing person.",
+          "Pause briefly after changing an override and let the page save it automatically."
+        ],
+        "details": [
+          "The Users page lists the current profile records in the app.",
+          "Admins can create new users without leaving the current admin session.",
+          "Admins can change another person's role directly from the role selector.",
+          "Each user can also have permission overrides that inherit, allow, or deny specific capabilities beyond the base role.",
+          "Override changes now autosave, and the manual save button only appears if recovery is needed after a failed save.",
+          "The current admin cannot demote their own account or change their own overrides from this screen to avoid accidental lockout."
+        ]
+      },
+      "adminPermissions": {
+        "title": "Edit the permission matrix",
+        "summary": "Use the Permissions page to review and directly toggle what each role can do across the app.",
+        "workflow": [
+          "Open Settings and enter the Admin area.",
+          "Open Permissions to inspect each role and its default access.",
+          "Use the matrix to enable or disable section, page, and functionality permissions for any role."
+        ],
+        "details": [
+          "The page summarizes each role and shows the full permission matrix in one place.",
+          "Permissions are grouped by section, page, and functionality so the access model is easier to understand.",
+          "Admins can toggle permissions directly in the matrix, while the reserved system role stays read-only."
+        ]
+      },
+      "autosaveDefaults": {
+        "title": "Autosave by default",
+        "summary": "Editable pages use autosave as the standard pattern, and manual save buttons only appear when autosave needs a recovery path.",
+        "workflow": [
+          "Open an editable page and change one or more values.",
+          "Pause briefly or finish the local edit action and let the page save automatically.",
+          "Use a visible save button only if the page reports that autosave failed."
+        ],
+        "details": [
+          "Autosave is now the expected default for editable experiences across the app.",
+          "Fallback save buttons are recovery controls rather than the main workflow.",
+          "New product work should follow this pattern unless there is a strong reason to behave differently."
+        ]
+      },
+      "contributionHub": {
+        "title": "Open the contribute hub",
+        "summary": "Use the Contribute page as a home for actions that strengthen your presence and help other people.",
+        "workflow": [
+          "Open Contribute from the bottom navigation.",
+          "Choose the kind of contribution you want to make next.",
+          "Jump into the linked flow for endorsing, profile improvement, posting, or score review."
+        ],
+        "details": [
+          "Contribute is designed as a central action hub rather than a single-purpose screen.",
+          "It gives high-intent actions a dedicated place in navigation.",
+          "The page helps separate contribution actions from passive browsing."
+        ]
+      },
+      "trustFeed": {
+        "title": "Share trust feed posts",
+        "summary": "Post updates from the Home page so your latest thoughts and activity stay visible in the community feed.",
+        "workflow": [
+          "Open Home and move to the post composer below your score card.",
+          "Write a short update in the message box and watch it expand as needed.",
+          "Press Post to publish the update into the feed."
+        ],
+        "details": [
+          "New posts appear in the feed and push older posts downward.",
+          "The composer activates visually when text is entered.",
+          "Posts are designed to support likes, comments, and scrolling through the feed."
+        ]
+      },
+      "profilePageMenu": {
+        "title": "Open pages from the profile menu",
+        "summary": "Use the top-right profile picture on Home to open a compact list of every page your account can currently access.",
+        "workflow": [
+          "Open Home and move to the profile picture in the top-right corner.",
+          "Hover over it on desktop or tap it on touch devices to open the page list.",
+          "Choose any listed page to jump there directly."
+        ],
+        "details": [
+          "The menu lists real navigable pages instead of abstract features.",
+          "Admin pages only appear when the signed-in user has the required permissions.",
+          "The current page is highlighted so people can stay oriented while navigating."
+        ]
+      },
+      "messaging": {
+        "title": "Join the messaging stream",
+        "summary": "Use the built-in Messaging panel to send short messages and keep the shared conversation moving.",
+        "workflow": [
+          "Open the Messaging panel from Home.",
+          "Type a message and submit it to the shared stream.",
+          "Review the ongoing conversation as new messages appear."
+        ],
+        "details": [
+          "Messaging is available as a lightweight shared communication surface.",
+          "The panel is intended for quick updates rather than long-form posts.",
+          "It remains accessible alongside the main Home experience."
+        ]
+      },
+      "scoreSnapshot": {
+        "title": "Review your score snapshot",
+        "summary": "See your current Levela score, endorsements, and trust signal summary at a glance.",
+        "workflow": [
+          "Open Home or Profile to see your current Levela score.",
+          "Review your endorsement totals and score-related context.",
+          "Use the details link to move deeper into your profile view."
+        ],
+        "details": [
+          "The score card summarizes your current trust position.",
+          "It highlights how many endorsements currently support your profile.",
+          "The component is designed as a quick entry point into your deeper identity view."
+        ]
+      },
+      "directorySearch": {
+        "title": "Search people quickly",
+        "summary": "Look up people by name or username so you can discover profiles worth viewing or endorsing.",
+        "workflow": [
+          "Open the Search page from Home.",
+          "Type a name or username into the search field.",
+          "Review the matching profiles and open one that looks relevant."
+        ],
+        "details": [
+          "Search is intended for discovery across the app’s user base.",
+          "It helps users move quickly from browsing to profile review.",
+          "Search supports the endorsement flow by making people easy to find."
+        ]
+      },
+      "publicProfiles": {
+        "title": "Open public profiles",
+        "summary": "Visit profile pages to understand someone’s trust profile, pillars, and endorsement history.",
+        "workflow": [
+          "Open a profile from search, feed activity, or endorsement flow.",
+          "Review the score, pillar breakdown, and endorsement context.",
+          "Decide whether to endorse, follow up, or simply learn more about the person."
+        ],
+        "details": [
+          "Profiles centralize a person’s trust and contribution information.",
+          "They surface pillar context and endorsement history in one place.",
+          "Profiles support both self-understanding and community evaluation."
+        ]
+      },
+      "endorsements": {
+        "title": "Send endorsements",
+        "summary": "Recognize people across the five pillars with ratings and optional comments that add meaningful context.",
+        "workflow": [
+          "Open Endorse and choose a person to recognize.",
+          "Select the relevant pillar and assign a rating.",
+          "Optionally add a comment, then submit the endorsement."
+        ],
+        "details": [
+          "Endorsements are organized around the app’s five-pillar model.",
+          "Comments add qualitative context to a rating.",
+          "The flow is designed to encourage thoughtful recognition instead of one-tap reactions."
+        ]
+      },
+      "featureExplorer": {
+        "title": "Explore features by area",
+        "summary": "Use this Features page to browse everything the app can do and filter it by section or page.",
+        "workflow": [
+          "Open Features from the bottom navigation.",
+          "Use the Sections and Pages filters to narrow the catalog.",
+          "Read each feature card to understand workflows and detailed behavior."
+        ],
+        "details": [
+          "The Features page is the app’s feature reference surface.",
+          "It is meant to help both users and agents understand what exists today.",
+          "It should stay aligned with product changes as the source of truth evolves."
+        ]
+      },
+      "lawLibrary": {
+        "title": "Read the law library",
+        "summary": "The Law page organizes the law library into a structured reading flow, with searchable sources, article browsing, and reviewable community contributions.",
+        "workflow": [
+          "Open Law from the profile page menu or from Features.",
+          "Choose a reading track such as international civil or international criminal law.",
+          "Move from the legal framework into sections and then into the article-level material.",
+          "Suggest a contribution when a source, summary, or organizational improvement is needed.",
+          "Track your submission status or review pending submissions if you have Law review access.",
+          "Copy a direct article link when you want to return to or share a specific article.",
+          "Use the review filters to narrow reviewer work by status, type, and track."
+        ],
+        "details": [
+          "Law is grouped under the Knowledge section so it behaves like a reference library rather than a settings or marketplace tool.",
+          "The page is structured around jurisdiction, domain, instrument, section, and article to keep long legal material readable.",
+          "Contribution calls to action are built into the page so readers can help improve organization and coverage over time.",
+          "The live version stores sources, sections, articles, and contribution statuses in Supabase so the library can keep growing beyond the starter catalog.",
+          "Reviewers can now leave notes on approvals, requested changes, and rejections so contributors can understand what happened next.",
+          "Each article now has a direct link so the reader can reopen the page at the exact article later.",
+          "Review moderation is easier because reviewers can filter the queue instead of scanning every contribution manually.",
+          "Moderators can also inspect a separate history view to understand past review decisions and their notes."
+        ]
+      },
+      "termsUse": {
+        "title": "Review the Terms of Use",
+        "summary": "The Terms of Use page explains the platform’s conduct rules, governance principles, and the agreement users accept when signing up.",
+        "workflow": [
+          "Open Terms of Use from signup, Settings, or the page menu.",
+          "Read the platform purpose, conduct rules, and governance model.",
+          "Accept the terms during signup before creating an account."
+        ],
+        "details": [
+          "The Terms page is available before signup so consent is informed rather than hidden behind account creation.",
+          "Signup now requires an explicit checkbox confirming agreement to the Terms of Use.",
+          "The page includes the platform-law principle so users can understand that statement directly in the product."
+        ]
+      },
+      "marketPreview": {
+        "title": "Preview the marketplace",
+        "summary": "Check the Market page to see where future offers, tools, and opportunities will live.",
+        "workflow": [
+          "Open Market from the bottom navigation.",
+          "Review the placeholder state and current marketplace direction.",
+          "Return later as the marketplace grows into a fuller product area."
+        ],
+        "details": [
+          "Market is reserved for future offers and opportunity surfaces.",
+          "It gives users a stable navigation destination for upcoming marketplace work.",
+          "The current state is intentionally lightweight while the concept matures."
+        ]
+      },
+      "profileEditing": {
+        "title": "Edit profile details",
+        "summary": "Update your name, username, bio, and country from the Edit Profile experience with full autosave.",
+        "workflow": [
+          "Open Settings and choose Edit Profile.",
+          "Update identity fields like name, username, country, or bio.",
+          "Pause briefly after editing and let the page save your changes automatically."
+        ],
+        "details": [
+          "Edit Profile is the main place to maintain personal identity data.",
+          "Country uses a searchable dropdown rather than free text.",
+          "All core profile fields now autosave without a dedicated Save Changes button unless an autosave fails.",
+          "The page supports continuing profile maintenance without leaving the main app shell."
+        ]
+      },
+      "countryAutoSave": {
+        "title": "Auto-save country changes",
+        "summary": "Choose a country from the Edit Profile picker and have it save as part of the same autosave flow as the rest of the profile fields.",
+        "workflow": [
+          "Open Settings and choose Edit Profile.",
+          "Use the country picker to find and select a new country.",
+          "Keep editing normally while the profile autosave flow remembers the new country."
+        ],
+        "details": [
+          "Country changes are included in the full profile autosave cycle.",
+          "The country field remembers the saved value when the user comes back later.",
+          "Auto-saving country does not wipe the other unsaved fields in the editor."
+        ]
+      },
+      "photoUpload": {
+        "title": "Upload a profile photo",
+        "summary": "Choose and upload a profile image so your identity feels more personal and recognizable.",
+        "workflow": [
+          "Open Profile or Edit Profile and choose the photo upload action.",
+          "Select an image file from your device.",
+          "Upload the photo and wait for the updated avatar to appear."
+        ],
+        "details": [
+          "Profile photos are stored in the app’s avatar storage bucket.",
+          "Uploads are validated for image type and size before saving.",
+          "Successful uploads refresh the visible profile image across the app."
+        ]
+      },
+      "languageTheme": {
+        "title": "Change language and theme",
+        "summary": "Use Settings to switch languages, choose appearance, and tailor the app to how you want it to feel.",
+        "workflow": [
+          "Open Settings from the bottom navigation.",
+          "Choose a language or appearance mode.",
+          "Return to the app and continue with the new presentation applied."
+        ],
+        "details": [
+          "Language preference is synced to the user profile when available.",
+          "Theme settings let people choose light, dark, or system behavior.",
+          "The experience is meant to make the app more personal without adding friction."
+        ]
+      },
+      "pillarCustomization": {
+        "title": "Customize pillar names",
+        "summary": "Adjust pillar names and descriptions so the framework reflects the terminology you want to use, with autosave handling the persistence.",
+        "workflow": [
+          "Open Settings and navigate to Pillars.",
+          "Review the current pillar names and descriptions.",
+          "Edit them and let the page save the updates automatically once you finish the local edit."
+        ],
+        "details": [
+          "Pillar customization lets the framework feel more aligned to the user’s language.",
+          "Names and descriptions can be tailored without changing the app’s core structure.",
+          "The page now follows the same autosave-by-default pattern as the rest of the editable app.",
+          "This supports interpretation while preserving the five-pillar model underneath."
+        ]
+      }
+    }
+  },
+  "home": {
+    "welcomeBack": "Welcome back,",
+    "profileMenuButton": "Open your page menu",
+    "profileMenuNoUsername": "No username yet",
+    "currentPage": "Current",
+    "whatsOnYourMind": "What’s on your mind, {name}?",
+    "shortcutHint": "Press Ctrl/⌘ + Enter to post faster.",
+    "post": "Post",
+    "posting": "Posting...",
+    "yourLevelaScore": "Your Levela Score",
+    "totalEndorsements": "{count} total endorsements",
+    "viewDetails": "View details",
+    "findPeople": "Find people",
+    "discoverEndorse": "Discover and endorse",
+    "endorse": "Endorse",
+    "recognizeSomeone": "Recognize someone",
+    "localFeedModeTitle": "Local feed mode",
+    "localFeedModeDescription": "The live Posts tables are not connected yet. New posts and comments are saved on this device for now.",
+    "noPostsYet": "No posts yet. Share what's on your mind to start your feed.",
+    "recentActivity": "Recent Activity",
+    "noEndorsementsYet": "No endorsements yet.",
+    "shareYourProfile": "Share your profile to start receiving endorsements.",
+    "requestFirstEndorsement": "Ask for your first endorsement",
+    "like": "Like",
+    "liked": "Liked",
+    "comment": "Comment",
+    "postComment": "Post comment",
+    "writeComment": "Write a comment...",
+    "noCommentsYet": "No comments yet. Start the conversation.",
+    "startConversation": "Start the conversation.",
+    "savedLocallyPost": "Saved locally for now",
+    "savedLocallyPostDescription": "The live Posts table is not connected yet, so your post was saved on this device.",
+    "savedLocallyLikeDescription": "Your like will stay visible on this device until the backend is available.",
+    "savedLocallyCommentDescription": "Comments are staying on this device until the Posts tables are connected.",
+    "couldNotCreatePost": "Could not create post",
+    "couldNotSaveLike": "Could not save like",
+    "couldNotCreateComment": "Could not create comment",
+    "postedToFeed": "Posted to your feed",
+    "justNow": "Just now",
+    "someone": "Someone",
+    "endorsedYouOn": "{person} endorsed you on {pillar}",
+    "friend": "Friend",
+    "commentCount": "{count} comments",
+    "likeCount": "{count} likes",
+    "feedPlaceholder": "No posts yet. Share what's on your mind to start your feed."
+  },
+  "search": {
+    "title": "Find people",
+    "placeholder": "Search by name or username...",
+    "searching": "Searching...",
+    "noUsersFound": "No users found",
+    "tryDifferent": "Try a different search term",
+    "startTyping": "Start typing to search",
+    "description": "Find people to endorse and connect with."
+  },
+  "endorseSelect": {
+    "title": "Choose someone to endorse",
+    "subtitle": "Recognize someone for what they contribute.",
+    "searchPlaceholder": "Search for someone to endorse...",
+    "recentlyEndorsed": "Recently Endorsed",
+    "emptyTitle": "Search for someone to endorse",
+    "emptySubtitle": "Start typing a name or username above"
+  },
+  "endorseFlow": {
+    "loading": "Loading...",
+    "userNotFound": "User not found",
+    "back": "Back",
+    "backToPillars": "Back to Pillars",
+    "endorseTarget": "Endorse {name}",
+    "selectPillar": "Choose a pillar to endorse",
+    "howWouldYouRate": "How would you rate {name}?",
+    "addComment": "Add a comment (optional)",
+    "commentPlaceholder": "Share why you're endorsing this person...",
+    "submitting": "Submitting...",
+    "submitEndorsement": "Submit Endorsement",
+    "oneMore": "You can endorse this pillar again in 30 days",
+    "pleaseSelectStars": "Please select a star rating",
+    "submitted": "Endorsement submitted!"
+  },
+  "profile": {
+    "loading": "Loading...",
+    "userNotFound": "User not found",
+    "back": "Back",
+    "basedOn": "Based on {count} endorsement{plural}",
+    "pillars": "Pillars",
+    "scoreBuilding": "Building",
+    "scoreGrowing": "Growing",
+    "scoreEstablished": "Established"
+  },
+  "userProfile": {
+    "userNotFound": "User not found",
+    "back": "Back",
+    "endorse": "Endorse",
+    "basedOn": "Based on {count} endorsement{plural}",
+    "pillars": "Pillars"
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "photoSoon": "Photo upload coming soon!",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Jane Smith",
+    "username": "Username",
+    "usernamePlaceholder": "janesmith",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell people about yourself...",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "autoSaving": "Saving changes automatically...",
+    "autoSaveActive": "Changes save automatically.",
+    "autoSaveFailed": "Auto-save failed. Use Save Changes to retry.",
+    "usernameTaken": "Username is already taken",
+    "profileUpdated": "Profile updated!",
+    "countrySaved": "Country saved.",
+    "countrySaveFailed": "Could not save the country.",
+    "country": "Country",
+    "countryPlaceholder": "Select a country",
+    "searchCountryPlaceholder": "Search countries...",
+    "countryNotFound": "No country found."
+  },
+  "pillars": {
+    "title": "Pillars",
+    "description": "Click the edit icons to customize pillar names and descriptions.",
+    "saveAll": "Save All",
+    "saving": "Saving...",
+    "saved": "Pillar customizations updated!",
+    "autoSaving": "Saving changes automatically...",
+    "autoSaveActive": "Changes save automatically.",
+    "autoSaveFailed": "Auto-save failed. Use Save changes to retry.",
+    "retrySave": "Save changes",
+    "save": "Save",
+    "done": "Done",
+    "cancel": "Cancel",
+    "educationShort": "Education",
+    "educationName": "Education and Skills",
+    "educationDescription": "Knowledge, learning, and professional competencies",
+    "cultureShort": "Culture",
+    "cultureName": "Culture and Ethics",
+    "cultureDescription": "Values, integrity, and ethical behavior",
+    "responsibilityShort": "Responsibility",
+    "responsibilityName": "Responsibility and Reliability",
+    "responsibilityDescription": "Dependability, accountability, and follow-through",
+    "communityShort": "Community",
+    "communityName": "Environment and Community",
+    "communityDescription": "Social impact and community engagement",
+    "economyShort": "Economy",
+    "economyName": "Economy and Contribution",
+    "economyDescription": "Economic value and professional contribution"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "returnHome": "Go home"
+  },
+  "chatBar": {
+    "title": "Messaging",
+    "loading": "Loading messages...",
+    "emptyTitle": "No messages yet",
+    "emptySubtitle": "Start the conversation! Messages will appear here instantly.",
+    "placeholder": "Type a message...",
+    "retry": "Retry",
+    "anonymous": "Anonymous"
+  },
+  "admin": {
+    "roles": {
+      "guest": "Guest",
+      "member": "Member",
+      "verified_member": "Verified Member",
+      "moderator": "Moderator",
+      "market_manager": "Market Manager",
+      "admin": "Admin",
+      "system": "System"
+    },
+    "roleDescriptions": {
+      "guest": "Public read access only.",
+      "member": "Default signed-in member access.",
+      "verified_member": "Member access with future trust verification support.",
+      "moderator": "Moderation access for content and reports.",
+      "market_manager": "Marketplace operations without full admin power.",
+      "admin": "Full staff access across settings, roles, and moderation.",
+      "system": "Reserved for internal system-level operations."
+    },
+    "permissionGroups": {
+      "profile": "Profile",
+      "posting": "Posting and likes",
+      "comments": "Comments",
+      "messages": "Messages",
+      "endorsements": "Endorsements",
+      "reports": "Reports",
+      "management": "Management"
+    },
+    "permissions": {
+      "title": "Permissions",
+      "subtitle": "See what each role can open and do across the app.",
+      "permissionCount": "{count} permissions",
+      "fullAccess": "Full access",
+      "loadFailed": "Could not load the permission matrix.",
+      "updateFailed": "Could not update that permission.",
+      "permissionEnabled": "{permission} is now enabled for {role}.",
+      "permissionDisabled": "{permission} is now disabled for {role}.",
+      "readOnlyRole": "Read only",
+      "showRoleCards": "Show role cards",
+      "hideRoleCards": "Hide role cards",
+      "matrixTitle": "Role access",
+      "matrixDescription": "Grouped by section, page, and feature.",
+      "permissionColumn": "Permission",
+      "featureColumn": "Feature",
+      "sectionNames": {
+        "administration": "Admin",
+        "home": "Home",
+        "discovery": "Search",
+        "knowledge": "Knowledge",
+        "contribution": "Contribute",
+        "identity": "Identity",
+        "marketplace": "Market",
+        "preferences": "Settings"
+      }
+    },
+    "scopeLabels": {
+      "section": "Section",
+      "page": "Page",
+      "functionality": "Functionality"
+    },
+    "areaLabels": {
+      "profile": "Profile",
+      "home": "Home",
+      "messaging": "Messaging",
+      "contribute": "Contribute",
+      "settings": "Settings",
+      "market": "Market",
+      "admin": "Admin"
+    },
+    "permissionLabels": {
+      "law.read": "View",
+      "law.contribute": "Contribute",
+      "law.review": "Review",
+      "profile.read": "View",
+      "profile.update_self": "Edit",
+      "profile.update_any": "Edit profiles",
+      "post.create": "Create",
+      "post.edit_self": "Edit own",
+      "post.delete_self": "Delete own",
+      "post.moderate": "Moderate",
+      "comment.create": "Comment",
+      "comment.edit_self": "Edit own",
+      "comment.delete_self": "Delete own",
+      "comment.moderate": "Moderate",
+      "message.create": "Send",
+      "message.edit_self": "Edit own",
+      "message.moderate": "Moderate",
+      "endorsement.create": "Create",
+      "endorsement.review": "Review",
+      "endorsement.moderate": "Moderate",
+      "report.create": "Create",
+      "report.review": "Review",
+      "market.manage": "Manage",
+      "role.assign": "Assign roles",
+      "settings.manage": "Manage settings",
+      "like.create": "Like",
+      "like.delete_self": "Remove own"
+    },
+    "permissionDescriptions": {
+      "law.read": "Open and read the Law library.",
+      "law.contribute": "Submit source, structure, or summary contributions.",
+      "law.review": "Review and update submitted Law contributions.",
+      "profile.read": "Open profile information.",
+      "profile.update_self": "Edit your own profile details.",
+      "profile.update_any": "Edit other people's profiles.",
+      "post.create": "Publish feed posts.",
+      "post.edit_self": "Edit your own feed posts.",
+      "post.delete_self": "Delete your own feed posts.",
+      "post.moderate": "Moderate any feed post.",
+      "comment.create": "Write comments on posts.",
+      "comment.edit_self": "Edit your own comments.",
+      "comment.delete_self": "Delete your own comments.",
+      "comment.moderate": "Moderate any comment.",
+      "message.create": "Send messages.",
+      "message.edit_self": "Edit your own messages.",
+      "message.moderate": "Moderate messages.",
+      "endorsement.create": "Create endorsements.",
+      "endorsement.review": "Review endorsement activity.",
+      "endorsement.moderate": "Moderate endorsements.",
+      "report.create": "Create reports.",
+      "report.review": "Review and resolve reports.",
+      "market.manage": "Manage market controls.",
+      "role.assign": "Assign roles to other users.",
+      "settings.manage": "Manage admin settings.",
+      "like.create": "Like posts.",
+      "like.delete_self": "Remove your own likes."
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Manage roles and permission overrides for individual people.",
+      "adminAccess": "Admin access",
+      "totalUsers": "Total users",
+      "admins": "Admins",
+      "staffRoles": "Staff roles",
+      "searchPlaceholder": "Search by name, username, country, or role...",
+      "loadFailed": "Could not load users.",
+      "permissionsLoadFailed": "Could not load role permissions.",
+      "cannotEditSelf": "You cannot change your own role here.",
+      "cannotEditOwnPermissions": "You cannot change your own permission overrides here.",
+      "roleUpdateFailed": "Could not update the role.",
+      "roleUpdated": "{user} is now set to {role}.",
+      "overrideSaveFailed": "Could not save permission overrides.",
+      "overrideSaved": "Permission overrides saved.",
+      "autoSaving": "Saving permission overrides automatically...",
+      "autoSaveActive": "Permission overrides save automatically.",
+      "autoSaveFailed": "Auto-save failed. Use Save overrides to retry.",
+      "noResultsTitle": "No matching users",
+      "noResultsDescription": "Try a broader search to see more people.",
+      "userColumn": "User",
+      "roleColumn": "Role",
+      "joinedColumn": "Joined",
+      "accessColumn": "Access",
+      "statusColumn": "Status",
+      "lastActiveColumn": "Last Active",
+      "noUsername": "No username yet",
+      "noActivity": "No activity yet",
+      "onlineNow": "Online",
+      "selfRoleHint": "Your own role is locked on this screen.",
+      "selfPermissionsHint": "Your own permission overrides are locked here to prevent accidental loss of admin access.",
+      "verifiedBadge": "Verified",
+      "manageAccess": "Manage access",
+      "createUser": "New user",
+      "createUserTitle": "Create user",
+      "createUserSubtitle": "Add a person without leaving the current admin session.",
+      "temporaryPassword": "Temporary password",
+      "creatingUser": "Creating user...",
+      "userCreated": "User created.",
+      "createUserFailed": "Could not create the user.",
+      "overrideTitle": "Permission overrides",
+      "overrideSubtitle": "Adjust inherited access for {user} with allow, deny, or inherited settings.",
+      "overrideLegendTitle": "Override modes",
+      "overrideLegendInherit": "Use the selected role's default permission.",
+      "overrideLegendGrant": "Give this permission even if the role does not include it.",
+      "overrideLegendDeny": "Remove this permission even if the role normally has it.",
+      "effectivePermissionsTitle": "Effective permissions",
+      "inheritedEnabled": "Enabled by role",
+      "saveOverrides": "Save overrides",
+      "overrideModes": {
+        "inherit": "Inherit",
+        "grant": "Allow",
+        "deny": "Deny"
+      }
+    }
+  }
+} as const;
+
+export type BaseTranslations = typeof baseTranslations;

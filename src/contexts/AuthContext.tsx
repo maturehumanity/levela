@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { type LanguageCode } from '@/lib/i18n';
+import { resolveEffectivePermissions, rolePermissionMap, type AppPermission, type AppRole } from '@/lib/access-control';
 
 interface Profile {
   id: string;
@@ -9,8 +11,16 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  country: string | null;
+  language_code: LanguageCode | null;
+  last_active_at?: string | null;
   is_verified: boolean;
   is_admin: boolean;
+  role: AppRole;
+  custom_permissions: AppPermission[];
+  granted_permissions: AppPermission[];
+  denied_permissions: AppPermission[];
+  effective_permissions: AppPermission[];
   created_at: string;
   updated_at: string;
 }
@@ -20,7 +30,18 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: { username?: string; full_name?: string }) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata?: {
+      username?: string;
+      full_name?: string;
+      country?: string;
+      language_code?: LanguageCode;
+      terms_accepted_at?: string;
+      terms_version?: string;
+    }
+  ) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -33,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const supportsLastActiveRef = useRef(true);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -46,7 +68,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    return data as Profile;
+    const typedProfile = data as Omit<Profile, 'effective_permissions'>;
+
+    const { data: effectivePermissionRows, error: effectivePermissionsError } = await supabase.rpc(
+      'current_app_permissions',
+    );
+
+    if (effectivePermissionsError) {
+      console.error('Error fetching effective permissions:', effectivePermissionsError);
+    }
+
+    const effectivePermissions = Array.isArray(effectivePermissionRows)
+      ? (effectivePermissionRows as AppPermission[])
+      : resolveEffectivePermissions(
+          typedProfile.role,
+          rolePermissionMap[typedProfile.role],
+          typedProfile.granted_permissions || [],
+          typedProfile.denied_permissions || [],
+          typedProfile.custom_permissions || [],
+        );
+
+    return {
+      ...typedProfile,
+      effective_permissions: effectivePermissions,
+    } as Profile;
+  };
+
+  const touchProfileActivity = async (userId: string) => {
+    if (!supportsLastActiveRef.current) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ last_active_at: new Date().toISOString() })
+      .eq('user_id', userId);
+
+    if (error) {
+      if (error.message?.toLowerCase().includes('last_active_at')) {
+        supportsLastActiveRef.current = false;
+        return;
+      }
+      console.error('Error updating last active timestamp:', error);
+    }
   };
 
   const refreshProfile = async () => {
@@ -95,7 +157,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, metadata?: { username?: string; full_name?: string }) => {
+  useEffect(() => {
+    if (!user) return;
+
+    void touchProfileActivity(user.id);
+
+    const interval = window.setInterval(() => {
+      void touchProfileActivity(user.id);
+    }, 2 * 60 * 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void touchProfileActivity(user.id);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
+
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata?: {
+      username?: string;
+      full_name?: string;
+      country?: string;
+      language_code?: LanguageCode;
+      terms_accepted_at?: string;
+      terms_version?: string;
+    },
+  ) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { getScoreColor, getScoreLabel } from '@/lib/constants';
+import { getScoreColor } from '@/lib/constants';
 import { formatScore } from '@/lib/scoring';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LevelaScoreProps {
   score: number;
@@ -10,6 +11,7 @@ interface LevelaScoreProps {
 }
 
 export function LevelaScore({ score, size = 'md', showLabel = true, animate = true }: LevelaScoreProps) {
+  const { t } = useLanguage();
   const sizeClasses = {
     sm: 'w-16 h-16 text-lg',
     md: 'w-24 h-24 text-2xl',
@@ -72,8 +74,14 @@ export function LevelaScore({ score, size = 'md', showLabel = true, animate = tr
           animate={animate ? { opacity: 1, y: 0 } : undefined}
           transition={{ delay: 0.7 }}
         >
-          <p className="text-sm font-medium text-foreground">Levela Score</p>
-          <p className={`text-xs ${getScoreColor(score)}`}>{getScoreLabel(score)}</p>
+          <p className="text-sm font-medium text-foreground">{t('home.yourLevelaScore')}</p>
+          <p className={`text-xs ${getScoreColor(score)}`}>
+            {score < 40
+              ? t('profile.scoreBuilding')
+              : score < 70
+                ? t('profile.scoreGrowing')
+                : t('profile.scoreEstablished')}
+          </p>
         </motion.div>
       )}
     </div>

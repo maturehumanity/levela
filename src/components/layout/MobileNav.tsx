@@ -1,18 +1,20 @@
 import { motion } from 'framer-motion';
-import { Home, Search, User, Settings, PlusCircle } from 'lucide-react';
+import { Home, LayoutGrid, Store, Settings, PlusCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const navItems = [
   { path: '/', icon: Home, label: 'Home' },
-  { path: '/search', icon: Search, label: 'Search' },
-  { path: '/endorse', icon: PlusCircle, label: 'Endorse' },
-  { path: '/profile', icon: User, label: 'Profile' },
+  { path: '/features', icon: LayoutGrid, label: 'Features' },
+  { path: '/contribute', icon: PlusCircle, label: 'Contribute' },
+  { path: '/market', icon: Store, label: 'Market' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass safe-bottom">
@@ -20,6 +22,16 @@ export function MobileNav() {
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
+          const labelKey =
+            item.label === 'Home'
+              ? 'common.home'
+              : item.label === 'Features'
+                ? 'common.features'
+                : item.label === 'Contribute'
+                  ? 'common.contribute'
+                  : item.label === 'Market'
+                    ? 'common.market'
+                    : 'common.settings';
 
           return (
             <motion.button
@@ -36,7 +48,7 @@ export function MobileNav() {
               whileTap={{ scale: 0.9 }}
             >
               <div className="relative">
-                <Icon className={`w-6 h-6 ${item.path === '/endorse' ? 'w-7 h-7' : ''}`} />
+                <Icon className={`w-6 h-6 ${item.path === '/contribute' ? 'w-7 h-7' : ''}`} />
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
@@ -46,7 +58,7 @@ export function MobileNav() {
                   />
                 )}
               </div>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium">{t(labelKey)}</span>
             </motion.button>
           );
         })}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,7 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 export default function Login() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,28 +40,26 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto w-full max-w-sm"
         >
-          {/* Logo & Title */}
           <div className="text-center mb-8">
             <motion.h1
               className="text-4xl font-display font-bold text-primary mb-2"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
             >
-              Levela
+              {t('auth.loginTitle')}
             </motion.h1>
-            <p className="text-muted-foreground">Welcome back</p>
+            <p className="text-muted-foreground">{t('auth.loginSubtitle')}</p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="jane@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -69,13 +69,13 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
@@ -84,7 +84,7 @@ export default function Login() {
               </div>
               <div className="flex justify-end">
                 <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
             </div>
@@ -98,9 +98,9 @@ export default function Login() {
                 {error}
                 {error.toLowerCase().includes('invalid login credentials') && (
                   <span className="block mt-1 text-muted-foreground">
-                    If you previously signed up, your password may be different — try{' '}
+                    {t('auth.invalidCredentialsPrefix')}{' '}
                     <Link to="/forgot-password" className="text-primary hover:underline font-medium">
-                      resetting it
+                      {t('auth.forgotPassword')}
                     </Link>
                     .
                   </span>
@@ -113,15 +113,15 @@ export default function Login() {
               className="w-full gap-2"
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
 
           <p className="text-center mt-6 text-sm text-muted-foreground">
-            Don't have an account?{' '}
+            {t('auth.dontHaveAccount')}{' '}
             <Link to="/signup" className="text-primary hover:underline font-medium">
-              Sign up
+              {t('auth.signUpLink')}
             </Link>
           </p>
         </motion.div>

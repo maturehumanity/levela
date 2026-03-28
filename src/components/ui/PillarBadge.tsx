@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon } from 'lucide-react';
-import { PILLARS, type PillarId, getPillarShortName } from '@/lib/constants';
+import { PILLARS, type PillarId } from '@/lib/constants';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
@@ -27,10 +28,28 @@ export function PillarBadge({
   showDetails = true,
   onClick,
 }: PillarBadgeProps) {
+  const { t } = useLanguage();
   const pillar = PILLARS.find(p => p.id === pillarId);
   if (!pillar) return null;
 
   const Icon = iconMap[pillar.icon];
+
+  const getTranslatedShortName = () => {
+    switch (pillar.id) {
+      case 'education_skills':
+        return t('pillars.educationShort');
+      case 'culture_ethics':
+        return t('pillars.cultureShort');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityShort');
+      case 'environment_community':
+        return t('pillars.communityShort');
+      case 'economy_contribution':
+        return t('pillars.economyShort');
+      default:
+        return pillarId;
+    }
+  };
 
   const sizeClasses = {
     sm: {
@@ -72,7 +91,7 @@ export function PillarBadge({
       {showDetails && (
         <div className="text-center">
           <p className={`font-medium ${classes.text} text-foreground`}>
-            {getPillarShortName(pillarId)}
+            {getTranslatedShortName()}
           </p>
           {score !== undefined && (
             <p className={`font-display font-bold ${classes.text} ${pillar.colorClass}`}>
@@ -81,7 +100,7 @@ export function PillarBadge({
           )}
           {endorsementCount !== undefined && endorsementCount > 0 && (
             <p className="text-xs text-muted-foreground">
-              {endorsementCount} {endorsementCount === 1 ? 'endorsement' : 'endorsements'}
+              {endorsementCount} {endorsementCount === 1 ? t('common.endorsement') : t('common.endorsements')}
             </p>
           )}
         </div>

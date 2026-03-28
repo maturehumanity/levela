@@ -1,20 +1,22 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle, Lock } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, CheckCircle, Lock } from 'lucide-react';
 
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasSession, setHasSession] = useState(false);
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -23,22 +25,18 @@ export default function ResetPassword() {
     let isMounted = true;
     let fallbackTimeout: ReturnType<typeof setTimeout>;
 
-    // Listen for auth state changes FIRST (Supabase will fire PASSWORD_RECOVERY after parsing hash)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
-      console.log("[ResetPassword] auth event:", event, !!session);
-      // PASSWORD_RECOVERY or TOKEN_REFRESHED means the hash was processed successfully
+      console.log('[ResetPassword] auth event:', event, !!session);
       if (session) {
         setHasSession(true);
         setCheckingSession(false);
       }
     });
 
-    // Give Supabase time to process hash fragments before concluding "no session"
     const checkSession = async () => {
-      // Small delay to allow hash processing
       await new Promise((r) => setTimeout(r, 500));
       const { data } = await supabase.auth.getSession();
       if (!isMounted) return;
@@ -46,7 +44,6 @@ export default function ResetPassword() {
         setHasSession(true);
         setCheckingSession(false);
       } else {
-        // Wait a bit more for slow networks / hash processing, then give up
         fallbackTimeout = setTimeout(() => {
           if (!isMounted) return;
           setCheckingSession(false);
@@ -68,17 +65,17 @@ export default function ResetPassword() {
     setError(null);
 
     if (!hasSession) {
-      setError("Open the password recovery link from your email to continue.");
+      setError(t('auth.openRecoveryLink'));
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t('auth.passwordsDoNotMatch'));
       return;
     }
 
@@ -93,9 +90,8 @@ export default function ResetPassword() {
 
     setSuccess(true);
 
-    // Optional: force re-login with the new password
     await supabase.auth.signOut();
-    setTimeout(() => navigate("/login"), 600);
+    setTimeout(() => navigate('/login'), 600);
   };
 
   if (success) {
@@ -109,10 +105,10 @@ export default function ResetPassword() {
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Password updated</h1>
-          <p className="text-muted-foreground mb-6">You can now log in with your new password.</p>
+          <h1 className="text-2xl font-display font-bold text-foreground mb-2">{t('auth.passwordUpdated')}</h1>
+          <p className="text-muted-foreground mb-6">{t('auth.passwordUpdatedMessage')}</p>
           <Button asChild>
-            <Link to="/login">Go to Login</Link>
+            <Link to="/login">{t('auth.signIn')}</Link>
           </Button>
         </motion.div>
       </div>
@@ -133,21 +129,20 @@ export default function ResetPassword() {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
             >
-              Levela
+              {t('auth.resetTitle')}
             </motion.h1>
-            <p className="text-muted-foreground">Choose a new password</p>
+            <p className="text-muted-foreground">{t('auth.resetSubtitle')}</p>
           </div>
 
           {checkingSession ? (
-            <div className="text-center text-sm text-muted-foreground">Loading...</div>
+            <div className="text-center text-sm text-muted-foreground">{t('common.loading')}</div>
           ) : (
             <>
               {!hasSession && (
                 <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground mb-4">
-                  This page only works from the recovery link we email you. If you haven't requested one,
-                  go to{" "}
+                  {t('auth.recoveryOnlyWorks')}{' '}
                   <Link to="/forgot-password" className="text-primary hover:underline font-medium">
-                    Forgot password
+                    {t('auth.forgotPasswordLink')}
                   </Link>
                   .
                 </div>
@@ -155,13 +150,13 @@ export default function ResetPassword() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
+                  <Label htmlFor="password">{t('auth.newPassword')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={t('auth.passwordPlaceholder')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10"
@@ -172,13 +167,13 @@ export default function ResetPassword() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={t('auth.passwordPlaceholder')}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-10"
@@ -199,14 +194,14 @@ export default function ResetPassword() {
                 )}
 
                 <Button type="submit" className="w-full gap-2" disabled={loading}>
-                  {loading ? "Updating..." : "Update password"}
+                  {loading ? t('auth.updating') : t('auth.updatePassword')}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </form>
 
               <p className="text-center mt-6 text-sm text-muted-foreground">
                 <Link to="/login" className="text-primary hover:underline font-medium">
-                  Back to login
+                  {t('auth.backToLogin')}
                 </Link>
               </p>
             </>

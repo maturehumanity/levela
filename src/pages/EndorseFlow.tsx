@@ -10,9 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StarRating } from '@/components/ui/StarRating';
 import { PillarBadge } from '@/components/ui/PillarBadge';
 import { supabase } from '@/integrations/supabase/client';
-import { PILLARS, type PillarId, getPillarName, getPillarDescription } from '@/lib/constants';
+import { PILLARS, type PillarId } from '@/lib/constants';
 import { canEndorse, type Endorsement } from '@/lib/scoring';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { ArrowLeft, CheckCircle, Send, AlertCircle, Clock } from 'lucide-react';
 
@@ -28,6 +29,7 @@ export default function EndorseFlow() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { profile: currentProfile } = useAuth();
+  const { t } = useLanguage();
   const [targetUser, setTargetUser] = useState<UserProfile | null>(null);
   const [existingEndorsements, setExistingEndorsements] = useState<Endorsement[]>([]);
   const [selectedPillar, setSelectedPillar] = useState<PillarId | null>(null);
@@ -35,6 +37,40 @@ export default function EndorseFlow() {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const getTranslatedPillarName = (pillarId: PillarId) => {
+    switch (pillarId) {
+      case 'education_skills':
+        return t('pillars.educationName');
+      case 'culture_ethics':
+        return t('pillars.cultureName');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityName');
+      case 'environment_community':
+        return t('pillars.communityName');
+      case 'economy_contribution':
+        return t('pillars.economyName');
+      default:
+        return pillarId;
+    }
+  };
+
+  const getTranslatedPillarDescription = (pillarId: PillarId) => {
+    switch (pillarId) {
+      case 'education_skills':
+        return t('pillars.educationDescription');
+      case 'culture_ethics':
+        return t('pillars.cultureDescription');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityDescription');
+      case 'environment_community':
+        return t('pillars.communityDescription');
+      case 'economy_contribution':
+        return t('pillars.economyDescription');
+      default:
+        return '';
+    }
+  };
 
   useEffect(() => {
     if (userId) {
@@ -100,7 +136,7 @@ export default function EndorseFlow() {
 
   const handleSubmit = async () => {
     if (!currentProfile?.id || !userId || !selectedPillar || stars === 0) {
-      toast.error('Please select a star rating');
+      toast.error(t('endorseFlow.pleaseSelectStars'));
       return;
     }
 
@@ -122,7 +158,7 @@ export default function EndorseFlow() {
       return;
     }
 
-    toast.success('Endorsement submitted!');
+    toast.success(t('endorseFlow.submitted'));
     navigate(`/user/${userId}`);
   };
 
@@ -146,7 +182,7 @@ export default function EndorseFlow() {
     return (
       <AppLayout hideNav>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-pulse-soft text-muted-foreground">Loading...</div>
+          <div className="animate-pulse-soft text-muted-foreground">{t('endorseFlow.loading')}</div>
         </div>
       </AppLayout>
     );
@@ -156,8 +192,8 @@ export default function EndorseFlow() {
     return (
       <AppLayout hideNav>
         <div className="flex flex-col items-center justify-center min-h-screen px-4">
-          <p className="text-muted-foreground mb-4">User not found</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <p className="text-muted-foreground mb-4">{t('endorseFlow.userNotFound')}</p>
+          <Button onClick={() => navigate(-1)}>{t('endorseFlow.back')}</Button>
         </div>
       </AppLayout>
     );
@@ -174,7 +210,7 @@ export default function EndorseFlow() {
           className="gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          {selectedPillar ? 'Back to Pillars' : 'Back'}
+          {selectedPillar ? t('endorseFlow.backToPillars') : t('endorseFlow.back')}
         </Button>
 
         {/* Target user info */}
@@ -191,7 +227,7 @@ export default function EndorseFlow() {
           </Avatar>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground">
-              Endorse {targetUser.full_name || 'User'}
+              {t('endorseFlow.endorseTarget', { name: targetUser.full_name || t('common.anonymousUser') })}
             </h1>
             {targetUser.username && (
               <p className="text-muted-foreground">@{targetUser.username}</p>
@@ -207,7 +243,7 @@ export default function EndorseFlow() {
             className="space-y-4"
           >
             <h2 className="text-lg font-semibold text-foreground">
-              Select a pillar to endorse
+              {t('endorseFlow.selectPillar')}
             </h2>
             <div className="space-y-3">
               {PILLARS.map((pillar, index) => {
@@ -237,10 +273,10 @@ export default function EndorseFlow() {
                         />
                         <div className="flex-1">
                           <h3 className="font-semibold text-foreground">
-                            {getPillarName(pillar.id)}
+                            {getTranslatedPillarName(pillar.id)}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {getPillarDescription(pillar.id)}
+                            {getTranslatedPillarDescription(pillar.id)}
                           </p>
                           {!isAvailable && (
                             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
@@ -275,17 +311,17 @@ export default function EndorseFlow() {
                 showDetails={false}
               />
               <h2 className="font-semibold text-foreground mt-3">
-                {getPillarName(selectedPillar)}
+                {getTranslatedPillarName(selectedPillar)}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {getPillarDescription(selectedPillar)}
+                {getTranslatedPillarDescription(selectedPillar)}
               </p>
             </Card>
 
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold mb-3 block">
-                  How would you rate {targetUser.full_name?.split(' ')[0] || 'them'}?
+                  {t('endorseFlow.howWouldYouRate', { name: targetUser.full_name?.split(' ')[0] || t('common.thisPerson') })}
                 </Label>
                 <div className="flex justify-center py-4">
                   <StarRating
@@ -299,11 +335,11 @@ export default function EndorseFlow() {
 
               <div>
                 <Label htmlFor="comment" className="text-base font-semibold mb-3 block">
-                  Add a comment (optional)
+                  {t('endorseFlow.addComment')}
                 </Label>
                 <Textarea
                   id="comment"
-                  placeholder="Share why you're endorsing this person..."
+                  placeholder={t('endorseFlow.commentPlaceholder')}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   className="min-h-[100px]"
@@ -321,12 +357,12 @@ export default function EndorseFlow() {
               className="w-full gap-2"
               size="lg"
             >
-              {submitting ? 'Submitting...' : 'Submit Endorsement'}
+              {submitting ? t('endorseFlow.submitting') : t('endorseFlow.submitEndorsement')}
               <Send className="w-4 h-4" />
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              You can endorse this pillar again in 30 days
+              {t('endorseFlow.oneMore')}
             </p>
           </motion.div>
         )}

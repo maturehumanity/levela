@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { PILLARS } from '@/lib/constants';
-import { ArrowLeft, Edit3, Save, X, GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon } from 'lucide-react';
+import { ArrowLeft, Check, Edit3, Save, X, GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
@@ -31,16 +32,85 @@ interface EditingState {
 
 export default function Pillars() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [pillarCustomizations, setPillarCustomizations] = useState<Record<string, PillarCustomizations>>({});
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [tempValue, setTempValue] = useState('');
   const [saving, setSaving] = useState(false);
+  const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
+  const hydratedRef = useRef(false);
+  const lastSavedValueRef = useRef('');
+
+  const getTranslatedPillarShortName = (pillarId: string) => {
+    switch (pillarId) {
+      case 'education_skills':
+        return t('pillars.educationShort');
+      case 'culture_ethics':
+        return t('pillars.cultureShort');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityShort');
+      case 'environment_community':
+        return t('pillars.communityShort');
+      case 'economy_contribution':
+        return t('pillars.economyShort');
+      default:
+        return pillarId;
+    }
+  };
+
+  const getTranslatedPillarName = (pillarId: string) => {
+    switch (pillarId) {
+      case 'education_skills':
+        return t('pillars.educationName');
+      case 'culture_ethics':
+        return t('pillars.cultureName');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityName');
+      case 'environment_community':
+        return t('pillars.communityName');
+      case 'economy_contribution':
+        return t('pillars.economyName');
+      default:
+        return pillarId;
+    }
+  };
+
+  const getTranslatedPillarDescription = (pillarId: string) => {
+    switch (pillarId) {
+      case 'education_skills':
+        return t('pillars.educationDescription');
+      case 'culture_ethics':
+        return t('pillars.cultureDescription');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityDescription');
+      case 'environment_community':
+        return t('pillars.communityDescription');
+      case 'economy_contribution':
+        return t('pillars.economyDescription');
+      default:
+        return '';
+    }
+  };
+
+  const getDefaultCustomizations = () => {
+    const defaults: Record<string, PillarCustomizations> = {};
+    PILLARS.forEach(pillar => {
+      defaults[pillar.id] = {
+        displayName: getTranslatedPillarShortName(pillar.id),
+        categoryName: getTranslatedPillarName(pillar.id),
+        description: getTranslatedPillarDescription(pillar.id),
+      };
+    });
+    return defaults;
+  };
 
   useEffect(() => {
     // Load custom pillar customizations from localStorage
     const saved = localStorage.getItem('customPillarCustomizations');
     if (saved) {
-      setPillarCustomizations(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      setPillarCustomizations(parsed);
+      lastSavedValueRef.current = JSON.stringify(parsed);
     } else {
       // Check for old format and migrate
       const oldSaved = localStorage.getItem('customPillarNames');
@@ -49,28 +119,23 @@ export default function Pillars() {
         const migrated: Record<string, PillarCustomizations> = {};
         PILLARS.forEach(pillar => {
           migrated[pillar.id] = {
-            displayName: pillar.shortName,
-            categoryName: oldNames[pillar.id] || pillar.name,
-            description: pillar.description,
+            displayName: getTranslatedPillarShortName(pillar.id),
+            categoryName: oldNames[pillar.id] || getTranslatedPillarName(pillar.id),
+            description: getTranslatedPillarDescription(pillar.id),
           };
         });
         setPillarCustomizations(migrated);
         localStorage.setItem('customPillarCustomizations', JSON.stringify(migrated));
         localStorage.removeItem('customPillarNames'); // Clean up old key
+        lastSavedValueRef.current = JSON.stringify(migrated);
       } else {
-        // Initialize with default values
-        const defaults: Record<string, PillarCustomizations> = {};
-        PILLARS.forEach(pillar => {
-          defaults[pillar.id] = {
-            displayName: pillar.shortName,
-            categoryName: pillar.name,
-            description: pillar.description,
-          };
-        });
+        const defaults = getDefaultCustomizations();
         setPillarCustomizations(defaults);
+        lastSavedValueRef.current = JSON.stringify(defaults);
       }
     }
-  }, []);
+    hydratedRef.current = true;
+  }, [t]);
 
   const handleStartEdit = (pillarId: string, field: keyof PillarCustomizations, currentValue: string) => {
     setEditing({ pillarId, field });
@@ -80,6 +145,7 @@ export default function Pillars() {
   const handleSaveEdit = () => {
     if (!editing) return;
     
+    setAutoSaveError(null);
     setPillarCustomizations(prev => ({
       ...prev,
       [editing.pillarId]: {
@@ -97,14 +163,45 @@ export default function Pillars() {
     setTempValue('');
   };
 
-  const handleSave = async () => {
+  const persistCustomizations = async (nextCustomizations: Record<string, PillarCustomizations>, showSuccessToast = false) => {
     setSaving(true);
 
-    // Save to localStorage
-    localStorage.setItem('customPillarCustomizations', JSON.stringify(pillarCustomizations));
+    try {
+      const serialized = JSON.stringify(nextCustomizations);
+      localStorage.setItem('customPillarCustomizations', serialized);
+      lastSavedValueRef.current = serialized;
+      setAutoSaveError(null);
 
-    toast.success('Pillar customizations updated!');
-    setSaving(false);
+      if (showSuccessToast) {
+        toast.success(t('pillars.saved'));
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error saving pillar customizations:', error);
+      setAutoSaveError(t('pillars.autoSaveFailed'));
+      toast.error(t('pillars.autoSaveFailed'));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+
+    const serialized = JSON.stringify(pillarCustomizations);
+    if (!serialized || serialized === lastSavedValueRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      void persistCustomizations(pillarCustomizations);
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [pillarCustomizations]);
+
+  const handleRetrySave = async () => {
+    await persistCustomizations(pillarCustomizations, true);
   };
 
   const truncateText = (text: string, maxLength: number = 60) => {
@@ -118,7 +215,7 @@ export default function Pillars() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-4">
             <Button
@@ -129,18 +226,24 @@ export default function Pillars() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              Pillars
+              {t('pillars.title')}
             </h1>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            size="sm"
-            className="gap-2"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save All'}
-          </Button>
+          {autoSaveError ? (
+            <Button
+              onClick={handleRetrySave}
+              disabled={saving}
+              size="sm"
+              className="gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {t('pillars.retrySave')}
+            </Button>
+          ) : (
+            <p className="text-right text-sm text-muted-foreground">
+              {saving ? t('pillars.autoSaving') : t('pillars.autoSaveActive')}
+            </p>
+          )}
         </motion.div>
 
         {/* Description */}
@@ -150,7 +253,7 @@ export default function Pillars() {
           transition={{ delay: 0.1 }}
         >
           <p className="text-muted-foreground text-sm">
-            Click the edit icons to customize pillar names and descriptions.
+            {t('pillars.description')}
           </p>
         </motion.div>
 
@@ -163,9 +266,9 @@ export default function Pillars() {
         >
           {PILLARS.map((pillar, index) => {
             const custom = pillarCustomizations[pillar.id] || {
-              displayName: pillar.shortName,
-              categoryName: pillar.name,
-              description: pillar.description,
+              displayName: getTranslatedPillarShortName(pillar.id),
+              categoryName: getTranslatedPillarName(pillar.id),
+              description: getTranslatedPillarDescription(pillar.id),
             };
             
             const isEditingDisplayName = editing?.pillarId === pillar.id && editing?.field === 'displayName';
@@ -203,7 +306,7 @@ export default function Pillars() {
                               }}
                             />
                             <Button size="sm" variant="ghost" onClick={handleSaveEdit} className="h-8 w-8 p-0">
-                              <Save className="w-3 h-3" />
+                              <Check className="w-3 h-3" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-8 w-8 p-0">
                               <X className="w-3 h-3" />
@@ -236,7 +339,7 @@ export default function Pillars() {
                             }}
                           />
                           <Button size="sm" variant="ghost" onClick={handleSaveEdit} className="h-8 w-8 p-0">
-                            <Save className="w-3 h-3" />
+                            <Check className="w-3 h-3" />
                           </Button>
                           <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-8 w-8 p-0">
                             <X className="w-3 h-3" />
@@ -265,12 +368,12 @@ export default function Pillars() {
                           />
                           <div className="flex items-center gap-2">
                             <Button size="sm" variant="ghost" onClick={handleSaveEdit} className="h-8 px-2">
-                              <Save className="w-3 h-3 mr-1" />
-                              Save
+                              <Check className="w-3 h-3 mr-1" />
+                              {t('pillars.done')}
                             </Button>
                             <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-8 px-2">
                               <X className="w-3 h-3 mr-1" />
-                              Cancel
+                              {t('pillars.cancel')}
                             </Button>
                           </div>
                         </div>

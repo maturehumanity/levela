@@ -3,12 +3,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PILLARS, type PillarId, getScoreColor, getScoreLabel } from '@/lib/constants';
+import { PILLARS, type PillarId, getScoreColor } from '@/lib/constants';
 import { calculateLevelaScore, type Endorsement, formatScore } from '@/lib/scoring';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon, Plus } from 'lucide-react';
+import { CheckCircle, Camera, Loader2, GraduationCap, Heart, Shield, Users, TrendingUp, LucideIcon, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
+import { uploadProfileAvatar } from '@/lib/profile-avatar';
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
@@ -19,10 +22,13 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export default function Profile() {
-  const { profile, user } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile?.id) {
@@ -57,6 +63,71 @@ export default function Profile() {
   };
 
   const score = calculateLevelaScore(endorsements);
+  const getLocalizedScoreLabel = (scoreValue: number) => {
+    if (scoreValue < 40) return t('profile.scoreBuilding');
+    if (scoreValue < 70) return t('profile.scoreGrowing');
+    return t('profile.scoreEstablished');
+  };
+
+  const getTranslatedPillarShortName = (pillarId: PillarId) => {
+    switch (pillarId) {
+      case 'education_skills':
+        return t('pillars.educationShort');
+      case 'culture_ethics':
+        return t('pillars.cultureShort');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityShort');
+      case 'environment_community':
+        return t('pillars.communityShort');
+      case 'economy_contribution':
+        return t('pillars.economyShort');
+      default:
+        return pillarId;
+    }
+  };
+
+  const handleAvatarUploadClick = () => {
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file || !profile?.id || !profile.user_id) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('common.photoUploadInvalidType'));
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('common.photoUploadTooLarge'));
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const { publicUrl } = await uploadProfileAvatar(file, profile.user_id);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', profile.id);
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshProfile();
+      toast.success(t('common.photoUpdated'));
+    } catch (error) {
+      console.error('Error uploading profile avatar:', error);
+      toast.error(t('common.photoUploadFailed'));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const getInitials = (name?: string | null) => {
     if (!name) return '?';
@@ -116,7 +187,7 @@ export default function Profile() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-pulse-soft text-muted-foreground">Loading...</div>
+          <div className="animate-pulse-soft text-muted-foreground">{t('profile.loading')}</div>
         </div>
       </AppLayout>
     );
@@ -181,7 +252,7 @@ export default function Profile() {
                   <Icon className="w-3 h-3 text-primary-foreground" />
                 </div>
                 <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">
-                  {pillar.shortName}
+                  {getTranslatedPillarShortName(pillar.id)}
                 </span>
                 <span className="text-[11px] font-bold text-muted-foreground tabular-nums">
                   {pillarScore?.score !== undefined ? formatScore(pillarScore.score) : '0.0'}
@@ -233,6 +304,26 @@ export default function Profile() {
                   {getInitials(profile?.full_name)}
                 </AvatarFallback>
               </Avatar>
+              <button
+                type="button"
+                onClick={handleAvatarUploadClick}
+                className="absolute -bottom-1 -left-1 w-9 h-9 bg-card border border-border rounded-full flex items-center justify-center shadow-soft hover:shadow-elevated transition-all"
+                disabled={uploadingAvatar}
+                aria-label={t('common.changePhoto')}
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                ) : (
+                  <Camera className="w-4 h-4 text-primary" />
+                )}
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
               
               {/* Verified Badge */}
               {profile?.is_verified && (
@@ -252,7 +343,7 @@ export default function Profile() {
           transition={{ delay: 0.4 }}
         >
           <h1 className="text-2xl font-display font-bold text-foreground">
-            {profile?.full_name || 'Anonymous User'}
+            {profile?.full_name || t('common.anonymousUser')}
           </h1>
           {profile?.username && (
             <p className="text-muted-foreground">@{profile.username}</p>
@@ -264,7 +355,7 @@ export default function Profile() {
               {formatScore(score.overall)}
             </span>
             <span className="text-sm text-muted-foreground">
-              · {getScoreLabel(score.overall)}
+              · {getLocalizedScoreLabel(score.overall)}
             </span>
           </div>
         </motion.div>
@@ -294,7 +385,7 @@ export default function Profile() {
             onClick={() => navigate('/endorse/select')}
           >
             <Plus className="w-5 h-5" />
-            Request First Endorsement
+            {t('home.requestFirstEndorsement')}
           </Button>
         </motion.div>
 
@@ -306,8 +397,11 @@ export default function Profile() {
           transition={{ delay: 0.7 }}
         >
           {score.totalEndorsements === 0 
-            ? 'No endorsements yet'
-            : `Based on ${score.totalEndorsements} endorsement${score.totalEndorsements !== 1 ? 's' : ''}`
+            ? t('home.noEndorsementsYet')
+            : t('profile.basedOn', {
+                count: score.totalEndorsements,
+                plural: score.totalEndorsements !== 1 ? 's' : '',
+              })
           }
         </motion.p>
       </div>

@@ -78,6 +78,24 @@ npm run cap:ios      # Build and open in Xcode
 - Platform directories (`android/`, `ios/`) are gitignored
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Feature Registry Rule
+
+This project keeps a canonical feature registry for both product users and future AI agents.
+
+- Source of truth: `src/lib/feature-registry.ts`
+- User-facing reference: the in-app `Features` page
+- Supporting copy and workflows: `src/lib/i18n.base.ts`
+
+Whenever you add or change a feature, workflow, page behavior, or notable asset behavior, update the feature registry and the matching Features-page copy in the same change.
+
+## Autosave-by-Default Rule
+
+Editable application pages should use autosave as the default interaction pattern.
+
+- Changes should save automatically after the user pauses or completes the local edit interaction.
+- Manual save buttons should only appear as recovery controls when autosave fails.
+- New pages and updated pages should follow this rule unless there is a strong product reason to do otherwise.
+
 ## What technologies are used for this project?
 
 This project is built with:

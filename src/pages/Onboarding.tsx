@@ -2,27 +2,29 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, Star, Users, TrendingUp, GraduationCap } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const features = [
   {
     icon: Shield,
-    title: 'Evidence-Based Trust',
-    description: 'Build credibility through verified endorsements',
+    titleKey: 'onboarding.featureEvidenceTitle',
+    descriptionKey: 'onboarding.featureEvidenceDescription',
   },
   {
     icon: Star,
-    title: '5-Pillar System',
-    description: 'Comprehensive profile across key life dimensions',
+    titleKey: 'onboarding.featurePillarsTitle',
+    descriptionKey: 'onboarding.featurePillarsDescription',
   },
   {
     icon: Users,
-    title: 'Community Driven',
-    description: 'Earn recognition from people who know you',
+    titleKey: 'onboarding.featureCommunityTitle',
+    descriptionKey: 'onboarding.featureCommunityDescription',
   },
 ];
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background flex flex-col safe-top safe-bottom">
@@ -43,10 +45,10 @@ export default function Onboarding() {
             <TrendingUp className="w-10 h-10 text-primary" />
           </motion.div>
           <h1 className="text-4xl font-display font-bold text-foreground mb-3">
-            Levela
+            {t('onboarding.title')}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xs mx-auto">
-            Build your Trust & Contribution profile
+            {t('onboarding.subtitle')}
           </p>
         </motion.div>
 
@@ -54,7 +56,7 @@ export default function Onboarding() {
         <div className="space-y-4 my-12">
           {features.map((feature, index) => (
             <motion.div
-              key={feature.title}
+              key={feature.titleKey}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 + index * 0.1 }}
@@ -64,8 +66,8 @@ export default function Onboarding() {
                 <feature.icon className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
+                <h3 className="font-semibold text-foreground">{t(feature.titleKey)}</h3>
+                <p className="text-sm text-muted-foreground">{t(feature.descriptionKey)}</p>
               </div>
             </motion.div>
           ))}
@@ -109,7 +111,7 @@ export default function Onboarding() {
             className="w-full gap-2"
             size="lg"
           >
-            Get Started
+            {t('onboarding.getStarted')}
             <ArrowRight className="w-4 h-4" />
           </Button>
           <Button
@@ -118,7 +120,7 @@ export default function Onboarding() {
             className="w-full"
             size="lg"
           >
-            I already have an account
+            {t('onboarding.existingAccount')}
           </Button>
         </motion.div>
       </div>

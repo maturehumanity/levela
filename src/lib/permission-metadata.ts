@@ -1,0 +1,206 @@
+import type { AppPermission } from '@/lib/access-control';
+import type { PageId, SectionId } from '@/lib/feature-registry';
+
+export type PermissionMetadata = {
+  permission: AppPermission;
+  section: SectionId;
+  page: PageId;
+  titleKey: string;
+  descriptionKey: string;
+};
+
+export const permissionMetadata: PermissionMetadata[] = [
+  {
+    permission: 'law.read',
+    section: 'knowledge',
+    page: 'law',
+    titleKey: 'admin.permissionLabels.law.read',
+    descriptionKey: 'admin.permissionDescriptions.law.read',
+  },
+  {
+    permission: 'law.contribute',
+    section: 'knowledge',
+    page: 'law',
+    titleKey: 'admin.permissionLabels.law.contribute',
+    descriptionKey: 'admin.permissionDescriptions.law.contribute',
+  },
+  {
+    permission: 'law.review',
+    section: 'knowledge',
+    page: 'law',
+    titleKey: 'admin.permissionLabels.law.review',
+    descriptionKey: 'admin.permissionDescriptions.law.review',
+  },
+  {
+    permission: 'profile.read',
+    section: 'identity',
+    page: 'profile',
+    titleKey: 'admin.permissionLabels.profile.read',
+    descriptionKey: 'admin.permissionDescriptions.profile.read',
+  },
+  {
+    permission: 'profile.update_self',
+    section: 'identity',
+    page: 'editProfile',
+    titleKey: 'admin.permissionLabels.profile.update_self',
+    descriptionKey: 'admin.permissionDescriptions.profile.update_self',
+  },
+  {
+    permission: 'profile.update_any',
+    section: 'administration',
+    page: 'adminUsers',
+    titleKey: 'admin.permissionLabels.profile.update_any',
+    descriptionKey: 'admin.permissionDescriptions.profile.update_any',
+  },
+  {
+    permission: 'post.create',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.post.create',
+    descriptionKey: 'admin.permissionDescriptions.post.create',
+  },
+  {
+    permission: 'post.edit_self',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.post.edit_self',
+    descriptionKey: 'admin.permissionDescriptions.post.edit_self',
+  },
+  {
+    permission: 'post.delete_self',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.post.delete_self',
+    descriptionKey: 'admin.permissionDescriptions.post.delete_self',
+  },
+  {
+    permission: 'post.moderate',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.post.moderate',
+    descriptionKey: 'admin.permissionDescriptions.post.moderate',
+  },
+  {
+    permission: 'comment.create',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.comment.create',
+    descriptionKey: 'admin.permissionDescriptions.comment.create',
+  },
+  {
+    permission: 'comment.edit_self',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.comment.edit_self',
+    descriptionKey: 'admin.permissionDescriptions.comment.edit_self',
+  },
+  {
+    permission: 'comment.delete_self',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.comment.delete_self',
+    descriptionKey: 'admin.permissionDescriptions.comment.delete_self',
+  },
+  {
+    permission: 'comment.moderate',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.comment.moderate',
+    descriptionKey: 'admin.permissionDescriptions.comment.moderate',
+  },
+  {
+    permission: 'message.create',
+    section: 'home',
+    page: 'messaging',
+    titleKey: 'admin.permissionLabels.message.create',
+    descriptionKey: 'admin.permissionDescriptions.message.create',
+  },
+  {
+    permission: 'message.edit_self',
+    section: 'home',
+    page: 'messaging',
+    titleKey: 'admin.permissionLabels.message.edit_self',
+    descriptionKey: 'admin.permissionDescriptions.message.edit_self',
+  },
+  {
+    permission: 'message.moderate',
+    section: 'home',
+    page: 'messaging',
+    titleKey: 'admin.permissionLabels.message.moderate',
+    descriptionKey: 'admin.permissionDescriptions.message.moderate',
+  },
+  {
+    permission: 'endorsement.create',
+    section: 'contribution',
+    page: 'endorse',
+    titleKey: 'admin.permissionLabels.endorsement.create',
+    descriptionKey: 'admin.permissionDescriptions.endorsement.create',
+  },
+  {
+    permission: 'endorsement.review',
+    section: 'contribution',
+    page: 'endorse',
+    titleKey: 'admin.permissionLabels.endorsement.review',
+    descriptionKey: 'admin.permissionDescriptions.endorsement.review',
+  },
+  {
+    permission: 'endorsement.moderate',
+    section: 'contribution',
+    page: 'endorse',
+    titleKey: 'admin.permissionLabels.endorsement.moderate',
+    descriptionKey: 'admin.permissionDescriptions.endorsement.moderate',
+  },
+  {
+    permission: 'report.create',
+    section: 'preferences',
+    page: 'settings',
+    titleKey: 'admin.permissionLabels.report.create',
+    descriptionKey: 'admin.permissionDescriptions.report.create',
+  },
+  {
+    permission: 'report.review',
+    section: 'administration',
+    page: 'adminPermissions',
+    titleKey: 'admin.permissionLabels.report.review',
+    descriptionKey: 'admin.permissionDescriptions.report.review',
+  },
+  {
+    permission: 'market.manage',
+    section: 'marketplace',
+    page: 'market',
+    titleKey: 'admin.permissionLabels.market.manage',
+    descriptionKey: 'admin.permissionDescriptions.market.manage',
+  },
+  {
+    permission: 'role.assign',
+    section: 'administration',
+    page: 'adminUsers',
+    titleKey: 'admin.permissionLabels.role.assign',
+    descriptionKey: 'admin.permissionDescriptions.role.assign',
+  },
+  {
+    permission: 'settings.manage',
+    section: 'administration',
+    page: 'adminPermissions',
+    titleKey: 'admin.permissionLabels.settings.manage',
+    descriptionKey: 'admin.permissionDescriptions.settings.manage',
+  },
+  {
+    permission: 'like.create',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.like.create',
+    descriptionKey: 'admin.permissionDescriptions.like.create',
+  },
+  {
+    permission: 'like.delete_self',
+    section: 'home',
+    page: 'home',
+    titleKey: 'admin.permissionLabels.like.delete_self',
+    descriptionKey: 'admin.permissionDescriptions.like.delete_self',
+  },
+];
+
+export const permissionMetadataMap = Object.fromEntries(
+  permissionMetadata.map((entry) => [entry.permission, entry]),
+) as Record<AppPermission, PermissionMetadata>;

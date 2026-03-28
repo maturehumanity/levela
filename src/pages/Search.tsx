@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { Search as SearchIcon, Users, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserProfile {
   id: string;
@@ -21,6 +22,7 @@ interface UserProfile {
 export default function Search() {
   const navigate = useNavigate();
   const { profile: currentProfile } = useAuth();
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,18 +66,17 @@ export default function Search() {
   return (
     <AppLayout>
       <div className="px-4 py-6 space-y-6">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="text-2xl font-display font-bold text-foreground mb-4">
-            Find People
+            {t('search.title')}
           </h1>
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Search by name or username..."
+              placeholder={t('search.placeholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10"
@@ -83,11 +84,10 @@ export default function Search() {
           </div>
         </motion.div>
 
-        {/* Results */}
         <div className="space-y-3">
           {loading && (
             <p className="text-center text-muted-foreground animate-pulse-soft">
-              Searching...
+              {t('search.searching')}
             </p>
           )}
 
@@ -98,9 +98,9 @@ export default function Search() {
               className="text-center py-12"
             >
               <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No users found</p>
+              <p className="text-muted-foreground">{t('search.noUsersFound')}</p>
               <p className="text-sm text-muted-foreground">
-                Try a different search term
+                {t('search.tryDifferent')}
               </p>
             </motion.div>
           )}
@@ -126,7 +126,7 @@ export default function Search() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-foreground truncate">
-                        {user.full_name || 'Anonymous'}
+                        {user.full_name || t('common.anonymousUser')}
                       </h3>
                       {user.is_verified && (
                         <CheckCircle className="w-4 h-4 text-primary shrink-0" />
@@ -150,9 +150,9 @@ export default function Search() {
               className="text-center py-12"
             >
               <SearchIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">Start typing to search</p>
+              <p className="text-muted-foreground">{t('search.startTyping')}</p>
               <p className="text-sm text-muted-foreground">
-                Find people to endorse and connect with
+                {t('search.description')}
               </p>
             </motion.div>
           )}

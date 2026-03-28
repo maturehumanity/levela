@@ -12,6 +12,7 @@ import { PILLARS, type PillarId } from '@/lib/constants';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, CheckCircle, Star, Flag } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserProfile {
   id: string;
@@ -27,6 +28,7 @@ export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { profile: currentProfile } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function UserProfile() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-pulse-soft text-muted-foreground">Loading...</div>
+          <div className="animate-pulse-soft text-muted-foreground">{t('profile.loading')}</div>
         </div>
       </AppLayout>
     );
@@ -92,8 +94,8 @@ export default function UserProfile() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-screen px-4">
-          <p className="text-muted-foreground mb-4">User not found</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <p className="text-muted-foreground mb-4">{t('userProfile.userNotFound')}</p>
+          <Button onClick={() => navigate(-1)}>{t('userProfile.back')}</Button>
         </div>
       </AppLayout>
     );
@@ -103,15 +105,15 @@ export default function UserProfile() {
     <AppLayout>
       <div className="px-4 py-6 space-y-6">
         {/* Back button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          {t('userProfile.back')}
+          </Button>
 
         {/* Header */}
         <motion.div
@@ -134,7 +136,7 @@ export default function UserProfile() {
           </div>
 
           <h1 className="text-2xl font-display font-bold text-foreground">
-            {profile.full_name || 'Anonymous User'}
+            {profile.full_name || t('common.anonymousUser')}
           </h1>
           {profile.username && (
             <p className="text-muted-foreground">@{profile.username}</p>
@@ -152,7 +154,7 @@ export default function UserProfile() {
                 onClick={() => navigate(`/endorse/${profile.id}`)}
               >
                 <Star className="w-4 h-4" />
-                Endorse
+                {t('userProfile.endorse')}
               </Button>
               <Button
                 variant="outline"
@@ -175,7 +177,10 @@ export default function UserProfile() {
           <Card className="p-6 bg-card shadow-soft border-border/50">
             <LevelaScore score={score.overall} size="lg" />
             <p className="text-center text-sm text-muted-foreground mt-4">
-              Based on {score.totalEndorsements} endorsement{score.totalEndorsements !== 1 ? 's' : ''}
+              {t('userProfile.basedOn', {
+                count: score.totalEndorsements,
+                plural: score.totalEndorsements !== 1 ? 's' : '',
+              })}
             </p>
           </Card>
         </motion.div>
@@ -186,7 +191,7 @@ export default function UserProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2 className="text-lg font-semibold text-foreground mb-4">Pillars</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('userProfile.pillars')}</h2>
           <div className="grid grid-cols-3 gap-3">
             {PILLARS.map((pillar, index) => {
               const pillarScore = score.pillars.find(p => p.pillar === pillar.id);

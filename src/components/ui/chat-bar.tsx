@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Message {
   id: string;
@@ -27,6 +28,7 @@ interface Message {
 
 export function ChatBar() {
   const { profile, user } = useAuth();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -138,7 +140,7 @@ export function ChatBar() {
     const sender = profile || {
       id: `anonymous-${Date.now()}`,
       username: 'anonymous',
-      full_name: 'Anonymous',
+      full_name: t('chatBar.anonymous'),
       avatar_url: null,
     };
 
@@ -260,11 +262,11 @@ export function ChatBar() {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-background border border-border rounded-lg shadow-glow w-full"
+              className="bg-background border border-border rounded-lg shadow-glow w-full"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-border">
-              <h3 className="font-semibold text-foreground">Community Chat</h3>
+              <h3 className="font-semibold text-foreground">{t('chatBar.title')}</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -279,13 +281,13 @@ export function ChatBar() {
             <ScrollArea className="h-64 p-3" ref={scrollAreaRef}>
               {loading ? (
                 <div className="text-center text-muted-foreground py-4">
-                  Loading messages...
+                  {t('chatBar.loading')}
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-4">
                   <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No messages yet</p>
-                  <p className="text-sm">Start the conversation! Messages will appear here instantly.</p>
+                  <p>{t('chatBar.emptyTitle')}</p>
+                  <p className="text-sm">{t('chatBar.emptySubtitle')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -303,7 +305,7 @@ export function ChatBar() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2 mb-1">
                           <span className="font-medium text-foreground text-sm">
-                            {message.sender?.full_name || 'Anonymous'}
+                            {message.sender?.full_name || t('chatBar.anonymous')}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {formatTime(message.created_at)}
@@ -316,7 +318,7 @@ export function ChatBar() {
                               onClick={() => retryMessage(message.id)}
                               className="text-xs text-destructive ml-2 hover:text-destructive/80 underline"
                             >
-                              Retry
+                              {t('chatBar.retry')}
                             </button>
                           )}
                         </p>
@@ -341,7 +343,7 @@ export function ChatBar() {
                       handleSendMessage();
                     }
                   }}
-                  placeholder="Type a message..."
+                  placeholder={t('chatBar.placeholder')}
                   className="flex-1"
                   maxLength={500}
                 />

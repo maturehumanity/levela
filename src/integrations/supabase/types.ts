@@ -111,11 +111,18 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          country: string | null
           created_at: string
+          custom_permissions: Database["public"]["Enums"]["app_permission"][]
+          denied_permissions: Database["public"]["Enums"]["app_permission"][]
           full_name: string | null
+          granted_permissions: Database["public"]["Enums"]["app_permission"][]
           id: string
           is_admin: boolean | null
           is_verified: boolean | null
+          language_code: string | null
+          last_active_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           user_id: string
           username: string | null
@@ -123,11 +130,18 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string
+          custom_permissions?: Database["public"]["Enums"]["app_permission"][]
+          denied_permissions?: Database["public"]["Enums"]["app_permission"][]
           full_name?: string | null
+          granted_permissions?: Database["public"]["Enums"]["app_permission"][]
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
+          language_code?: string | null
+          last_active_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id: string
           username?: string | null
@@ -135,14 +149,39 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string
+          custom_permissions?: Database["public"]["Enums"]["app_permission"][]
+          denied_permissions?: Database["public"]["Enums"]["app_permission"][]
           full_name?: string | null
+          granted_permissions?: Database["public"]["Enums"]["app_permission"][]
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
+          language_code?: string | null
+          last_active_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
       }
@@ -203,6 +242,212 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      law_articles: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          label: string
+          section_id: string
+          slug: string
+          sort_order: number
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          section_id: string
+          slug: string
+          sort_order?: number
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          section_id?: string
+          slug?: string
+          sort_order?: number
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "law_articles_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "law_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      law_contributions: {
+        Row: {
+          author_id: string
+          contribution_type: Database["public"]["Enums"]["law_contribution_type"]
+          created_at: string
+          id: string
+          note: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_notes: string | null
+          source_id: string | null
+          source_reference: string | null
+          status: Database["public"]["Enums"]["law_contribution_status"]
+          title: string
+          track: Database["public"]["Enums"]["law_track"]
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          contribution_type: Database["public"]["Enums"]["law_contribution_type"]
+          created_at?: string
+          id?: string
+          note: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          source_id?: string | null
+          source_reference?: string | null
+          status?: Database["public"]["Enums"]["law_contribution_status"]
+          title: string
+          track: Database["public"]["Enums"]["law_track"]
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          contribution_type?: Database["public"]["Enums"]["law_contribution_type"]
+          created_at?: string
+          id?: string
+          note?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+          source_id?: string | null
+          source_reference?: string | null
+          status?: Database["public"]["Enums"]["law_contribution_status"]
+          title?: string
+          track?: Database["public"]["Enums"]["law_track"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "law_contributions_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "law_contributions_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "law_contributions_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "law_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      law_sections: {
+        Row: {
+          created_at: string
+          id: string
+          slug: string
+          sort_order: number
+          source_id: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          slug: string
+          sort_order?: number
+          source_id: string
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          source_id?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "law_sections_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "law_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      law_sources: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          instrument: string
+          is_published: boolean
+          jurisdiction: string
+          slug: string
+          sort_order: number
+          source_url: string | null
+          summary: string
+          title: string
+          track: Database["public"]["Enums"]["law_track"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          instrument: string
+          is_published?: boolean
+          jurisdiction: string
+          slug: string
+          sort_order?: number
+          source_url?: string | null
+          summary: string
+          title: string
+          track: Database["public"]["Enums"]["law_track"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          instrument?: string
+          is_published?: boolean
+          jurisdiction?: string
+          slug?: string
+          sort_order?: number
+          source_url?: string | null
+          summary?: string
+          title?: string
+          track?: Database["public"]["Enums"]["law_track"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -363,6 +608,54 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      app_permission:
+        | "law.read"
+        | "law.contribute"
+        | "law.review"
+        | "profile.read"
+        | "profile.update_self"
+        | "profile.update_any"
+        | "post.create"
+        | "post.edit_self"
+        | "post.delete_self"
+        | "post.moderate"
+        | "comment.create"
+        | "comment.edit_self"
+        | "comment.delete_self"
+        | "comment.moderate"
+        | "message.create"
+        | "message.edit_self"
+        | "message.moderate"
+        | "endorsement.create"
+        | "endorsement.review"
+        | "endorsement.moderate"
+        | "report.create"
+        | "report.review"
+        | "market.manage"
+        | "role.assign"
+        | "settings.manage"
+        | "like.create"
+        | "like.delete_self"
+      app_role:
+        | "guest"
+        | "member"
+        | "verified_member"
+        | "moderator"
+        | "market_manager"
+        | "admin"
+        | "system"
+      law_contribution_status:
+        | "pending"
+        | "approved"
+        | "changes_requested"
+        | "rejected"
+      law_contribution_type:
+        | "source"
+        | "structure"
+        | "summary"
+      law_track:
+        | "civil"
+        | "criminal"
       pillar_type:
         | "education_skills"
         | "culture_ethics"
@@ -496,6 +789,41 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_permission: [
+        "profile.read",
+        "profile.update_self",
+        "profile.update_any",
+        "post.create",
+        "post.edit_self",
+        "post.delete_self",
+        "post.moderate",
+        "comment.create",
+        "comment.edit_self",
+        "comment.delete_self",
+        "comment.moderate",
+        "message.create",
+        "message.edit_self",
+        "message.moderate",
+        "endorsement.create",
+        "endorsement.review",
+        "endorsement.moderate",
+        "report.create",
+        "report.review",
+        "market.manage",
+        "role.assign",
+        "settings.manage",
+        "like.create",
+        "like.delete_self",
+      ],
+      app_role: [
+        "guest",
+        "member",
+        "verified_member",
+        "moderator",
+        "market_manager",
+        "admin",
+        "system",
+      ],
       pillar_type: [
         "education_skills",
         "culture_ethics",

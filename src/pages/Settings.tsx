@@ -4,111 +4,188 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  User, 
-  Shield, 
-  Bell, 
-  HelpCircle, 
-  LogOut, 
+import { useLanguage } from '@/contexts/LanguageContext';
+import { type LanguageCode } from '@/lib/i18n';
+import { permissionListHasAny, type AppPermission } from '@/lib/access-control';
+import {
+  User,
+  Shield,
+  Bell,
+  HelpCircle,
+  LogOut,
   ChevronRight,
   FileText,
   Lock,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Globe,
+  Palette,
+  Users,
+  KeyRound,
 } from 'lucide-react';
 
 const settingsItems = [
   {
     icon: User,
-    label: 'Edit Profile',
-    description: 'Update your name, bio, and avatar',
+    labelKey: 'settings.editProfile',
+    descriptionKey: 'settings.editProfileDescription',
     path: '/settings/profile',
+    requiredPermissions: ['profile.update_self'] as AppPermission[],
   },
   {
     icon: Bell,
-    label: 'Notifications',
-    description: 'Manage notification preferences',
+    labelKey: 'settings.notifications',
+    descriptionKey: 'settings.notificationsDescription',
     path: '/settings/notifications',
   },
   {
     icon: Lock,
-    label: 'Privacy',
-    description: 'Control who can see your profile',
+    labelKey: 'settings.privacy',
+    descriptionKey: 'settings.privacyDescription',
     path: '/settings/privacy',
   },
   {
     icon: Shield,
-    label: 'Safety',
-    description: 'View your reports and blocked users',
+    labelKey: 'settings.safety',
+    descriptionKey: 'settings.safetyDescription',
     path: '/settings/safety',
   },
   {
     icon: FileText,
-    label: 'Terms & Privacy',
-    description: 'Review our policies',
+    labelKey: 'settings.termsPrivacy',
+    descriptionKey: 'settings.termsPrivacyDescription',
     path: '/settings/legal',
   },
   {
     icon: HelpCircle,
-    label: 'Help & Support',
-    description: 'Get help with Levela',
+    labelKey: 'settings.helpSupport',
+    descriptionKey: 'settings.helpSupportDescription',
     path: '/settings/help',
   },
   {
     icon: SettingsIcon,
-    label: 'Pillars',
-    description: 'Manage growth pillars and their names',
+    labelKey: 'settings.pillars',
+    descriptionKey: 'settings.pillarsDescription',
     path: '/settings/pillars',
+    requiredPermissions: ['profile.update_self'] as AppPermission[],
   },
 ];
 
 export default function Settings() {
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
+  const { language, setLanguage, languageOptions, t } = useLanguage();
+  const canAccessAdmin = profile
+    ? permissionListHasAny(profile.effective_permissions || [], ['role.assign', 'settings.manage'])
+    : false;
+
+  const visibleSettingsItems = settingsItems.filter(
+    (item) =>
+      !item.requiredPermissions ||
+      permissionListHasAny(profile?.effective_permissions || [], item.requiredPermissions),
+  );
+
+  const adminItems = canAccessAdmin
+    ? [
+        {
+          icon: Users,
+          labelKey: 'settings.adminUsers',
+          descriptionKey: 'settings.adminUsersDescription',
+          path: '/settings/admin/users',
+        },
+        {
+          icon: KeyRound,
+          labelKey: 'settings.adminPermissions',
+          descriptionKey: 'settings.adminPermissionsDescription',
+          path: '/settings/admin/permissions',
+        },
+      ]
+    : [];
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/onboarding');
   };
 
+  const handleLanguageChange = async (nextLanguage: string) => {
+    await setLanguage(nextLanguage as LanguageCode);
+  };
+
   return (
     <AppLayout>
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-6 flex flex-col gap-4">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="text-2xl font-display font-bold text-foreground">
-            Settings
+            {t('settings.title')}
           </h1>
         </motion.div>
 
-        {/* Theme Settings */}
+        {/* Language & Theme Settings */}
+        {/* Language Settings */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
         >
           <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-foreground">Appearance</h3>
-                <p className="text-sm text-muted-foreground">Choose your theme</p>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Globe className="w-5 h-5 text-primary" />
               </div>
-              <ThemeToggle />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground">{t('settings.languageTitle')}</h3>
+                <p className="text-sm text-muted-foreground">{t('settings.languageDescription')}</p>
+              </div>
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-auto">
+                  <SelectValue placeholder={t('settings.languageTitle')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {languageOptions.map((option) => (
+                    <SelectItem key={option.code} value={option.code}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Appearance Settings */}
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Card className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Palette className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground">{t('settings.appearanceTitle')}</h3>
+                <p className="text-sm text-muted-foreground">{t('settings.appearanceDescription')}</p>
+              </div>
+              <div className="flex-shrink-0">
+                <ThemeToggle />
+              </div>
             </div>
           </Card>
         </motion.div>
 
         {/* Settings items */}
-        <div className="space-y-3">
-          {settingsItems.map((item, index) => (
+        <div className="flex flex-col gap-4">
+          {visibleSettingsItems.map((item, index) => (
             <motion.div
               key={item.path}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: (index + 2) * 0.05 }}
             >
               <Card
                 className="p-4 cursor-pointer hover:shadow-elevated transition-shadow"
@@ -119,8 +196,8 @@ export default function Settings() {
                     <item.icon className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{item.label}</h3>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                    <h3 className="font-semibold text-foreground">{t(item.labelKey)}</h3>
+                    <p className="text-sm text-muted-foreground">{t(item.descriptionKey)}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
@@ -129,11 +206,54 @@ export default function Settings() {
           ))}
         </div>
 
+        {canAccessAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="flex flex-col gap-3"
+          >
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                {t('settings.adminTitle')}
+              </h2>
+              <p className="text-sm text-muted-foreground">{t('settings.adminDescription')}</p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {adminItems.map((item, index) => (
+                <motion.div
+                  key={item.path}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + index * 0.05 }}
+                >
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-elevated transition-shadow"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <item.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{t(item.labelKey)}</h3>
+                        <p className="text-sm text-muted-foreground">{t(item.descriptionKey)}</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Sign out */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: canAccessAdmin ? 0.65 : 0.55 }}
         >
           <Button
             variant="destructive"
@@ -141,7 +261,7 @@ export default function Settings() {
             onClick={handleSignOut}
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t('settings.signOut')}
           </Button>
         </motion.div>
 
@@ -149,11 +269,11 @@ export default function Settings() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: canAccessAdmin ? 0.75 : 0.65 }}
           className="text-center text-sm text-muted-foreground"
         >
-          <p>Levela v1.0.0</p>
-          <p>Build your trust profile</p>
+          <p>{t('settings.appInfoLine1')}</p>
+          <p>{t('settings.appInfoLine2')}</p>
         </motion.div>
       </div>
     </AppLayout>

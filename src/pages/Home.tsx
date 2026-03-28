@@ -1,18 +1,20 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { UserPageMenu } from '@/components/layout/UserPageMenu';
 import { LevelaScore } from '@/components/ui/LevelaScore';
 import { ChatBar } from '@/components/ui/chat-bar';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
-import { type PillarId, getPillarShortName } from '@/lib/constants';
+import { type PillarId } from '@/lib/constants';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, PlusCircle, Star, ThumbsUp, TrendingUp, Users } from 'lucide-react';
+import { Award, MessageCircle, Star, ThumbsUp, TrendingUp, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RecentEndorsement {
   id: string;
@@ -61,6 +63,7 @@ interface PostComment {
 export default function Home() {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [recentEndorsements, setRecentEndorsements] = useState<RecentEndorsement[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -75,6 +78,9 @@ export default function Home() {
   const [submittingCommentPostId, setSubmittingCommentPostId] = useState<string | null>(null);
   const [feedBackendUnavailable, setFeedBackendUnavailable] = useState(false);
   const [optimisticLikeStates, setOptimisticLikeStates] = useState<Record<string, boolean>>({});
+  const [isComposerFocused, setIsComposerFocused] = useState(false);
+  const postTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const canPost = postContent.trim().length > 0;
 
   useEffect(() => {
     if (profile?.id) {
@@ -84,6 +90,14 @@ export default function Home() {
       return cleanup;
     }
   }, [profile?.id]);
+
+  useEffect(() => {
+    const textarea = postTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = '0px';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+  }, [postContent]);
 
   const normalizePost = (raw: any): Post => ({
     id: raw.id,
@@ -362,11 +376,24 @@ export default function Home() {
   };
 
   const getPillarName = (id: PillarId) => {
-    return getPillarShortName(id);
+    switch (id) {
+      case 'education_skills':
+        return t('pillars.educationShort');
+      case 'culture_ethics':
+        return t('pillars.cultureShort');
+      case 'responsibility_reliability':
+        return t('pillars.responsibilityShort');
+      case 'environment_community':
+        return t('pillars.communityShort');
+      case 'economy_contribution':
+        return t('pillars.economyShort');
+      default:
+        return id;
+    }
   };
 
   const getDisplayName = (person?: { full_name?: string; username?: string }) => {
-    return person?.full_name || person?.username || 'User';
+    return person?.full_name || person?.username || t('common.anonymousUser');
   };
 
   const formatRelativeTime = (createdAt: string) => {
@@ -374,7 +401,7 @@ export default function Home() {
     const date = new Date(createdAt).getTime();
     const diffMs = now - date;
 
-    if (diffMs < 60_000) return 'Just now';
+    if (diffMs < 60_000) return t('home.justNow');
     if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)}m`;
     if (diffMs < 86_400_000) return `${Math.floor(diffMs / 3_600_000)}h`;
     if (diffMs < 604_800_000) return `${Math.floor(diffMs / 86_400_000)}d`;
@@ -453,8 +480,8 @@ export default function Home() {
         setPostLikes((prev) => ({ ...prev, [localPost.id]: [] }));
         setPostComments((prev) => ({ ...prev, [localPost.id]: [] }));
         persistLocalPosts(mergePostsById(readStoredValue<Post[]>(getFeedStorageKey('posts'), []), [localPost]));
-        toast.message('Saved locally for now', {
-          description: 'The live Posts table is not connected yet, so your post was saved on this device.',
+        toast.message(t('home.savedLocallyPost'), {
+          description: t('home.savedLocallyPostDescription'),
         });
         setPostContent('');
         return;
@@ -485,13 +512,13 @@ export default function Home() {
           setPostLikes((prev) => ({ ...prev, [localPost.id]: [] }));
           setPostComments((prev) => ({ ...prev, [localPost.id]: [] }));
           persistLocalPosts(mergePostsById(readStoredValue<Post[]>(getFeedStorageKey('posts'), []), [localPost]));
-          toast.message('Saved locally for now', {
-            description: 'The Posts table is missing in Supabase, so this post was stored on this device.',
+          toast.message(t('home.savedLocallyPost'), {
+            description: t('home.savedLocallyPostDescription'),
           });
           setPostContent('');
         } else {
-          toast.error('Could not create post', {
-            description: 'Please try again in a moment.',
+          toast.error(t('home.couldNotCreatePost'), {
+            description: t('common.tryAgainMoment'),
           });
         }
         return;
@@ -503,7 +530,7 @@ export default function Home() {
         setPostLikes(prev => ({ ...prev, [normalized.id]: [] }));
         setPostComments(prev => ({ ...prev, [normalized.id]: [] }));
         setPostContent('');
-        toast.success('Posted to your feed');
+        toast.success(t('home.postedToFeed'));
       }
     } catch (err) {
       console.error('Error creating post:', err);
@@ -511,8 +538,8 @@ export default function Home() {
       setPostLikes((prev) => ({ ...prev, [localPost.id]: [] }));
       setPostComments((prev) => ({ ...prev, [localPost.id]: [] }));
       persistLocalPosts(mergePostsById(readStoredValue<Post[]>(getFeedStorageKey('posts'), []), [localPost]));
-      toast.message('Saved locally for now', {
-        description: 'Your post could not reach Supabase, but it was kept on this device.',
+      toast.message(t('home.savedLocallyPost'), {
+        description: t('home.savedLocallyPostDescription'),
       });
     } finally {
       setIsPosting(false);
@@ -573,12 +600,12 @@ export default function Home() {
         }));
         setPostLikes(fallbackLikes);
         persistLocalLikes(fallbackLikes);
-        toast.message('Saved locally for now', {
-          description: 'Your like will stay visible on this device until the backend is available.',
+        toast.message(t('home.savedLocallyPost'), {
+          description: t('home.savedLocallyLikeDescription'),
         });
       } else {
-        toast.error('Could not save like', {
-          description: 'Please try again in a moment.',
+        toast.error(t('home.couldNotSaveLike'), {
+          description: t('common.tryAgainMoment'),
         });
       }
     } else {
@@ -650,8 +677,8 @@ export default function Home() {
           });
           setCommentDrafts((prev) => ({ ...prev, [postId]: '' }));
           setExpandedComments((prev) => ({ ...prev, [postId]: true }));
-          toast.message('Saved locally for now', {
-            description: 'Comments are staying on this device until the Posts tables are connected.',
+          toast.message(t('home.savedLocallyPost'), {
+            description: t('home.savedLocallyCommentDescription'),
           });
         }
         return;
@@ -679,7 +706,7 @@ export default function Home() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-pulse-soft text-muted-foreground">Loading...</div>
+          <div className="animate-pulse-soft text-muted-foreground">{t('common.loading')}</div>
         </div>
       </AppLayout>
     );
@@ -696,61 +723,13 @@ export default function Home() {
         >
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              Welcome back,
+              {t('home.welcomeBack')}
             </h1>
             <p className="text-lg text-muted-foreground">
               {profile?.full_name?.split(' ')[0] || 'Friend'}
             </p>
           </div>
-          <Avatar
-            className="w-12 h-12 cursor-pointer border-2 border-border"
-            onClick={() => navigate('/profile')}
-          >
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {getInitials(profile?.full_name)}
-            </AvatarFallback>
-          </Avatar>
-        </motion.div>
-
-        {/* Create Post / What’s on your mind block */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-        >
-          <Card className="p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <Avatar className="w-12 h-12">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/20 text-primary">
-                  {getInitials(profile?.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <textarea
-                rows={3}
-                className="flex-1 min-h-[96px] resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
-                placeholder={`What’s on your mind, ${profile?.full_name?.split(' ')[0] || 'there'}?`}
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                onKeyDown={(event) => {
-                  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                    event.preventDefault();
-                    createPost();
-                  }
-                }}
-              >
-              </textarea>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">
-                Press <span className="font-medium text-foreground">Ctrl/⌘ + Enter</span> to post faster.
-              </p>
-              <Button size="sm" onClick={createPost} disabled={isPosting || !postContent.trim()}>
-                {isPosting ? 'Posting...' : 'Post'}
-              </Button>
-            </div>
-          </Card>
+          <UserPageMenu />
         </motion.div>
 
         {/* Score Card */}
@@ -759,24 +738,82 @@ export default function Home() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/10">
-            <div className="flex items-center gap-6">
+          <Card className="border-border/70 bg-gradient-to-br from-primary/5 via-card to-accent/5 p-5 shadow-sm transition-all duration-200 hover:border-border hover:shadow-md sm:p-6">
+            <div className="flex items-center gap-4 sm:gap-6">
               <LevelaScore score={score.overall} size="md" showLabel={false} />
               <div className="flex-1">
                 <h2 className="font-display font-bold text-xl text-foreground">
-                  Your Levela Score
+                  {t('home.yourLevelaScore')}
                 </h2>
                 <p className="text-sm text-muted-foreground mb-3">
-                  {score.totalEndorsements} total endorsements
+                  {t('home.totalEndorsements', { count: score.totalEndorsements })}
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => navigate('/profile')}
-                  className="gap-2"
+                  className="gap-2 rounded-xl border-border/70 bg-background/75 shadow-sm hover:bg-background"
                 >
-                  View Details
+                  {t('home.viewDetails')}
                   <TrendingUp className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Create Post / What’s on your mind block */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Card
+            className={`p-3 transition-all duration-200 sm:p-4 ${
+              isComposerFocused
+                ? 'border-primary/20 shadow-md shadow-primary/10 -translate-y-0.5'
+                : 'border-border/80 shadow-none'
+            }`}
+          >
+            <div className="flex items-start gap-2.5 sm:gap-3">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/20 text-primary">
+                  {getInitials(profile?.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-1 items-end gap-2 sm:gap-3">
+                <textarea
+                  ref={postTextareaRef}
+                  rows={1}
+                  className={`min-h-[44px] flex-1 overflow-hidden resize-none rounded-2xl border px-3 py-2.5 text-sm leading-6 text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/10 sm:px-4 sm:py-3 ${
+                    canPost
+                      ? 'border-primary/30 bg-primary/5 shadow-sm'
+                      : 'border-border bg-background'
+                  }`}
+                  placeholder={t('home.whatsOnYourMind', { name: profile?.full_name?.split(' ')[0] || 'there' })}
+                  value={postContent}
+                  onChange={(e) => setPostContent(e.target.value)}
+                  onFocus={() => setIsComposerFocused(true)}
+                  onBlur={() => setIsComposerFocused(false)}
+                  onKeyDown={(event) => {
+                    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                      event.preventDefault();
+                      createPost();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className={`h-11 shrink-0 rounded-2xl px-4 transition-all sm:px-5 disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 ${
+                    canPost
+                      ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md'
+                      : ''
+                  }`}
+                  onClick={createPost}
+                  disabled={isPosting || !canPost}
+                >
+                  {isPosting ? t('home.posting') : t('home.post')}
                 </Button>
               </div>
             </div>
@@ -791,20 +828,20 @@ export default function Home() {
           transition={{ delay: 0.2 }}
         >
           <Card
-            className="p-4 cursor-pointer hover:shadow-elevated transition-shadow"
+            className="cursor-pointer border-border/70 bg-card/95 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md"
             onClick={() => navigate('/search')}
           >
-            <Users className="w-8 h-8 text-primary mb-2" />
-            <h3 className="font-semibold text-foreground">Find People</h3>
-            <p className="text-xs text-muted-foreground">Discover & endorse</p>
+            <Users className="mb-2 w-8 h-8 text-primary" />
+            <h3 className="font-semibold text-foreground">{t('home.findPeople')}</h3>
+            <p className="text-xs text-muted-foreground">{t('home.discoverEndorse')}</p>
           </Card>
           <Card
-            className="p-4 cursor-pointer hover:shadow-elevated transition-shadow"
+            className="cursor-pointer border-border/70 bg-card/95 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md"
             onClick={() => navigate('/endorse')}
           >
-            <PlusCircle className="w-8 h-8 text-accent mb-2" />
-            <h3 className="font-semibold text-foreground">Endorse</h3>
-            <p className="text-xs text-muted-foreground">Recognize someone</p>
+            <Award className="mb-2 w-8 h-8 text-accent" />
+            <h3 className="font-semibold text-foreground">{t('home.endorse')}</h3>
+            <p className="text-xs text-muted-foreground">{t('home.recognizeSomeone')}</p>
           </Card>
         </motion.div>
 
@@ -815,18 +852,18 @@ export default function Home() {
           transition={{ delay: 0.3 }}
         >
           {feedBackendUnavailable && (
-            <Card className="p-4 mb-4 border-amber-500/30 bg-amber-500/5">
-              <p className="text-sm font-semibold text-foreground">Local feed mode</p>
+            <Card className="mb-4 border-amber-500/25 bg-amber-500/5 p-4 shadow-sm">
+              <p className="text-sm font-semibold text-foreground">{t('home.localFeedModeTitle')}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                The live Posts tables are not connected yet, so new posts and comments are saved on this device for now.
+                {t('home.localFeedModeDescription')}
               </p>
             </Card>
           )}
 
           {posts.length === 0 ? (
-            <Card className="p-6 mb-4 border-dashed border-2 border-border bg-background/60">
-              <p className="text-sm text-muted-foreground">
-                No posts yet. Share what&apos;s on your mind to start your feed.
+            <Card className="mb-4 border-2 border-dashed border-border/70 bg-card/70 p-6 shadow-sm">
+                <p className="text-sm text-muted-foreground">
+                {t('home.noPostsYet')}
               </p>
             </Card>
           ) : (
@@ -849,7 +886,7 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + index * 0.04 }}
                   >
-                    <Card className="p-4">
+                    <Card className="border-border/70 bg-card/95 p-4 shadow-sm transition-all duration-200 hover:border-border hover:shadow-md">
                       <div className="flex items-start gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={post.author?.avatar_url || undefined} />
@@ -874,28 +911,28 @@ export default function Home() {
                             {post.content}
                           </p>
 
-                          <div className="mt-3 border-t border-border/70 pt-2">
+                          <div className="mt-3 border-t border-border/60 pt-2.5">
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className={`gap-2 ${hasLiked ? 'text-primary' : ''}`}
+                                className={`gap-2 rounded-xl px-3 ${hasLiked ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'}`}
                                 onClick={() => toggleLike(post.id)}
                                 disabled={likingPostId === post.id}
                               >
                                 <ThumbsUp className={`w-4 h-4 ${hasLiked ? 'fill-primary' : ''}`} />
-                                {hasLiked ? 'Liked' : 'Like'}
+                                {hasLiked ? t('home.liked') : t('home.like')}
                                 {likeCount > 0 ? ` (${likeCount})` : ''}
                               </Button>
 
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="gap-2"
+                                className="gap-2 rounded-xl px-3 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                                 onClick={() => toggleComments(post.id)}
                               >
                                 <MessageCircle className="w-4 h-4" />
-                                Comment
+                                {t('home.comment')}
                                 {comments.length > 0 ? ` (${comments.length})` : ''}
                               </Button>
                             </div>
@@ -905,12 +942,12 @@ export default function Home() {
                             <div className="mt-3 space-y-3">
                               {comments.length === 0 ? (
                                 <p className="text-xs text-muted-foreground">
-                                  No comments yet. Start the conversation.
+                                  {t('home.noCommentsYet')}
                                 </p>
                               ) : (
                                 <div className="space-y-2">
                                   {comments.map((comment) => (
-                                    <div key={comment.id} className="rounded-lg bg-muted/40 p-3">
+                                    <div key={comment.id} className="rounded-2xl border border-border/50 bg-muted/35 p-3 shadow-sm">
                                       <p className="text-xs font-medium text-foreground">
                                         {getDisplayName(comment.author)}
                                       </p>
@@ -924,8 +961,8 @@ export default function Home() {
 
                               <div className="flex gap-2">
                                 <textarea
-                                  className="w-full min-h-[68px] resize-none rounded-md border border-border p-2 text-sm"
-                                  placeholder="Write a comment..."
+                                  className="min-h-[68px] w-full resize-none rounded-2xl border border-border/70 bg-background/90 p-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                                  placeholder={t('home.writeComment')}
                                   value={draftComment}
                                   onChange={(event) =>
                                     setCommentDrafts((prev) => ({
@@ -938,10 +975,11 @@ export default function Home() {
                               <div className="flex justify-end">
                                 <Button
                                   size="sm"
+                                  className="rounded-xl px-4"
                                   onClick={() => submitComment(post.id)}
                                   disabled={isSubmittingComment || !draftComment.trim()}
                                 >
-                                  {isSubmittingComment ? 'Posting...' : 'Post comment'}
+                                  {isSubmittingComment ? t('home.posting') : t('home.postComment')}
                                 </Button>
                               </div>
                             </div>
@@ -962,13 +1000,13 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <h2 className="text-lg font-semibold text-foreground mb-3">Recent Activity</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-3">{t('home.recentActivity')}</h2>
           {recentEndorsements.length === 0 ? (
             <Card className="p-6 text-center">
               <Star className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No endorsements yet</p>
+              <p className="text-muted-foreground">{t('home.noEndorsementsYet')}</p>
               <p className="text-sm text-muted-foreground">
-                Share your profile to start receiving endorsements
+                {t('home.shareYourProfile')}
               </p>
             </Card>
           ) : (
@@ -990,13 +1028,10 @@ export default function Home() {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm">
-                          <span className="font-medium text-foreground">
-                            {endorsement.endorser?.full_name || 'Someone'}
-                          </span>
-                          {' '}endorsed you on{' '}
-                          <span className="font-medium text-primary">
-                            {getPillarName(endorsement.pillar)}
-                          </span>
+                          {t('home.endorsedYouOn', {
+                            person: endorsement.endorser?.full_name || t('home.someone'),
+                            pillar: getPillarName(endorsement.pillar),
+                          })}
                         </p>
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
@@ -1010,11 +1045,11 @@ export default function Home() {
                             />
                           ))}
                         </div>
-                        {endorsement.comment && (
-                          <p className="text-sm text-muted-foreground mt-1 truncate">
-                            "{endorsement.comment}"
-                          </p>
-                        )}
+                          {endorsement.comment && (
+                            <p className="text-sm text-muted-foreground mt-1 truncate">
+                              "{endorsement.comment}"
+                            </p>
+                          )}
                       </div>
                     </div>
                   </Card>
@@ -1025,7 +1060,7 @@ export default function Home() {
         </motion.div>
       </div>
 
-      {/* Community Chat */}
+      {/* Messaging */}
       <ChatBar />
     </AppLayout>
   );

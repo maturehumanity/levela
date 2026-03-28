@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Star, Users } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserProfile {
   id: string;
@@ -19,6 +20,7 @@ interface UserProfile {
 export default function EndorseSelect() {
   const navigate = useNavigate();
   const { profile: currentProfile } = useAuth();
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserProfile[]>([]);
   const [recentUsers, setRecentUsers] = useState<UserProfile[]>([]);
@@ -104,7 +106,7 @@ export default function EndorseSelect() {
         </Avatar>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground truncate">
-            {user.full_name || 'Anonymous'}
+            {user.full_name || t('common.anonymousUser')}
           </h3>
           {user.username && (
             <p className="text-sm text-muted-foreground">@{user.username}</p>
@@ -124,10 +126,10 @@ export default function EndorseSelect() {
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            Endorse Someone
+            {t('endorseSelect.title')}
           </h1>
           <p className="text-muted-foreground">
-            Recognize someone for their contributions
+            {t('endorseSelect.subtitle')}
           </p>
         </motion.div>
 
@@ -140,7 +142,7 @@ export default function EndorseSelect() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Search for someone to endorse..."
+              placeholder={t('endorseSelect.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10"
@@ -153,12 +155,12 @@ export default function EndorseSelect() {
           <div className="space-y-3">
             {loading ? (
               <p className="text-center text-muted-foreground animate-pulse-soft">
-                Searching...
+                {t('search.searching')}
               </p>
             ) : results.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-muted-foreground">No users found</p>
+                <p className="text-muted-foreground">{t('search.noUsersFound')}</p>
               </div>
             ) : (
               results.map((user, index) => (
@@ -183,7 +185,7 @@ export default function EndorseSelect() {
             transition={{ delay: 0.2 }}
           >
             <h2 className="text-lg font-semibold text-foreground mb-3">
-              Recently Endorsed
+              {t('endorseSelect.recentlyEndorsed')}
             </h2>
             <div className="space-y-3">
               {recentUsers.map((user, index) => (
@@ -209,10 +211,10 @@ export default function EndorseSelect() {
           >
             <Star className="w-12 h-12 text-accent/30 mx-auto mb-3" />
             <p className="text-muted-foreground mb-2">
-              Search for someone to endorse
+              {t('endorseSelect.emptyTitle')}
             </p>
             <p className="text-sm text-muted-foreground">
-              Start typing a name or username above
+              {t('endorseSelect.emptySubtitle')}
             </p>
           </motion.div>
         )}

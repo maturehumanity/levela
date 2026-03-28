@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Mail, ArrowRight, CheckCircle } from "lucide-react";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
 
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const { t } = useLanguage();
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -44,12 +46,12 @@ export default function ForgotPassword() {
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Check your email</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground mb-2">{t('auth.checkEmailTitle')}</h1>
           <p className="text-muted-foreground mb-6">
-            We sent a password recovery link to <strong>{email}</strong>.
+            {t('auth.passwordRecoveryMessage', { email })}
           </p>
           <Button asChild variant="outline">
-            <Link to="/login">Back to Login</Link>
+            <Link to="/login">{t('auth.backToLogin')}</Link>
           </Button>
         </motion.div>
       </div>
@@ -70,20 +72,20 @@ export default function ForgotPassword() {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
             >
-              Levela
+              {t('auth.forgotTitle')}
             </motion.h1>
-            <p className="text-muted-foreground">Reset your password</p>
+            <p className="text-muted-foreground">{t('auth.forgotSubtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="jane@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -103,15 +105,15 @@ export default function ForgotPassword() {
             )}
 
             <Button type="submit" className="w-full gap-2" disabled={loading}>
-              {loading ? "Sending..." : "Send reset link"}
+              {loading ? t('auth.sending') : t('auth.sendResetLink')}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
 
           <p className="text-center mt-6 text-sm text-muted-foreground">
-            Remembered it?{" "}
+            {t('auth.rememberedIt')}{' '}
             <Link to="/login" className="text-primary hover:underline font-medium">
-              Back to login
+              {t('auth.backToLogin')}
             </Link>
           </p>
         </motion.div>
