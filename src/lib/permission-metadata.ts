@@ -39,6 +39,13 @@ export const permissionMetadata: PermissionMetadata[] = [
     descriptionKey: 'admin.permissionDescriptions.profile.read',
   },
   {
+    permission: 'build.use',
+    section: 'administration',
+    page: 'admin',
+    titleKey: 'admin.permissionLabels.build.use',
+    descriptionKey: 'admin.permissionDescriptions.build.use',
+  },
+  {
     permission: 'profile.update_self',
     section: 'identity',
     page: 'editProfile',

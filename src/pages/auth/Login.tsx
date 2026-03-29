@@ -6,13 +6,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { UserRound, Lock, ArrowRight } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const { t } = useLanguage();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export default function Login() {
     setLoading(true);
     setError(null);
 
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(identifier, password);
 
     if (error) {
       setError(error.message);
@@ -53,15 +53,15 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.email')}</Label>
+              <Label htmlFor="identifier">{t('auth.loginIdentifier')}</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('auth.emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  placeholder={t('auth.loginIdentifierPlaceholder')}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="pl-10"
                   required
                 />
@@ -122,6 +122,11 @@ export default function Login() {
             {t('auth.dontHaveAccount')}{' '}
             <Link to="/signup" className="text-primary hover:underline font-medium">
               {t('auth.signUpLink')}
+            </Link>
+          </p>
+          <p className="text-center mt-3 text-sm text-muted-foreground">
+            <Link to="/download" className="text-primary hover:underline font-medium">
+              {t('auth.downloadAndroid')}
             </Link>
           </p>
         </motion.div>

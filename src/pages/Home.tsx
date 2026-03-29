@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UserPageMenu } from '@/components/layout/UserPageMenu';
+import { AppDownloadCard } from '@/components/download/AppDownloadCard';
 import { LevelaScore } from '@/components/ui/LevelaScore';
 import { ChatBar } from '@/components/ui/chat-bar';
 import { Card } from '@/components/ui/card';
@@ -12,9 +13,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
 import { type PillarId } from '@/lib/constants';
 import { useNavigate } from 'react-router-dom';
-import { Award, MessageCircle, Star, ThumbsUp, TrendingUp, Users } from 'lucide-react';
+import { Award, BadgeCheck, BadgeX, MessageCircle, Star, ThumbsUp, TrendingUp, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface RecentEndorsement {
   id: string;
@@ -723,11 +726,31 @@ export default function Home() {
         >
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              {t('home.welcomeBack')}
+              {t('home.welcomeUser', { name: profile?.full_name?.split(' ')[0] || t('home.friend') })}
             </h1>
-            <p className="text-lg text-muted-foreground">
-              {profile?.full_name?.split(' ')[0] || 'Friend'}
-            </p>
+            <div className="mt-1 flex items-center gap-2 text-lg text-muted-foreground">
+              <span>{t('home.worldCitizen')}</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={cn(
+                        'inline-flex h-5 w-5 items-center justify-center rounded-full',
+                        profile?.is_verified
+                          ? 'bg-sky-500/10 text-sky-600 dark:text-sky-300'
+                          : 'bg-muted text-muted-foreground',
+                      )}
+                      aria-label={profile?.is_verified ? t('home.verifiedBadge') : t('home.unverifiedBadge')}
+                    >
+                      {profile?.is_verified ? <BadgeCheck className="h-3.5 w-3.5" /> : <BadgeX className="h-3.5 w-3.5" />}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {profile?.is_verified ? t('home.userIsVerified') : t('home.userIsUnverified')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
           <UserPageMenu />
         </motion.div>
@@ -843,6 +866,14 @@ export default function Home() {
             <h3 className="font-semibold text-foreground">{t('home.endorse')}</h3>
             <p className="text-xs text-muted-foreground">{t('home.recognizeSomeone')}</p>
           </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.24 }}
+        >
+          <AppDownloadCard />
         </motion.div>
 
         {/* User Posts Feed */}

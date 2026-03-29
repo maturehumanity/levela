@@ -3,13 +3,17 @@ import {
   Award,
   BookOpen,
   Compass,
+  Download,
+  BadgeCheck,
   Edit3,
   FileText,
   Globe,
   GraduationCap,
+  LogIn,
   Scale,
   LayoutGrid,
   MessageSquareText,
+  Hammer,
   PlusCircle,
   Settings2,
   Shield,
@@ -19,6 +23,7 @@ import {
   TrendingUp,
   Upload,
   Users,
+  UserPlus,
 } from 'lucide-react';
 
 /**
@@ -45,6 +50,7 @@ export type PageId =
   | 'contribute'
   | 'home'
   | 'features'
+  | 'downloads'
   | 'law'
   | 'terms'
   | 'search'
@@ -55,16 +61,23 @@ export type PageId =
   | 'settings'
   | 'pillars'
   | 'messaging'
+  | 'login'
+  | 'admin'
+  | 'adminRoles'
   | 'adminUsers'
-  | 'adminPermissions';
+  | 'adminPermissions'
+  | 'signUp';
 
 export type FeatureId =
   | 'accessControl'
   | 'adminUsers'
+  | 'adminRoles'
   | 'adminPermissions'
   | 'autosaveDefaults'
   | 'countryAutoSave'
+  | 'cardLayoutEditor'
   | 'contributionHub'
+  | 'homeAppDownload'
   | 'trustFeed'
   | 'messaging'
   | 'scoreSnapshot'
@@ -72,13 +85,18 @@ export type FeatureId =
   | 'publicProfiles'
   | 'endorsements'
   | 'featureExplorer'
+  | 'generatedIdentity'
+  | 'identifierLogin'
+  | 'mobileDownloads'
   | 'lawLibrary'
   | 'marketPreview'
+  | 'phoneFirstSignup'
   | 'profileEditing'
   | 'profilePageMenu'
   | 'photoUpload'
   | 'languageTheme'
   | 'pillarCustomization'
+  | 'userVerification'
   | 'termsUse';
 
 export type RegistryEntry<T extends string> = {
@@ -113,6 +131,7 @@ export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   contribute: { id: 'contribute', icon: PlusCircle, labelKey: 'features.pages.contribute' },
   home: { id: 'home', icon: LayoutGrid, labelKey: 'features.pages.home' },
   features: { id: 'features', icon: Compass, labelKey: 'features.pages.features' },
+  downloads: { id: 'downloads', icon: Download, labelKey: 'features.pages.downloads' },
   law: { id: 'law', icon: Scale, labelKey: 'features.pages.law' },
   terms: { id: 'terms', icon: FileText, labelKey: 'features.pages.terms' },
   search: { id: 'search', icon: Users, labelKey: 'features.pages.search' },
@@ -123,8 +142,12 @@ export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   settings: { id: 'settings', icon: Settings2, labelKey: 'features.pages.settings' },
   pillars: { id: 'pillars', icon: TrendingUp, labelKey: 'features.pages.pillars' },
   messaging: { id: 'messaging', icon: MessageSquareText, labelKey: 'features.pages.messaging' },
+  login: { id: 'login', icon: LogIn, labelKey: 'features.pages.login' },
+  admin: { id: 'admin', icon: Shield, labelKey: 'features.pages.admin' },
+  adminRoles: { id: 'adminRoles', icon: Users, labelKey: 'features.pages.adminRoles' },
   adminUsers: { id: 'adminUsers', icon: Users, labelKey: 'features.pages.adminUsers' },
   adminPermissions: { id: 'adminPermissions', icon: KeyRound, labelKey: 'features.pages.adminPermissions' },
+  signUp: { id: 'signUp', icon: UserPlus, labelKey: 'features.pages.signUp' },
 };
 
 export const featureRegistry: FeatureEntry[] = [
@@ -137,6 +160,16 @@ export const featureRegistry: FeatureEntry[] = [
     detailsKey: 'features.catalog.accessControl.details',
     section: 'preferences',
     page: 'settings',
+  },
+  {
+    id: 'adminRoles',
+    icon: Users,
+    titleKey: 'features.catalog.adminRoles.title',
+    summaryKey: 'features.catalog.adminRoles.summary',
+    workflowKey: 'features.catalog.adminRoles.workflow',
+    detailsKey: 'features.catalog.adminRoles.details',
+    section: 'administration',
+    page: 'adminRoles',
   },
   {
     id: 'adminUsers',
@@ -169,6 +202,16 @@ export const featureRegistry: FeatureEntry[] = [
     page: 'settings',
   },
   {
+    id: 'cardLayoutEditor',
+    icon: Hammer,
+    titleKey: 'features.catalog.cardLayoutEditor.title',
+    summaryKey: 'features.catalog.cardLayoutEditor.summary',
+    workflowKey: 'features.catalog.cardLayoutEditor.workflow',
+    detailsKey: 'features.catalog.cardLayoutEditor.details',
+    section: 'identity',
+    page: 'editProfile',
+  },
+  {
     id: 'contributionHub',
     icon: PlusCircle,
     titleKey: 'features.catalog.contributionHub.title',
@@ -177,6 +220,16 @@ export const featureRegistry: FeatureEntry[] = [
     detailsKey: 'features.catalog.contributionHub.details',
     section: 'contribution',
     page: 'contribute',
+  },
+  {
+    id: 'homeAppDownload',
+    icon: Download,
+    titleKey: 'features.catalog.homeAppDownload.title',
+    summaryKey: 'features.catalog.homeAppDownload.summary',
+    workflowKey: 'features.catalog.homeAppDownload.workflow',
+    detailsKey: 'features.catalog.homeAppDownload.details',
+    section: 'home',
+    page: 'home',
   },
   {
     id: 'trustFeed',
@@ -259,6 +312,46 @@ export const featureRegistry: FeatureEntry[] = [
     page: 'features',
   },
   {
+    id: 'identifierLogin',
+    icon: LogIn,
+    titleKey: 'features.catalog.identifierLogin.title',
+    summaryKey: 'features.catalog.identifierLogin.summary',
+    workflowKey: 'features.catalog.identifierLogin.workflow',
+    detailsKey: 'features.catalog.identifierLogin.details',
+    section: 'identity',
+    page: 'login',
+  },
+  {
+    id: 'generatedIdentity',
+    icon: Shield,
+    titleKey: 'features.catalog.generatedIdentity.title',
+    summaryKey: 'features.catalog.generatedIdentity.summary',
+    workflowKey: 'features.catalog.generatedIdentity.workflow',
+    detailsKey: 'features.catalog.generatedIdentity.details',
+    section: 'identity',
+    page: 'profile',
+  },
+  {
+    id: 'userVerification',
+    icon: BadgeCheck,
+    titleKey: 'features.catalog.userVerification.title',
+    summaryKey: 'features.catalog.userVerification.summary',
+    workflowKey: 'features.catalog.userVerification.workflow',
+    detailsKey: 'features.catalog.userVerification.details',
+    section: 'administration',
+    page: 'adminUsers',
+  },
+  {
+    id: 'mobileDownloads',
+    icon: Download,
+    titleKey: 'features.catalog.mobileDownloads.title',
+    summaryKey: 'features.catalog.mobileDownloads.summary',
+    workflowKey: 'features.catalog.mobileDownloads.workflow',
+    detailsKey: 'features.catalog.mobileDownloads.details',
+    section: 'discovery',
+    page: 'downloads',
+  },
+  {
     id: 'lawLibrary',
     icon: Scale,
     titleKey: 'features.catalog.lawLibrary.title',
@@ -287,6 +380,16 @@ export const featureRegistry: FeatureEntry[] = [
     detailsKey: 'features.catalog.marketPreview.details',
     section: 'marketplace',
     page: 'market',
+  },
+  {
+    id: 'phoneFirstSignup',
+    icon: UserPlus,
+    titleKey: 'features.catalog.phoneFirstSignup.title',
+    summaryKey: 'features.catalog.phoneFirstSignup.summary',
+    workflowKey: 'features.catalog.phoneFirstSignup.workflow',
+    detailsKey: 'features.catalog.phoneFirstSignup.details',
+    section: 'identity',
+    page: 'signUp',
   },
   {
     id: 'profileEditing',

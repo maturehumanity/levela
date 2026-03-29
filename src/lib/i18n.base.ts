@@ -2,6 +2,7 @@ export const baseTranslations = {
   "common": {
     "appName": "Levela",
     "loading": "Loading...",
+    "front": "Front",
     "back": "Back",
     "save": "Save",
     "saving": "Saving...",
@@ -79,10 +80,24 @@ export const baseTranslations = {
     "resetSubtitle": "Choose a new password.",
     "fullName": "Full Name",
     "fullNamePlaceholder": "Jane Smith",
+    "dateOfBirth": "Date of Birth",
+    "dateOfBirthRequired": "Date of birth is required.",
     "username": "Username",
     "usernamePlaceholder": "janesmith",
+    "phone": "Phone number",
+    "phonePlaceholder": "2015550123",
+    "phoneDetected": "Detected country: {country} ({code})",
+    "phoneInvalid": "Enter a valid phone number for the selected country.",
+    "searchCountryCode": "Search country or code...",
     "email": "Email",
     "emailPlaceholder": "jane@example.com",
+    "emailOptional": "Email",
+    "emailOptionalPlaceholder": "jane@example.com",
+    "contactMethodHint": "Add either an email or a phone number. Use only one here.",
+    "contactMethodRequired": "Add either your email or your phone number.",
+    "contactMethodExclusive": "Use either email or phone during sign up, not both.",
+    "loginIdentifier": "Email, username, or phone",
+    "loginIdentifierPlaceholder": "jane@example.com, janesmith, or +12015550123",
     "password": "Password",
     "passwordPlaceholder": "••••••••",
     "country": "Country",
@@ -102,6 +117,8 @@ export const baseTranslations = {
     "backToLogin": "Back to sign in",
     "checkEmailTitle": "Check your email",
     "checkEmailMessage": "We've sent a verification link to {email}.",
+    "accountReadyTitle": "Account created",
+    "accountReadyMessage": "Your account is ready for {phone}. You can sign in now.",
     "passwordRecoveryTitle": "Check your email",
     "passwordRecoveryMessage": "We sent a password recovery link to {email}.",
     "sendResetLink": "Send reset link",
@@ -120,7 +137,28 @@ export const baseTranslations = {
     "recoveryOnlyWorks": "This page only works from the recovery link we email you. If you did not request one, go to",
     "forgotPasswordLink": "Forgot password",
     "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?"
+    "dontHaveAccount": "Don't have an account?",
+    "downloadAndroid": "Download the Android test build"
+  },
+  "downloads": {
+    "badge": "Mobile testing",
+    "title": "Download Levela",
+    "subtitle": "Install the current mobile test build or keep using the web app while native distribution expands.",
+    "backToApp": "Back to the app",
+    "android": {
+      "title": "Android test build",
+      "subtitle": "Installable APK",
+      "description": "This is the latest Android testing build prepared from the current web app and packaged as a native Capacitor app.",
+      "installHint": "On Android, you may need to allow installs from your browser or file manager before opening the APK.",
+      "button": "Download Android APK"
+    },
+    "ios": {
+      "title": "iPhone test build",
+      "subtitle": "Coming soon",
+      "description": "iPhone distribution will be prepared through Apple’s signing and testing flow after the Android testing pass is stable.",
+      "installHint": "iPhone builds will likely be distributed through TestFlight rather than direct file download.",
+      "button": "iPhone build coming soon"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -145,6 +183,8 @@ export const baseTranslations = {
     "pillarsDescription": "Edit pillar names and descriptions",
     "adminTitle": "Admin",
     "adminDescription": "Manage people, roles, and access rules.",
+    "adminRoles": "Roles",
+    "adminRolesDescription": "Review role definitions and permission scope",
     "adminUsers": "Users",
     "adminUsersDescription": "Manage roles and person-by-person access",
     "adminPermissions": "Permissions",
@@ -415,7 +455,9 @@ export const baseTranslations = {
       "contribute": "Contribute",
       "home": "Home",
       "features": "Features",
+      "downloads": "Download",
       "law": "Law",
+      "login": "Login",
       "terms": "Terms of Use",
       "search": "Search",
       "endorse": "Endorse",
@@ -423,10 +465,13 @@ export const baseTranslations = {
       "profile": "Profile",
       "editProfile": "Edit Profile",
       "settings": "Settings",
+      "admin": "Admin",
+      "adminRoles": "Roles",
       "pillars": "Pillars",
       "messaging": "Messaging",
       "adminUsers": "Users",
-      "adminPermissions": "Permissions"
+      "adminPermissions": "Permissions",
+      "signUp": "Sign Up"
     },
     "catalog": {
       "accessControl": {
@@ -459,6 +504,20 @@ export const baseTranslations = {
           "Each user can also have permission overrides that inherit, allow, or deny specific capabilities beyond the base role.",
           "Override changes now autosave, and the manual save button only appears if recovery is needed after a failed save.",
           "The current admin cannot demote their own account or change their own overrides from this screen to avoid accidental lockout."
+        ]
+      },
+      "adminRoles": {
+        "title": "Review role groups",
+        "summary": "Use the Roles page to understand the role catalog before you edit the live permission matrix.",
+        "workflow": [
+          "Open Settings and move into the Admin area.",
+          "Open Roles to review the current role groups.",
+          "Open Permissions when you are ready to change what each role can access."
+        ],
+        "details": [
+          "The Roles page gives admins a cleaner overview of the current user groups.",
+          "Each role card shows the current permission count and a short description of the role's scope.",
+          "This keeps the role overview separate from the detailed permission matrix."
         ]
       },
       "adminPermissions": {
@@ -501,6 +560,19 @@ export const baseTranslations = {
           "Contribute is designed as a central action hub rather than a single-purpose screen.",
           "It gives high-intent actions a dedicated place in navigation.",
           "The page helps separate contribution actions from passive browsing."
+        ]
+      },
+      "homeAppDownload": {
+        "title": "Download the Android app from Home",
+        "summary": "Home includes a visible app-download card with a direct APK link and a QR code for phone installation.",
+        "workflow": [
+          "Open Home and find the download card below the quick actions.",
+          "Tap the download button or scan the QR code from another device.",
+          "Install the Android test build on your phone."
+        ],
+        "details": [
+          "The card keeps the Android test build visible without making users hunt through auth screens or hidden links.",
+          "The QR code points directly to the current APK so desktop users can move smoothly to mobile testing."
         ]
       },
       "trustFeed": {
@@ -615,6 +687,63 @@ export const baseTranslations = {
           "It should stay aligned with product changes as the source of truth evolves."
         ]
       },
+      "identifierLogin": {
+        "title": "Sign in with one identifier field",
+        "summary": "Login accepts an email address, username, or phone number instead of forcing a single credential style.",
+        "workflow": [
+          "Open Login and type your email, username, or phone number.",
+          "Enter your password.",
+          "Let the app resolve the right account and continue into the app."
+        ],
+        "details": [
+          "The login field stays simple while still supporting multiple identity methods.",
+          "Username and phone logins resolve to the linked account before the password sign-in runs.",
+          "This keeps login flexible without forcing users to remember which contact method they originally used."
+        ]
+      },
+      "generatedIdentity": {
+        "title": "Generate system identity values",
+        "summary": "New accounts receive a generated username, an official system ID, and an SSN-style number automatically.",
+        "workflow": [
+          "Create a new account with your name and one contact method.",
+          "Let the backend generate your identity values during account creation.",
+          "Use the generated username immediately, and change it later if your profile rules allow it."
+        ],
+        "details": [
+          "Usernames are generated from the person’s name and adjusted automatically until they are unique.",
+          "Each account also receives a unique official ID for system identity purposes.",
+          "Each account also receives an SSN-style value in the XXX-XX-XXXX format."
+        ]
+      },
+      "userVerification": {
+        "title": "Approve user verification",
+        "summary": "Authorized admins can mark a user as verified or unverified, and the app reflects that state immediately.",
+        "workflow": [
+          "Open Settings and go to Admin, then Users.",
+          "Find the person you want to review.",
+          "Use the verify or unverify control on their row.",
+          "See the updated verification status immediately in the admin list and profile-facing badge."
+        ],
+        "details": [
+          "Newly registered users start as unverified by default.",
+          "Verification can be changed directly from the Users page without opening a separate editor.",
+          "The user list also shows each person’s generated official ID and SSN-style number for identity review."
+        ]
+      },
+      "mobileDownloads": {
+        "title": "Download the mobile test builds",
+        "summary": "The Download page gives testers a direct path to the latest Android build and explains the current iPhone rollout status.",
+        "workflow": [
+          "Open Download from the auth screens, from a direct link, or from the page menu.",
+          "Download the current Android APK.",
+          "Install it on your Android device and allow local installation if needed.",
+          "Return later for newer builds and future iPhone testing access."
+        ],
+        "details": [
+          "The Android build is published as a direct APK for testing.",
+          "The iPhone rollout is explained on the same page so users understand why it follows a different process."
+        ]
+      },
       "lawLibrary": {
         "title": "Read the law library",
         "summary": "The Law page organizes the law library into a structured reading flow, with searchable sources, article browsing, and reviewable community contributions.",
@@ -666,6 +795,20 @@ export const baseTranslations = {
           "The current state is intentionally lightweight while the concept matures."
         ]
       },
+      "phoneFirstSignup": {
+        "title": "Sign up with phone-first identity",
+        "summary": "Signup now prioritizes phone-based registration while still allowing email as the single alternate contact method.",
+        "workflow": [
+          "Open Sign Up and enter your full name.",
+          "Use the detected flag and country code, then enter your local phone number, or provide an email instead.",
+          "Choose your language, agree to the Terms, and create the account."
+        ],
+        "details": [
+          "The signup form no longer asks people to invent a username up front.",
+          "Phone entry uses the detected country and dialing code so mobile registration feels lighter.",
+          "Signup accepts either email or phone, but not both in the same registration step."
+        ]
+      },
       "profileEditing": {
         "title": "Edit profile details",
         "summary": "Update your name, username, bio, and country from the Edit Profile experience with full autosave.",
@@ -679,6 +822,22 @@ export const baseTranslations = {
           "Country uses a searchable dropdown rather than free text.",
           "All core profile fields now autosave without a dedicated Save Changes button unless an autosave fails.",
           "The page supports continuing profile maintenance without leaving the main app shell."
+        ]
+      },
+      "cardLayoutEditor": {
+        "title": "Global build editor",
+        "summary": "Users with Build access can open a floating editor, select visible UI elements, and nudge them into place directly in the app.",
+        "workflow": [
+          "Open any page where Build access is enabled for your role.",
+          "Tap the floating Build button to enter build mode.",
+          "Click the visible element you want to adjust.",
+          "Use the arrow controls or keyboard arrows to move that element until it sits correctly.",
+          "Exit edit mode and keep the saved placement for that device."
+        ],
+        "details": [
+          "Build access is controlled by the global permission matrix rather than a hardcoded founder bypass.",
+          "Offsets are saved locally, which makes it practical for pixel-level layout tuning during design review.",
+          "The builder can now target a much broader set of visible texts, icons, fields, and other UI elements across the app."
         ]
       },
       "countryAutoSave": {
@@ -742,6 +901,12 @@ export const baseTranslations = {
   },
   "home": {
     "welcomeBack": "Welcome back,",
+    "welcomeUser": "Welcome, {name}",
+    "worldCitizen": "World Citizen",
+    "verifiedBadge": "Verified",
+    "unverifiedBadge": "Unverified",
+    "userIsVerified": "Verification status: verified",
+    "userIsUnverified": "Verification status: unverified",
     "profileMenuButton": "Open your page menu",
     "profileMenuNoUsername": "No username yet",
     "currentPage": "Current",
@@ -756,6 +921,10 @@ export const baseTranslations = {
     "discoverEndorse": "Discover and endorse",
     "endorse": "Endorse",
     "recognizeSomeone": "Recognize someone",
+    "downloadApp": "Download app",
+    "downloadAppDescription": "Install the latest Android test build.",
+    "scanQrInstall": "Scan to install on your phone",
+    "openDownloadPage": "Open download page",
     "localFeedModeTitle": "Local feed mode",
     "localFeedModeDescription": "The live Posts tables are not connected yet. New posts and comments are saved on this device for now.",
     "noPostsYet": "No posts yet. Share what's on your mind to start your feed.",
@@ -838,6 +1007,34 @@ export const baseTranslations = {
   },
   "editProfile": {
     "title": "Edit Profile",
+    "id": "ID",
+    "ssn": "SSN",
+    "did": "DID",
+    "mrz": "Machine Readable Zone",
+    "worldCitizenId": "World Citizen ID",
+    "worldCitizen": "World Citizen",
+    "founder": "Founder",
+    "guardian": "Guardian",
+    "explorer": "Explorer",
+    "editName": "Edit name",
+    "nameChangeAvailable": "Edit Information Until {date}",
+    "nameChangeEnded": "Information edits closed on {date}.",
+    "nameChangeUnavailable": "Information editing is not available right now.",
+    "dateOfBirth": "Date of Birth",
+    "givenName": "Given Name",
+    "surname": "Surname",
+    "socialCard": "Social Card",
+    "activeWorldCitizen": "Active World Citizen",
+    "verification": "Verification",
+    "selectiveDisclosure": "Selective disclosure ready",
+    "legacy": "Legacy",
+    "nfcReady": "NFC and reader ready",
+    "registryCode": "Registry Code",
+    "showId": "Show full ID",
+    "hideId": "Hide full ID",
+    "showSsn": "Show full social security number",
+    "hideSsn": "Hide full social security number",
+    "socialSecurityNumber": "Social Security Number",
     "photoSoon": "Photo upload coming soon!",
     "fullName": "Full Name",
     "fullNamePlaceholder": "Jane Smith",
@@ -851,6 +1048,11 @@ export const baseTranslations = {
     "autoSaveActive": "Changes save automatically.",
     "autoSaveFailed": "Auto-save failed. Use Save Changes to retry.",
     "usernameTaken": "Username is already taken",
+    "usernameChangeWindow": "You can edit your username until {date}.",
+    "usernameChangeAvailable": "You can still change your username once. After that, it becomes available again once each year.",
+    "usernameChangeYearlyAvailable": "Your yearly username change is available.",
+    "usernameChangeNextDate": "Your next username change will be available on {date}.",
+    "usernameChangeUnavailable": "Username editing is not available right now.",
     "profileUpdated": "Profile updated!",
     "countrySaved": "Country saved.",
     "countrySaveFailed": "Could not save the country.",
@@ -905,9 +1107,10 @@ export const baseTranslations = {
     "roles": {
       "guest": "Guest",
       "member": "Member",
-      "verified_member": "Verified Member",
+      "verified_member": "Verified",
       "moderator": "Moderator",
-      "market_manager": "Market Manager",
+      "market_manager": "Manager",
+      "founder": "Founder",
       "admin": "Admin",
       "system": "System"
     },
@@ -916,9 +1119,17 @@ export const baseTranslations = {
       "member": "Default signed-in member access.",
       "verified_member": "Member access with future trust verification support.",
       "moderator": "Moderation access for content and reports.",
-      "market_manager": "Marketplace operations without full admin power.",
+      "market_manager": "Flexible management access without full admin power.",
+      "founder": "Founding authority with full platform access.",
       "admin": "Full staff access across settings, roles, and moderation.",
       "system": "Reserved for internal system-level operations."
+    },
+    "rolesPage": {
+      "title": "Roles",
+      "subtitle": "Review the role groups and how broad each one is before adjusting live permissions.",
+      "loadFailed": "Could not load the role catalog.",
+      "scopeLabel": "Permission scope",
+      "manageInPermissions": "Manage in Permissions"
     },
     "permissionGroups": {
       "profile": "Profile",
@@ -975,6 +1186,7 @@ export const baseTranslations = {
       "law.contribute": "Contribute",
       "law.review": "Review",
       "profile.read": "View",
+      "build.use": "Build",
       "profile.update_self": "Edit",
       "profile.update_any": "Edit profiles",
       "post.create": "Create",
@@ -1004,6 +1216,7 @@ export const baseTranslations = {
       "law.contribute": "Submit source, structure, or summary contributions.",
       "law.review": "Review and update submitted Law contributions.",
       "profile.read": "Open profile information.",
+      "build.use": "Open build mode across the application.",
       "profile.update_self": "Edit your own profile details.",
       "profile.update_any": "Edit other people's profiles.",
       "post.create": "Publish feed posts.",
@@ -1061,6 +1274,16 @@ export const baseTranslations = {
       "selfRoleHint": "Your own role is locked on this screen.",
       "selfPermissionsHint": "Your own permission overrides are locked here to prevent accidental loss of admin access.",
       "verifiedBadge": "Verified",
+      "unverifiedBadge": "Unverified",
+      "verifyUser": "Verify",
+      "unverifyUser": "Unverify",
+      "userVerified": "{user} is now verified.",
+      "userUnverified": "{user} is now unverified.",
+      "userIsVerified": "This user is verified.",
+      "userIsUnverified": "This user is unverified.",
+      "verificationUpdateFailed": "Could not update verification.",
+      "officialIdLabel": "ID",
+      "ssnLabel": "SSN",
       "manageAccess": "Manage access",
       "createUser": "New user",
       "createUserTitle": "Create user",

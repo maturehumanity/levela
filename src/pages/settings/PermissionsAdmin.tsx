@@ -3,25 +3,16 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  BadgeCheck,
   Check,
   ChevronDown,
   ChevronRight,
   CircleHelp,
-  Cpu,
-  Eye,
-  EyeOff,
   Loader2,
-  ShieldCheck,
-  Store,
-  User,
-  Users,
   X,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { APP_ROLES, type AppPermission, type AppRole } from '@/lib/access-control';
 import { pageRegistry, type PageId, type SectionId } from '@/lib/feature-registry';
@@ -38,20 +29,11 @@ type RolePermissionRow = {
 };
 
 const sectionOrder: SectionId[] = ['home', 'discovery', 'knowledge', 'identity', 'contribution', 'marketplace', 'preferences', 'administration'];
-const pageOrder: PageId[] = ['home', 'messaging', 'features', 'law', 'profile', 'editProfile', 'endorse', 'market', 'settings', 'adminUsers', 'adminPermissions'];
-const roleIconMap = {
-  guest: User,
-  member: User,
-  verified_member: BadgeCheck,
-  moderator: ShieldCheck,
-  market_manager: Store,
-  admin: Users,
-  system: Cpu,
-} as const;
-const matrixGridTemplate = `minmax(260px, 1.9fr) repeat(${APP_ROLES.length}, minmax(72px, 0.65fr))`;
-
+const pageOrder: PageId[] = ['home', 'messaging', 'features', 'law', 'profile', 'editProfile', 'endorse', 'market', 'settings', 'admin', 'adminRoles', 'adminUsers', 'adminPermissions'];
 function getPageLabel(pageId: PageId, t: (key: string, params?: Record<string, string | number>) => string) {
   if (pageId === 'editProfile') return t('settings.editProfile');
+  if (pageId === 'admin') return t('features.pages.admin');
+  if (pageId === 'adminRoles') return t('settings.adminRoles');
   if (pageId === 'adminUsers') return t('common.users');
   if (pageId === 'adminPermissions') return t('common.permissions');
   return t(pageRegistry[pageId].labelKey);
@@ -64,9 +46,16 @@ export default function PermissionsAdmin() {
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [collapsedPages, setCollapsedPages] = useState<Record<string, boolean>>({});
-  const [showRoleCards, setShowRoleCards] = useState(true);
   const [rolePermissions, setRolePermissions] = useState<Record<AppRole, AppPermission[]>>(
     Object.fromEntries(APP_ROLES.map((role) => [role, []])) as Record<AppRole, AppPermission[]>,
+  );
+  const visibleRoles = useMemo(
+    () => (profile?.role === 'admin' ? APP_ROLES.filter((role) => role !== 'founder') : APP_ROLES),
+    [profile?.role],
+  );
+  const matrixGridTemplate = useMemo(
+    () => `minmax(260px, 1.9fr) repeat(${visibleRoles.length}, minmax(72px, 0.65fr))`,
+    [visibleRoles.length],
   );
 
   useEffect(() => {
@@ -127,12 +116,6 @@ export default function PermissionsAdmin() {
         pages: Array<{ pageId: PageId; items: typeof permissionMetadata }>;
       }>;
   }, []);
-
-  const roleCounts = useMemo(
-    () =>
-      Object.fromEntries(APP_ROLES.map((role) => [role, rolePermissions[role]?.length || 0])) as Record<AppRole, number>,
-    [rolePermissions],
-  );
 
   const handleTogglePermission = async (role: AppRole, permission: AppPermission) => {
     if (role === 'system') return;
@@ -200,68 +183,8 @@ export default function PermissionsAdmin() {
         </Button>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-display font-bold text-foreground">{t('admin.permissions.title')}</h1>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={() => setShowRoleCards((current) => !current)}
-              aria-label={showRoleCards ? t('admin.permissions.hideRoleCards') : t('admin.permissions.showRoleCards')}
-            >
-              {showRoleCards ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
+          <h1 className="text-2xl font-display font-bold text-foreground">{t('admin.permissions.title')}</h1>
         </motion.div>
-
-        {showRoleCards ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            {APP_ROLES.map((role) => {
-              const RoleIcon = roleIconMap[role];
-
-              return (
-                <Card key={role} className="rounded-3xl border-border/60 p-3 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-xl bg-primary/10 p-1.5 text-primary">
-                          <RoleIcon className="h-4 w-4" />
-                        </div>
-                        <h2 className="truncate text-sm font-semibold text-foreground">{t(`admin.roles.${role}`)}</h2>
-                        <Badge
-                          variant="secondary"
-                          className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary hover:bg-primary/10"
-                        >
-                          {t('admin.permissions.permissionCount', { count: roleCounts[role] })}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-2 flex items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1 text-xs leading-5 text-muted-foreground">
-                      {t(`admin.roleDescriptions.${role}`)}
-                    </p>
-                    {role === 'system' && (
-                      <Badge
-                        variant="secondary"
-                        className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
-                      >
-                        {t('admin.permissions.readOnlyRole')}
-                      </Badge>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </motion.div>
-        ) : null}
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card className="overflow-hidden rounded-3xl border-border/60 shadow-sm">
@@ -279,7 +202,7 @@ export default function PermissionsAdmin() {
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     {t('admin.permissions.featureColumn')}
                   </div>
-                  {APP_ROLES.map((role) => (
+                  {visibleRoles.map((role) => (
                     <div key={role} className="text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       {t(`admin.roles.${role}`)}
                     </div>
@@ -326,7 +249,7 @@ export default function PermissionsAdmin() {
                                 {pageGroup.items.map((entry) => (
                                   <div
                                     key={entry.permission}
-                                    className="grid items-center gap-3 px-4 py-3"
+                                    className="grid items-center gap-2.5 px-4 py-2"
                                     style={{ gridTemplateColumns: matrixGridTemplate }}
                                   >
                                     <div className="min-w-0">
@@ -347,7 +270,7 @@ export default function PermissionsAdmin() {
                                         </Tooltip>
                                       </TooltipProvider>
                                     </div>
-                                    {APP_ROLES.map((role) => {
+                                    {visibleRoles.map((role) => {
                                       const enabled = (rolePermissions[role] || []).includes(entry.permission);
                                       const key = `${role}:${entry.permission}`;
                                       const isSaving = savingKey === key;

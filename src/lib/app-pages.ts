@@ -5,6 +5,7 @@ import { pageRegistry } from '@/lib/feature-registry';
 export type NavigablePageId =
   | 'home'
   | 'features'
+  | 'downloads'
   | 'law'
   | 'terms'
   | 'contribute'
@@ -15,6 +16,7 @@ export type NavigablePageId =
   | 'editProfile'
   | 'settings'
   | 'pillars'
+  | 'adminRoles'
   | 'adminUsers'
   | 'adminPermissions';
 
@@ -29,6 +31,7 @@ export type AppPageLink = {
 export const appPageLinks: AppPageLink[] = [
   { id: 'home', path: '/', labelKey: pageRegistry.home.labelKey, icon: pageRegistry.home.icon },
   { id: 'features', path: '/features', labelKey: pageRegistry.features.labelKey, icon: pageRegistry.features.icon },
+  { id: 'downloads', path: '/download', labelKey: pageRegistry.downloads.labelKey, icon: pageRegistry.downloads.icon },
   {
     id: 'law',
     path: '/law',
@@ -79,6 +82,13 @@ export const appPageLinks: AppPageLink[] = [
     labelKey: pageRegistry.pillars.labelKey,
     icon: pageRegistry.pillars.icon,
     requiredPermissions: ['profile.update_self'],
+  },
+  {
+    id: 'adminRoles',
+    path: '/settings/admin/roles',
+    labelKey: pageRegistry.adminRoles.labelKey,
+    icon: pageRegistry.adminRoles.icon,
+    requiredPermissions: ['role.assign', 'settings.manage'],
   },
   {
     id: 'adminUsers',

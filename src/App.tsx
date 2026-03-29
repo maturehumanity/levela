@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { BuildOverlay } from "@/components/layout/BuildOverlay";
 
 // Pages
 import Onboarding from "@/pages/Onboarding";
@@ -15,6 +16,7 @@ import SignUp from "@/pages/auth/SignUp";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import Contribute from "@/pages/Contribute";
+import DownloadPage from "@/pages/Download";
 import Features from "@/pages/Features";
 import Home from "@/pages/Home";
 import Law from "@/pages/Law";
@@ -28,6 +30,7 @@ import EndorseFlow from "@/pages/EndorseFlow";
 import Settings from "@/pages/Settings";
 import EditProfile from "@/pages/settings/EditProfile";
 import Pillars from "@/pages/settings/Pillars";
+import RolesAdmin from "@/pages/settings/RolesAdmin";
 import UsersAdmin from "@/pages/settings/UsersAdmin";
 import PermissionsAdmin from "@/pages/settings/PermissionsAdmin";
 import NotFound from "@/pages/NotFound";
@@ -67,6 +70,7 @@ const App = () => (
               <Route path="/onboarding" element={<AuthRedirect><Onboarding /></AuthRedirect>} />
               <Route path="/login" element={<AuthRedirect><Login /></AuthRedirect>} />
               <Route path="/signup" element={<AuthRedirect><SignUp /></AuthRedirect>} />
+              <Route path="/download" element={<DownloadPage />} />
               <Route path="/terms" element={<TermsOfUse />} />
              <Route path="/forgot-password" element={<AuthRedirect><ForgotPassword /></AuthRedirect>} />
              {/* Do NOT wrap recovery route with AuthRedirect (recovery link may create a session) */}
@@ -144,6 +148,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/settings/admin/roles"
+                element={
+                  <ProtectedRoute requiredPermissions={['role.assign', 'settings.manage']}>
+                    <RolesAdmin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/settings/admin/users"
                 element={
                   <ProtectedRoute requiredPermissions={['role.assign', 'settings.manage']}>
@@ -163,6 +175,7 @@ const App = () => (
               {/* Fallback */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <BuildOverlay />
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>

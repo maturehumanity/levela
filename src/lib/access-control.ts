@@ -5,6 +5,7 @@ export const APP_ROLES = [
   'moderator',
   'market_manager',
   'admin',
+  'founder',
   'system',
 ] as const;
 
@@ -12,6 +13,7 @@ export const APP_PERMISSIONS = [
   'law.read',
   'law.contribute',
   'law.review',
+  'build.use',
   'profile.read',
   'profile.update_self',
   'profile.update_any',
@@ -123,6 +125,7 @@ export const rolePermissionMap: Record<AppRole, AppPermission[]> = {
     'like.create',
     'like.delete_self',
   ],
+  founder: [...APP_PERMISSIONS],
   admin: [...APP_PERMISSIONS],
   system: [...APP_PERMISSIONS],
 };
@@ -206,5 +209,5 @@ export function hasAnyPermission(
 }
 
 export function isStaffRole(role: AppRole) {
-  return role === 'moderator' || role === 'admin' || role === 'system';
+  return role === 'moderator' || role === 'founder' || role === 'admin' || role === 'system';
 }

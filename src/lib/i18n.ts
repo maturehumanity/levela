@@ -1,4 +1,5 @@
 import { baseTranslations, type BaseTranslations } from './i18n.base';
+import { getCountryName } from './countries';
 import {
   languageOptions as rawLanguageOptions,
   primaryLanguageCodes,
@@ -9,13 +10,14 @@ import {
 
 export type LocalePreferences = {
   languageCode: LanguageCode;
+  countryCode: string;
   country: string;
 };
 
 export type TranslationTree = BaseTranslations;
 
 const LANGUAGE_PACK_PREFIX = 'levela-i18n-pack';
-const LANGUAGE_PACK_VERSION = '25';
+const LANGUAGE_PACK_VERSION = '33';
 const FALLBACK_LANGUAGE: LanguageCode = 'en';
 const inFlightLanguageLoads = new Map<LanguageCode, Promise<TranslationTree>>();
 const cachedLanguagePacks = new Map<LanguageCode, TranslationTree>();
@@ -88,43 +90,78 @@ export function detectLanguageCode(locale = getBrowserLocale()): LanguageCode {
 }
 
 export function detectCountry(locale = getBrowserLocale()): string {
+  return getCountryName(detectCountryCode(locale), detectLanguageCode(locale));
+}
+
+const timezoneCountryFallbacks: Record<string, string> = {
+  'America/Anchorage': 'US',
+  'America/Chicago': 'US',
+  'America/Denver': 'US',
+  'America/Detroit': 'US',
+  'America/Los_Angeles': 'US',
+  'America/New_York': 'US',
+  'America/Phoenix': 'US',
+  'America/Toronto': 'CA',
+  'America/Vancouver': 'CA',
+  'America/Mexico_City': 'MX',
+  'America/Sao_Paulo': 'BR',
+  'America/Argentina/Buenos_Aires': 'AR',
+  'Europe/Berlin': 'DE',
+  'Europe/London': 'GB',
+  'Europe/Madrid': 'ES',
+  'Europe/Paris': 'FR',
+  'Europe/Rome': 'IT',
+  'Europe/Warsaw': 'PL',
+  'Europe/Kyiv': 'UA',
+  'Europe/Moscow': 'RU',
+  'Asia/Dubai': 'AE',
+  'Asia/Jerusalem': 'IL',
+  'Asia/Kolkata': 'IN',
+  'Asia/Seoul': 'KR',
+  'Asia/Shanghai': 'CN',
+  'Asia/Singapore': 'SG',
+  'Asia/Tokyo': 'JP',
+  'Australia/Melbourne': 'AU',
+  'Australia/Sydney': 'AU',
+  'Pacific/Auckland': 'NZ',
+};
+
+export function detectCountryCode(locale = getBrowserLocale()): string {
   const normalized = normalizeLocaleCode(locale);
-  const parts = normalized.split('-');
-  const region = parts.find((part) => part.length === 2 || part.length === 3);
 
-  if (!region) {
-    const fallbackRegion = detectLanguageCode(locale) === 'es' ? 'ES' : 'US';
-
-    try {
-      if (typeof Intl !== 'undefined' && 'DisplayNames' in Intl) {
-        const displayNames = new Intl.DisplayNames([detectLanguageCode(locale)], { type: 'region' });
-        return displayNames.of(fallbackRegion) || (fallbackRegion === 'ES' ? 'Spain' : 'United States');
-      }
-    } catch {
-      // fall through to the code
-    }
-
-    return fallbackRegion === 'ES' ? 'Spain' : 'United States';
-  }
-
-  const countryCode = region.toUpperCase();
   try {
-    if (typeof Intl !== 'undefined' && 'DisplayNames' in Intl) {
-      const displayNames = new Intl.DisplayNames([detectLanguageCode(locale)], { type: 'region' });
-      return displayNames.of(countryCode) || countryCode;
+    if (typeof Intl !== 'undefined' && 'Locale' in Intl) {
+      const region = new Intl.Locale(normalized).region;
+      if (region) return region.toUpperCase();
     }
   } catch {
-    // fall through to the code
+    // fall through
   }
 
-  return countryCode;
+  const parts = normalized.split('-');
+  const region = parts.find(
+    (part, index) =>
+      index > 0 && ((part.length === 2 && /^[A-Za-z]{2}$/.test(part)) || (part.length === 3 && /^\d{3}$/.test(part))),
+  );
+  if (region) return region.toUpperCase();
+
+  if (typeof Intl !== 'undefined') {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone && timezoneCountryFallbacks[timezone]) {
+      return timezoneCountryFallbacks[timezone];
+    }
+  }
+
+  return detectLanguageCode(locale) === 'es' ? 'ES' : 'US';
 }
 
 export function detectLocalePreferences(): LocalePreferences {
   const locale = getBrowserLocale();
+  const countryCode = detectCountryCode(locale);
   return {
     languageCode: detectLanguageCode(locale),
-    country: detectCountry(locale),
+    countryCode,
+    country: getCountryName(countryCode, detectLanguageCode(locale)),
   };
 }
 

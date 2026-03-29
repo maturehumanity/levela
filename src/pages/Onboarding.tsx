@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, Star, Users, TrendingUp, GraduationCap } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { AppDownloadCard } from '@/components/download/AppDownloadCard';
 
 const features = [
   {
@@ -97,6 +98,15 @@ export default function Onboarding() {
               <pillar.icon className="w-5 h-5 text-white" />
             </motion.div>
           ))}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.72 }}
+          className="mb-8"
+        >
+          <AppDownloadCard variant="stacked" />
         </motion.div>
 
         {/* Actions */}

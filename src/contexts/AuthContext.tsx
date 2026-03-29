@@ -11,8 +11,18 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  date_of_birth?: string | null;
   country: string | null;
+  country_code?: string | null;
   language_code: LanguageCode | null;
+  phone_country_code?: string | null;
+  phone_number?: string | null;
+  phone_e164?: string | null;
+  official_id?: string | null;
+  social_security_number?: string | null;
+  full_name_change_count?: number | null;
+  full_name_last_changed_at?: string | null;
+  username_last_changed_at?: string | null;
   last_active_at?: string | null;
   is_verified: boolean;
   is_admin: boolean;
@@ -31,18 +41,27 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signUp: (
-    email: string,
+    credentials: {
+      email?: string;
+      phoneNumber?: string;
+      phoneCountryCode?: string;
+      phoneE164?: string;
+    },
     password: string,
     metadata?: {
-      username?: string;
       full_name?: string;
+      date_of_birth?: string;
       country?: string;
+      country_code?: string;
       language_code?: LanguageCode;
+      phone_country_code?: string;
+      phone_number?: string;
+      phone_e164?: string;
       terms_accepted_at?: string;
       terms_version?: string;
     }
   ) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (identifier: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -181,30 +200,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const signUp = async (
-    email: string,
+    credentials: {
+      email?: string;
+      phoneNumber?: string;
+      phoneCountryCode?: string;
+      phoneE164?: string;
+    },
     password: string,
     metadata?: {
-      username?: string;
       full_name?: string;
+      date_of_birth?: string;
       country?: string;
+      country_code?: string;
       language_code?: LanguageCode;
+      phone_country_code?: string;
+      phone_number?: string;
+      phone_e164?: string;
       terms_accepted_at?: string;
       terms_version?: string;
     },
   ) => {
+    const normalizedEmail = credentials.email?.trim().toLowerCase();
+    const normalizedPhoneDigits = credentials.phoneNumber?.replace(/\D/g, '') || '';
+    const syntheticEmail = normalizedPhoneDigits
+      ? `phone-${normalizedPhoneDigits}@phone.levela.local`
+      : undefined;
+
     const { error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail || syntheticEmail,
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: metadata,
+        data: {
+          ...metadata,
+          phone_country_code: metadata?.phone_country_code ?? credentials.phoneCountryCode,
+          phone_number: metadata?.phone_number ?? credentials.phoneNumber,
+          phone_e164: metadata?.phone_e164 ?? credentials.phoneE164,
+          contact_method: normalizedEmail ? 'email' : 'phone',
+        },
       },
     });
 
     return { error: error as Error | null };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (identifier: string, password: string) => {
+    const trimmedIdentifier = identifier.trim();
+    let email = trimmedIdentifier;
+
+    if (!trimmedIdentifier.includes('@')) {
+      const { data, error: resolveError } = await supabase.rpc('resolve_login_email', {
+        identifier: trimmedIdentifier,
+      });
+
+      if (resolveError) {
+        return { error: resolveError as Error };
+      }
+
+      if (!data) {
+        return { error: new Error('Invalid login credentials') };
+      }
+
+      email = data;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

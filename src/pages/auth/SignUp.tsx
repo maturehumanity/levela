@@ -1,31 +1,46 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { detectLocalePreferences, languageOptions } from '@/lib/i18n';
+import { createPhoneDraft, getPhoneCountryOptions, getPhoneCountrySummary } from '@/lib/phone';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Lock, User, ArrowRight, CheckCircle, Globe } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, CheckCircle, Globe, Phone, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function SignUp() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const detected = detectLocalePreferences();
+  const countryOptions = getPhoneCountryOptions(language);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [selectedCountryCode, setSelectedCountryCode] = useState(detected.countryCode);
   const [country, setCountry] = useState(detected.country);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState(detected.languageCode);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successContactLabel, setSuccessContactLabel] = useState('');
+  const [successWasPhone, setSuccessWasPhone] = useState(false);
+  const phoneDraft = useMemo(() => createPhoneDraft(selectedCountryCode, phoneNumber), [phoneNumber, selectedCountryCode]);
+  const selectedPhoneCountry = useMemo(
+    () => getPhoneCountrySummary(selectedCountryCode, language),
+    [language, selectedCountryCode],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,13 +51,45 @@ export default function SignUp() {
       return;
     }
 
+    if (!dateOfBirth) {
+      setError(t('auth.dateOfBirthRequired'));
+      return;
+    }
+
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phoneNumber.trim();
+
+    if (!trimmedEmail && !trimmedPhone) {
+      setError(t('auth.contactMethodRequired'));
+      return;
+    }
+
+    if (trimmedEmail && trimmedPhone) {
+      setError(t('auth.contactMethodExclusive'));
+      return;
+    }
+
+    if (trimmedPhone && !phoneDraft.e164) {
+      setError(t('auth.phoneInvalid'));
+      return;
+    }
+
     setLoading(true);
 
-    const { error } = await signUp(email, password, {
-      username: username || undefined,
+    const { error } = await signUp({
+      email: trimmedEmail || undefined,
+      phoneNumber: trimmedPhone || undefined,
+      phoneCountryCode: selectedPhoneCountry.dialCode || undefined,
+      phoneE164: phoneDraft.e164 || undefined,
+    }, password, {
       full_name: fullName || undefined,
+      date_of_birth: dateOfBirth || undefined,
       country: country || undefined,
+      country_code: selectedCountryCode || undefined,
       language_code: preferredLanguage,
+      phone_country_code: selectedPhoneCountry.dialCode || undefined,
+      phone_number: trimmedPhone || undefined,
+      phone_e164: phoneDraft.e164 || undefined,
       terms_accepted_at: new Date().toISOString(),
       terms_version: '2026-03-28',
     });
@@ -51,6 +98,8 @@ export default function SignUp() {
       setError(error.message);
       setLoading(false);
     } else {
+      setSuccessContactLabel(trimmedEmail || phoneDraft.e164 || trimmedPhone);
+      setSuccessWasPhone(!trimmedEmail);
       setSuccess(true);
     }
   };
@@ -67,10 +116,12 @@ export default function SignUp() {
             <CheckCircle className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            {t('auth.checkEmailTitle')}
+            {successWasPhone ? t('auth.accountReadyTitle') : t('auth.checkEmailTitle')}
           </h1>
           <p className="text-muted-foreground mb-6">
-            {t('auth.checkEmailMessage', { email })}
+            {successWasPhone
+              ? t('auth.accountReadyMessage', { phone: successContactLabel })
+              : t('auth.checkEmailMessage', { email: successContactLabel })}
           </p>
           <Button variant="outline" onClick={() => navigate('/login')}>
             {t('auth.backToLogin')}
@@ -113,23 +164,103 @@ export default function SignUp() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="pl-10"
+                  required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username">{t('auth.username')}</Label>
+              <Label htmlFor="dateOfBirth">{t('auth.dateOfBirth')}</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">{t('auth.phone')}</Label>
+              <div className="flex gap-2">
+                <Popover open={countryPickerOpen} onOpenChange={setCountryPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-w-[122px] justify-between gap-2 px-3"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-base">{selectedPhoneCountry.flag}</span>
+                        <span className="text-sm">{selectedPhoneCountry.dialCode}</span>
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder={t('auth.searchCountryCode')} />
+                      <CommandList>
+                        <CommandEmpty>{t('editProfile.countryNotFound')}</CommandEmpty>
+                        <CommandGroup>
+                          {countryOptions.map((option) => (
+                            <CommandItem
+                              key={option.code}
+                              value={`${option.label} ${option.dialCode}`}
+                              onSelect={() => {
+                                setSelectedCountryCode(option.code);
+                                setCountry(option.label);
+                                setCountryPickerOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  selectedCountryCode === option.code ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              <span className="mr-2">{option.flag}</span>
+                              <span className="flex-1 truncate">{option.label}</span>
+                              <span className="text-muted-foreground">{option.dialCode}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                <div className="relative flex-1">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder={t('auth.phonePlaceholder')}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('auth.phoneDetected', { country: country, code: selectedPhoneCountry.dialCode })}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('auth.emailOptional')}</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder={t('auth.usernamePlaceholder')}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                  className="pl-8"
+                  id="email"
+                  type="email"
+                  placeholder={t('auth.emailOptionalPlaceholder')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">{t('auth.contactMethodHint')}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -140,9 +271,8 @@ export default function SignUp() {
                   <Input
                     id="country"
                     type="text"
-                    placeholder={t('editProfile.countryPlaceholder')}
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    readOnly
                     className="pl-10"
                   />
                 </div>
@@ -163,22 +293,6 @@ export default function SignUp() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.email')}</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('auth.emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
               </div>
             </div>
 
@@ -243,6 +357,11 @@ export default function SignUp() {
             {t('auth.alreadyHaveAccount')}{' '}
             <Link to="/login" className="text-primary hover:underline font-medium">
               {t('auth.signInLink')}
+            </Link>
+          </p>
+          <p className="text-center mt-3 text-sm text-muted-foreground">
+            <Link to="/download" className="text-primary hover:underline font-medium">
+              {t('auth.downloadAndroid')}
             </Link>
           </p>
         </motion.div>

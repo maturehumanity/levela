@@ -153,6 +153,11 @@
     text-wrap: balance;
   }
 
+  .font-mrz {
+    font-family: "OCR B Std", "OCR-B", "OCRB", "Noto Sans Mono", "Consolas", "Menlo", monospace;
+    letter-spacing: 0.14em;
+  }
+
   .safe-bottom {
     padding-bottom: max(1rem, var(--safe-area-bottom));
   }

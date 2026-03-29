@@ -112,58 +112,88 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           country: string | null
+          country_code: string | null
           created_at: string
           custom_permissions: Database["public"]["Enums"]["app_permission"][]
+          date_of_birth: string | null
           denied_permissions: Database["public"]["Enums"]["app_permission"][]
           full_name: string | null
+          full_name_change_count: number | null
+          full_name_last_changed_at: string | null
           granted_permissions: Database["public"]["Enums"]["app_permission"][]
           id: string
           is_admin: boolean | null
           is_verified: boolean | null
           language_code: string | null
           last_active_at: string | null
+          official_id: string
+          phone_country_code: string | null
+          phone_e164: string | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
+          social_security_number: string
           updated_at: string
           user_id: string
           username: string | null
+          username_last_changed_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           country?: string | null
+          country_code?: string | null
           created_at?: string
           custom_permissions?: Database["public"]["Enums"]["app_permission"][]
+          date_of_birth?: string | null
           denied_permissions?: Database["public"]["Enums"]["app_permission"][]
           full_name?: string | null
+          full_name_change_count?: number | null
+          full_name_last_changed_at?: string | null
           granted_permissions?: Database["public"]["Enums"]["app_permission"][]
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
           language_code?: string | null
           last_active_at?: string | null
+          official_id?: string
+          phone_country_code?: string | null
+          phone_e164?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          social_security_number?: string
           updated_at?: string
           user_id: string
           username?: string | null
+          username_last_changed_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           country?: string | null
+          country_code?: string | null
           created_at?: string
           custom_permissions?: Database["public"]["Enums"]["app_permission"][]
+          date_of_birth?: string | null
           denied_permissions?: Database["public"]["Enums"]["app_permission"][]
           full_name?: string | null
+          full_name_change_count?: number | null
+          full_name_last_changed_at?: string | null
           granted_permissions?: Database["public"]["Enums"]["app_permission"][]
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
           language_code?: string | null
           last_active_at?: string | null
+          official_id?: string
+          phone_country_code?: string | null
+          phone_e164?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          social_security_number?: string
           updated_at?: string
           user_id?: string
           username?: string | null
+          username_last_changed_at?: string | null
         }
         Relationships: []
       }
@@ -605,13 +635,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      resolve_login_email: {
+        Args: { identifier: string }
+        Returns: string | null
+      }
     }
     Enums: {
       app_permission:
         | "law.read"
         | "law.contribute"
         | "law.review"
+        | "build.use"
         | "profile.read"
         | "profile.update_self"
         | "profile.update_any"
@@ -642,6 +676,7 @@ export type Database = {
         | "verified_member"
         | "moderator"
         | "market_manager"
+        | "founder"
         | "admin"
         | "system"
       law_contribution_status:
@@ -790,6 +825,7 @@ export const Constants = {
   public: {
     Enums: {
       app_permission: [
+        "build.use",
         "profile.read",
         "profile.update_self",
         "profile.update_any",
@@ -821,6 +857,7 @@ export const Constants = {
         "verified_member",
         "moderator",
         "market_manager",
+        "founder",
         "admin",
         "system",
       ],

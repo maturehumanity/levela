@@ -1,6 +1,10 @@
+import { getCountryCallingCode, isSupportedCountry, type CountryCode } from 'libphonenumber-js';
+
 export type CountryOption = {
   code: string;
   label: string;
+  flag: string;
+  dialCode: string;
 };
 
 const COUNTRY_CODES = [
@@ -38,13 +42,55 @@ function createDisplayNames(locale: string) {
   }
 }
 
-export function getCountryOptions(locale: string): CountryOption[] {
-  const displayNames = createDisplayNames(locale);
+export function getCountryFlag(code: string): string {
+  const upper = code.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(upper)) return '🌍';
+  return String.fromCodePoint(
+    ...upper.split('').map((char) => 127397 + char.charCodeAt(0)),
+  );
+}
 
+export function getCountryDialCode(code: string): string {
+  const upper = code.toUpperCase();
+  if (isSupportedCountry(upper as CountryCode)) {
+    return `+${getCountryCallingCode(upper as CountryCode)}`;
+  }
+  return '';
+}
+
+export function getCountryName(code: string, locale: string): string {
+  const displayNames = createDisplayNames(locale);
+  return displayNames.of(code.toUpperCase()) || code.toUpperCase();
+}
+
+export function getCountryCodeFromName(name: string): string | null {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (/^[a-z]{2}$/i.test(normalized)) {
+    const upper = normalized.toUpperCase();
+    return COUNTRY_CODES.includes(upper as (typeof COUNTRY_CODES)[number]) ? upper : null;
+  }
+
+  const englishDisplayNames = createDisplayNames('en');
+
+  for (const code of COUNTRY_CODES) {
+    const label = (englishDisplayNames.of(code) || code).trim().toLowerCase();
+    if (label === normalized) {
+      return code;
+    }
+  }
+
+  return null;
+}
+
+export function getCountryOptions(locale: string): CountryOption[] {
   return COUNTRY_CODES
     .map((code) => ({
       code,
-      label: displayNames.of(code) || code,
+      label: getCountryName(code, locale),
+      flag: getCountryFlag(code),
+      dialCode: getCountryDialCode(code),
     }))
     .sort((left, right) => left.label.localeCompare(right.label, locale));
 }

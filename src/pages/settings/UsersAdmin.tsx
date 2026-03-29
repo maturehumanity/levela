@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Plus, Search, Settings2, Shield, Users } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, BadgeX, Loader2, Plus, Search, Settings2, Shield, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -37,6 +37,7 @@ import { pageRegistry, type PageId, type SectionId } from '@/lib/feature-registr
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type ProfileRow = {
   id: string;
@@ -45,7 +46,10 @@ type ProfileRow = {
   full_name: string | null;
   avatar_url: string | null;
   country: string | null;
+  country_code: string | null;
   language_code: string | null;
+  official_id: string | null;
+  social_security_number: string | null;
   last_active_at?: string | null;
   is_verified: boolean | null;
   is_admin: boolean | null;
@@ -70,6 +74,7 @@ const roleBadgeClassName: Record<AppRole, string> = {
   verified_member: 'border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300',
   moderator: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
   market_manager: 'border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300',
+  founder: 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300',
   admin: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
   system: 'border-destructive/20 bg-destructive/10 text-destructive',
 };
@@ -210,10 +215,10 @@ export default function UsersAdmin() {
   }, [selectedUser]);
 
   const stats = useMemo(() => {
-    const staffCount = users.filter((user) => ['moderator', 'market_manager', 'admin', 'system'].includes(user.role)).length;
+    const staffCount = users.filter((user) => ['moderator', 'market_manager', 'founder', 'admin', 'system'].includes(user.role)).length;
     return {
       total: users.length,
-      admins: users.filter((user) => user.role === 'admin').length,
+      admins: users.filter((user) => ['founder', 'admin'].includes(user.role)).length,
       staff: staffCount,
     };
   }, [users]);
@@ -370,6 +375,32 @@ export default function UsersAdmin() {
       t('admin.users.roleUpdated', {
         user: target.full_name || target.username || t('common.anonymousUser'),
         role: t(`admin.roles.${nextRole}`),
+      }),
+    );
+    setRoleSavingUserId(null);
+  };
+
+  const handleVerificationToggle = async (target: ProfileRow) => {
+    const nextVerified = !target.is_verified;
+    setRoleSavingUserId(target.id);
+    setUsers((current) => current.map((user) => (user.id === target.id ? { ...user, is_verified: nextVerified } : user)));
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_verified: nextVerified })
+      .eq('id', target.id);
+
+    if (error) {
+      console.error('Error updating verification:', error);
+      setUsers((current) => current.map((user) => (user.id === target.id ? { ...user, is_verified: target.is_verified } : user)));
+      toast.error(t('admin.users.verificationUpdateFailed'));
+      setRoleSavingUserId(null);
+      return;
+    }
+
+    toast.success(
+      t(nextVerified ? 'admin.users.userVerified' : 'admin.users.userUnverified', {
+        user: target.full_name || target.username || t('common.anonymousUser'),
       }),
     );
     setRoleSavingUserId(null);
@@ -566,10 +597,13 @@ export default function UsersAdmin() {
                 <p className="mt-2 text-sm text-muted-foreground">{t('admin.users.noResultsDescription')}</p>
               </div>
             ) : (
+              <TooltipProvider>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('admin.users.userColumn')}</TableHead>
+                    <TableHead>{t('admin.users.officialIdLabel')}</TableHead>
+                    <TableHead>{t('admin.users.ssnLabel')}</TableHead>
                     <TableHead>{t('admin.users.roleColumn')}</TableHead>
                     <TableHead>{t('common.country')}</TableHead>
                     <TableHead>{t('admin.users.joinedColumn')}</TableHead>
@@ -604,6 +638,12 @@ export default function UsersAdmin() {
                             </div>
                           </button>
                         </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {user.official_id || '—'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {user.social_security_number || '—'}
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-2">
                             <Select value={user.role} onValueChange={(value) => handleRoleChange(user, value as AppRole)} disabled={isCurrentUser || isSaving}>
@@ -617,21 +657,55 @@ export default function UsersAdmin() {
                             {isCurrentUser && <p className="text-xs text-muted-foreground">{t('admin.users.selfRoleHint')}</p>}
                           </div>
                         </TableCell>
-                        <TableCell>{user.country || '—'}</TableCell>
+                        <TableCell>{user.country || user.country_code || '—'}</TableCell>
                         <TableCell>{formatDate(user.created_at)}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" className="gap-2" onClick={() => setSelectedUserId(user.id)}>
-                            <Settings2 className="h-4 w-4" />
-                            {t('admin.users.manageAccess')}
-                          </Button>
+                          <div className="flex flex-col items-start gap-2">
+                            <Button variant="outline" size="sm" className="gap-2" onClick={() => setSelectedUserId(user.id)}>
+                              <Settings2 className="h-4 w-4" />
+                              {t('admin.users.manageAccess')}
+                            </Button>
+                            <Button
+                              variant={user.is_verified ? 'secondary' : 'outline'}
+                              size="sm"
+                              className="gap-2"
+                              onClick={() => void handleVerificationToggle(user)}
+                              disabled={isSaving}
+                            >
+                              {user.is_verified ? (
+                                <>
+                                  <BadgeCheck className="h-4 w-4" />
+                                  {t('admin.users.unverifyUser')}
+                                </>
+                              ) : (
+                                <>
+                                  <BadgeX className="h-4 w-4" />
+                                  {t('admin.users.verifyUser')}
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-col items-end gap-2">
-                            {user.is_verified && (
-                              <Badge variant="secondary" className="rounded-full bg-sky-500/10 text-sky-700 hover:bg-sky-500/10 dark:text-sky-300">
-                                {t('admin.users.verifiedBadge')}
-                              </Badge>
-                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  variant="secondary"
+                                  className={cn(
+                                    'rounded-full hover:bg-transparent',
+                                    user.is_verified
+                                      ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300'
+                                      : 'bg-muted text-muted-foreground',
+                                  )}
+                                >
+                                  {user.is_verified ? t('admin.users.verifiedBadge') : t('admin.users.unverifiedBadge')}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {user.is_verified ? t('admin.users.userIsVerified') : t('admin.users.userIsUnverified')}
+                              </TooltipContent>
+                            </Tooltip>
                             <span className={cn('text-sm', isOnline && 'font-medium text-emerald-600 dark:text-emerald-300')}>
                               {isOnline ? t('admin.users.onlineNow') : formatRelativeTime(getActivityTimestamp(user))}
                             </span>
@@ -642,6 +716,7 @@ export default function UsersAdmin() {
                   })}
                 </TableBody>
               </Table>
+              </TooltipProvider>
             )}
           </Card>
         </motion.div>
