@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowUp,
   Box,
+  ChevronDown,
   ChevronRight,
   Component,
   Folder,
@@ -19,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
 
 type StoredOffset = {
@@ -163,9 +164,6 @@ function buildPathFromRoot(element: BuildElement, root: HTMLElement) {
 function isAutoBuildCandidate(element: BuildElement) {
   if (element.dataset.buildIgnore === 'true') return false;
   if (element.closest('[data-build-ignore="true"]')) return false;
-  if (!element.dataset.buildKey && element.querySelector('[data-build-key]') && !hasDirectReadableText(element)) {
-    return false;
-  }
 
   const tag = element.tagName.toLowerCase();
   const candidateTags = new Set([
@@ -469,10 +467,13 @@ function getAvailableTargets(groups: BuildGroup[]) {
     }
 
     const baseTargetType = detectTargetType(element);
+    const directBuildChildCount = Array.from(element.children).filter(
+      (child): child is BuildElement => isBuildElement(child) && selectorByElement.has(child),
+    ).length;
     const hasBuildDescendant = buildElements.some(
       (candidate) => candidate !== element && element.contains(candidate),
     );
-    const isStructuralGroup = baseTargetType === 'container' && hasBuildDescendant;
+    const isStructuralGroup = baseTargetType === 'container' && hasBuildDescendant && directBuildChildCount > 1;
     const targetType = isStructuralGroup ? 'group' : baseTargetType;
     const targetName = normalizeTargetName(summarizeElement(element), targetType);
 
@@ -1160,6 +1161,8 @@ export function BuildOverlay() {
   const [buttonPosition, setButtonPosition] = useState<ButtonPosition | null>(null);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [targetMenuOpen, setTargetMenuOpen] = useState(false);
+  const [expandedTargetSelectors, setExpandedTargetSelectors] = useState<Set<string>>(() => new Set());
   const suppressClickRef = useRef(false);
   const suppressSelectionClickRef = useRef(false);
   const dragStateRef = useRef<{
@@ -1189,6 +1192,37 @@ export function BuildOverlay() {
     () => availableTargets.find((target) => target.selector === selectedTargetValue) || null,
     [availableTargets, selectedTargetValue],
   );
+  const targetChildrenByParent = useMemo(() => {
+    const next = new Map<string | null, AvailableTarget[]>();
+    availableTargets.forEach((target) => {
+      const parentKey = target.parentSelector || null;
+      const existing = next.get(parentKey);
+      if (existing) {
+        existing.push(target);
+        return;
+      }
+      next.set(parentKey, [target]);
+    });
+    return next;
+  }, [availableTargets]);
+
+  useEffect(() => {
+    setExpandedTargetSelectors((current) => {
+      const valid = new Set<string>();
+      current.forEach((selector) => {
+        const children = targetChildrenByParent.get(selector);
+        if (children?.length) valid.add(selector);
+      });
+      if (valid.size === current.size) {
+        let unchanged = true;
+        current.forEach((selector) => {
+          if (!valid.has(selector)) unchanged = false;
+        });
+        if (unchanged) return current;
+      }
+      return valid;
+    });
+  }, [targetChildrenByParent]);
 
   const reloadPageOffsets = () => {
     const storage = readStorage();
@@ -1211,6 +1245,8 @@ export function BuildOverlay() {
       setPageGroups([]);
       setPageOffsets({});
       setSelectedGroupId(null);
+      setTargetMenuOpen(false);
+      setExpandedTargetSelectors(new Set());
       return;
     }
 
@@ -1706,6 +1742,7 @@ export function BuildOverlay() {
       setSelectionLayers([]);
       setSelectedLayerIndex(0);
       setStyleControls(getStyleControlState(nextTarget.members[0]));
+      setTargetMenuOpen(false);
       return;
     }
 
@@ -1716,6 +1753,71 @@ export function BuildOverlay() {
     setSelectionLayers([]);
     setSelectedLayerIndex(0);
     setStyleControls(getStyleControlState(nextTarget.selector));
+    setTargetMenuOpen(false);
+  };
+
+  const toggleTargetFolder = (selector: string) => {
+    setExpandedTargetSelectors((current) => {
+      const next = new Set(current);
+      if (next.has(selector)) {
+        next.delete(selector);
+      } else {
+        next.add(selector);
+      }
+      return next;
+    });
+  };
+
+  const renderTargetTree = (parentSelector: string | null, depth = 0): JSX.Element[] => {
+    const children = targetChildrenByParent.get(parentSelector) || [];
+    return children.flatMap((target) => {
+      const nestedChildren = targetChildrenByParent.get(target.selector) || [];
+      const isExpandable = target.targetType === 'group' && !target.isManualGroup && nestedChildren.length > 0;
+      const isExpanded = isExpandable && expandedTargetSelectors.has(target.selector);
+      const isSelected = selectedTargetValue === target.selector;
+
+      const row = (
+        <div key={target.selector}>
+          <button
+            type="button"
+            onClick={() => handleTargetSelect(target.selector)}
+            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
+              isSelected ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent/60'
+            }`}
+            style={{ paddingLeft: `${Math.min(88, 8 + depth * 14)}px` }}
+          >
+            {isExpandable ? (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}
+                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  toggleTargetFolder(target.selector);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  toggleTargetFolder(target.selector);
+                }}
+              >
+                {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              </span>
+            ) : (
+              <span className="h-4 w-4 shrink-0" />
+            )}
+            <TargetOptionIcon target={target} />
+            <span className="truncate">{target.label}</span>
+          </button>
+          {isExpandable && isExpanded ? renderTargetTree(target.selector, depth + 1) : null}
+        </div>
+      );
+
+      return [row];
+    });
   };
 
   const groupSelection = () => {
@@ -2113,38 +2215,36 @@ export function BuildOverlay() {
             {availableTargets.length ? (
               <label className="mt-2 block">
                 <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Target</span>
-                <Select value={selectedTargetValue} onValueChange={handleTargetSelect}>
-                  <SelectTrigger className="mt-1 h-8 rounded-xl border-border/70 bg-background px-2 text-xs">
-                    {selectedTargetOption ? (
-                      <span className="flex min-w-0 items-center gap-2">
-                        <TargetOptionIcon target={selectedTargetOption} />
-                        <span className="truncate text-foreground">{selectedTargetOption.label}</span>
-                      </span>
-                    ) : (
-                      <span className="truncate text-muted-foreground">Select a target</span>
-                    )}
-                  </SelectTrigger>
-                  <SelectContent className="z-[120] max-h-72" data-build-ignore="true">
-                    <SelectGroup>
-                      <SelectLabel className="py-1 pl-2 pr-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Targets
-                      </SelectLabel>
-                      {availableTargets.map((target) => (
-                        <SelectItem
-                          key={target.selector}
-                          value={target.selector}
-                          className="pr-2 text-xs"
-                          style={target.hierarchyDepth > 0 ? { paddingLeft: `${Math.min(80, 24 + target.hierarchyDepth * 12)}px` } : undefined}
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <TargetOptionIcon target={target} />
-                            <span className="truncate">{target.label}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Popover open={targetMenuOpen} onOpenChange={setTargetMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="mt-1 flex h-8 w-full items-center justify-between rounded-xl border border-border/70 bg-background px-2 text-xs"
+                      data-build-ignore="true"
+                    >
+                      {selectedTargetOption ? (
+                        <span className="flex min-w-0 items-center gap-2">
+                          <TargetOptionIcon target={selectedTargetOption} />
+                          <span className="truncate text-foreground">{selectedTargetOption.label}</span>
+                        </span>
+                      ) : (
+                        <span className="truncate text-muted-foreground">Select a target</span>
+                      )}
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    sideOffset={6}
+                    className="z-[120] max-h-72 w-[--radix-popover-trigger-width] overflow-y-auto rounded-2xl border-border/70 bg-background p-2"
+                    data-build-ignore="true"
+                  >
+                    <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Targets
+                    </p>
+                    <div className="space-y-0.5">{renderTargetTree(null, 0)}</div>
+                  </PopoverContent>
+                </Popover>
               </label>
             ) : null}
             {selectionLayers.length > 1 ? (
