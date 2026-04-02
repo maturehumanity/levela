@@ -1993,7 +1993,7 @@ export function BuildOverlay() {
                       <span className="truncate text-muted-foreground">Select a target</span>
                     )}
                   </SelectTrigger>
-                  <SelectContent className="max-h-72">
+                  <SelectContent className="z-[120] max-h-72" data-build-ignore="true">
                     {groupedTargetOptions.map((group, groupIndex) => (
                       <SelectGroup key={group.targetType}>
                         <SelectLabel className="py-1 pl-2 pr-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
