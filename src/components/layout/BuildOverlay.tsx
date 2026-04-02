@@ -174,6 +174,9 @@ function isAutoBuildCandidate(element: BuildElement) {
     'section', 'article', 'aside', 'header', 'footer', 'nav', 'form',
     'li', 'figure'
   ]);
+  const structuralContainerTags = new Set([
+    'div', 'section', 'article', 'aside', 'header', 'footer', 'nav', 'form', 'li', 'figure',
+  ]);
 
   const rect = element.getBoundingClientRect();
   if (rect.width < 4 || rect.height < 4) return false;
@@ -185,6 +188,9 @@ function isAutoBuildCandidate(element: BuildElement) {
     return true;
   }
   if (element instanceof HTMLImageElement || element instanceof SVGElement) {
+    return true;
+  }
+  if (structuralContainerTags.has(tag) && element.children.length > 0) {
     return true;
   }
   if (candidateTags.has(tag) && (hasDirectReadableText(element) || element.children.length <= 2)) return true;
@@ -467,13 +473,10 @@ function getAvailableTargets(groups: BuildGroup[]) {
     }
 
     const baseTargetType = detectTargetType(element);
-    const directBuildChildCount = Array.from(element.children).filter(
-      (child): child is BuildElement => isBuildElement(child) && selectorByElement.has(child),
-    ).length;
     const hasBuildDescendant = buildElements.some(
       (candidate) => candidate !== element && element.contains(candidate),
     );
-    const isStructuralGroup = baseTargetType === 'container' && hasBuildDescendant && directBuildChildCount > 1;
+    const isStructuralGroup = baseTargetType === 'container' && hasBuildDescendant;
     const targetType = isStructuralGroup ? 'group' : baseTargetType;
     const targetName = normalizeTargetName(summarizeElement(element), targetType);
 
