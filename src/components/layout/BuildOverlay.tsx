@@ -1,7 +1,25 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronRight, Hammer, RotateCcw, X } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Box,
+  ChevronRight,
+  Component,
+  Folder,
+  Hammer,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  RotateCcw,
+  Shapes,
+  SquareMousePointer,
+  TextCursorInput,
+  Type as TypeIcon,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 
 type StoredOffset = {
@@ -40,10 +58,14 @@ type SelectionLayer = {
   label: string;
 };
 
+type TargetType = 'group' | 'icon' | 'button' | 'input' | 'text' | 'image' | 'link' | 'container' | 'other';
+
 type AvailableTarget = {
   kind: 'element' | 'group';
   selector: string;
   label: string;
+  targetType: TargetType;
+  targetName: string;
   groupId?: string;
   members?: string[];
 };
@@ -78,6 +100,19 @@ const MAX_SELECTION_LAYERS = 5;
 const ALIGNMENT_TOLERANCE = 4;
 const MAX_GUIDE_DISTANCE = 180;
 const MAX_GUIDES_PER_ORIENTATION = 2;
+const TARGET_TYPE_ORDER: TargetType[] = ['group', 'icon', 'button', 'input', 'text', 'image', 'link', 'container', 'other'];
+
+const TARGET_TYPE_LABEL: Record<TargetType, string> = {
+  group: 'group',
+  icon: 'icon',
+  button: 'button',
+  input: 'input',
+  text: 'text',
+  image: 'image',
+  link: 'link',
+  container: 'container',
+  other: 'other',
+};
 
 type BuildElement = HTMLElement | SVGElement;
 
@@ -350,35 +385,76 @@ function applyStoredOffsets(offsets: Record<string, StoredOffset>) {
   });
 }
 
+function detectTargetType(element: BuildElement): TargetType {
+  if (element instanceof SVGElement) return 'icon';
+  if (element instanceof HTMLButtonElement || element.getAttribute('role') === 'button') return 'button';
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) return 'input';
+  if (element instanceof HTMLImageElement) return 'image';
+  if (element instanceof HTMLAnchorElement) return 'link';
+
+  const tag = element.tagName.toLowerCase();
+  if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'strong', 'em', 'small', 'label'].includes(tag)) return 'text';
+  if (['div', 'section', 'article', 'aside', 'header', 'footer', 'nav', 'form', 'li', 'figure'].includes(tag)) return 'container';
+  return 'other';
+}
+
+function normalizeTargetName(rawLabel: string, targetType: TargetType) {
+  const cleaned = rawLabel.replace(/^Group:\s*/i, '').trim();
+  if (!cleaned) return targetType === 'group' ? 'Selection' : 'Untitled';
+  if (targetType === 'icon') {
+    return cleaned.replace(/\s+icon$/i, '').trim() || 'Icon';
+  }
+  return cleaned;
+}
+
+function formatTargetLabel(targetType: TargetType, targetName: string) {
+  return `${TARGET_TYPE_LABEL[targetType]} ${targetName}`.trim();
+}
+
 function getAvailableTargets(groups: BuildGroup[]) {
   const seen = new Set<string>();
 
   const elementTargets = Array.from(document.querySelectorAll('[data-build-key]'))
     .filter((element): element is BuildElement => isBuildElement(element))
     .filter((element) => !element.closest('[data-build-ignore="true"]'))
-    .map((element) => ({
-      kind: 'element' as const,
-      selector: getElementSelector(element),
-      label: summarizeElement(element),
-    }))
+    .map((element) => {
+      const targetType = detectTargetType(element);
+      const targetName = normalizeTargetName(summarizeElement(element), targetType);
+      return {
+        kind: 'element' as const,
+        selector: getElementSelector(element),
+        targetType,
+        targetName,
+        label: formatTargetLabel(targetType, targetName),
+      };
+    })
     .filter((target) => {
       if (!target.selector || seen.has(target.selector)) return false;
       seen.add(target.selector);
       return true;
-    })
-    .sort((a, b) => a.label.localeCompare(b.label));
+    });
 
   const groupTargets = groups
     .filter((group) => group.members.length > 0)
-    .map((group) => ({
-      kind: 'group' as const,
-      selector: `group:${group.id}`,
-      label: `Group: ${group.label}`,
-      groupId: group.id,
-      members: group.members,
-    }));
+    .map((group) => {
+      const targetType = 'group' as const;
+      const targetName = normalizeTargetName(group.label, targetType);
+      return {
+        kind: 'group' as const,
+        selector: `group:${group.id}`,
+        targetType,
+        targetName,
+        label: formatTargetLabel(targetType, targetName),
+        groupId: group.id,
+        members: group.members,
+      };
+    });
 
-  return [...groupTargets, ...elementTargets].sort((a, b) => a.label.localeCompare(b.label));
+  return [...groupTargets, ...elementTargets].sort((a, b) => {
+    const typeDiff = TARGET_TYPE_ORDER.indexOf(a.targetType) - TARGET_TYPE_ORDER.indexOf(b.targetType);
+    if (typeDiff !== 0) return typeDiff;
+    return a.targetName.localeCompare(b.targetName, undefined, { sensitivity: 'base' });
+  });
 }
 
 function cssColorToHex(value: string) {
@@ -893,6 +969,29 @@ function getAlignmentGuidesForSelector(selector: string | null): AlignmentGuideS
   return [...pickBest('vertical'), ...pickBest('horizontal')];
 }
 
+function TargetTypeGlyph({ targetType, className }: { targetType: TargetType; className?: string }) {
+  switch (targetType) {
+    case 'group':
+      return <Folder className={className} />;
+    case 'icon':
+      return <Shapes className={className} />;
+    case 'button':
+      return <SquareMousePointer className={className} />;
+    case 'input':
+      return <TextCursorInput className={className} />;
+    case 'text':
+      return <TypeIcon className={className} />;
+    case 'image':
+      return <ImageIcon className={className} />;
+    case 'link':
+      return <LinkIcon className={className} />;
+    case 'container':
+      return <Box className={className} />;
+    default:
+      return <Component className={className} />;
+  }
+}
+
 export function BuildOverlay() {
   const { pathname } = useLocation();
   const { profile } = useAuth();
@@ -942,6 +1041,22 @@ export function BuildOverlay() {
   const canBuild = useMemo(
     () => Boolean(profile?.effective_permissions?.includes('build.use')),
     [profile?.effective_permissions],
+  );
+  const selectedTargetValue = selectedGroupId ? `group:${selectedGroupId}` : (selectedSelector || undefined);
+  const selectedTargetOption = useMemo(
+    () => availableTargets.find((target) => target.selector === selectedTargetValue) || null,
+    [availableTargets, selectedTargetValue],
+  );
+  const groupedTargetOptions = useMemo(
+    () =>
+      TARGET_TYPE_ORDER
+        .map((targetType) => ({
+          targetType,
+          title: TARGET_TYPE_LABEL[targetType],
+          items: availableTargets.filter((target) => target.targetType === targetType),
+        }))
+        .filter((group) => group.items.length > 0),
+    [availableTargets],
   );
 
   const reloadPageOffsets = () => {
@@ -1867,18 +1982,36 @@ export function BuildOverlay() {
             {availableTargets.length ? (
               <label className="mt-2 block">
                 <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Target</span>
-                <select
-                  value={selectedGroupId ? `group:${selectedGroupId}` : (selectedSelector || '')}
-                  onChange={(event) => handleTargetSelect(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-border/70 bg-background px-2 py-1.5 text-xs text-foreground outline-none"
-                >
-                  <option value="">Select a target</option>
-                  {availableTargets.map((target) => (
-                    <option key={target.selector} value={target.selector}>
-                      {target.label}
-                    </option>
-                  ))}
-                </select>
+                <Select value={selectedTargetValue} onValueChange={handleTargetSelect}>
+                  <SelectTrigger className="mt-1 h-8 rounded-xl border-border/70 bg-background px-2 text-xs">
+                    {selectedTargetOption ? (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <TargetTypeGlyph targetType={selectedTargetOption.targetType} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-foreground">{selectedTargetOption.label}</span>
+                      </span>
+                    ) : (
+                      <span className="truncate text-muted-foreground">Select a target</span>
+                    )}
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {groupedTargetOptions.map((group, groupIndex) => (
+                      <SelectGroup key={group.targetType}>
+                        <SelectLabel className="py-1 pl-2 pr-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {group.title}
+                        </SelectLabel>
+                        {group.items.map((target) => (
+                          <SelectItem key={target.selector} value={target.selector} className="pr-2 text-xs">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <TargetTypeGlyph targetType={target.targetType} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                              <span className="truncate">{target.label}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                        {groupIndex < groupedTargetOptions.length - 1 ? <SelectSeparator /> : null}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
             ) : null}
             {selectionLayers.length > 1 ? (
