@@ -434,6 +434,7 @@ function normalizeTargetName(rawLabel: string, targetType: TargetType) {
 }
 
 function formatTargetLabel(targetType: TargetType, targetName: string) {
+  if (targetType === 'group') return targetName;
   return `${TARGET_TYPE_LABEL[targetType]} ${targetName}`.trim();
 }
 
@@ -461,10 +462,12 @@ function getAvailableTargets(groups: BuildGroup[]) {
       ancestor = ancestor.parentElement;
     }
 
-    const isStructuralGroup = buildElements.some(
+    const baseTargetType = detectTargetType(element);
+    const hasBuildDescendant = buildElements.some(
       (candidate) => candidate !== element && element.contains(candidate),
     );
-    const targetType = isStructuralGroup ? 'group' : detectTargetType(element);
+    const isStructuralGroup = baseTargetType === 'container' && hasBuildDescendant;
+    const targetType = isStructuralGroup ? 'group' : baseTargetType;
     const targetName = normalizeTargetName(summarizeElement(element), targetType);
 
     return {
