@@ -66,6 +66,10 @@ type AvailableTarget = {
   label: string;
   targetType: TargetType;
   targetName: string;
+  hierarchyDepth: number;
+  hierarchyOrder: number;
+  iconMarkup?: string;
+  isManualGroup?: boolean;
   groupId?: string;
   members?: string[];
 };
@@ -221,6 +225,28 @@ function getNearestControlLabel(element: BuildElement) {
   }
 
   return '';
+}
+
+function getSvgPreviewMarkup(element: SVGElement) {
+  const clone = element.cloneNode(true) as SVGElement;
+  clone.removeAttribute('class');
+  clone.removeAttribute('style');
+  clone.removeAttribute('id');
+  clone.setAttribute('width', '14');
+  clone.setAttribute('height', '14');
+  clone.setAttribute('stroke', 'currentColor');
+  clone.setAttribute('fill', clone.getAttribute('fill') || 'none');
+  clone.setAttribute('aria-hidden', 'true');
+  clone.setAttribute('focusable', 'false');
+
+  clone.querySelectorAll('*').forEach((node) => {
+    if (!(node instanceof Element)) return;
+    node.removeAttribute('class');
+    node.removeAttribute('style');
+    node.removeAttribute('id');
+  });
+
+  return clone.outerHTML;
 }
 
 function summarizeElement(element: BuildElement) {
@@ -412,31 +438,50 @@ function formatTargetLabel(targetType: TargetType, targetName: string) {
 }
 
 function getAvailableTargets(groups: BuildGroup[]) {
-  const seen = new Set<string>();
-
-  const elementTargets = Array.from(document.querySelectorAll('[data-build-key]'))
+  const seenSelectors = new Set<string>();
+  const buildElements = Array.from(document.querySelectorAll('[data-build-key]'))
     .filter((element): element is BuildElement => isBuildElement(element))
-    .filter((element) => !element.closest('[data-build-ignore="true"]'))
-    .map((element) => {
-      const targetType = detectTargetType(element);
-      const targetName = normalizeTargetName(summarizeElement(element), targetType);
-      return {
-        kind: 'element' as const,
-        selector: getElementSelector(element),
-        targetType,
-        targetName,
-        label: formatTargetLabel(targetType, targetName),
-      };
-    })
-    .filter((target) => {
-      if (!target.selector || seen.has(target.selector)) return false;
-      seen.add(target.selector);
-      return true;
-    });
+    .filter((element) => !element.closest('[data-build-ignore="true"]'));
+
+  const selectorByElement = new Map<BuildElement, string>();
+  buildElements.forEach((element) => {
+    const selector = getElementSelector(element);
+    if (!selector || seenSelectors.has(selector)) return;
+    seenSelectors.add(selector);
+    selectorByElement.set(element, selector);
+  });
+
+  const elementTargets = Array.from(selectorByElement.entries()).map(([element, selector], index) => {
+    let hierarchyDepth = 0;
+    let ancestor = element.parentElement;
+    while (ancestor) {
+      if (isBuildElement(ancestor) && selectorByElement.has(ancestor)) {
+        hierarchyDepth += 1;
+      }
+      ancestor = ancestor.parentElement;
+    }
+
+    const isStructuralGroup = buildElements.some(
+      (candidate) => candidate !== element && element.contains(candidate),
+    );
+    const targetType = isStructuralGroup ? 'group' : detectTargetType(element);
+    const targetName = normalizeTargetName(summarizeElement(element), targetType);
+
+    return {
+      kind: 'element' as const,
+      selector,
+      targetType,
+      targetName,
+      label: formatTargetLabel(targetType, targetName),
+      hierarchyDepth,
+      hierarchyOrder: index,
+      iconMarkup: element instanceof SVGElement ? getSvgPreviewMarkup(element) : undefined,
+    };
+  });
 
   const groupTargets = groups
     .filter((group) => group.members.length > 0)
-    .map((group) => {
+    .map((group, index) => {
       const targetType = 'group' as const;
       const targetName = normalizeTargetName(group.label, targetType);
       return {
@@ -445,6 +490,9 @@ function getAvailableTargets(groups: BuildGroup[]) {
         targetType,
         targetName,
         label: formatTargetLabel(targetType, targetName),
+        hierarchyDepth: 0,
+        hierarchyOrder: -10000 + index,
+        isManualGroup: true,
         groupId: group.id,
         members: group.members,
       };
@@ -453,6 +501,19 @@ function getAvailableTargets(groups: BuildGroup[]) {
   return [...groupTargets, ...elementTargets].sort((a, b) => {
     const typeDiff = TARGET_TYPE_ORDER.indexOf(a.targetType) - TARGET_TYPE_ORDER.indexOf(b.targetType);
     if (typeDiff !== 0) return typeDiff;
+
+    if (a.targetType === 'group' && b.targetType === 'group') {
+      if (Boolean(a.isManualGroup) !== Boolean(b.isManualGroup)) {
+        return a.isManualGroup ? -1 : 1;
+      }
+      if (a.hierarchyOrder !== b.hierarchyOrder) {
+        return a.hierarchyOrder - b.hierarchyOrder;
+      }
+      if (a.hierarchyDepth !== b.hierarchyDepth) {
+        return a.hierarchyDepth - b.hierarchyDepth;
+      }
+    }
+
     return a.targetName.localeCompare(b.targetName, undefined, { sensitivity: 'base' });
   });
 }
@@ -990,6 +1051,19 @@ function TargetTypeGlyph({ targetType, className }: { targetType: TargetType; cl
     default:
       return <Component className={className} />;
   }
+}
+
+function TargetOptionIcon({ target }: { target: AvailableTarget }) {
+  if (target.targetType === 'icon' && target.iconMarkup) {
+    return (
+      <span
+        className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-muted-foreground [&_svg]:h-3.5 [&_svg]:w-3.5"
+        dangerouslySetInnerHTML={{ __html: target.iconMarkup }}
+      />
+    );
+  }
+
+  return <TargetTypeGlyph targetType={target.targetType} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
 }
 
 export function BuildOverlay() {
@@ -1986,7 +2060,7 @@ export function BuildOverlay() {
                   <SelectTrigger className="mt-1 h-8 rounded-xl border-border/70 bg-background px-2 text-xs">
                     {selectedTargetOption ? (
                       <span className="flex min-w-0 items-center gap-2">
-                        <TargetTypeGlyph targetType={selectedTargetOption.targetType} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <TargetOptionIcon target={selectedTargetOption} />
                         <span className="truncate text-foreground">{selectedTargetOption.label}</span>
                       </span>
                     ) : (
@@ -2000,9 +2074,14 @@ export function BuildOverlay() {
                           {group.title}
                         </SelectLabel>
                         {group.items.map((target) => (
-                          <SelectItem key={target.selector} value={target.selector} className="pr-2 text-xs">
+                          <SelectItem
+                            key={target.selector}
+                            value={target.selector}
+                            className="pr-2 text-xs"
+                            style={target.targetType === 'group' ? { paddingLeft: `${Math.min(56, 32 + target.hierarchyDepth * 12)}px` } : undefined}
+                          >
                             <span className="flex min-w-0 items-center gap-2">
-                              <TargetTypeGlyph targetType={target.targetType} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                              <TargetOptionIcon target={target} />
                               <span className="truncate">{target.label}</span>
                             </span>
                           </SelectItem>
