@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 
 type StoredOffset = {
@@ -68,6 +68,7 @@ type AvailableTarget = {
   targetName: string;
   hierarchyDepth: number;
   hierarchyOrder: number;
+  parentSelector?: string | null;
   iconMarkup?: string;
   isManualGroup?: boolean;
   groupId?: string;
@@ -452,7 +453,12 @@ function getAvailableTargets(groups: BuildGroup[]) {
     selectorByElement.set(element, selector);
   });
 
-  const elementTargets = Array.from(selectorByElement.entries()).map(([element, selector], index) => {
+  const elementBySelector = new Map<string, BuildElement>();
+  selectorByElement.forEach((selector, element) => {
+    elementBySelector.set(selector, element);
+  });
+
+  const preliminaryElementTargets = Array.from(selectorByElement.entries()).map(([element, selector], index) => {
     let hierarchyDepth = 0;
     let ancestor = element.parentElement;
     while (ancestor) {
@@ -478,7 +484,37 @@ function getAvailableTargets(groups: BuildGroup[]) {
       label: formatTargetLabel(targetType, targetName),
       hierarchyDepth,
       hierarchyOrder: index,
+      parentSelector: null,
       iconMarkup: element instanceof SVGElement ? getSvgPreviewMarkup(element) : undefined,
+    };
+  });
+
+  const structuralGroupSelectors = new Set(
+    preliminaryElementTargets
+      .filter((target) => target.targetType === 'group')
+      .map((target) => target.selector),
+  );
+
+  const elementTargets = preliminaryElementTargets.map((target) => {
+    const element = elementBySelector.get(target.selector);
+    if (!element) return target;
+
+    let parentSelector: string | null = null;
+    let ancestor = element.parentElement;
+    while (ancestor) {
+      if (isBuildElement(ancestor)) {
+        const ancestorSelector = selectorByElement.get(ancestor);
+        if (ancestorSelector && structuralGroupSelectors.has(ancestorSelector)) {
+          parentSelector = ancestorSelector;
+          break;
+        }
+      }
+      ancestor = ancestor.parentElement;
+    }
+
+    return {
+      ...target,
+      parentSelector,
     };
   });
 
@@ -495,13 +531,27 @@ function getAvailableTargets(groups: BuildGroup[]) {
         label: formatTargetLabel(targetType, targetName),
         hierarchyDepth: 0,
         hierarchyOrder: -10000 + index,
+        parentSelector: null,
         isManualGroup: true,
         groupId: group.id,
         members: group.members,
       };
     });
 
-  return [...groupTargets, ...elementTargets].sort((a, b) => {
+  const allTargets = [...groupTargets, ...elementTargets];
+  const childrenByParent = new Map<string | null, AvailableTarget[]>();
+
+  allTargets.forEach((target) => {
+    const parentKey = target.parentSelector || null;
+    const bucket = childrenByParent.get(parentKey);
+    if (bucket) {
+      bucket.push(target);
+      return;
+    }
+    childrenByParent.set(parentKey, [target]);
+  });
+
+  const compareTargets = (a: AvailableTarget, b: AvailableTarget) => {
     const typeDiff = TARGET_TYPE_ORDER.indexOf(a.targetType) - TARGET_TYPE_ORDER.indexOf(b.targetType);
     if (typeDiff !== 0) return typeDiff;
 
@@ -509,16 +559,31 @@ function getAvailableTargets(groups: BuildGroup[]) {
       if (Boolean(a.isManualGroup) !== Boolean(b.isManualGroup)) {
         return a.isManualGroup ? -1 : 1;
       }
-      if (a.hierarchyOrder !== b.hierarchyOrder) {
-        return a.hierarchyOrder - b.hierarchyOrder;
-      }
-      if (a.hierarchyDepth !== b.hierarchyDepth) {
-        return a.hierarchyDepth - b.hierarchyDepth;
-      }
     }
 
-    return a.targetName.localeCompare(b.targetName, undefined, { sensitivity: 'base' });
-  });
+    const nameDiff = a.targetName.localeCompare(b.targetName, undefined, { sensitivity: 'base' });
+    if (nameDiff !== 0) return nameDiff;
+
+    return a.hierarchyOrder - b.hierarchyOrder;
+  };
+
+  const orderedTargets: AvailableTarget[] = [];
+  const walk = (parentSelector: string | null, depth: number) => {
+    const children = (childrenByParent.get(parentSelector) || []).sort(compareTargets);
+    children.forEach((child) => {
+      orderedTargets.push({
+        ...child,
+        hierarchyDepth: depth,
+      });
+
+      if (child.targetType === 'group' && !child.isManualGroup) {
+        walk(child.selector, depth + 1);
+      }
+    });
+  };
+
+  walk(null, 0);
+  return orderedTargets;
 }
 
 function cssColorToHex(value: string) {
@@ -1123,17 +1188,6 @@ export function BuildOverlay() {
   const selectedTargetOption = useMemo(
     () => availableTargets.find((target) => target.selector === selectedTargetValue) || null,
     [availableTargets, selectedTargetValue],
-  );
-  const groupedTargetOptions = useMemo(
-    () =>
-      TARGET_TYPE_ORDER
-        .map((targetType) => ({
-          targetType,
-          title: TARGET_TYPE_LABEL[targetType],
-          items: availableTargets.filter((target) => target.targetType === targetType),
-        }))
-        .filter((group) => group.items.length > 0),
-    [availableTargets],
   );
 
   const reloadPageOffsets = () => {
@@ -2071,27 +2125,24 @@ export function BuildOverlay() {
                     )}
                   </SelectTrigger>
                   <SelectContent className="z-[120] max-h-72" data-build-ignore="true">
-                    {groupedTargetOptions.map((group, groupIndex) => (
-                      <SelectGroup key={group.targetType}>
-                        <SelectLabel className="py-1 pl-2 pr-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {group.title}
-                        </SelectLabel>
-                        {group.items.map((target) => (
-                          <SelectItem
-                            key={target.selector}
-                            value={target.selector}
-                            className="pr-2 text-xs"
-                            style={target.targetType === 'group' ? { paddingLeft: `${Math.min(56, 32 + target.hierarchyDepth * 12)}px` } : undefined}
-                          >
-                            <span className="flex min-w-0 items-center gap-2">
-                              <TargetOptionIcon target={target} />
-                              <span className="truncate">{target.label}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                        {groupIndex < groupedTargetOptions.length - 1 ? <SelectSeparator /> : null}
-                      </SelectGroup>
-                    ))}
+                    <SelectGroup>
+                      <SelectLabel className="py-1 pl-2 pr-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Targets
+                      </SelectLabel>
+                      {availableTargets.map((target) => (
+                        <SelectItem
+                          key={target.selector}
+                          value={target.selector}
+                          className="pr-2 text-xs"
+                          style={target.hierarchyDepth > 0 ? { paddingLeft: `${Math.min(80, 24 + target.hierarchyDepth * 12)}px` } : undefined}
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <TargetOptionIcon target={target} />
+                            <span className="truncate">{target.label}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </label>
