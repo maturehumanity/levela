@@ -160,6 +160,16 @@ export const baseTranslations = {
       "button": "iPhone build coming soon"
     }
   },
+  "appUpdate": {
+    "title": "Update available",
+    "description": "Levela {latestVersion} is available. You are currently using {currentVersion}.",
+    "body": "Install the latest Android build to get the newest fixes, versioned releases, and update-check support.",
+    "currentVersion": "Installed version",
+    "latestVersion": "Available version",
+    "releaseNotes": "Included in this release",
+    "updateNow": "Update now",
+    "later": "Later"
+  },
   "settings": {
     "title": "Settings",
     "appearanceTitle": "Appearance",

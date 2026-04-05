@@ -1,0 +1,14 @@
+window.__LEVELA_ANDROID_UPDATE__ = {
+  platform: 'android',
+  version: '0.1.0',
+  versionTag: 'v0.1.0',
+  buildNumber: 2,
+  releaseId: '20260405-v0.1.0',
+  downloadPath: '/downloads/levela-debug-20260405-v0.1.0.apk',
+  downloadUrl: 'https://levela.yeremyan.net/downloads/levela-debug-20260405-v0.1.0.apk',
+  publishedAt: '2026-04-05T08:29:05Z',
+  notes: [
+    'First versioned Levela mobile release.',
+    'The Android app can now detect newer releases and suggest an update on launch.',
+  ],
+};

@@ -7,8 +7,17 @@ ANDROID_DIR="$ROOT_DIR/android"
 APK_SOURCE="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
 APK_TARGET_DIR="$ROOT_DIR/public/downloads"
 APK_TARGET="$APK_TARGET_DIR/levela-debug.apk"
-RELEASE_ID="$(sed -n "s/^export const APP_RELEASE_ID = '\\(.*\\)';$/\\1/p" "$ROOT_DIR/src/lib/downloads.ts")"
-VERSIONED_APK_TARGET="$APK_TARGET_DIR/levela-debug-${RELEASE_ID}.apk"
+UPDATE_MANIFEST_DIR="$ROOT_DIR/public/updates"
+UPDATE_MANIFEST_PATH="$UPDATE_MANIFEST_DIR/android.json"
+UPDATE_SCRIPT_PATH="$UPDATE_MANIFEST_DIR/android.js"
+RELEASE_METADATA_FILE="$ROOT_DIR/src/lib/app-release.ts"
+APP_VERSION="$(sed -n "s/^export const APP_VERSION = '\\(.*\\)';$/\\1/p" "$RELEASE_METADATA_FILE")"
+ANDROID_VERSION_CODE="$(sed -n "s/^export const ANDROID_VERSION_CODE = \\([0-9][0-9]*\\);$/\\1/p" "$RELEASE_METADATA_FILE")"
+RELEASE_ID="$(sed -n "s/^export const APP_RELEASE_ID = '\\(.*\\)';$/\\1/p" "$RELEASE_METADATA_FILE")"
+VERSIONED_APK_FILENAME="levela-debug-${RELEASE_ID}.apk"
+VERSIONED_APK_TARGET="$APK_TARGET_DIR/$VERSIONED_APK_FILENAME"
+VERSIONED_APK_PATH="/downloads/$VERSIONED_APK_FILENAME"
+VERSIONED_APK_URL="https://levela.yeremyan.net$VERSIONED_APK_PATH"
 JDK_CACHE_DIR="/tmp/levela-jdk"
 JDK_ARCHIVE="$JDK_CACHE_DIR/temurin21.tar.gz"
 JDK_DOWNLOAD_URL="https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse"
@@ -43,6 +52,46 @@ ensure_java() {
   fi
 }
 
+write_update_manifest() {
+  mkdir -p "$UPDATE_MANIFEST_DIR"
+  local published_at
+  published_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+  cat > "$UPDATE_MANIFEST_PATH" <<EOF
+{
+  "platform": "android",
+  "version": "$APP_VERSION",
+  "versionTag": "v$APP_VERSION",
+  "buildNumber": $ANDROID_VERSION_CODE,
+  "releaseId": "$RELEASE_ID",
+  "downloadPath": "$VERSIONED_APK_PATH",
+  "downloadUrl": "$VERSIONED_APK_URL",
+  "publishedAt": "$published_at",
+  "notes": [
+    "First versioned Levela mobile release.",
+    "The Android app can now detect newer releases and suggest an update on launch."
+  ]
+}
+EOF
+
+  cat > "$UPDATE_SCRIPT_PATH" <<EOF
+window.__LEVELA_ANDROID_UPDATE__ = {
+  platform: 'android',
+  version: '$APP_VERSION',
+  versionTag: 'v$APP_VERSION',
+  buildNumber: $ANDROID_VERSION_CODE,
+  releaseId: '$RELEASE_ID',
+  downloadPath: '$VERSIONED_APK_PATH',
+  downloadUrl: '$VERSIONED_APK_URL',
+  publishedAt: '$published_at',
+  notes: [
+    'First versioned Levela mobile release.',
+    'The Android app can now detect newer releases and suggest an update on launch.',
+  ],
+};
+EOF
+}
+
 echo "Building the web app for Android sync..."
 npm run build:android
 
@@ -67,6 +116,9 @@ echo "Publishing the APK into the website download path..."
 mkdir -p "$APK_TARGET_DIR"
 cp "$APK_SOURCE" "$APK_TARGET"
 cp "$APK_SOURCE" "$VERSIONED_APK_TARGET"
+
+echo "Writing the Android update manifest..."
+write_update_manifest
 
 echo "Rebuilding the website so the download path includes the latest APK..."
 npm run build

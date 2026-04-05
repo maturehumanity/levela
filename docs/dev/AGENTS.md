@@ -70,3 +70,25 @@ This file stores project-specific notes for future AI agent work.
 - Update the host path `/www/wwwroot/levela` directly. Do not try to write into the container mount path `/srv/levela` because it is mounted read-only inside the Caddy container.
 - Keep `.user.ini` in `/www/wwwroot/levela` untouched during deploys.
 - The legacy path `/downloads/levela-debug.apk` may remain edge-cached by Cloudflare after a deploy; prefer a versioned APK filename in the website bundle for immediate fresh downloads.
+
+## 5. Application Versioning
+
+- The app release source of truth lives in `src/lib/app-release.ts`.
+- Keep these three values aligned for every release:
+  - `APP_VERSION`
+  - `ANDROID_VERSION_CODE`
+  - `APP_RELEASE_ID`
+- `android/app/build.gradle` reads its Android `versionName` and `versionCode` directly from `src/lib/app-release.ts`.
+- The mobile app update prompt reads the live script manifest at `/updates/android.js` on `https://levela.yeremyan.net`.
+- Keep `/updates/android.json` as the human-readable mirror for verification and debugging.
+- `scripts/update-application.sh` is responsible for:
+  - building the web app
+  - syncing Capacitor Android assets
+  - building the APK
+  - publishing both the legacy and versioned APK filenames
+  - regenerating `public/updates/android.json`
+  - regenerating `public/updates/android.js`
+- After versioning changes, verify all three of these outputs together:
+  - the APK filename linked on the live website
+  - the live `/updates/android.json` manifest
+  - the installed Android app's bundled version/build values
