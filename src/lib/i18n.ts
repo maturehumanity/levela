@@ -17,7 +17,7 @@ export type LocalePreferences = {
 export type TranslationTree = BaseTranslations;
 
 const LANGUAGE_PACK_PREFIX = 'levela-i18n-pack';
-const LANGUAGE_PACK_VERSION = '33';
+const LANGUAGE_PACK_VERSION = '35';
 const FALLBACK_LANGUAGE: LanguageCode = 'en';
 const inFlightLanguageLoads = new Map<LanguageCode, Promise<TranslationTree>>();
 const cachedLanguagePacks = new Map<LanguageCode, TranslationTree>();

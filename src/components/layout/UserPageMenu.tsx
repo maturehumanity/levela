@@ -27,8 +27,11 @@ export function UserPageMenu() {
   const closeTimerRef = useRef<number | null>(null);
 
   const pageLinks = useMemo(
-    () => getAccessiblePageLinks(profile?.effective_permissions || []),
-    [profile?.effective_permissions],
+    () =>
+      [...getAccessiblePageLinks(profile?.effective_permissions || [])].sort((a, b) =>
+        t(a.labelKey).localeCompare(t(b.labelKey), undefined, { sensitivity: 'base' }),
+      ),
+    [profile?.effective_permissions, t],
   );
 
   const clearCloseTimer = () => {
@@ -134,7 +137,7 @@ export function UserPageMenu() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="border-t border-border/60"
             >
-              <div className="max-h-[340px] overflow-y-auto p-2 pt-2">
+              <div className="p-2 pt-2">
                 {pageLinks.map((page) => {
                   const Icon = page.icon;
                   const isCurrent = location.pathname === page.path;

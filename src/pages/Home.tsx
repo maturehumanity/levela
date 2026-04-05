@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UserPageMenu } from '@/components/layout/UserPageMenu';
-import { AppDownloadCard } from '@/components/download/AppDownloadCard';
 import { LevelaScore } from '@/components/ui/LevelaScore';
 import { ChatBar } from '@/components/ui/chat-bar';
 import { Card } from '@/components/ui/card';
@@ -866,14 +865,6 @@ export default function Home() {
             <h3 className="font-semibold text-foreground">{t('home.endorse')}</h3>
             <p className="text-xs text-muted-foreground">{t('home.recognizeSomeone')}</p>
           </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.24 }}
-        >
-          <AppDownloadCard />
         </motion.div>
 
         {/* User Posts Feed */}

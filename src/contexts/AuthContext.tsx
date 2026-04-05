@@ -12,6 +12,8 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   date_of_birth?: string | null;
+  place_of_birth?: string | null;
+  sex?: string | null;
   country: string | null;
   country_code?: string | null;
   language_code: LanguageCode | null;

@@ -70,6 +70,10 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 
     const handleKeyDown = React.useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (document.body.dataset.buildModeActive === "true") {
+          return;
+        }
+
         if (event.key === "ArrowLeft") {
           event.preventDefault();
           scrollPrev();

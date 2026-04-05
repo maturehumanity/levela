@@ -24,6 +24,7 @@ import {
   Users,
   KeyRound,
   ShieldCheck,
+  Fingerprint,
 } from 'lucide-react';
 
 const settingsItems = [
@@ -90,7 +91,7 @@ export default function Settings() {
   const adminItems = canAccessAdmin
     ? [
         {
-          icon: ShieldCheck,
+          icon: Fingerprint,
           labelKey: 'settings.adminRoles',
           descriptionKey: 'settings.adminRolesDescription',
           path: '/settings/admin/roles',

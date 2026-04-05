@@ -127,10 +127,12 @@ export type Database = {
           language_code: string | null
           last_active_at: string | null
           official_id: string
+          place_of_birth: string | null
           phone_country_code: string | null
           phone_e164: string | null
           phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
+          sex: string | null
           social_security_number: string
           updated_at: string
           user_id: string
@@ -156,10 +158,12 @@ export type Database = {
           language_code?: string | null
           last_active_at?: string | null
           official_id?: string
+          place_of_birth?: string | null
           phone_country_code?: string | null
           phone_e164?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          sex?: string | null
           social_security_number?: string
           updated_at?: string
           user_id: string
@@ -185,10 +189,12 @@ export type Database = {
           language_code?: string | null
           last_active_at?: string | null
           official_id?: string
+          place_of_birth?: string | null
           phone_country_code?: string | null
           phone_e164?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          sex?: string | null
           social_security_number?: string
           updated_at?: string
           user_id?: string

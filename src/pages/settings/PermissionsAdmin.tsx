@@ -249,7 +249,7 @@ export default function PermissionsAdmin() {
                                 {pageGroup.items.map((entry) => (
                                   <div
                                     key={entry.permission}
-                                    className="grid items-center gap-2.5 px-4 py-2"
+                                    className="grid items-center gap-2.5 rounded-2xl px-4 py-2 transition-[background-color,box-shadow] hover:bg-background/40 hover:ring-1 hover:ring-primary/20"
                                     style={{ gridTemplateColumns: matrixGridTemplate }}
                                   >
                                     <div className="min-w-0">
