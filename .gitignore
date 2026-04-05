@@ -34,3 +34,6 @@ ios/
 !.vscode/settings.json
 !.vscode/tasks.json
 .codex
+
+# APK artifacts stay local and on the VPS only.
+public/downloads/*.apk

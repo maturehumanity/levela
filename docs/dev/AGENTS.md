@@ -48,6 +48,7 @@ This file stores project-specific notes for future AI agent work.
 - Do not wait for the user to name missed sub-elements one by one. When a composite field is touched, audit and register its obvious inner parts in the same pass.
 - Proactively enforce all standing instructions and notes in this file on future work. Do not wait for the user to repeat them when they clearly apply.
 - When the user asks to `update the application`, carry the update through to the actual distributable app artifact and website download path when the project supports it, not just the source code.
+- Do not commit or push APK binaries to GitHub for this project. APKs should exist only as local build artifacts on this machine and as deployed download files on the VPS.
 
 ## 4. Remote Environment
 
@@ -88,6 +89,7 @@ This file stores project-specific notes for future AI agent work.
   - publishing both the legacy and versioned APK filenames
   - regenerating `public/updates/android.json`
   - regenerating `public/updates/android.js`
+- `scripts/release-bump.sh` updates the version source of truth in `src/lib/app-release.ts`, bumps the Android build number, and syncs `package.json` plus `package-lock.json`.
 - After versioning changes, verify all three of these outputs together:
   - the APK filename linked on the live website
   - the live `/updates/android.json` manifest
