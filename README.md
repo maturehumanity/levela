@@ -64,6 +64,7 @@ npm run build        # Production build for Lovable
 For Android app development:
 ```bash
 npm run cap:android  # Build and open in Android Studio
+npm run update:application  # Build web, sync Android, build APK, and publish it to /downloads/levela-debug.apk
 ```
 
 ### iOS Development
