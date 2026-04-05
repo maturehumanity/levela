@@ -48,3 +48,25 @@ This file stores project-specific notes for future AI agent work.
 - Do not wait for the user to name missed sub-elements one by one. When a composite field is touched, audit and register its obvious inner parts in the same pass.
 - Proactively enforce all standing instructions and notes in this file on future work. Do not wait for the user to repeat them when they clearly apply.
 - When the user asks to `update the application`, carry the update through to the actual distributable app artifact and website download path when the project supports it, not just the source code.
+
+## 4. Remote Environment
+
+- Production for `levela.yeremyan.net` is not served by Lovable. Treat it as a VPS-managed deployment.
+- Current known VPS entrypoint:
+  - SSH host alias: `soc-yeremyan-net`
+  - Host: `130.61.32.187`
+  - Port: `26747`
+  - User: `ubuntu`
+  - Identity file: `~/.ssh/soc-yeremyan-net`
+- The SSH key is passphrase-protected. In this environment, the server accepts the key, but non-interactive SSH fails unless that key is already unlocked in `ssh-agent`.
+- Existing history confirms the VPS also hosts a Supabase stack at `~/supabase-stack/supabase/docker`.
+- Live web traffic for `levela.yeremyan.net` is served by the Docker container `caddy-supabase` (`caddy:2.9.1-alpine`).
+- The container mounts the actual host web root from `/www/wwwroot/levela` into the container as `/srv/levela` read-only.
+- The Caddyfile source on the VPS is `/home/ubuntu/supabase-stack/caddy/Caddyfile`.
+- Before saying the application is updated, verify the live site and live APK on `https://levela.yeremyan.net`, not just local build output or GitHub.
+- When syncing production, update both:
+  - the live web assets for `levela.yeremyan.net`
+  - the live Android APK served from the currently linked download path on the website
+- Update the host path `/www/wwwroot/levela` directly. Do not try to write into the container mount path `/srv/levela` because it is mounted read-only inside the Caddy container.
+- Keep `.user.ini` in `/www/wwwroot/levela` untouched during deploys.
+- The legacy path `/downloads/levela-debug.apk` may remain edge-cached by Cloudflare after a deploy; prefer a versioned APK filename in the website bundle for immediate fresh downloads.
