@@ -90,6 +90,7 @@ This file stores project-specific notes for future AI agent work.
   - regenerating `public/updates/android.json`
   - regenerating `public/updates/android.js`
 - `scripts/release-bump.sh` updates the version source of truth in `src/lib/app-release.ts`, bumps the Android build number, and syncs `package.json` plus `package-lock.json`.
+- The step-by-step human release guide lives in `docs/dev/RELEASING.md`.
 - After versioning changes, verify all three of these outputs together:
   - the APK filename linked on the live website
   - the live `/updates/android.json` manifest
