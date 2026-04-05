@@ -68,8 +68,8 @@ write_update_manifest() {
   "downloadUrl": "$VERSIONED_APK_URL",
   "publishedAt": "$published_at",
   "notes": [
-    "First versioned Levela mobile release.",
-    "The Android app can now detect newer releases and suggest an update on launch."
+    "Latest Levela Android release built from the current application.",
+    "Open Settings to confirm the installed version and build number."
   ]
 }
 EOF
@@ -85,8 +85,8 @@ window.__LEVELA_ANDROID_UPDATE__ = {
   downloadUrl: '$VERSIONED_APK_URL',
   publishedAt: '$published_at',
   notes: [
-    'First versioned Levela mobile release.',
-    'The Android app can now detect newer releases and suggest an update on launch.',
+    'Latest Levela Android release built from the current application.',
+    'Open Settings to confirm the installed version and build number.',
   ],
 };
 EOF

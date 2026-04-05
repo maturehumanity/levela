@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { type LanguageCode } from '@/lib/i18n';
 import { permissionListHasAny, type AppPermission } from '@/lib/access-control';
+import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
 import {
   User,
   Shield,
@@ -278,9 +279,37 @@ export default function Settings() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: canAccessAdmin ? 0.75 : 0.65 }}
+        >
+          <Card className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground">{t('settings.appInfoTitle')}</h3>
+                <p className="text-sm text-muted-foreground">{t('settings.appInfoDescription')}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium text-foreground">{t('settings.currentVersionLabel')}</span>
+                <span className="text-muted-foreground">{APP_VERSION_TAG}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="font-medium text-foreground">{t('settings.currentBuildLabel')}</span>
+                <span className="text-muted-foreground">{ANDROID_VERSION_CODE}</span>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: canAccessAdmin ? 0.8 : 0.7 }}
           className="text-center text-sm text-muted-foreground"
         >
-          <p>{t('settings.appInfoLine1')}</p>
           <p>{t('settings.appInfoLine2')}</p>
         </motion.div>
       </div>

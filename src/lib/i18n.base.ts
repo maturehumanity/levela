@@ -200,7 +200,10 @@ export const baseTranslations = {
     "adminPermissions": "Permissions",
     "adminPermissionsDescription": "Edit what each role can access",
     "signOut": "Sign out",
-    "appInfoLine1": "Levela v1.0.0",
+    "appInfoTitle": "Application version",
+    "appInfoDescription": "Check which mobile release and build are currently installed on this device.",
+    "currentVersionLabel": "Version",
+    "currentBuildLabel": "Build",
     "appInfoLine2": "Build your trust and contribution profile"
   },
   "market": {
