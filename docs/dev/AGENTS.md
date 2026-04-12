@@ -84,11 +84,15 @@ This file stores project-specific notes for future AI agent work.
 - Keep `/updates/android.json` as the human-readable mirror for verification and debugging.
 - `scripts/update-application.sh` is responsible for:
   - building the web app
+  - removing `dist/downloads` before Android asset sync (website APK files must not be embedded inside the mobile APK)
   - syncing Capacitor Android assets
-  - building the APK
+  - building the APK with `./gradlew clean assembleDebug` to avoid stale packaged assets
   - publishing both the legacy and versioned APK filenames
   - regenerating `public/updates/android.json`
   - regenerating `public/updates/android.js`
+- APK size sanity check for releases:
+  - verify the built APK does not contain `assets/public/downloads/*` entries
+  - if APK size jumps unexpectedly (for example >2x from previous release), treat it as a packaging regression and inspect APK contents before publishing
 - `scripts/release-bump.sh` updates the version source of truth in `src/lib/app-release.ts`, bumps the Android build number, and syncs `package.json` plus `package-lock.json`.
 - The step-by-step human release guide lives in `docs/dev/RELEASING.md`.
 - After versioning changes, verify all three of these outputs together:
