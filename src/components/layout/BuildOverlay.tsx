@@ -2987,7 +2987,7 @@ export function BuildOverlay() {
       if (panelResize && panelResize.pointerId === event.pointerId) {
         const deltaX = event.clientX - panelResize.startX;
         const deltaY = event.clientY - panelResize.startY;
-        let nextFrame = { ...panelResize.origin };
+        const nextFrame = { ...panelResize.origin };
 
         if (panelResize.edge === 'right' || panelResize.edge === 'bottom-right') {
           nextFrame.width = panelResize.origin.width + deltaX;
@@ -3032,6 +3032,7 @@ export function BuildOverlay() {
   if (!buttonPosition) return null;
 
   const handleButtonPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -3054,6 +3055,7 @@ export function BuildOverlay() {
     }
 
     if (!dragState.moved) return;
+    event.preventDefault();
 
     setButtonPosition(
       clampButtonPosition({
@@ -3940,7 +3942,7 @@ export function BuildOverlay() {
       <Button
         type="button"
         size="icon"
-        className="pointer-events-auto fixed h-12 w-12 rounded-full border border-primary/30 bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(15,23,42,0.32)] [&_svg]:!h-7 [&_svg]:!w-7"
+        className="pointer-events-auto fixed h-12 w-12 touch-none select-none rounded-full border border-primary/30 bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(15,23,42,0.32)] [&_svg]:!h-7 [&_svg]:!w-7"
         style={{ left: `${buttonPosition.x}px`, top: `${buttonPosition.y}px` }}
         onClick={handleButtonClick}
         onPointerDown={handleButtonPointerDown}
