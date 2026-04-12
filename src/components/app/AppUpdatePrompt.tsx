@@ -20,6 +20,7 @@ import {
   shouldPromptForAndroidUpdate,
   type AndroidUpdateManifest,
 } from '@/lib/app-updates';
+import { canUseExternalAndroidApkUpdates, DISTRIBUTION_CHANNEL } from '@/lib/distribution';
 import { ANDROID_UPDATE_SCRIPT_URL } from '@/lib/downloads';
 
 const DISMISSED_ANDROID_RELEASE_KEY = 'levela-dismissed-android-release';
@@ -59,13 +60,18 @@ function loadRemoteManifest() {
 export function AppUpdatePrompt() {
   const { t } = useLanguage();
   const [availableUpdate, setAvailableUpdate] = useState<AndroidUpdateManifest | null>(null);
+  const allowsExternalAndroidApkUpdates = useMemo(
+    () => canUseExternalAndroidApkUpdates(DISTRIBUTION_CHANNEL),
+    [],
+  );
   const isAndroidNativeApp = useMemo(
     () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android',
     [],
   );
+  const shouldUseExternalApkPrompt = isAndroidNativeApp && allowsExternalAndroidApkUpdates;
 
   const checkForUpdates = useCallback(async () => {
-    if (!isAndroidNativeApp) {
+    if (!shouldUseExternalApkPrompt) {
       return;
     }
 
@@ -89,10 +95,11 @@ export function AppUpdatePrompt() {
     } catch {
       // Ignore update check failures so offline use remains unaffected.
     }
-  }, [isAndroidNativeApp]);
+  }, [shouldUseExternalApkPrompt]);
 
   useEffect(() => {
-    if (!isAndroidNativeApp) {
+    if (!shouldUseExternalApkPrompt) {
+      setAvailableUpdate(null);
       return;
     }
 
@@ -115,9 +122,9 @@ export function AppUpdatePrompt() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [checkForUpdates, isAndroidNativeApp]);
+  }, [checkForUpdates, shouldUseExternalApkPrompt]);
 
-  if (!isAndroidNativeApp || !availableUpdate) {
+  if (!shouldUseExternalApkPrompt || !availableUpdate) {
     return null;
   }
 

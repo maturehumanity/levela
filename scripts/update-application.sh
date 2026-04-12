@@ -21,6 +21,7 @@ VERSIONED_APK_URL="https://levela.yeremyan.net$VERSIONED_APK_PATH?v=$RELEASE_ID"
 JDK_CACHE_DIR="/tmp/levela-jdk"
 JDK_ARCHIVE="$JDK_CACHE_DIR/temurin21.tar.gz"
 JDK_DOWNLOAD_URL="https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse"
+export VITE_DISTRIBUTION_CHANNEL="${VITE_DISTRIBUTION_CHANNEL:-sideload}"
 
 ensure_java() {
   if command -v java >/dev/null 2>&1; then

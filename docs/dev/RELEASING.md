@@ -7,6 +7,10 @@ This project keeps source code in GitHub, but APK files only on the local machin
 - Do not commit or push APK files to GitHub.
 - Keep release metadata in `src/lib/app-release.ts` as the source of truth.
 - After each release, verify both the live website and the live Android download path on `https://levela.yeremyan.net`.
+- Set distribution channel per target build:
+  - `VITE_DISTRIBUTION_CHANNEL=sideload` for direct APK distribution
+  - `VITE_DISTRIBUTION_CHANNEL=play-store` for Google Play builds
+  - `VITE_DISTRIBUTION_CHANNEL=app-store` for iOS App Store builds
 
 ## Release Flow
 
@@ -26,6 +30,12 @@ npm run release:bump -- 0.1.5
 
 ```bash
 npm run update:application
+```
+
+For direct website APK distribution, run with:
+
+```bash
+VITE_DISTRIBUTION_CHANNEL=sideload npm run update:application
 ```
 
 This script:
