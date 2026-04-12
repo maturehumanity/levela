@@ -240,11 +240,10 @@ export function AppUpdatePrompt() {
     acknowledgeRelease(availableUpdate.releaseId);
     markReleaseAsInstalling(availableUpdate.releaseId);
 
-    const popup = window.open(availableUpdate.downloadUrl, '_blank', 'noopener,noreferrer');
-
-    if (!popup) {
-      window.location.assign(availableUpdate.downloadUrl);
-    }
+    // On Android WebView, window.open can still return null even when it already launched
+    // the external downloader, causing a second fallback navigation and duplicate prompts.
+    // Use a single navigation path to avoid double download flows.
+    window.location.assign(availableUpdate.downloadUrl);
 
     setAvailableUpdate(null);
   };
