@@ -95,6 +95,9 @@ EOF
 echo "Building the web app for Android sync..."
 npm run build:android
 
+echo "Removing website APK artifacts from Android web assets..."
+rm -rf "$ROOT_DIR/dist/downloads"
+
 echo "Syncing the latest web assets into the Android project..."
 npx cap sync android
 
@@ -104,7 +107,7 @@ ensure_java
 echo "Building the Android debug APK..."
 (
   cd "$ANDROID_DIR"
-  ./gradlew assembleDebug
+  ./gradlew clean assembleDebug
 )
 
 if [ ! -f "$APK_SOURCE" ]; then

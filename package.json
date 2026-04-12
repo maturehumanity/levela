@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "scripts": {
     "workspace:check": "bash scripts/check-workspace-drift.sh",
@@ -9,7 +9,7 @@
     "dev": "npm run workspace:check && vite",
     "build": "npm run workspace:check && vite build",
     "build:dev": "vite build --mode development",
-    "build:android": "npm run build && cp capacitor.config.android.json capacitor.config.json",
+    "build:android": "npm run build && rm -rf dist/downloads && cp capacitor.config.android.json capacitor.config.json",
     "release:bump": "bash scripts/release-bump.sh",
     "update:application": "npm run workspace:check:strict && bash scripts/update-application.sh",
     "cap:android": "npm run build:android && npx cap sync android && npx cap open android",
