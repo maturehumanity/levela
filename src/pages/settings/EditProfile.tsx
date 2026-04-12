@@ -150,6 +150,11 @@ const LAYOUT_REGION_LABELS = {
 
 const LEGACY_LAYOUT_STORAGE_PREFIX = 'levela-edit-profile-layout-v1';
 const GLOBAL_BUILD_STORAGE_KEY = 'levela-global-build-v1';
+const BUILD_GROUP_STORAGE_KEY = 'levela-global-build-groups-v1';
+const BUILD_PARENT_STORAGE_KEY = 'levela-global-build-parents-v1';
+const BUILD_ORDER_STORAGE_KEY = 'levela-global-build-orders-v1';
+const EDIT_PROFILE_LAYOUT_SCHEMA_VERSION = 2;
+const EDIT_PROFILE_LAYOUT_SCHEMA_KEY_PREFIX = 'levela-edit-profile-layout-schema-v1';
 const BUILD_STORAGE_EVENT = 'levela-build-storage-updated';
 
 function normalizeProfileDraft(values: {
@@ -186,6 +191,51 @@ function areDraftsEqual(a: ProfileDraft | null, b: ProfileDraft | null) {
     a.country === b.country &&
     a.country_code === b.country_code
   );
+}
+
+function clearBuildStoragePath(storageKey: string, pathname: string) {
+  const rawStorage = window.localStorage.getItem(storageKey);
+  if (!rawStorage) return false;
+
+  try {
+    const parsedStorage = JSON.parse(rawStorage) as Record<string, unknown>;
+    if (!parsedStorage || typeof parsedStorage !== 'object') {
+      window.localStorage.removeItem(storageKey);
+      return true;
+    }
+
+    if (!(pathname in parsedStorage)) return false;
+
+    delete parsedStorage[pathname];
+    if (Object.keys(parsedStorage).length === 0) {
+      window.localStorage.removeItem(storageKey);
+      return true;
+    }
+
+    window.localStorage.setItem(storageKey, JSON.stringify(parsedStorage));
+    return true;
+  } catch {
+    window.localStorage.removeItem(storageKey);
+    return true;
+  }
+}
+
+function resetEditProfileBuildStorage(pathname: string) {
+  let didChange = false;
+  const storageKeys = [
+    GLOBAL_BUILD_STORAGE_KEY,
+    BUILD_GROUP_STORAGE_KEY,
+    BUILD_PARENT_STORAGE_KEY,
+    BUILD_ORDER_STORAGE_KEY,
+  ];
+
+  storageKeys.forEach((storageKey) => {
+    if (clearBuildStoragePath(storageKey, pathname)) {
+      didChange = true;
+    }
+  });
+
+  return didChange;
 }
 
 function getUsernameChangeState(profile?: {
@@ -498,39 +548,29 @@ export default function EditProfile() {
   useEffect(() => {
     if (!profile?.id) return;
 
+    const pathname = window.location.pathname;
     const legacyKey = `${LEGACY_LAYOUT_STORAGE_PREFIX}:${profile.id}`;
-    const rawLegacy = window.localStorage.getItem(legacyKey);
-    if (!rawLegacy) return;
+    const schemaKey = `${EDIT_PROFILE_LAYOUT_SCHEMA_KEY_PREFIX}:${pathname}`;
+    const hasLegacyOffsets = Boolean(window.localStorage.getItem(legacyKey));
+    const storedSchemaVersion = Number.parseInt(window.localStorage.getItem(schemaKey) || '', 10);
+    const needsSchemaReset = storedSchemaVersion !== EDIT_PROFILE_LAYOUT_SCHEMA_VERSION;
 
-    try {
-      const legacyOffsets = JSON.parse(rawLegacy) as Record<string, { x?: number; y?: number }>;
-      const rawGlobal = window.localStorage.getItem(GLOBAL_BUILD_STORAGE_KEY);
-      const globalStorage = rawGlobal ? JSON.parse(rawGlobal) as Record<string, Record<string, { x: number; y: number; label: string }>> : {};
-      const pathname = window.location.pathname;
-      const pageStorage = { ...(globalStorage[pathname] || {}) };
+    if (!hasLegacyOffsets && !needsSchemaReset) return;
 
-      Object.entries(legacyOffsets).forEach(([key, offset]) => {
-        if (!(key in LAYOUT_REGION_LABELS)) return;
-        const selector = `[data-build-key="${key}"]`;
-        if (pageStorage[selector]) return;
+    let didChange = resetEditProfileBuildStorage(pathname);
 
-        pageStorage[selector] = {
-          x: Number(offset.x || 0),
-          y: Number(offset.y || 0),
-          label: LAYOUT_REGION_LABELS[key as keyof typeof LAYOUT_REGION_LABELS],
-        };
-      });
+    if (hasLegacyOffsets) {
+      window.localStorage.removeItem(legacyKey);
+      didChange = true;
+    }
 
-      window.localStorage.setItem(
-        GLOBAL_BUILD_STORAGE_KEY,
-        JSON.stringify({
-          ...globalStorage,
-          [pathname]: pageStorage,
-        }),
-      );
+    if (needsSchemaReset) {
+      window.localStorage.setItem(schemaKey, String(EDIT_PROFILE_LAYOUT_SCHEMA_VERSION));
+      didChange = true;
+    }
+
+    if (didChange) {
       window.dispatchEvent(new CustomEvent(BUILD_STORAGE_EVENT));
-    } catch {
-      // Ignore malformed legacy layout data.
     }
   }, [profile?.id]);
 

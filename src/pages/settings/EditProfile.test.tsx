@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import EditProfile from '@/pages/settings/EditProfile';
 
@@ -91,6 +91,10 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 describe('Edit Profile identity block', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('shows masked generated identity values and reveals them on demand', () => {
     render(
       <MemoryRouter>
@@ -115,5 +119,62 @@ describe('Edit Profile identity block', () => {
     fireEvent.click(screen.getByLabelText('Social Card front'));
 
     expect(screen.getByTestId('identity-qr')).toBeInTheDocument();
+  });
+
+  it('clears stale legacy edit-profile layout storage', () => {
+    const legacyKey = 'levela-edit-profile-layout-v1:profile-1';
+
+    window.localStorage.setItem(legacyKey, JSON.stringify({ wcFrontTitle: { x: 12, y: -4 } }));
+    window.localStorage.setItem(
+      'levela-global-build-v1',
+      JSON.stringify({
+        '/': {
+          '[data-build-key="wcFrontTitle"]': { x: 12, y: -4, label: 'Legacy title' },
+        },
+      }),
+    );
+    window.localStorage.setItem(
+      'levela-global-build-groups-v1',
+      JSON.stringify({
+        '/': [
+          {
+            id: 'legacy-group',
+            label: 'Legacy group',
+            members: ['[data-build-key="wcFrontTitle"]'],
+          },
+        ],
+      }),
+    );
+    window.localStorage.setItem(
+      'levela-global-build-parents-v1',
+      JSON.stringify({
+        '/': {
+          '[data-build-key="wcFrontTitle"]': '[data-build-key="wcFrontHeaderGroup"]',
+        },
+      }),
+    );
+    window.localStorage.setItem(
+      'levela-global-build-orders-v1',
+      JSON.stringify({
+        '/': {
+          '[data-build-key="wcFrontTitle"]': 1,
+        },
+      }),
+    );
+
+    render(
+      <MemoryRouter>
+        <EditProfile />
+      </MemoryRouter>,
+    );
+
+    expect(window.localStorage.getItem(legacyKey)).toBeNull();
+
+    expect(window.localStorage.getItem('levela-global-build-v1')).toBeNull();
+    expect(window.localStorage.getItem('levela-global-build-groups-v1')).toBeNull();
+    expect(window.localStorage.getItem('levela-global-build-parents-v1')).toBeNull();
+    expect(window.localStorage.getItem('levela-global-build-orders-v1')).toBeNull();
+
+    expect(window.localStorage.getItem('levela-edit-profile-layout-schema-v1:/')).toBe('2');
   });
 });

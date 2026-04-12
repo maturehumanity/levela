@@ -79,6 +79,14 @@ npm run cap:ios      # Build and open in Xcode
 - Platform directories (`android/`, `ios/`) are gitignored
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Workspace Source Of Truth
+
+If you have both `levela` and `levela-your-growth-score` folders locally, treat `levela-your-growth-score` as the canonical workspace for Lovable sync and Android release builds.
+
+- Run `npm run workspace:check` before starting local work if you suspect folder drift.
+- `npm run update:application` now runs a strict workspace check and will fail when the sibling workspace points to a different branch/commit.
+- To fully remove confusion, archive or rename the legacy `levela` folder, or replace it with a symlink to this repository.
+
 ## Feature Registry Rule
 
 This project keeps a canonical feature registry for both product users and future AI agents.
