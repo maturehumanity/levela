@@ -65,7 +65,6 @@ describe('Settings page', () => {
     );
 
     expect(screen.getByText('Application version')).toBeInTheDocument();
-    expect(screen.getByText(APP_VERSION_TAG)).toBeInTheDocument();
-    expect(screen.getByText(String(ANDROID_VERSION_CODE))).toBeInTheDocument();
+    expect(screen.getByText(`${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`)).toBeInTheDocument();
   });
 });

@@ -79,6 +79,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
   const { language, setLanguage, languageOptions, t } = useLanguage();
+  const installedReleaseLabel = `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
   const canAccessAdmin = profile
     ? permissionListHasAny(profile.effective_permissions || [], ['role.assign', 'settings.manage'])
     : false;
@@ -294,11 +295,7 @@ export default function Settings() {
             <div className="mt-4 rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="font-medium text-foreground">{t('settings.currentVersionLabel')}</span>
-                <span className="text-muted-foreground">{APP_VERSION_TAG}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="font-medium text-foreground">{t('settings.currentBuildLabel')}</span>
-                <span className="text-muted-foreground">{ANDROID_VERSION_CODE}</span>
+                <span className="text-muted-foreground">{installedReleaseLabel}</span>
               </div>
             </div>
           </Card>
