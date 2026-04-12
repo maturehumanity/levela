@@ -120,3 +120,13 @@ This file stores project-specific notes for future AI agent work.
   - the mandatory preflight/validation check
   - the stop condition that blocks repeating the same error
 - Do not rely on memory alone for repeated-release safeguards; encode them as explicit written rules.
+
+## 8. Local Dev Port Policy
+
+- Default local development URL for this project is `http://localhost:8080`.
+- Reuse port `8080` by default; do not open new Vite dev ports (such as `8081`, `8082`, etc.) for routine work.
+- Before starting a new dev server, check whether an existing server is already running on `8080` and reuse it when available.
+- Only use a different port when:
+  - the user explicitly asks for another port, or
+  - port `8080` is genuinely unavailable and cannot be freed quickly.
+- If a fallback port is temporarily required, clearly state that reason and switch back to `8080` for normal workflows.
