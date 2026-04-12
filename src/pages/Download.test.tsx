@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import DownloadPage from '@/pages/Download';
-import { ANDROID_DOWNLOAD_PATH } from '@/lib/downloads';
+import { ANDROID_DOWNLOAD_URL } from '@/lib/downloads';
 
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
@@ -43,7 +43,7 @@ describe('Download page', () => {
     expect(screen.getByText('iPhone test build')).toBeInTheDocument();
 
     const androidLink = screen.getByRole('link', { name: 'Download Android APK' });
-    expect(androidLink).toHaveAttribute('href', ANDROID_DOWNLOAD_PATH);
+    expect(androidLink).toHaveAttribute('href', ANDROID_DOWNLOAD_URL);
 
     expect(screen.getByRole('button', { name: 'iPhone build coming soon' })).toBeDisabled();
   });

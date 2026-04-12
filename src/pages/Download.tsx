@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ANDROID_DOWNLOAD_PATH } from '@/lib/downloads';
+import { ANDROID_DOWNLOAD_URL } from '@/lib/downloads';
 
 export default function DownloadPage() {
   const { t } = useLanguage();
@@ -45,7 +45,7 @@ export default function DownloadPage() {
               </div>
 
               <Button asChild className="w-full gap-2">
-                <a href={ANDROID_DOWNLOAD_PATH} download>
+                <a href={ANDROID_DOWNLOAD_URL} download>
                   {t('downloads.android.button')}
                   <ExternalLink className="h-4 w-4" />
                 </a>
