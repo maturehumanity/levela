@@ -916,7 +916,7 @@ export default function EditProfile() {
                                 {renderLayoutRegion(
                                   'wcFrontTitle',
                                   <div className="min-w-0 space-y-0.5">
-                                    <p className="text-[10px] uppercase tracking-[0.22em] text-cyan-50/85">
+                                    <p className="whitespace-nowrap text-[9px] uppercase tracking-[0.14em] leading-none text-cyan-50/85">
                                       {t('editProfile.worldCitizenId')} • {getWorldCitizenStatusLabel(profile?.role, citizenStatusPrefix, t).toUpperCase()}
                                     </p>
                                     <div className="grid grid-cols-2 gap-1.5">
