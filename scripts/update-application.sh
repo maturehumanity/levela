@@ -72,6 +72,23 @@ write_update_manifest() {
     "Open Settings to confirm the installed version and build number."
   ]
 }
+
+prune_download_archive() {
+  mkdir -p "$APK_TARGET_DIR"
+
+  local -a versioned_apks=()
+  mapfile -t versioned_apks < <(cd "$APK_TARGET_DIR" && ls -1t levela-debug-*.apk 2>/dev/null || true)
+  if [ "${#versioned_apks[@]}" -eq 0 ]; then
+    return
+  fi
+
+  for apk_file in "${versioned_apks[@]}"; do
+    if [ "$apk_file" = "$VERSIONED_APK_FILENAME" ]; then
+      continue
+    fi
+    rm -f "$APK_TARGET_DIR/$apk_file"
+  done
+}
 EOF
 
   cat > "$UPDATE_SCRIPT_PATH" <<EOF
@@ -119,6 +136,7 @@ echo "Publishing the APK into the website download path..."
 mkdir -p "$APK_TARGET_DIR"
 cp "$APK_SOURCE" "$APK_TARGET"
 cp "$APK_SOURCE" "$VERSIONED_APK_TARGET"
+prune_download_archive
 
 echo "Writing the Android update manifest..."
 write_update_manifest
