@@ -24,6 +24,10 @@ import { ANDROID_UPDATE_SCRIPT_URL } from '@/lib/downloads';
 
 const DISMISSED_ANDROID_RELEASE_KEY = 'levela-dismissed-android-release';
 
+function acknowledgeRelease(releaseId: string) {
+  window.localStorage.setItem(DISMISSED_ANDROID_RELEASE_KEY, releaseId);
+}
+
 function loadRemoteManifest() {
   return new Promise<unknown>((resolve, reject) => {
     const script = document.createElement('script');
@@ -118,11 +122,14 @@ export function AppUpdatePrompt() {
   }
 
   const handleLater = () => {
-    window.localStorage.setItem(DISMISSED_ANDROID_RELEASE_KEY, availableUpdate.releaseId);
+    acknowledgeRelease(availableUpdate.releaseId);
     setAvailableUpdate(null);
   };
 
   const handleUpdate = () => {
+    // Suppress repeated prompts for the same release while install flow is in progress.
+    acknowledgeRelease(availableUpdate.releaseId);
+
     const popup = window.open(availableUpdate.downloadUrl, '_blank', 'noopener,noreferrer');
 
     if (!popup) {

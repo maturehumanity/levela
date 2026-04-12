@@ -52,6 +52,23 @@ ensure_java() {
   fi
 }
 
+prune_download_archive() {
+  mkdir -p "$APK_TARGET_DIR"
+
+  local -a versioned_apks=()
+  mapfile -t versioned_apks < <(cd "$APK_TARGET_DIR" && ls -1t levela-debug-*.apk 2>/dev/null || true)
+  if [ "${#versioned_apks[@]}" -eq 0 ]; then
+    return
+  fi
+
+  for apk_file in "${versioned_apks[@]}"; do
+    if [ "$apk_file" = "$VERSIONED_APK_FILENAME" ]; then
+      continue
+    fi
+    rm -f "$APK_TARGET_DIR/$apk_file"
+  done
+}
+
 write_update_manifest() {
   mkdir -p "$UPDATE_MANIFEST_DIR"
   local published_at
@@ -71,23 +88,6 @@ write_update_manifest() {
     "Latest Levela Android release built from the current application.",
     "Open Settings to confirm the installed version and build number."
   ]
-}
-
-prune_download_archive() {
-  mkdir -p "$APK_TARGET_DIR"
-
-  local -a versioned_apks=()
-  mapfile -t versioned_apks < <(cd "$APK_TARGET_DIR" && ls -1t levela-debug-*.apk 2>/dev/null || true)
-  if [ "${#versioned_apks[@]}" -eq 0 ]; then
-    return
-  fi
-
-  for apk_file in "${versioned_apks[@]}"; do
-    if [ "$apk_file" = "$VERSIONED_APK_FILENAME" ]; then
-      continue
-    fi
-    rm -f "$APK_TARGET_DIR/$apk_file"
-  done
 }
 EOF
 

@@ -4,6 +4,20 @@
 
 Allow users to update most app changes without downloading a full APK, while preserving APK updates for native-layer changes.
 
+## Marketplace Policy Guardrails
+
+This plan must be implemented differently per distribution channel.
+
+Android (Google Play):
+- Google Play policy does not allow Play-distributed apps to self-update outside Play's update mechanism.
+- For Play builds, keep binary updates on Play only (Play In-App Updates API), and treat web OTA as restricted to non-native web assets with strict policy review.
+- Current direct APK download flow should remain for side-loaded distribution, not Play production builds.
+
+iOS (App Store):
+- App Store Review Guideline 2.5.2 states apps may not download/install/execute code that changes app features or functionality.
+- Because of this, JavaScript bundle OTA that changes app behavior is high risk for App Store rejection.
+- For App Store distribution, use App Store app updates for behavior/functionality changes; limit runtime server updates to content/configuration that does not constitute executable feature changes.
+
 ## Current Baseline
 
 - Native app is distributed via APK download from `https://levela.yeremyan.net/downloads/*`.
