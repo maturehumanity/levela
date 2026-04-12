@@ -494,6 +494,14 @@ function applyStoredOffsets(offsets: Record<string, StoredOffset>) {
   });
 }
 
+function clearStoredOffsetsBySelectors(selectors: Iterable<string>) {
+  Array.from(selectors).forEach((selector) => {
+    const element = document.querySelector(selector);
+    if (!isBuildElement(element)) return;
+    clearOffset(element);
+  });
+}
+
 function detectTargetType(element: BuildElement): TargetType {
   if (element instanceof SVGElement) return 'icon';
   if (element instanceof HTMLButtonElement || element.getAttribute('role') === 'button') return 'button';
@@ -1647,6 +1655,7 @@ export function BuildOverlay() {
   } | null>(null);
   const guideHideTimeoutRef = useRef<number | null>(null);
   const layersTreeScrollRef = useRef<HTMLDivElement | null>(null);
+  const appliedOffsetSelectorsRef = useRef<Set<string>>(new Set());
 
   const canBuild = useMemo(
     () => Boolean(profile?.effective_permissions?.includes('build.use')),
@@ -1794,7 +1803,6 @@ export function BuildOverlay() {
     setPageParentAssignments(nextParentAssignments);
     setPageTargetOrder(nextTargetOrder);
     setPageOffsets(nextPageOffsets);
-    applyStoredOffsets(nextPageOffsets);
   };
 
   useEffect(() => {
@@ -1826,7 +1834,6 @@ export function BuildOverlay() {
     setPageParentAssignments(nextParentAssignments);
     setPageTargetOrder(nextTargetOrder);
     setPageOffsets(nextPageOffsets);
-    applyStoredOffsets(nextPageOffsets);
     window.requestAnimationFrame(() => {
       setAvailableTargets(getAvailableTargets(nextGroups, nextParentAssignments, nextTargetOrder));
     });
@@ -1864,7 +1871,9 @@ export function BuildOverlay() {
           registerAutoBuildTarget(element, pathname, root);
         }
       });
-      applyStoredOffsets(pageOffsets);
+      if (active) {
+        applyStoredOffsets(pageOffsets);
+      }
       setAvailableTargets(getAvailableTargets(pageGroups, pageParentAssignments, pageTargetOrder));
     };
 
@@ -1890,7 +1899,37 @@ export function BuildOverlay() {
       if (animationFrame) cancelAnimationFrame(animationFrame);
       observer.disconnect();
     };
-  }, [canBuild, pageGroups, pageOffsets, pageParentAssignments, pageTargetOrder, pathname]);
+  }, [active, canBuild, pageGroups, pageOffsets, pageParentAssignments, pageTargetOrder, pathname]);
+
+  useEffect(() => {
+    const previouslyAppliedSelectors = appliedOffsetSelectorsRef.current;
+
+    if (!canBuild || !active) {
+      clearStoredOffsetsBySelectors(previouslyAppliedSelectors);
+      appliedOffsetSelectorsRef.current = new Set();
+      return;
+    }
+
+    const nextSelectors = new Set(Object.keys(pageOffsets));
+    const selectorsToClear: string[] = [];
+
+    previouslyAppliedSelectors.forEach((selector) => {
+      if (!nextSelectors.has(selector)) {
+        selectorsToClear.push(selector);
+      }
+    });
+
+    clearStoredOffsetsBySelectors(selectorsToClear);
+    applyStoredOffsets(pageOffsets);
+    appliedOffsetSelectorsRef.current = nextSelectors;
+  }, [active, canBuild, pageOffsets]);
+
+  useEffect(() => (
+    () => {
+      clearStoredOffsetsBySelectors(appliedOffsetSelectorsRef.current);
+      appliedOffsetSelectorsRef.current = new Set();
+    }
+  ), []);
 
   useEffect(() => {
     if (!canBuild) {

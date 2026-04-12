@@ -175,6 +175,6 @@ describe('Edit Profile identity block', () => {
     expect(window.localStorage.getItem('levela-global-build-parents-v1')).toBeNull();
     expect(window.localStorage.getItem('levela-global-build-orders-v1')).toBeNull();
 
-    expect(window.localStorage.getItem('levela-edit-profile-layout-schema-v1:/')).toBe('2');
+    expect(window.localStorage.getItem('levela-edit-profile-layout-schema-v1:/')).toBe('3');
   });
 });

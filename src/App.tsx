@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { AppUpdatePrompt } from "@/components/app/AppUpdatePrompt";
+import { ThemeStorageSync } from "@/components/app/ThemeStorageSync";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { BuildOverlay } from "@/components/layout/BuildOverlay";
 
@@ -59,7 +60,8 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="levela-theme-v1">
+      <ThemeStorageSync />
       <TooltipProvider>
         <AuthProvider>
           <LanguageProvider>

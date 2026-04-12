@@ -153,7 +153,7 @@ const GLOBAL_BUILD_STORAGE_KEY = 'levela-global-build-v1';
 const BUILD_GROUP_STORAGE_KEY = 'levela-global-build-groups-v1';
 const BUILD_PARENT_STORAGE_KEY = 'levela-global-build-parents-v1';
 const BUILD_ORDER_STORAGE_KEY = 'levela-global-build-orders-v1';
-const EDIT_PROFILE_LAYOUT_SCHEMA_VERSION = 2;
+const EDIT_PROFILE_LAYOUT_SCHEMA_VERSION = 3;
 const EDIT_PROFILE_LAYOUT_SCHEMA_KEY_PREFIX = 'levela-edit-profile-layout-schema-v1';
 const BUILD_STORAGE_EVENT = 'levela-build-storage-updated';
 
