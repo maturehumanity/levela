@@ -99,3 +99,24 @@ This file stores project-specific notes for future AI agent work.
   - the APK filename linked on the live website
   - the live `/updates/android.json` manifest
   - the installed Android app's bundled version/build values
+
+## 6. Deploy Payload Guardrails
+
+- Never deploy a bloated `dist` archive to production when payload size is unexpectedly large.
+- Before creating any VPS deploy tarball, run a payload preflight and verify:
+  - `du -sh dist` is in the expected range for the current release
+  - `dist/downloads` contains only:
+    - `levela-debug.apk`
+    - `levela-debug-${APP_RELEASE_ID}.apk`
+- If old versioned APK files are present in `public/downloads` or `dist/downloads`, prune them before deploy.
+- If the deploy tarball is unexpectedly large (for example >50 MB for this project), stop and investigate instead of uploading.
+- Keep release backups on the VPS, but do not repeatedly upload historical APK archives inside new deploy bundles.
+
+## 7. Agent Correction Notes
+
+- When an agent discovers a repeated mistake or process gap, add a concrete prevention rule to this `AGENTS.md` file in the same session.
+- Notes must include:
+  - the failure pattern
+  - the mandatory preflight/validation check
+  - the stop condition that blocks repeating the same error
+- Do not rely on memory alone for repeated-release safeguards; encode them as explicit written rules.
