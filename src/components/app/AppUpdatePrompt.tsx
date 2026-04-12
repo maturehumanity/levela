@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   AlertDialog,
@@ -146,6 +146,9 @@ function loadRemoteManifest() {
 export function AppUpdatePrompt() {
   const { t } = useLanguage();
   const [availableUpdate, setAvailableUpdate] = useState<AndroidUpdateManifest | null>(null);
+  const [isLaunchingUpdate, setIsLaunchingUpdate] = useState(false);
+  const updateLaunchLockRef = useRef(false);
+  const releaseLaunchTimeoutRef = useRef<number | null>(null);
   const allowsExternalAndroidApkUpdates = useMemo(
     () => canUseExternalAndroidApkUpdates(DISTRIBUTION_CHANNEL),
     [],
@@ -223,6 +226,11 @@ export function AppUpdatePrompt() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+
+      if (releaseLaunchTimeoutRef.current !== null) {
+        window.clearTimeout(releaseLaunchTimeoutRef.current);
+        releaseLaunchTimeoutRef.current = null;
+      }
     };
   }, [checkForUpdates, shouldUseExternalApkPrompt]);
 
@@ -236,6 +244,10 @@ export function AppUpdatePrompt() {
   };
 
   const handleUpdate = () => {
+    if (updateLaunchLockRef.current) return;
+    updateLaunchLockRef.current = true;
+    setIsLaunchingUpdate(true);
+
     // Suppress repeated prompts for the same release while install flow is in progress.
     acknowledgeRelease(availableUpdate.releaseId);
     markReleaseAsInstalling(availableUpdate.releaseId);
@@ -243,9 +255,17 @@ export function AppUpdatePrompt() {
     // On Android WebView, window.open can still return null even when it already launched
     // the external downloader, causing a second fallback navigation and duplicate prompts.
     // Use a single navigation path to avoid double download flows.
-    window.location.assign(availableUpdate.downloadUrl);
+    const downloadUrl = new URL(availableUpdate.downloadUrl);
+    downloadUrl.searchParams.set('install_attempt', Date.now().toString());
+    window.location.assign(downloadUrl.toString());
 
     setAvailableUpdate(null);
+
+    releaseLaunchTimeoutRef.current = window.setTimeout(() => {
+      updateLaunchLockRef.current = false;
+      setIsLaunchingUpdate(false);
+      releaseLaunchTimeoutRef.current = null;
+    }, 2500);
   };
 
   return (
@@ -292,8 +312,12 @@ export function AppUpdatePrompt() {
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleLater}>{t('appUpdate.later')}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleUpdate}>{t('appUpdate.updateNow')}</AlertDialogAction>
+          <AlertDialogCancel onClick={handleLater} disabled={isLaunchingUpdate}>
+            {t('appUpdate.later')}
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleUpdate} disabled={isLaunchingUpdate}>
+            {t('appUpdate.updateNow')}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
