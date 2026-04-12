@@ -1,12 +1,12 @@
 {
   "platform": "android",
-  "version": "0.1.6",
-  "versionTag": "v0.1.6",
-  "buildNumber": 8,
-  "releaseId": "20260412-v0.1.6",
-  "downloadPath": "/downloads/levela-debug-20260412-v0.1.6.apk",
-  "downloadUrl": "https://levela.yeremyan.net/downloads/levela-debug-20260412-v0.1.6.apk?v=20260412-v0.1.6",
-  "publishedAt": "2026-04-12T09:02:08Z",
+  "version": "0.1.7",
+  "versionTag": "v0.1.7",
+  "buildNumber": 9,
+  "releaseId": "20260412-v0.1.7",
+  "downloadPath": "/downloads/levela-debug-20260412-v0.1.7.apk",
+  "downloadUrl": "https://levela.yeremyan.net/downloads/levela-debug-20260412-v0.1.7.apk?v=20260412-v0.1.7",
+  "publishedAt": "2026-04-12T09:17:50Z",
   "notes": [
     "Latest Levela Android release built from the current application.",
     "Open Settings to confirm the installed version and build number."

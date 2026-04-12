@@ -16,6 +16,7 @@ import {
   CURRENT_ANDROID_RELEASE,
   CURRENT_ANDROID_RELEASE_LABEL,
   formatReleaseLabel,
+  isAndroidUpdateAvailable,
   isAndroidUpdateManifest,
   shouldPromptForAndroidUpdate,
   type AndroidUpdateManifest,
@@ -24,9 +25,94 @@ import { canUseExternalAndroidApkUpdates, DISTRIBUTION_CHANNEL } from '@/lib/dis
 import { ANDROID_UPDATE_SCRIPT_URL } from '@/lib/downloads';
 
 const DISMISSED_ANDROID_RELEASE_KEY = 'levela-dismissed-android-release';
+const PENDING_ANDROID_RELEASE_KEY = 'levela-pending-android-release';
+const UPDATE_INSTALL_GRACE_PERIOD_MS = 20 * 60 * 1000;
+
+type PendingAndroidRelease = {
+  releaseId: string;
+  startedAt: number;
+};
+
+let dismissedReleaseMemory: string | null = null;
+let pendingReleaseMemory: PendingAndroidRelease | null = null;
+
+function readStorageItem(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorageItem(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage failures and fall back to in-memory state.
+  }
+}
+
+function removeStorageItem(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage failures and fall back to in-memory state.
+  }
+}
+
+function getDismissedReleaseId() {
+  const stored = readStorageItem(DISMISSED_ANDROID_RELEASE_KEY);
+  if (stored) {
+    dismissedReleaseMemory = stored;
+    return stored;
+  }
+  return dismissedReleaseMemory;
+}
 
 function acknowledgeRelease(releaseId: string) {
-  window.localStorage.setItem(DISMISSED_ANDROID_RELEASE_KEY, releaseId);
+  dismissedReleaseMemory = releaseId;
+  writeStorageItem(DISMISSED_ANDROID_RELEASE_KEY, releaseId);
+}
+
+function clearAcknowledgedRelease() {
+  dismissedReleaseMemory = null;
+  removeStorageItem(DISMISSED_ANDROID_RELEASE_KEY);
+}
+
+function getPendingRelease(): PendingAndroidRelease | null {
+  const raw = readStorageItem(PENDING_ANDROID_RELEASE_KEY);
+  const source = raw ?? (pendingReleaseMemory ? JSON.stringify(pendingReleaseMemory) : null);
+
+  if (!source) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(source) as Partial<PendingAndroidRelease>;
+    if (typeof parsed.releaseId !== 'string' || typeof parsed.startedAt !== 'number') {
+      return null;
+    }
+    pendingReleaseMemory = {
+      releaseId: parsed.releaseId,
+      startedAt: parsed.startedAt,
+    };
+    return pendingReleaseMemory;
+  } catch {
+    return pendingReleaseMemory;
+  }
+}
+
+function markReleaseAsInstalling(releaseId: string) {
+  pendingReleaseMemory = {
+    releaseId,
+    startedAt: Date.now(),
+  };
+  writeStorageItem(PENDING_ANDROID_RELEASE_KEY, JSON.stringify(pendingReleaseMemory));
+}
+
+function clearPendingRelease() {
+  pendingReleaseMemory = null;
+  removeStorageItem(PENDING_ANDROID_RELEASE_KEY);
 }
 
 function loadRemoteManifest() {
@@ -82,13 +168,29 @@ export function AppUpdatePrompt() {
         return;
       }
 
-      const dismissedReleaseId = typeof window !== 'undefined'
-        ? window.localStorage.getItem(DISMISSED_ANDROID_RELEASE_KEY)
-        : null;
+      const pendingRelease = getPendingRelease();
+      if (pendingRelease) {
+        const stillInstallingSameRelease = pendingRelease.releaseId === manifest.releaseId
+          && Date.now() - pendingRelease.startedAt < UPDATE_INSTALL_GRACE_PERIOD_MS;
 
-      if (shouldPromptForAndroidUpdate(CURRENT_ANDROID_RELEASE, manifest, dismissedReleaseId)) {
+        if (stillInstallingSameRelease) {
+          setAvailableUpdate(null);
+          return;
+        }
+
+        clearPendingRelease();
+      }
+
+      const dismissedReleaseId = getDismissedReleaseId();
+      const updateAvailable = isAndroidUpdateAvailable(CURRENT_ANDROID_RELEASE, manifest);
+
+      if (updateAvailable && shouldPromptForAndroidUpdate(CURRENT_ANDROID_RELEASE, manifest, dismissedReleaseId)) {
         setAvailableUpdate(manifest);
         return;
+      }
+
+      if (!updateAvailable && dismissedReleaseId === manifest.releaseId) {
+        clearAcknowledgedRelease();
       }
 
       setAvailableUpdate(null);
@@ -136,6 +238,7 @@ export function AppUpdatePrompt() {
   const handleUpdate = () => {
     // Suppress repeated prompts for the same release while install flow is in progress.
     acknowledgeRelease(availableUpdate.releaseId);
+    markReleaseAsInstalling(availableUpdate.releaseId);
 
     const popup = window.open(availableUpdate.downloadUrl, '_blank', 'noopener,noreferrer');
 

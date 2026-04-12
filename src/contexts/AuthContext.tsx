@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { type LanguageCode } from '@/lib/i18n';
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const supportsLastActiveRef = useRef(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -113,9 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...typedProfile,
       effective_permissions: effectivePermissions,
     } as Profile;
-  };
+  }, []);
 
-  const touchProfileActivity = async (userId: string) => {
+  const touchProfileActivity = useCallback(async (userId: string) => {
     if (!supportsLastActiveRef.current) return;
 
     const { error } = await supabase
@@ -130,14 +130,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       console.error('Error updating last active timestamp:', error);
     }
-  };
+  }, []);
 
-  const refreshProfile = async () => {
-    if (user) {
-      const profileData = await fetchProfile(user.id);
+  const refreshProfileForUser = useCallback(async (userId: string) => {
+    const profileData = await fetchProfile(userId);
+    if (profileData) {
       setProfile(profileData);
     }
-  };
+  }, [fetchProfile]);
+
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      await refreshProfileForUser(user.id);
+    }
+  }, [refreshProfileForUser, user]);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -149,8 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentSession?.user) {
           // Use setTimeout to avoid potential race conditions
           setTimeout(async () => {
-            const profileData = await fetchProfile(currentSession.user.id);
-            setProfile(profileData);
+            await refreshProfileForUser(currentSession.user.id);
             setLoading(false);
           }, 0);
         } else {
@@ -166,8 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
-        fetchProfile(currentSession.user.id).then(profileData => {
-          setProfile(profileData);
+        refreshProfileForUser(currentSession.user.id).finally(() => {
           setLoading(false);
         });
       } else {
@@ -176,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshProfileForUser]);
 
   useEffect(() => {
     if (!user) return;
@@ -190,16 +194,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         void touchProfileActivity(user.id);
+        void refreshProfileForUser(user.id);
       }
     };
 
+    const handleFocus = () => {
+      void touchProfileActivity(user.id);
+      void refreshProfileForUser(user.id);
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
-  }, [user]);
+  }, [refreshProfileForUser, touchProfileActivity, user]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const profileChannel = supabase
+      .channel(`profile-sync:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          void refreshProfileForUser(user.id);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(profileChannel);
+    };
+  }, [refreshProfileForUser, user?.id]);
 
   const signUp = async (
     credentials: {
