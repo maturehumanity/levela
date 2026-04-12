@@ -145,3 +145,14 @@ This file stores project-specific notes for future AI agent work.
   - extract tar into `/www/wwwroot/levela`
 - Stop condition:
   - if passwordless `sudo` is unavailable, stop and do not attempt partial writes to `/www/wwwroot/levela`
+
+## 10. Profile Mismatch Triage
+
+- Failure pattern: web and phone show different Edit Profile identity data (role/photo/place) even after app update.
+- Mandatory production check:
+  - query `public.profiles` for all likely identities (for example current and legacy usernames) and compare `user_id`, `role`, `avatar_url`, `place_of_birth`, `country`, and `updated_at`
+  - confirm whether the user is actually on a different account rather than a stale bundle
+- Root-cause guard:
+  - if duplicate accounts exist for the same person, do not assume frontend rendering drift first; verify account-level data mismatch before changing UI layout code
+- Stop condition:
+  - do not ship another UI-only fix for profile-card mismatch until the production profile rows are verified against the reported username/account
