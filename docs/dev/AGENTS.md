@@ -130,3 +130,18 @@ This file stores project-specific notes for future AI agent work.
   - the user explicitly asks for another port, or
   - port `8080` is genuinely unavailable and cannot be freed quickly.
 - If a fallback port is temporarily required, clearly state that reason and switch back to `8080` for normal workflows.
+
+## 9. VPS Deploy Method Guard
+
+- Failure pattern: deploying with plain user write operations to `/www/wwwroot/levela` can fail with permission errors, and `rsync` may not exist on the VPS.
+- Mandatory preflight before deploy:
+  - confirm SSH access to `soc-yeremyan-net`
+  - check `sudo -n true` works
+  - check whether `rsync` exists on the remote host
+- Standard deploy fallback when `rsync` is missing:
+  - package local `dist/` as tar
+  - upload tar via `scp`
+  - use `sudo` to clear `/www/wwwroot/levela` (preserve `.user.ini`)
+  - extract tar into `/www/wwwroot/levela`
+- Stop condition:
+  - if passwordless `sudo` is unavailable, stop and do not attempt partial writes to `/www/wwwroot/levela`
