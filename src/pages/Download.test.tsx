@@ -33,7 +33,7 @@ vi.mock('@/contexts/LanguageContext', async () => {
 describe('Download page', () => {
   it('shows the Android download card and iPhone coming-soon state', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <DownloadPage />
       </MemoryRouter>,
     );

@@ -139,7 +139,12 @@ export const baseTranslations = {
     "forgotPasswordLink": "Forgot password",
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?",
-    "downloadAndroid": "Download the Android test build"
+    "downloadAndroid": "Download the Android test build",
+    "testUsersTitle": "Test user switcher",
+    "testUsersDescription": "Quickly sign in as a seeded role or profession fixture while you test.",
+    "testUsersSelect": "Choose a test user",
+    "testUsersFill": "Fill login form",
+    "testUsersSignIn": "Sign in as user"
   },
   "downloads": {
     "badge": "Mobile testing",
@@ -1440,6 +1445,7 @@ export const baseTranslations = {
     "roles": {
       "guest": "Guest",
       "member": "Member",
+      "citizen": "Citizen",
       "verified_member": "Verified",
       "certified": "Certified",
       "moderator": "Moderator",
@@ -1451,6 +1457,7 @@ export const baseTranslations = {
     "roleDescriptions": {
       "guest": "Public read access only.",
       "member": "Default signed-in member access.",
+      "citizen": "Identity-confirmed civic access for trusted community participation.",
       "verified_member": "Member access with future trust verification support.",
       "certified": "Professionally certified contributor access for matching moderated content.",
       "moderator": "Moderation access for content and reports.",

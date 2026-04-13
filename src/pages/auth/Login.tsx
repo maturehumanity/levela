@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserRound, Lock, ArrowRight } from 'lucide-react';
+import TestUserSwitcher, { type TestUserFixture } from '@/components/dev/TestUserSwitcher';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,6 +17,29 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const applyTestUser = (user: TestUserFixture) => {
+    setIdentifier(user.email || user.username);
+    setPassword(user.password);
+    setError(null);
+  };
+
+  const signInTestUser = async (user: TestUserFixture) => {
+    setIdentifier(user.email || user.username);
+    setPassword(user.password);
+    setLoading(true);
+    setError(null);
+
+    const { error } = await signIn(user.email || user.username, user.password);
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    navigate('/');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +141,8 @@ export default function Login() {
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
+
+          <TestUserSwitcher onApply={applyTestUser} onSignIn={signInTestUser} disabled={loading} />
 
           <p className="text-center mt-6 text-sm text-muted-foreground">
             {t('auth.dontHaveAccount')}{' '}

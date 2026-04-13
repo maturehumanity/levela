@@ -115,6 +115,7 @@ type KeywordRule = {
 
 const STAFF_OVERRIDE_ROLES = new Set<AppRole>(['founder', 'admin', 'system']);
 const VERIFIED_CONTENT_ROLES = new Set<AppRole>([
+  'citizen',
   'verified_member',
   'certified',
   'moderator',

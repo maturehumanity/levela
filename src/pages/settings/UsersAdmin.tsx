@@ -77,6 +77,7 @@ type OverrideMode = 'inherit' | 'grant' | 'deny';
 const roleBadgeClassName: Record<AppRole, string> = {
   guest: 'border-border bg-muted text-muted-foreground',
   member: 'border-primary/20 bg-primary/10 text-primary',
+  citizen: 'border-cyan-500/20 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
   verified_member: 'border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300',
   certified: 'border-teal-500/20 bg-teal-500/10 text-teal-700 dark:text-teal-300',
   moderator: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
@@ -456,7 +457,7 @@ export default function UsersAdmin() {
     setOverrideModes((current) => (current ? { ...current, [permission]: mode } : current));
   };
 
-  const persistOverrideModes = async (
+  const persistOverrideModes = useCallback(async (
     targetUser: ProfileRow,
     nextOverrideModes: Record<AppPermission, OverrideMode>,
     options?: { showSuccessToast?: boolean },
@@ -505,7 +506,7 @@ export default function UsersAdmin() {
     }
 
     return true;
-  };
+  }, [profile?.user_id, t]);
 
   useEffect(() => {
     if (!selectedUser || !overrideModes) return;
@@ -519,7 +520,7 @@ export default function UsersAdmin() {
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [overrideModes, profile?.user_id, selectedUser]);
+  }, [overrideModes, persistOverrideModes, profile?.user_id, selectedUser]);
 
   const handleRetrySaveOverrides = async () => {
     if (!selectedUser || !overrideModes) return;

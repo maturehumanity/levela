@@ -32,7 +32,6 @@ export default function UserProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (userId) {
       fetchProfile();

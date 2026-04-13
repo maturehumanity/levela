@@ -28,8 +28,21 @@ vi.mock('framer-motion', () => ({
     {},
     {
       get: (_target, tag: string) =>
-        ({ children, ...props }: React.HTMLAttributes<HTMLElement>) =>
-          <div {...props}>{children}</div>,
+        ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => {
+          const {
+            layoutId,
+            whileTap,
+            whileHover,
+            initial,
+            animate,
+            exit,
+            transition,
+            variants,
+            ...rest
+          } = props as Record<string, unknown>;
+
+          return <div {...(rest as React.HTMLAttributes<HTMLElement>)}>{children}</div>;
+        },
     },
   ),
 }));
@@ -97,7 +110,7 @@ describe('Edit Profile identity block', () => {
 
   it('shows masked generated identity values and reveals them on demand', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EditProfile />
       </MemoryRouter>,
     );
@@ -163,7 +176,7 @@ describe('Edit Profile identity block', () => {
     );
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EditProfile />
       </MemoryRouter>,
     );

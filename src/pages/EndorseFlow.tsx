@@ -71,7 +71,6 @@ export default function EndorseFlow() {
         return '';
     }
   };
-
   useEffect(() => {
     if (userId) {
       fetchData();

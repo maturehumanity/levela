@@ -1728,7 +1728,6 @@ export function BuildOverlay() {
 
     return resolvePositionSelectors(detachedSelectors);
   };
-
   useEffect(() => {
     setExpandedTargetSelectors((current) => {
       const valid = new Set<string>();
@@ -1746,7 +1745,6 @@ export function BuildOverlay() {
       return valid;
     });
   }, [targetChildrenByParent]);
-
   useEffect(() => {
     if (!selectedTargetValue) return;
 
@@ -1772,7 +1770,6 @@ export function BuildOverlay() {
       return changed ? next : currentExpanded;
     });
   }, [availableTargetMap, selectedTargetValue]);
-
   useEffect(() => {
     if (!layersPanelOpen || !selectedTargetValue) return;
 

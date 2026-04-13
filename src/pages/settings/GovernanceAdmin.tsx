@@ -122,7 +122,6 @@ export default function GovernanceAdmin() {
   const [approvalClass, setApprovalClass] = useState<ApprovalClass>('ordinary');
   const [approvalDecision, setApprovalDecision] = useState<ApprovalDecision>('approved');
   const [approvalNotes, setApprovalNotes] = useState('');
-
   useEffect(() => {
     if (!savedAt) return;
     const timer = window.setTimeout(() => setSavedAt(null), 2400);

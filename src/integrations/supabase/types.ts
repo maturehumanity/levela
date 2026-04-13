@@ -1212,6 +1212,7 @@ export type Database = {
       app_role:
         | "guest"
         | "member"
+        | "citizen"
         | "verified_member"
         | "certified"
         | "moderator"
@@ -1419,6 +1420,7 @@ export const Constants = {
       app_role: [
         "guest",
         "member",
+        "citizen",
         "verified_member",
         "certified",
         "moderator",

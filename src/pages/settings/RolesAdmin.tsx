@@ -7,6 +7,7 @@ import {
   BadgeCheck,
   Crown,
   Cpu,
+  Globe,
   Loader2,
   ShieldCheck,
   Store,
@@ -31,6 +32,7 @@ type RolePermissionRow = {
 const roleIconMap = {
   guest: User,
   member: User,
+  citizen: Globe,
   verified_member: BadgeCheck,
   certified: Award,
   moderator: ShieldCheck,

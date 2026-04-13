@@ -29,7 +29,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (profile?.id) {
       fetchEndorsements();

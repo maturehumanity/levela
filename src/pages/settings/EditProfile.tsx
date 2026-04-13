@@ -447,7 +447,6 @@ export default function EditProfile() {
     () => normalizeProfileDraft({ fullName, username, bio, dateOfBirth, placeOfBirth, sex, country, countryCode }),
     [bio, country, countryCode, dateOfBirth, fullName, placeOfBirth, sex, username],
   );
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -485,7 +484,6 @@ export default function EditProfile() {
       window.removeEventListener('resize', measureCategoryPopover);
     };
   }, []);
-
   useEffect(() => {
     if (!profile?.id) return;
 

@@ -103,7 +103,6 @@ export default function Pillars() {
     });
     return defaults;
   };
-
   useEffect(() => {
     // Load custom pillar customizations from localStorage
     const saved = localStorage.getItem('customPillarCustomizations');
@@ -186,7 +185,6 @@ export default function Pillars() {
       setSaving(false);
     }
   };
-
   useEffect(() => {
     if (!hydratedRef.current) return;
 

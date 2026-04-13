@@ -99,7 +99,6 @@ export default function Home() {
   const [isComposerFocused, setIsComposerFocused] = useState(false);
   const postTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canPost = postContent.trim().length > 0;
-
   useEffect(() => {
     if (profile?.id) {
       setOptimisticLikeStates({});

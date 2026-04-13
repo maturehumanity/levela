@@ -14,10 +14,11 @@
     "update:application": "npm run workspace:check:strict && bash scripts/update-application.sh",
     "cap:android": "npm run build:android && npx cap sync android && npx cap open android",
     "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test-users:sync": "node scripts/sync-test-users.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",

@@ -25,7 +25,6 @@ export default function EndorseSelect() {
   const [results, setResults] = useState<UserProfile[]>([]);
   const [recentUsers, setRecentUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     fetchRecentUsers();
   }, [currentProfile?.id]);

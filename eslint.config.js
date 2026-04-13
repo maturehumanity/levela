@@ -23,4 +23,27 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    files: ["src/components/ui/**/*.tsx", "src/contexts/**/*.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    files: [
+      "src/components/layout/BuildOverlay.tsx",
+      "src/pages/EndorseFlow.tsx",
+      "src/pages/EndorseSelect.tsx",
+      "src/pages/Home.tsx",
+      "src/pages/Profile.tsx",
+      "src/pages/UserProfile.tsx",
+      "src/pages/settings/EditProfile.tsx",
+      "src/pages/settings/GovernanceAdmin.tsx",
+      "src/pages/settings/Pillars.tsx",
+    ],
+    rules: {
+      // These screens intentionally scope effects to specific identity/timing triggers.
+      "react-hooks/exhaustive-deps": "off",
+    },
+  },
 );

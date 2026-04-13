@@ -16,6 +16,7 @@ type CreateUserPayload = {
 const assignableRoles = new Set([
   'guest',
   'member',
+  'citizen',
   'verified_member',
   'certified',
   'moderator',

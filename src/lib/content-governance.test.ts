@@ -60,6 +60,19 @@ describe('content governance', () => {
     expect(decision.allowed).toBe(true);
   });
 
+  it('allows citizens to contribute verified community knowledge', () => {
+    const decision = canContributeToContent({
+      role: 'citizen',
+      permissions: rolePermissionMap.citizen,
+      classification: {
+        categoryId: 'community_knowledge',
+        lane: 'unmoderated',
+      },
+    });
+
+    expect(decision.allowed).toBe(true);
+  });
+
   it('requires a matching approved profession for certified moderated contribution', () => {
     const classification = {
       categoryId: 'legal_content' as const,

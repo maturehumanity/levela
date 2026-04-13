@@ -62,7 +62,7 @@ describe('Settings page', () => {
     window.localStorage.removeItem(APP_UPDATE_CHANNEL_KEY);
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Settings />
       </MemoryRouter>,
     );

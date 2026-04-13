@@ -36,7 +36,7 @@ vi.mock('@/contexts/LanguageContext', async () => {
 describe('Onboarding download access', () => {
   it('shows the public app download card with qr code and actions', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Onboarding />
       </MemoryRouter>,
     );
