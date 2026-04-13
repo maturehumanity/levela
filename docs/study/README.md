@@ -1,5 +1,5 @@
-# Study Folder
+# Study Compatibility Note
 
-This folder now organizes study materials by topic.
+The canonical study documents are now filed under `docs/02-moderated/academic-materials/`.
 
-- `constitution/`: Universal Constitution files (full draft + article split files)
+This folder remains only as a compatibility signpost for contributors who remember the previous `docs/study` location.

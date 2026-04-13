@@ -13,6 +13,17 @@ type CreateUserPayload = {
   role?: string;
 };
 
+const assignableRoles = new Set([
+  'guest',
+  'member',
+  'verified_member',
+  'certified',
+  'moderator',
+  'market_manager',
+  'founder',
+  'admin',
+]);
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -50,7 +61,7 @@ Deno.serve(async (request) => {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile || !['admin', 'system'].includes(profile.role)) {
+    if (profileError || !profile || !['founder', 'admin', 'system'].includes(profile.role)) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -60,7 +71,7 @@ Deno.serve(async (request) => {
     const payload = (await request.json()) as CreateUserPayload;
     const email = payload.email?.trim();
     const password = payload.password?.trim();
-    const role = payload.role && payload.role !== 'system' ? payload.role : 'member';
+    const role = payload.role && assignableRoles.has(payload.role) ? payload.role : 'member';
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password are required.' }), {

@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { Database } from '@/integrations/supabase/types';
 import {
   APP_PERMISSIONS,
   APP_ROLES,
@@ -66,12 +67,18 @@ type RolePermissionRow = {
   permission: AppPermission;
 };
 
+type ProfessionRow = Database['public']['Tables']['professions']['Row'];
+type ProfileProfessionRow = Database['public']['Tables']['profile_professions']['Row'];
+type ProfessionVerificationStatus = Database['public']['Enums']['profession_verification_status'];
+type ProfessionStatusMode = ProfessionVerificationStatus | 'unassigned';
+
 type OverrideMode = 'inherit' | 'grant' | 'deny';
 
 const roleBadgeClassName: Record<AppRole, string> = {
   guest: 'border-border bg-muted text-muted-foreground',
   member: 'border-primary/20 bg-primary/10 text-primary',
   verified_member: 'border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300',
+  certified: 'border-teal-500/20 bg-teal-500/10 text-teal-700 dark:text-teal-300',
   moderator: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
   market_manager: 'border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300',
   founder: 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300',
@@ -134,6 +141,8 @@ export default function UsersAdmin() {
   const [rolePermissions, setRolePermissions] = useState<Record<AppRole, AppPermission[]>>(
     Object.fromEntries(APP_ROLES.map((role) => [role, []])) as Record<AppRole, AppPermission[]>,
   );
+  const [professions, setProfessions] = useState<ProfessionRow[]>([]);
+  const [userProfessions, setUserProfessions] = useState<Record<string, ProfileProfessionRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleSavingUserId, setRoleSavingUserId] = useState<string | null>(null);
@@ -144,14 +153,22 @@ export default function UsersAdmin() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState(emptyCreateUserForm);
+  const [professionSavingKey, setProfessionSavingKey] = useState<string | null>(null);
   const latestOverrideSignatureRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    const [{ data: usersData, error: usersError }, { data: matrixData, error: matrixError }] = await Promise.all([
+    const [
+      { data: usersData, error: usersError },
+      { data: matrixData, error: matrixError },
+      { data: professionsData, error: professionsError },
+      { data: profileProfessionsData, error: profileProfessionsError },
+    ] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('role_permissions').select('role,permission'),
+      supabase.from('professions').select('*').order('label', { ascending: true }),
+      supabase.from('profile_professions').select('*'),
     ]);
 
     if (usersError) {
@@ -164,6 +181,16 @@ export default function UsersAdmin() {
       toast.error(t('admin.users.permissionsLoadFailed'));
     }
 
+    if (professionsError) {
+      console.error('Error loading professions:', professionsError);
+      toast.error(t('admin.users.professionsLoadFailed'));
+    }
+
+    if (profileProfessionsError) {
+      console.error('Error loading user professions:', profileProfessionsError);
+      toast.error(t('admin.users.professionAssignmentsLoadFailed'));
+    }
+
     const groupedRolePermissions = Object.fromEntries(
       APP_ROLES.map((role) => [
         role,
@@ -174,8 +201,21 @@ export default function UsersAdmin() {
     ) as Record<AppRole, AppPermission[]>;
 
     const nextUsers = ((usersData || []) as ProfileRow[]).sort((a, b) => Number(b.is_admin) - Number(a.is_admin));
+    const groupedProfessions = ((profileProfessionsData || []) as ProfileProfessionRow[]).reduce<Record<string, ProfileProfessionRow[]>>(
+      (accumulator, assignment) => {
+        if (!accumulator[assignment.profile_id]) {
+          accumulator[assignment.profile_id] = [];
+        }
+        accumulator[assignment.profile_id].push(assignment);
+        return accumulator;
+      },
+      {},
+    );
+
     setUsers(nextUsers);
     setRolePermissions(groupedRolePermissions);
+    setProfessions((professionsData || []) as ProfessionRow[]);
+    setUserProfessions(groupedProfessions);
     setSelectedUserId((current) => current ?? nextUsers[0]?.id ?? null);
     setLoading(false);
   }, [t]);
@@ -198,6 +238,11 @@ export default function UsersAdmin() {
   const selectedUser = useMemo(
     () => users.find((user) => user.id === selectedUserId) || null,
     [selectedUserId, users],
+  );
+
+  const selectedUserProfessions = useMemo(
+    () => (selectedUser ? userProfessions[selectedUser.id] || [] : []),
+    [selectedUser, userProfessions],
   );
 
   useEffect(() => {
@@ -346,7 +391,7 @@ export default function UsersAdmin() {
     setUsers((current) =>
       current.map((user) =>
         user.id === target.id
-          ? { ...user, role: nextRole, is_admin: nextRole === 'admin' || nextRole === 'system' }
+          ? { ...user, role: nextRole, is_admin: nextRole === 'founder' || nextRole === 'admin' || nextRole === 'system' }
           : user,
       ),
     );
@@ -358,7 +403,7 @@ export default function UsersAdmin() {
       setUsers((current) =>
         current.map((user) =>
           user.id === target.id
-            ? { ...user, role: previousRole, is_admin: previousRole === 'admin' || previousRole === 'system' }
+            ? { ...user, role: previousRole, is_admin: previousRole === 'founder' || previousRole === 'admin' || previousRole === 'system' }
             : user,
         ),
       );
@@ -479,6 +524,93 @@ export default function UsersAdmin() {
   const handleRetrySaveOverrides = async () => {
     if (!selectedUser || !overrideModes) return;
     await persistOverrideModes(selectedUser, overrideModes, { showSuccessToast: true });
+  };
+
+  const getProfessionAssignment = (targetUserId: string, professionId: string) =>
+    (userProfessions[targetUserId] || []).find((assignment) => assignment.profession_id === professionId) || null;
+
+  const handleProfessionStatusChange = async (
+    targetUser: ProfileRow,
+    professionId: string,
+    nextStatus: ProfessionStatusMode,
+  ) => {
+    if (!profile) return;
+
+    const saveKey = `${targetUser.id}:${professionId}`;
+    const previousAssignments = userProfessions[targetUser.id] || [];
+    const previousAssignment = previousAssignments.find((assignment) => assignment.profession_id === professionId) || null;
+    setProfessionSavingKey(saveKey);
+
+    if (nextStatus === 'unassigned') {
+      const { error } = await supabase
+        .from('profile_professions')
+        .delete()
+        .eq('profile_id', targetUser.id)
+        .eq('profession_id', professionId);
+
+      if (error) {
+        console.error('Error removing profession assignment:', error);
+        toast.error(t('admin.users.professionSaveFailed'));
+        setProfessionSavingKey(null);
+        return;
+      }
+
+      setUserProfessions((current) => ({
+        ...current,
+        [targetUser.id]: (current[targetUser.id] || []).filter((assignment) => assignment.profession_id !== professionId),
+      }));
+
+      toast.success(
+        t('admin.users.professionRemoved', {
+          user: targetUser.full_name || targetUser.username || t('common.anonymousUser'),
+        }),
+      );
+      setProfessionSavingKey(null);
+      await loadData();
+      return;
+    }
+
+    const verifiedAt = nextStatus === 'pending' ? null : new Date().toISOString();
+    const verifiedBy = nextStatus === 'pending' ? null : profile.id;
+
+    const payload: Database['public']['Tables']['profile_professions']['Insert'] = {
+      profile_id: targetUser.id,
+      profession_id: professionId,
+      status: nextStatus,
+      evidence_url: previousAssignment?.evidence_url || null,
+      notes: previousAssignment?.notes || null,
+      verified_at: verifiedAt,
+      verified_by: verifiedBy,
+    };
+
+    const { data, error } = await supabase
+      .from('profile_professions')
+      .upsert(payload, { onConflict: 'profile_id,profession_id' })
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('Error saving profession assignment:', error);
+      toast.error(t('admin.users.professionSaveFailed'));
+      setProfessionSavingKey(null);
+      return;
+    }
+
+    setUserProfessions((current) => {
+      const remaining = (current[targetUser.id] || []).filter((assignment) => assignment.profession_id !== professionId);
+      return {
+        ...current,
+        [targetUser.id]: [...remaining, data as ProfileProfessionRow].sort((a, b) => a.profession_id.localeCompare(b.profession_id)),
+      };
+    });
+
+    toast.success(
+      t('admin.users.professionSaved', {
+        user: targetUser.full_name || targetUser.username || t('common.anonymousUser'),
+      }),
+    );
+    setProfessionSavingKey(null);
+    await loadData();
   };
 
   const handleCreateUser = async () => {
@@ -825,6 +957,54 @@ export default function UsersAdmin() {
                 </div>
 
                 <div className="space-y-4">
+                  <Card className="rounded-3xl border-border/60 p-4 shadow-none">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">{t('admin.users.professionsTitle')}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('admin.users.professionsSubtitle')}</p>
+                    <div className="mt-4 space-y-3">
+                      {professions.map((profession) => {
+                        const assignment = getProfessionAssignment(selectedUser.id, profession.id);
+                        const currentStatus = assignment?.status || 'unassigned';
+                        const saveKey = `${selectedUser.id}:${profession.id}`;
+
+                        return (
+                          <div key={profession.id} className="rounded-2xl border border-border/60 bg-background/70 p-3">
+                            <div className="flex flex-col gap-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="font-medium text-foreground">{profession.label}</p>
+                                  {assignment?.verified_at && currentStatus !== 'pending' && (
+                                    <Badge variant="outline" className="rounded-full text-[11px]">
+                                      {formatDate(assignment.verified_at)}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">{profession.description}</p>
+                              </div>
+                              <Select
+                                value={currentStatus}
+                                onValueChange={(value) =>
+                                  void handleProfessionStatusChange(selectedUser, profession.id, value as ProfessionStatusMode)
+                                }
+                                disabled={professionSavingKey === saveKey}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unassigned">{t('admin.users.professionStatuses.unassigned')}</SelectItem>
+                                  <SelectItem value="pending">{t('admin.users.professionStatuses.pending')}</SelectItem>
+                                  <SelectItem value="approved">{t('admin.users.professionStatuses.approved')}</SelectItem>
+                                  <SelectItem value="suspended">{t('admin.users.professionStatuses.suspended')}</SelectItem>
+                                  <SelectItem value="revoked">{t('admin.users.professionStatuses.revoked')}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+
                   <Card className="rounded-3xl border-border/60 p-4 shadow-none">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">{t('admin.users.overrideLegendTitle')}</h3>
                     <div className="mt-3 space-y-3 text-sm">

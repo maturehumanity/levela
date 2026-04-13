@@ -23,7 +23,7 @@ This file stores project-specific notes for future AI agent work.
 - Do not create stray tool/agent folders or files such as `.codex` inside the project unless there is a clear, user-requested purpose for them.
 - Before creating any new file, prefer:
   - reusing an existing project file
-  - placing notes/docs in `docs/dev/` instead of the repo root
+  - placing notes/docs in `docs/04-operations/dev/` instead of the repo root
   - keeping temporary or tool-specific artifacts out of the project tree whenever possible
 - If a new file is genuinely needed, choose the narrowest, most appropriate location and keep its purpose directly tied to the user’s request.
 
@@ -96,7 +96,7 @@ This file stores project-specific notes for future AI agent work.
   - verify the built APK does not contain `assets/public/downloads/*` entries
   - if APK size jumps unexpectedly (for example >2x from previous release), treat it as a packaging regression and inspect APK contents before publishing
 - `scripts/release-bump.sh` updates the version source of truth in `src/lib/app-release.ts`, bumps the Android build number, and syncs `package.json` plus `package-lock.json`.
-- The step-by-step human release guide lives in `docs/dev/RELEASING.md`.
+- The step-by-step human release guide lives in `docs/04-operations/dev/RELEASING.md`.
 - After versioning changes, verify all three of these outputs together:
   - the APK filename linked on the live website
   - the live `/updates/android.json` manifest

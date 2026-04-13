@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import Settings from '@/pages/Settings';
 import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
+import { APP_UPDATE_CHANNEL_KEY, getAppUpdateChannel } from '@/lib/update-channel';
 
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
@@ -58,13 +59,19 @@ vi.mock('@/contexts/LanguageContext', async () => {
 
 describe('Settings page', () => {
   it('shows the installed app version and build', () => {
+    window.localStorage.removeItem(APP_UPDATE_CHANNEL_KEY);
+
     render(
       <MemoryRouter>
         <Settings />
       </MemoryRouter>,
     );
 
+    const expectedLabel = getAppUpdateChannel() === 'testing'
+      ? `Testing ${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`
+      : `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
+
     expect(screen.getByText('Application version')).toBeInTheDocument();
-    expect(screen.getByText(`${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`)).toBeInTheDocument();
+    expect(screen.getByText(expectedLabel)).toBeInTheDocument();
   });
 });

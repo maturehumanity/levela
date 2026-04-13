@@ -614,6 +614,7 @@ export default function Study() {
             const canOpenDomain = domain.availableNow && !isDisabled;
             const domainTitle = t(domain.titleKey);
             const domainDescription = t(domain.descriptionKey);
+            const isDomainExpanded = selectedDomain === domain.id;
 
             return (
               <motion.div
@@ -642,27 +643,33 @@ export default function Study() {
                   role={canOpenDomain ? 'button' : undefined}
                   tabIndex={canOpenDomain ? 0 : undefined}
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className={cn('flex min-w-0 gap-3', isDomainExpanded ? 'items-start' : 'items-center')}>
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
+                      <Icon className="h-5 w-5" />
                     </div>
 
-                    <p
-                      className="min-w-0 w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm"
-                      title={`${domainTitle} - ${domainDescription}`}
-                    >
+                    <div className="min-w-0 w-0 flex-1">
                       <span
                         className={cn(
-                          'font-semibold text-muted-foreground transition-colors',
+                          'block truncate text-sm font-semibold text-muted-foreground transition-colors',
                           canOpenDomain && 'group-hover:text-foreground',
-                          selectedDomain === domain.id && 'text-foreground',
+                          isDomainExpanded && 'text-foreground',
                         )}
                       >
                         {domainTitle}
                       </span>
-                      <span className="mx-1 text-muted-foreground/70">-</span>
-                      <span className="text-muted-foreground">{domainDescription}</span>
-                    </p>
+                      <span
+                        className={cn(
+                          'mt-1 block text-sm text-muted-foreground',
+                          isDomainExpanded
+                            ? 'whitespace-normal break-words'
+                            : 'overflow-hidden text-ellipsis whitespace-nowrap',
+                        )}
+                        title={domainDescription}
+                      >
+                        {domainDescription}
+                      </span>
+                    </div>
 
                     <div className="flex shrink-0 items-center gap-1.5">
                       {isFoundational && (

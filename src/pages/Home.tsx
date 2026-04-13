@@ -62,6 +62,22 @@ interface PostComment {
   };
 }
 
+type RawPostRecord = {
+  id: string;
+  content: string;
+  created_at: string;
+  author_id: string;
+  is_edited: boolean | null;
+  edited_at?: string | null;
+  syncStatus?: 'local' | 'remote';
+  author: Post['author'];
+};
+
+type FeedQueryError = {
+  code?: string;
+  message?: string;
+} | null | undefined;
+
 export default function Home() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -101,7 +117,7 @@ export default function Home() {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
   }, [postContent]);
 
-  const normalizePost = (raw: any): Post => ({
+  const normalizePost = (raw: RawPostRecord): Post => ({
     id: raw.id,
     content: raw.content,
     created_at: raw.created_at,
@@ -112,7 +128,7 @@ export default function Home() {
     author: raw.author as Post['author'],
   });
 
-  const isMissingTableError = (error: any) => {
+  const isMissingTableError = (error: FeedQueryError) => {
     return error?.code === 'PGRST205' || /could not find the table|schema cache/i.test(error?.message || '');
   };
 

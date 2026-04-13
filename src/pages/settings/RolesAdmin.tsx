@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  Award,
   BadgeCheck,
   Crown,
   Cpu,
@@ -31,6 +32,7 @@ const roleIconMap = {
   guest: User,
   member: User,
   verified_member: BadgeCheck,
+  certified: Award,
   moderator: ShieldCheck,
   market_manager: Store,
   founder: Crown,

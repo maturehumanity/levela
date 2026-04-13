@@ -221,6 +221,271 @@ export type Database = {
         }
         Relationships: []
       }
+      professions: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profile_professions: {
+        Row: {
+          created_at: string
+          evidence_url: string | null
+          notes: string | null
+          profession_id: string
+          profile_id: string
+          status: Database["public"]["Enums"]["profession_verification_status"]
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_url?: string | null
+          notes?: string | null
+          profession_id: string
+          profile_id: string
+          status?: Database["public"]["Enums"]["profession_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          evidence_url?: string | null
+          notes?: string | null
+          profession_id?: string
+          profile_id?: string
+          status?: Database["public"]["Enums"]["profession_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_professions_profession_id_fkey"
+            columns: ["profession_id"]
+            isOneToOne: false
+            referencedRelation: "professions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_professions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_professions_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_categories: {
+        Row: {
+          allowed_professions: string[]
+          contribution_policy: string
+          created_at: string
+          default_content_types: string[]
+          default_moderation_lane: Database["public"]["Enums"]["content_moderation_lane"]
+          description: string
+          id: string
+          label: string
+          required_contribution_permission: Database["public"]["Enums"]["app_permission"]
+          required_review_permission: Database["public"]["Enums"]["app_permission"]
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          allowed_professions?: string[]
+          contribution_policy: string
+          created_at?: string
+          default_content_types?: string[]
+          default_moderation_lane: Database["public"]["Enums"]["content_moderation_lane"]
+          description: string
+          id: string
+          label: string
+          required_contribution_permission: Database["public"]["Enums"]["app_permission"]
+          required_review_permission: Database["public"]["Enums"]["app_permission"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          allowed_professions?: string[]
+          contribution_policy?: string
+          created_at?: string
+          default_content_types?: string[]
+          default_moderation_lane?: Database["public"]["Enums"]["content_moderation_lane"]
+          description?: string
+          id?: string
+          label?: string
+          required_contribution_permission?: Database["public"]["Enums"]["app_permission"]
+          required_review_permission?: Database["public"]["Enums"]["app_permission"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_contribution_rules: {
+        Row: {
+          allowed_professions: string[]
+          allowed_roles: Database["public"]["Enums"]["app_role"][]
+          category_id: string
+          content_type: string
+          created_at: string
+          moderation_lane: Database["public"]["Enums"]["content_moderation_lane"]
+          required_permission: Database["public"]["Enums"]["app_permission"]
+          requires_approved_profession: boolean
+          updated_at: string
+        }
+        Insert: {
+          allowed_professions?: string[]
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          category_id: string
+          content_type?: string
+          created_at?: string
+          moderation_lane: Database["public"]["Enums"]["content_moderation_lane"]
+          required_permission: Database["public"]["Enums"]["app_permission"]
+          requires_approved_profession?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allowed_professions?: string[]
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          category_id?: string
+          content_type?: string
+          created_at?: string
+          moderation_lane?: Database["public"]["Enums"]["content_moderation_lane"]
+          required_permission?: Database["public"]["Enums"]["app_permission"]
+          requires_approved_profession?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_contribution_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_items: {
+        Row: {
+          author_id: string | null
+          body_preview: string | null
+          category_id: string
+          classification_confidence: number
+          classification_method: string
+          classification_reasons: Json
+          content_type: string
+          contribution_policy: string
+          created_at: string
+          id: string
+          metadata: Json
+          moderation_lane: Database["public"]["Enums"]["content_moderation_lane"]
+          professional_domain: string
+          review_status: Database["public"]["Enums"]["content_review_status"]
+          reviewed_at: string | null
+          reviewer_id: string | null
+          source_id: string | null
+          source_table: string | null
+          submitted_at: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body_preview?: string | null
+          category_id?: string
+          classification_confidence?: number
+          classification_method?: string
+          classification_reasons?: Json
+          content_type?: string
+          contribution_policy?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          moderation_lane?: Database["public"]["Enums"]["content_moderation_lane"]
+          professional_domain?: string
+          review_status?: Database["public"]["Enums"]["content_review_status"]
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          submitted_at?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body_preview?: string | null
+          category_id?: string
+          classification_confidence?: number
+          classification_method?: string
+          classification_reasons?: Json
+          content_type?: string
+          contribution_policy?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          moderation_lane?: Database["public"]["Enums"]["content_moderation_lane"]
+          professional_domain?: string
+          review_status?: Database["public"]["Enums"]["content_review_status"]
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          submitted_at?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           admin_notes: string | null
@@ -886,6 +1151,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_contribute_to_content_category: {
+        Args: { target_category_id: string; target_profile_id?: string }
+        Returns: boolean
+      }
+      classify_content_category: {
+        Args: {
+          body_preview?: string
+          content_type?: string
+          source?: string
+          title?: string
+        }
+        Returns: string
+      }
+      profile_has_approved_profession: {
+        Args: { allowed_professions: string[]; target_profile_id: string }
+        Returns: boolean
+      }
       resolve_login_email: {
         Args: { identifier: string }
         Returns: string | null
@@ -896,6 +1178,12 @@ export type Database = {
         | "law.read"
         | "law.contribute"
         | "law.review"
+        | "content.read"
+        | "content.contribute_unmoderated"
+        | "content.contribute_moderated"
+        | "content.review"
+        | "content.moderate"
+        | "profession.verify"
         | "build.use"
         | "profile.read"
         | "profile.update_self"
@@ -925,11 +1213,23 @@ export type Database = {
         | "guest"
         | "member"
         | "verified_member"
+        | "certified"
         | "moderator"
         | "market_manager"
         | "founder"
         | "admin"
         | "system"
+      content_moderation_lane:
+        | "unmoderated"
+        | "moderated"
+      content_review_status:
+        | "draft"
+        | "proposed"
+        | "in_review"
+        | "changes_requested"
+        | "approved"
+        | "rejected"
+        | "archived"
       law_contribution_status:
         | "pending"
         | "approved"
@@ -948,6 +1248,11 @@ export type Database = {
         | "responsibility_reliability"
         | "environment_community"
         | "economy_contribution"
+      profession_verification_status:
+        | "pending"
+        | "approved"
+        | "suspended"
+        | "revoked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1076,6 +1381,15 @@ export const Constants = {
   public: {
     Enums: {
       app_permission: [
+        "law.read",
+        "law.contribute",
+        "law.review",
+        "content.read",
+        "content.contribute_unmoderated",
+        "content.contribute_moderated",
+        "content.review",
+        "content.moderate",
+        "profession.verify",
         "build.use",
         "profile.read",
         "profile.update_self",
@@ -1106,11 +1420,25 @@ export const Constants = {
         "guest",
         "member",
         "verified_member",
+        "certified",
         "moderator",
         "market_manager",
         "founder",
         "admin",
         "system",
+      ],
+      content_moderation_lane: [
+        "unmoderated",
+        "moderated",
+      ],
+      content_review_status: [
+        "draft",
+        "proposed",
+        "in_review",
+        "changes_requested",
+        "approved",
+        "rejected",
+        "archived",
       ],
       pillar_type: [
         "education_skills",
@@ -1118,6 +1446,12 @@ export const Constants = {
         "responsibility_reliability",
         "environment_community",
         "economy_contribution",
+      ],
+      profession_verification_status: [
+        "pending",
+        "approved",
+        "suspended",
+        "revoked",
       ],
     },
   },

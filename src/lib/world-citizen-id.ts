@@ -24,6 +24,9 @@ export function getWorldCitizenStatusPrefix(role?: AppRole | null, isVerified?: 
   if (role === 'system' || role === 'admin' || role === 'moderator' || role === 'market_manager') {
     return 'G';
   }
+  if (role === 'certified') {
+    return 'W';
+  }
   return isVerified ? 'W' : 'E';
 }
 
