@@ -30,6 +30,7 @@ import {
   Fingerprint,
   Landmark,
   LayoutGrid,
+  Award,
 } from 'lucide-react';
 
 const settingsItems = [
@@ -69,6 +70,12 @@ const settingsItems = [
     labelKey: 'settings.helpSupport',
     descriptionKey: 'settings.helpSupportDescription',
     path: '/settings/help',
+  },
+  {
+    icon: Award,
+    labelKey: 'settings.professions',
+    descriptionKey: 'settings.professionsDescription',
+    path: '/settings/professions',
   },
   {
     icon: SettingsIcon,

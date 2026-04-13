@@ -33,6 +33,7 @@ import EndorseFlow from "@/pages/EndorseFlow";
 import Settings from "@/pages/Settings";
 import EditProfile from "@/pages/settings/EditProfile";
 import Pillars from "@/pages/settings/Pillars";
+import Professions from "@/pages/settings/Professions";
 import RolesAdmin from "@/pages/settings/RolesAdmin";
 import UsersAdmin from "@/pages/settings/UsersAdmin";
 import PermissionsAdmin from "@/pages/settings/PermissionsAdmin";
@@ -143,6 +144,14 @@ const App = () => (
                   element={
                     <ProtectedRoute requiredPermissions={['profile.update_self']}>
                       <EditProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings/professions"
+                  element={
+                    <ProtectedRoute>
+                      <Professions />
                     </ProtectedRoute>
                   }
                 />

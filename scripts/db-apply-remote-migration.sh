@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+EXPLICIT_REMOTE_DB_HOST="${REMOTE_DB_HOST:-}"
+EXPLICIT_REMOTE_DOCKER_DIR="${REMOTE_DOCKER_DIR:-}"
+EXPLICIT_REMOTE_DB_NAME="${REMOTE_DB_NAME:-}"
+EXPLICIT_REMOTE_DB_USER="${REMOTE_DB_USER:-}"
+
 if [[ -f ".env.local" ]]; then
   # shellcheck disable=SC1091
   source ".env.local"
@@ -12,10 +17,10 @@ if [[ $# -ne 1 ]]; then
 fi
 
 MIGRATION_FILE="$1"
-REMOTE_HOST="${REMOTE_DB_HOST:-soc-yeremyan-net}"
-REMOTE_DOCKER_DIR="${REMOTE_DOCKER_DIR:-~/supabase-stack/supabase/docker}"
-REMOTE_DB_NAME="${REMOTE_DB_NAME:-postgres}"
-REMOTE_DB_USER="${REMOTE_DB_USER:-postgres}"
+REMOTE_HOST="${EXPLICIT_REMOTE_DB_HOST:-${REMOTE_DB_HOST:-soc-yeremyan-net}}"
+REMOTE_DOCKER_DIR="${EXPLICIT_REMOTE_DOCKER_DIR:-${REMOTE_DOCKER_DIR:-/home/ubuntu/supabase-stack/supabase/docker}}"
+REMOTE_DB_NAME="${EXPLICIT_REMOTE_DB_NAME:-${REMOTE_DB_NAME:-postgres}}"
+REMOTE_DB_USER="${EXPLICIT_REMOTE_DB_USER:-${REMOTE_DB_USER:-postgres}}"
 
 if [[ ! -f "$MIGRATION_FILE" ]]; then
   echo "Migration file not found: $MIGRATION_FILE"

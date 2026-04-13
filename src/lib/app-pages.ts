@@ -1,7 +1,7 @@
 import type { AppPermission } from '@/lib/access-control';
 import { permissionListHasAny } from '@/lib/access-control';
 import type { LucideIcon } from 'lucide-react';
-import { BookOpen, Landmark, LayoutGrid } from 'lucide-react';
+import { Award, BookOpen, Landmark, LayoutGrid } from 'lucide-react';
 import { pageRegistry } from '@/lib/feature-registry';
 
 export type NavigablePageId =
@@ -16,6 +16,7 @@ export type NavigablePageId =
   | 'endorse'
   | 'profile'
   | 'editProfile'
+  | 'professions'
   | 'settings'
   | 'pillars'
   | 'adminRoles'
@@ -73,6 +74,12 @@ export const appPageLinks: AppPageLink[] = [
     labelKey: pageRegistry.editProfile.labelKey,
     icon: pageRegistry.editProfile.icon,
     requiredPermissions: ['profile.update_self'],
+  },
+  {
+    id: 'professions',
+    path: '/settings/professions',
+    labelKey: 'settings.professions',
+    icon: Award,
   },
   {
     id: 'settings',

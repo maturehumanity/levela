@@ -28,7 +28,7 @@ You can override defaults per-command:
 
 ```bash
 REMOTE_DB_HOST=soc-yeremyan-net \
-REMOTE_DOCKER_DIR=~/supabase-stack/supabase/docker \
+REMOTE_DOCKER_DIR=/home/ubuntu/supabase-stack/supabase/docker \
 REMOTE_DB_USER=postgres \
 REMOTE_DB_NAME=postgres \
 scripts/db-apply-remote-migration.sh supabase/migrations/<migration>.sql
