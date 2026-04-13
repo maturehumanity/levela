@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -10,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { type LanguageCode } from '@/lib/i18n';
 import { permissionListHasAny, type AppPermission } from '@/lib/access-control';
 import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
+import { getAppUpdateChannel, onAppUpdateChannelChange, setAppUpdateChannel, toggleAppUpdateChannel } from '@/lib/update-channel';
 import {
   User,
   Shield,
@@ -81,7 +83,11 @@ export default function Settings() {
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
   const { language, setLanguage, languageOptions, t } = useLanguage();
+  const [appUpdateChannel, setLocalAppUpdateChannel] = useState(getAppUpdateChannel);
   const installedReleaseLabel = `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
+  const channelReleaseLabel = appUpdateChannel === 'testing'
+    ? `Testing ${installedReleaseLabel}`
+    : installedReleaseLabel;
   const canAccessAdmin = profile
     ? permissionListHasAny(profile.effective_permissions || [], ['role.assign', 'settings.manage'])
     : false;
@@ -135,6 +141,14 @@ export default function Settings() {
   const handleLanguageChange = async (nextLanguage: string) => {
     await setLanguage(nextLanguage as LanguageCode);
   };
+
+  const handleToggleUpdateChannel = () => {
+    const nextChannel = toggleAppUpdateChannel(appUpdateChannel);
+    setLocalAppUpdateChannel(nextChannel);
+    setAppUpdateChannel(nextChannel);
+  };
+
+  useEffect(() => onAppUpdateChannelChange(setLocalAppUpdateChannel), []);
 
   return (
     <AppLayout>
@@ -301,15 +315,19 @@ export default function Settings() {
                 <ShieldCheck className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground">{t('settings.appInfoTitle')}</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-foreground">{t('settings.appInfoTitle')}</h3>
+                  <button
+                    type="button"
+                    onClick={handleToggleUpdateChannel}
+                    className={appUpdateChannel === 'testing' ? 'text-sm font-semibold text-emerald-400' : 'text-sm font-medium text-muted-foreground'}
+                    aria-label="Toggle app update channel"
+                    title="Tap to switch Release/Testing channel"
+                  >
+                    {channelReleaseLabel}
+                  </button>
+                </div>
                 <p className="text-sm text-muted-foreground">{t('settings.appInfoDescription')}</p>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-medium text-foreground">{t('settings.currentVersionLabel')}</span>
-                <span className="text-muted-foreground">{installedReleaseLabel}</span>
               </div>
             </div>
           </Card>

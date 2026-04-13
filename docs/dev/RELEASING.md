@@ -32,6 +32,13 @@ npm run release:bump -- 0.1.5
 npm run update:application
 ```
 
+By default this now publishes both channels. You can override with:
+
+```bash
+LEVELA_UPDATE_CHANNEL=testing npm run update:application
+LEVELA_UPDATE_CHANNEL=release npm run update:application
+```
+
 For direct website APK distribution, run with:
 
 ```bash

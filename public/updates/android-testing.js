@@ -4,8 +4,8 @@ window.__LEVELA_ANDROID_UPDATE__ = {
   versionTag: 'v0.1.13',
   buildNumber: 15,
   releaseId: '20260412-v0.1.13',
-  downloadPath: '/downloads/levela-debug-release-20260412-v0.1.13.apk',
-  downloadUrl: 'https://levela.yeremyan.net/downloads/levela-debug-release-20260412-v0.1.13.apk?v=20260412-v0.1.13',
+  downloadPath: '/downloads/levela-debug-testing-20260412-v0.1.13.apk',
+  downloadUrl: 'https://levela.yeremyan.net/downloads/levela-debug-testing-20260412-v0.1.13.apk?v=20260412-v0.1.13',
   publishedAt: '2026-04-13T05:18:51Z',
   notes: [
     'Latest Levela Android release built from the current application.',

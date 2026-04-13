@@ -22,7 +22,9 @@ import {
   type AndroidUpdateManifest,
 } from '@/lib/app-updates';
 import { canUseExternalAndroidApkUpdates, DISTRIBUTION_CHANNEL } from '@/lib/distribution';
-import { ANDROID_UPDATE_SCRIPT_URL } from '@/lib/downloads';
+import { getAndroidUpdateScriptUrl } from '@/lib/downloads';
+import type { AppUpdateChannel } from '@/lib/update-channel';
+import { getAppUpdateChannel, onAppUpdateChannelChange } from '@/lib/update-channel';
 
 const DISMISSED_ANDROID_RELEASE_KEY = 'levela-dismissed-android-release';
 const PENDING_ANDROID_RELEASE_KEY = 'levela-pending-android-release';
@@ -115,10 +117,10 @@ function clearPendingRelease() {
   removeStorageItem(PENDING_ANDROID_RELEASE_KEY);
 }
 
-function loadRemoteManifest() {
+function loadRemoteManifest(channel: AppUpdateChannel) {
   return new Promise<unknown>((resolve, reject) => {
     const script = document.createElement('script');
-    const scriptUrl = new URL(ANDROID_UPDATE_SCRIPT_URL);
+    const scriptUrl = new URL(getAndroidUpdateScriptUrl(channel));
     const updateWindow = window as typeof window & {
       __LEVELA_ANDROID_UPDATE__?: unknown;
     };
@@ -147,6 +149,7 @@ export function AppUpdatePrompt() {
   const { t } = useLanguage();
   const [availableUpdate, setAvailableUpdate] = useState<AndroidUpdateManifest | null>(null);
   const [isLaunchingUpdate, setIsLaunchingUpdate] = useState(false);
+  const [appUpdateChannel, setAppUpdateChannel] = useState(getAppUpdateChannel);
   const updateLaunchLockRef = useRef(false);
   const releaseLaunchTimeoutRef = useRef<number | null>(null);
   const allowsExternalAndroidApkUpdates = useMemo(
@@ -159,13 +162,15 @@ export function AppUpdatePrompt() {
   );
   const shouldUseExternalApkPrompt = isAndroidNativeApp && allowsExternalAndroidApkUpdates;
 
+  useEffect(() => onAppUpdateChannelChange(setAppUpdateChannel), []);
+
   const checkForUpdates = useCallback(async () => {
     if (!shouldUseExternalApkPrompt) {
       return;
     }
 
     try {
-      const manifest = await loadRemoteManifest();
+      const manifest = await loadRemoteManifest(appUpdateChannel);
 
       if (!isAndroidUpdateManifest(manifest)) {
         return;
@@ -200,7 +205,7 @@ export function AppUpdatePrompt() {
     } catch {
       // Ignore update check failures so offline use remains unaffected.
     }
-  }, [shouldUseExternalApkPrompt]);
+  }, [appUpdateChannel, shouldUseExternalApkPrompt]);
 
   useEffect(() => {
     if (!shouldUseExternalApkPrompt) {

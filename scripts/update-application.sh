@@ -8,16 +8,31 @@ APK_SOURCE="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
 APK_TARGET_DIR="$ROOT_DIR/public/downloads"
 APK_TARGET="$APK_TARGET_DIR/levela-debug.apk"
 UPDATE_MANIFEST_DIR="$ROOT_DIR/public/updates"
-UPDATE_MANIFEST_PATH="$UPDATE_MANIFEST_DIR/android.json"
-UPDATE_SCRIPT_PATH="$UPDATE_MANIFEST_DIR/android.js"
 RELEASE_METADATA_FILE="$ROOT_DIR/src/lib/app-release.ts"
 APP_VERSION="$(sed -n "s/^export const APP_VERSION = '\\(.*\\)';$/\\1/p" "$RELEASE_METADATA_FILE")"
 ANDROID_VERSION_CODE="$(sed -n "s/^export const ANDROID_VERSION_CODE = \\([0-9][0-9]*\\);$/\\1/p" "$RELEASE_METADATA_FILE")"
 RELEASE_ID="$(sed -n "s/^export const APP_RELEASE_ID = '\\(.*\\)';$/\\1/p" "$RELEASE_METADATA_FILE")"
-VERSIONED_APK_FILENAME="levela-debug-${RELEASE_ID}.apk"
-VERSIONED_APK_TARGET="$APK_TARGET_DIR/$VERSIONED_APK_FILENAME"
-VERSIONED_APK_PATH="/downloads/$VERSIONED_APK_FILENAME"
-VERSIONED_APK_URL="https://levela.yeremyan.net$VERSIONED_APK_PATH?v=$RELEASE_ID"
+CHANNEL="${LEVELA_UPDATE_CHANNEL:-both}"
+
+resolve_channel_suffix() {
+  case "$1" in
+    testing)
+      echo "testing"
+      ;;
+    release)
+      echo "release"
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
+versioned_apk_filename() {
+  local suffix
+  suffix="$(resolve_channel_suffix "$1")"
+  echo "levela-debug-${suffix}-${RELEASE_ID}.apk"
+}
 JDK_CACHE_DIR="/tmp/levela-jdk"
 JDK_ARCHIVE="$JDK_CACHE_DIR/temurin21.tar.gz"
 JDK_DOWNLOAD_URL="https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse"
@@ -54,16 +69,23 @@ ensure_java() {
 }
 
 prune_download_archive() {
+  local channel="$1"
+  local suffix
+  suffix="$(resolve_channel_suffix "$channel")"
+  if [ -z "$suffix" ]; then
+    return
+  fi
+
   mkdir -p "$APK_TARGET_DIR"
 
   local -a versioned_apks=()
-  mapfile -t versioned_apks < <(cd "$APK_TARGET_DIR" && ls -1t levela-debug-*.apk 2>/dev/null || true)
+  mapfile -t versioned_apks < <(cd "$APK_TARGET_DIR" && ls -1t "levela-debug-${suffix}-"*.apk 2>/dev/null || true)
   if [ "${#versioned_apks[@]}" -eq 0 ]; then
     return
   fi
 
   for apk_file in "${versioned_apks[@]}"; do
-    if [ "$apk_file" = "$VERSIONED_APK_FILENAME" ]; then
+    if [ "$apk_file" = "$(versioned_apk_filename "$channel")" ]; then
       continue
     fi
     rm -f "$APK_TARGET_DIR/$apk_file"
@@ -71,19 +93,34 @@ prune_download_archive() {
 }
 
 write_update_manifest() {
+  local channel="$1"
+  local suffix
+  suffix="$(resolve_channel_suffix "$channel")"
+  if [ -z "$suffix" ]; then
+    echo "Unknown update channel: $channel" >&2
+    exit 1
+  fi
+
+  local apk_filename
+  apk_filename="$(versioned_apk_filename "$channel")"
+  local apk_path="/downloads/$apk_filename"
+  local apk_url="https://levela.yeremyan.net${apk_path}?v=${RELEASE_ID}"
+
   mkdir -p "$UPDATE_MANIFEST_DIR"
   local published_at
   published_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-  cat > "$UPDATE_MANIFEST_PATH" <<EOF
+  local manifest_suffix="android-${suffix}"
+
+  cat > "$UPDATE_MANIFEST_DIR/${manifest_suffix}.json" <<EOF
 {
   "platform": "android",
   "version": "$APP_VERSION",
   "versionTag": "v$APP_VERSION",
   "buildNumber": $ANDROID_VERSION_CODE,
   "releaseId": "$RELEASE_ID",
-  "downloadPath": "$VERSIONED_APK_PATH",
-  "downloadUrl": "$VERSIONED_APK_URL",
+  "downloadPath": "$apk_path",
+  "downloadUrl": "$apk_url",
   "publishedAt": "$published_at",
   "notes": [
     "Latest Levela Android release built from the current application.",
@@ -92,15 +129,15 @@ write_update_manifest() {
 }
 EOF
 
-  cat > "$UPDATE_SCRIPT_PATH" <<EOF
+  cat > "$UPDATE_MANIFEST_DIR/${manifest_suffix}.js" <<EOF
 window.__LEVELA_ANDROID_UPDATE__ = {
   platform: 'android',
   version: '$APP_VERSION',
   versionTag: 'v$APP_VERSION',
   buildNumber: $ANDROID_VERSION_CODE,
   releaseId: '$RELEASE_ID',
-  downloadPath: '$VERSIONED_APK_PATH',
-  downloadUrl: '$VERSIONED_APK_URL',
+  downloadPath: '$apk_path',
+  downloadUrl: '$apk_url',
   publishedAt: '$published_at',
   notes: [
     'Latest Levela Android release built from the current application.',
@@ -108,6 +145,14 @@ window.__LEVELA_ANDROID_UPDATE__ = {
   ],
 };
 EOF
+}
+
+write_legacy_manifest() {
+  if [ ! -f "$UPDATE_MANIFEST_DIR/android-release.json" ]; then
+    return
+  fi
+  cp "$UPDATE_MANIFEST_DIR/android-release.json" "$UPDATE_MANIFEST_DIR/android.json"
+  cp "$UPDATE_MANIFEST_DIR/android-release.js" "$UPDATE_MANIFEST_DIR/android.js"
 }
 
 echo "Building the web app for Android sync..."
@@ -133,19 +178,41 @@ if [ ! -f "$APK_SOURCE" ]; then
   exit 1
 fi
 
-echo "Publishing the APK into the website download path..."
+echo "Publishing the APK into the website download path ($CHANNEL channel)..."
 mkdir -p "$APK_TARGET_DIR"
-cp "$APK_SOURCE" "$APK_TARGET"
-cp "$APK_SOURCE" "$VERSIONED_APK_TARGET"
-prune_download_archive
-
-echo "Writing the Android update manifest..."
-write_update_manifest
+if [ "$CHANNEL" = "both" ]; then
+  cp "$APK_SOURCE" "$APK_TARGET"
+  for channel in testing release; do
+    apk_filename="$(versioned_apk_filename "$channel")"
+    cp "$APK_SOURCE" "$APK_TARGET_DIR/$apk_filename"
+    prune_download_archive "$channel"
+    write_update_manifest "$channel"
+  done
+  write_legacy_manifest
+else
+  apk_filename="$(versioned_apk_filename "$CHANNEL")"
+  if [ "$CHANNEL" = "testing" ]; then
+    cp "$APK_SOURCE" "$APK_TARGET"
+  fi
+  cp "$APK_SOURCE" "$APK_TARGET_DIR/$apk_filename"
+  prune_download_archive "$CHANNEL"
+  write_update_manifest "$CHANNEL"
+  if [ "$CHANNEL" = "release" ]; then
+    write_legacy_manifest
+  fi
+fi
 
 echo "Rebuilding the website so the download path includes the latest APK..."
 npm run build
 
 echo "Application update complete."
 echo "APK source: $APK_SOURCE"
-echo "Website download target: $APK_TARGET"
-echo "Website versioned APK target: $VERSIONED_APK_TARGET"
+if [ "$CHANNEL" = "both" ] || [ "$CHANNEL" = "testing" ]; then
+  echo "Website download target: $APK_TARGET"
+fi
+if [ "$CHANNEL" = "both" ]; then
+  echo "Website versioned APK target: $APK_TARGET_DIR/$(versioned_apk_filename testing)"
+  echo "Website versioned APK target: $APK_TARGET_DIR/$(versioned_apk_filename release)"
+else
+  echo "Website versioned APK target: $APK_TARGET_DIR/$(versioned_apk_filename "$CHANNEL")"
+fi
