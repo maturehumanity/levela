@@ -162,3 +162,18 @@ This file stores project-specific notes for future AI agent work.
   - if duplicate accounts exist for the same person, do not assume frontend rendering drift first; verify account-level data mismatch before changing UI layout code
 - Stop condition:
   - do not ship another UI-only fix for profile-card mismatch until the production profile rows are verified against the reported username/account
+
+## 11. Mandatory Post-Fix Release + Git Sync
+
+- Failure pattern: a fix is confirmed locally, but release/update propagation and/or Git sync is left incomplete.
+- Mandatory sequence after every confirmed fix (no user reminder required):
+  - run app/runtime verification on `http://localhost:8080` for the changed flow
+  - if the change affects distributed app behavior (web/mobile), run the full update pipeline and deploy to VPS
+  - when publishing mobile updates intended to be detected by installed clients, ensure release metadata is bumped first (`APP_VERSION`, `ANDROID_VERSION_CODE`, `APP_RELEASE_ID`)
+  - commit all pending related changes in this repo (not just the last edited file)
+  - push `main` to GitHub
+  - verify live endpoints after deploy (including both update channels when enabled)
+- Stop condition:
+  - do not report completion until deploy + commit + push + live verification are all done
+- Communication rule:
+  - do not ask whether to perform commit/push/update once a fix is confirmed; execute this flow automatically
