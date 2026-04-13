@@ -520,6 +520,134 @@ export type Database = {
           },
         ]
       }
+      monetary_policy_approvals: {
+        Row: {
+          approval_class: string
+          approver_id: string
+          created_at: string
+          decision: string
+          id: string
+          notes: string | null
+          policy_profile_id: string
+        }
+        Insert: {
+          approval_class: string
+          approver_id: string
+          created_at?: string
+          decision: string
+          id?: string
+          notes?: string | null
+          policy_profile_id: string
+        }
+        Update: {
+          approval_class?: string
+          approver_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          notes?: string | null
+          policy_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monetary_policy_approvals_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monetary_policy_approvals_policy_profile_id_fkey"
+            columns: ["policy_profile_id"]
+            isOneToOne: false
+            referencedRelation: "monetary_policy_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monetary_policy_audit_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          policy_profile_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          policy_profile_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          policy_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monetary_policy_audit_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monetary_policy_audit_events_policy_profile_id_fkey"
+            columns: ["policy_profile_id"]
+            isOneToOne: false
+            referencedRelation: "monetary_policy_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monetary_policy_profiles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          policy_json: Json
+          policy_name: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          policy_json?: Json
+          policy_name?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          policy_json?: Json
+          policy_name?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monetary_policy_profiles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_comments: {
         Row: {
           author_id: string
@@ -630,6 +758,123 @@ export type Database = {
           {
             foreignKeyName: "posts_author_id_fkey"
             columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_bookmarks: {
+        Row: {
+          created_at: string
+          document_key: string
+          id: string
+          notes: string | null
+          profile_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          document_key: string
+          id?: string
+          notes?: string | null
+          profile_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          document_key?: string
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_bookmarks_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_certifications: {
+        Row: {
+          certification_key: string
+          created_at: string
+          earned_at: string | null
+          id: string
+          metadata: Json
+          profile_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          certification_key: string
+          created_at?: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json
+          profile_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          certification_key?: string
+          created_at?: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json
+          profile_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_certifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          document_key: string
+          id: string
+          last_read_at: string
+          profile_id: string
+          progress_percent: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          document_key: string
+          id?: string
+          last_read_at?: string
+          profile_id: string
+          progress_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          document_key?: string
+          id?: string
+          last_read_at?: string
+          profile_id?: string
+          progress_percent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_progress_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

@@ -15,6 +15,7 @@ export const baseTranslations = {
     "permissions": "Permissions",
     "role": "Role",
     "features": "Features",
+    "study": "Study",
     "contribute": "Contribute",
     "market": "Market",
     "home": "Home",
@@ -199,6 +200,10 @@ export const baseTranslations = {
     "adminUsersDescription": "Manage roles and person-by-person access",
     "adminPermissions": "Permissions",
     "adminPermissionsDescription": "Edit what each role can access",
+    "adminGovernance": "Governance",
+    "adminGovernanceDescription": "Manage policy parameters and monetary guardrails",
+    "adminModules": "System Modules",
+    "adminModulesDescription": "Review the internal module catalog and workflows",
     "signOut": "Sign out",
     "appInfoTitle": "Application version",
     "appInfoDescription": "Check which mobile release and build are currently installed on this device.",
@@ -212,6 +217,62 @@ export const baseTranslations = {
     "comingSoonTitle": "Marketplace coming soon",
     "comingSoonDescription": "We’re preparing this space for future offers, tools, and opportunities."
   },
+  "governance": {
+    "title": "Governance Policies",
+    "subtitle": "Manage the foundational policy controls that guide issuance, stability, and oversight.",
+    "localMode": "Governance backend tables are not available yet. Changes are currently local to this device.",
+    "policyControlsTitle": "Policy control panel",
+    "policyControlsDescription": "Update policy values, run immediate simulations, and save the active governance profile locally.",
+    "savePolicy": "Save policy",
+    "saved": "Saved",
+    "simulationTitle": "Policy simulation",
+    "simulationDescription": "This preview applies the active policy values to the foundational quarterly issuance formula.",
+    "simulationQuarterlyCeiling": "Projected quarterly issuance ceiling",
+    "guardrailStatusTitle": "Guardrail status",
+    "guardrailStatusDescription": "Current guardrail signals based on baseline monitoring inputs.",
+    "approvalsTitle": "Approval records",
+    "approvalsDescription": "Record review decisions for the currently active policy profile.",
+    "approvalClassLabel": "Approval class",
+    "approvalDecisionLabel": "Decision",
+    "approvalNotesLabel": "Notes",
+    "approvalNotesPlaceholder": "Add review context for this policy decision.",
+    "recordApproval": "Record approval",
+    "approvalRecorded": "Approval recorded.",
+    "approvalClass": {
+      "ordinary": "Ordinary",
+      "elevated": "Elevated",
+      "emergency": "Emergency"
+    },
+    "approvalDecision": {
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "auditLogTitle": "Audit log",
+    "auditLogDescription": "Recent policy actions and approval events are listed here.",
+    "noAuditEvents": "No audit events recorded yet.",
+    "status": {
+      "stable": "Stable",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "noAlerts": "No active guardrail alerts for the current baseline scenario.",
+    "errors": {
+      "loadFailed": "Could not load governance policy data.",
+      "saveFailed": "Could not save the governance policy.",
+      "approvalFailed": "Could not record the approval decision."
+    },
+    "fields": {
+      "activeCitizens": "Active citizens",
+      "civicLiquidityBaseline": "Civic liquidity baseline",
+      "outputLiquidityRatio": "Output liquidity ratio",
+      "approvedPublicBudget": "Approved public budget",
+      "inflationTarget": "Inflation target",
+      "stabilityDampeningMultiplier": "Stability dampening multiplier",
+      "autoApprovalLimit": "Auto-approval limit",
+      "maxInflationRisk": "Max inflation risk",
+      "affordabilityAlertThreshold": "Affordability alert threshold"
+    }
+  },
   "law": {
     "title": "Law",
     "subtitle": "Read the Law library in a structured format built for learning and contribution.",
@@ -224,7 +285,7 @@ export const baseTranslations = {
     "contributionsLoadFailed": "Could not load your law contributions.",
     "actions": {
       "suggestContribution": "Suggest contribution",
-      "openFeatures": "Open Features",
+      "openFeatures": "Open Study",
       "openTerms": "Open Terms"
     },
     "searchPlaceholder": "Search by framework, domain, instrument, section, or article...",
@@ -440,8 +501,8 @@ export const baseTranslations = {
     }
   },
   "features": {
-    "title": "Features",
-    "subtitle": "See what makes Levela work.",
+    "title": "System Modules",
+    "subtitle": "Review internal modules, workflows, and implementation surfaces.",
     "sectionsLabel": "Sections",
     "pagesLabel": "Pages",
     "allSections": "All sections",
@@ -467,7 +528,7 @@ export const baseTranslations = {
     "pages": {
       "contribute": "Contribute",
       "home": "Home",
-      "features": "Features",
+      "features": "Study",
       "downloads": "Download",
       "law": "Law",
       "login": "Login",
@@ -484,7 +545,9 @@ export const baseTranslations = {
       "messaging": "Messaging",
       "adminUsers": "Users",
       "adminPermissions": "Permissions",
-      "signUp": "Sign Up"
+      "signUp": "Sign Up",
+      "adminGovernance": "Governance",
+      "adminModules": "System Modules"
     },
     "catalog": {
       "accessControl": {
@@ -545,6 +608,34 @@ export const baseTranslations = {
           "The page summarizes each role and shows the full permission matrix in one place.",
           "Permissions are grouped by section, page, and functionality so the access model is easier to understand.",
           "Admins can toggle permissions directly in the matrix, while the reserved system role stays read-only."
+        ]
+      },
+      "governancePolicies": {
+        "title": "Manage governance policy controls",
+        "summary": "Use the Governance admin page to tune policy parameters and run immediate monetary guardrail simulations.",
+        "workflow": [
+          "Open Settings and move into Administration.",
+          "Open Governance to review policy values.",
+          "Adjust control inputs, inspect simulation outputs, and save the policy profile."
+        ],
+        "details": [
+          "Governance controls map directly to the foundational monetary policy formula.",
+          "The page surfaces guardrail status so policy operators can react early.",
+          "Saved policy values persist locally for iterative governance sessions."
+        ]
+      },
+      "adminSystemModules": {
+        "title": "Review internal system modules",
+        "summary": "Use the System Modules page to inspect internal workflows, role tooling, and implementation-level capability surfaces.",
+        "workflow": [
+          "Open Settings and move into Administration.",
+          "Open System Modules.",
+          "Filter by section and page to inspect specific modules quickly."
+        ],
+        "details": [
+          "This page is intentionally admin-facing and separate from the citizen Study experience.",
+          "It helps staff and agents align on current workflows before changing behavior.",
+          "Module documentation should remain updated as product behavior changes."
         ]
       },
       "autosaveDefaults": {
@@ -687,17 +778,32 @@ export const baseTranslations = {
         ]
       },
       "featureExplorer": {
-        "title": "Explore features by area",
-        "summary": "Use this Features page to browse everything the app can do and filter it by section or page.",
+        "title": "Explore modules by area",
+        "summary": "Use this System Modules page to browse internal app surfaces and filter them by section or page.",
         "workflow": [
-          "Open Features from the bottom navigation.",
+          "Open Settings and move into Administration.",
+          "Open System Modules.",
           "Use the Sections and Pages filters to narrow the catalog.",
           "Read each feature card to understand workflows and detailed behavior."
         ],
         "details": [
-          "The Features page is the app’s feature reference surface.",
-          "It is meant to help both users and agents understand what exists today.",
+          "The System Modules page is the internal product reference surface.",
+          "It is meant to help moderators, admins, and agents understand what exists today.",
           "It should stay aligned with product changes as the source of truth evolves."
+        ]
+      },
+      "studyLearningCenter": {
+        "title": "Open the Study learning center",
+        "summary": "Use Study as the citizen-facing knowledge hub for constitutional, legal, civic, and economic learning paths.",
+        "workflow": [
+          "Open Study from the bottom navigation.",
+          "Select a foundation domain such as Constitution, Laws, Citizenship, or Economy.",
+          "Track progress and continue through recommended materials."
+        ],
+        "details": [
+          "Study is structured for civic learning rather than internal system tooling.",
+          "The first phase focuses on four foundational domains, with additional domains staged next.",
+          "Progress indicators make long-form civic reading easier to sustain."
         ]
       },
       "identifierLogin": {
@@ -761,7 +867,7 @@ export const baseTranslations = {
         "title": "Read the law library",
         "summary": "The Law page organizes the law library into a structured reading flow, with searchable sources, article browsing, and reviewable community contributions.",
         "workflow": [
-          "Open Law from the profile page menu or from Features.",
+          "Open Law from the profile page menu or from Study.",
           "Choose a reading track such as international civil or international criminal law.",
           "Move from the legal framework into sections and then into the article-level material.",
           "Suggest a contribution when a source, summary, or organizational improvement is needed.",
@@ -909,6 +1015,174 @@ export const baseTranslations = {
           "The page now follows the same autosave-by-default pattern as the rest of the editable app.",
           "This supports interpretation while preserving the five-pillar model underneath."
         ]
+      }
+    }
+  },
+  "study": {
+    "badge": "Civic Learning Center",
+    "title": "Study",
+    "subtitle": "Access foundational civic materials in a structured learning path.",
+    "localMode": "Study progress is currently stored on this device because backend study tables are not available.",
+    "availableNow": "Available now",
+    "comingSoon": "Planned",
+    "openModule": "Open module",
+    "plannedModule": "Planned module",
+    "lawAccessRequired": "Law access required",
+    "searchTitle": "Search materials",
+    "searchPlaceholder": "Search constitution, laws, citizenship, economy, and more...",
+    "searchHint": "Type a keyword to find specific study materials.",
+    "noSearchResults": "No study materials match this search yet.",
+    "estimatedMinutes": "{minutes} min read",
+    "bookmark": "Bookmark",
+    "removeBookmark": "Remove bookmark",
+    "bookmarksTitle": "Bookmarks",
+    "noBookmarks": "No bookmarked materials yet.",
+    "aiExplain": "AI explain",
+    "aiExplainTitle": "AI learning explanation",
+    "foundationLibraryTitle": "Foundational materials",
+    "foundationLibraryDescription": "Core constitutional, legal, citizenship, and economy materials for citizen study.",
+    "openMaterial": "Open material",
+    "viewProposal": "View proposal",
+    "markAsRead": "Mark as read",
+    "markAsUnread": "Mark as unread",
+    "markComplete": "Mark complete",
+    "markedComplete": "Completed",
+    "materialType": {
+      "constitution": "Constitution",
+      "summary": "Citizen Summary",
+      "legalText": "Legal Text",
+      "guide": "Guide"
+    },
+    "proposalStatus": {
+      "active": "Active",
+      "review": "In Review",
+      "scheduled": "Scheduled"
+    },
+    "continueLearning": "Continue learning",
+    "recentlyUpdated": "Recently updated documents",
+    "pendingVotes": "Pending votes",
+    "economyBriefingTitle": "Economy & Luma briefing",
+    "economyBriefingDescription": "Luma follows a civic monetary model with controlled issuance, human approvals, and policy guardrails.",
+    "economyBriefingPoints": {
+      "supply": "Supply expands through approved channels tied to population, productivity, and public value.",
+      "guardrails": "Inflation and affordability signals continuously shape issuance ceilings.",
+      "approval": "Requests above policy limits require stronger human approval thresholds.",
+      "audit": "Every validated and executed issuance action is logged as an auditable event."
+    },
+    "progress": {
+      "constitutionProgress": "Constitution reading progress",
+      "completedModules": "Completed modules",
+      "knowledgeBadge": "Civic knowledge badge",
+      "badgePending": "Pending",
+      "badgeEligible": "Eligible",
+      "badgeEarned": "Earned",
+      "readProgress": "Reading progress: {percent}%",
+      "readingRequired": "Completion requires mandatory reading and assessment questions.",
+      "completedVerified": "Module completion verified through required reading and assessment."
+    },
+    "errors": {
+      "loadFailed": "Could not load study progress.",
+      "progressSaveFailed": "Could not save study progress.",
+      "bookmarkSaveFailed": "Could not save bookmark."
+    },
+    "domains": {
+      "constitution": {
+        "title": "Constitution",
+        "description": "Study the Universal Constitution of Levela and foundational civic principles."
+      },
+      "laws": {
+        "title": "Laws & Governance",
+        "description": "Read legal frameworks, policy structures, and governance rules."
+      },
+      "rights": {
+        "title": "Rights & Responsibilities",
+        "description": "Understand citizen rights, responsibilities, and participation duties."
+      },
+      "economy": {
+        "title": "Economy & Luma",
+        "description": "Learn how civic currency, issuance policy, and monetary stability are governed."
+      },
+      "aiEthics": {
+        "title": "AI & Ethics",
+        "description": "Review AI operating boundaries, oversight duties, and transparency standards."
+      },
+      "citizenship": {
+        "title": "Citizenship",
+        "description": "Understand citizenship pathways, civic levels, and participation frameworks."
+      },
+      "environment": {
+        "title": "Environment",
+        "description": "Explore stewardship principles and environmental policy obligations."
+      },
+      "cultureEducation": {
+        "title": "Culture & Education",
+        "description": "Study knowledge systems, social development, and cultural continuity."
+      },
+      "judicial": {
+        "title": "Judicial Framework",
+        "description": "Learn justice principles, review processes, and conflict-resolution models."
+      },
+      "proposals": {
+        "title": "Public Proposals Archive",
+        "description": "Track active and historical public proposals under review."
+      }
+    },
+    "updates": {
+      "constitutionCore": "Universal Constitution foundational articles updated",
+      "lawLibrary": "Law reading pathways and contribution workflow refined",
+      "lumaMonetary": "Luma monetary policy baseline published"
+    },
+    "votes": {
+      "governanceCadence": "Quarterly governance review cadence",
+      "publicReserveDisclosure": "Reserve category disclosure format",
+      "citizenshipPathway": "Citizenship advancement criteria baseline"
+    },
+    "materials": {
+      "constitutionCore": {
+        "title": "Universal Constitution: Core Articles",
+        "summary": "Primary constitutional text covering foundational principles and civic order."
+      },
+      "constitutionSummary": {
+        "title": "Constitution Citizen Summary",
+        "summary": "Plain-language overview of constitutional principles for everyday understanding."
+      },
+      "lawFramework": {
+        "title": "Levela Legal Framework",
+        "summary": "Canonical law and governance structures used to guide platform-wide legal interpretation."
+      },
+      "lawCitizenGuide": {
+        "title": "Law Reading Guide",
+        "summary": "Guided path to understand legal terms, sections, and practical compliance steps."
+      },
+      "citizenshipPathways": {
+        "title": "Citizenship Pathways",
+        "summary": "How civic levels, participation, and contribution pathways are structured."
+      },
+      "citizenshipRightsSummary": {
+        "title": "Rights and Duties Summary",
+        "summary": "Citizen-facing summary of responsibilities, protections, and expected civic conduct."
+      },
+      "economyPolicyBaseline": {
+        "title": "Luma Monetary Policy Baseline",
+        "summary": "Foundational policy model for issuance, stability guardrails, and transparency."
+      },
+      "economyCitizenGuide": {
+        "title": "Economy & Luma Citizen Guide",
+        "summary": "Practical guide to understand supply changes, policy controls, and approval pathways."
+      }
+    },
+    "proposals": {
+      "governanceCadence": {
+        "title": "Quarterly Governance Review Cadence",
+        "summary": "Defines recurring review intervals for governance policy recalibration."
+      },
+      "reserveDisclosure": {
+        "title": "Reserve Disclosure Standard",
+        "summary": "Standardizes reserve-category visibility across civic reporting surfaces."
+      },
+      "citizenshipPathway": {
+        "title": "Citizenship Advancement Baseline",
+        "summary": "Clarifies baseline progression criteria for participation and civic standing."
       }
     }
   },

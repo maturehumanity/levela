@@ -1,10 +1,12 @@
 import type { AppPermission } from '@/lib/access-control';
 import { permissionListHasAny } from '@/lib/access-control';
+import type { LucideIcon } from 'lucide-react';
+import { BookOpen, Landmark, LayoutGrid } from 'lucide-react';
 import { pageRegistry } from '@/lib/feature-registry';
 
 export type NavigablePageId =
   | 'home'
-  | 'features'
+  | 'study'
   | 'downloads'
   | 'law'
   | 'terms'
@@ -18,19 +20,21 @@ export type NavigablePageId =
   | 'pillars'
   | 'adminRoles'
   | 'adminUsers'
-  | 'adminPermissions';
+  | 'adminPermissions'
+  | 'adminGovernance'
+  | 'adminModules';
 
 export type AppPageLink = {
   id: NavigablePageId;
   path: string;
   labelKey: string;
-  icon: (typeof pageRegistry)[NavigablePageId]['icon'];
+  icon: LucideIcon;
   requiredPermissions?: AppPermission[];
 };
 
 export const appPageLinks: AppPageLink[] = [
   { id: 'home', path: '/', labelKey: pageRegistry.home.labelKey, icon: pageRegistry.home.icon },
-  { id: 'features', path: '/features', labelKey: pageRegistry.features.labelKey, icon: pageRegistry.features.icon },
+  { id: 'study', path: '/study', labelKey: 'common.study', icon: BookOpen },
   { id: 'downloads', path: '/download', labelKey: pageRegistry.downloads.labelKey, icon: pageRegistry.downloads.icon },
   {
     id: 'law',
@@ -102,6 +106,20 @@ export const appPageLinks: AppPageLink[] = [
     path: '/settings/admin/permissions',
     labelKey: pageRegistry.adminPermissions.labelKey,
     icon: pageRegistry.adminPermissions.icon,
+    requiredPermissions: ['role.assign', 'settings.manage'],
+  },
+  {
+    id: 'adminGovernance',
+    path: '/settings/admin/governance',
+    labelKey: 'settings.adminGovernance',
+    icon: Landmark,
+    requiredPermissions: ['role.assign', 'settings.manage'],
+  },
+  {
+    id: 'adminModules',
+    path: '/settings/admin/modules',
+    labelKey: 'settings.adminModules',
+    icon: LayoutGrid,
     requiredPermissions: ['role.assign', 'settings.manage'],
   },
 ];

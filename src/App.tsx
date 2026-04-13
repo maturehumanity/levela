@@ -20,6 +20,7 @@ import ResetPassword from "@/pages/auth/ResetPassword";
 import Contribute from "@/pages/Contribute";
 import DownloadPage from "@/pages/Download";
 import Features from "@/pages/Features";
+import Study from "@/pages/Study";
 import Home from "@/pages/Home";
 import Law from "@/pages/Law";
 import Market from "@/pages/Market";
@@ -35,6 +36,7 @@ import Pillars from "@/pages/settings/Pillars";
 import RolesAdmin from "@/pages/settings/RolesAdmin";
 import UsersAdmin from "@/pages/settings/UsersAdmin";
 import PermissionsAdmin from "@/pages/settings/PermissionsAdmin";
+import GovernanceAdmin from "@/pages/settings/GovernanceAdmin";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,7 +85,8 @@ const App = () => (
                 {/* Protected routes */}
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/contribute" element={<ProtectedRoute><Contribute /></ProtectedRoute>} />
-                <Route path="/features" element={<ProtectedRoute><Features /></ProtectedRoute>} />
+                <Route path="/study" element={<ProtectedRoute><Study /></ProtectedRoute>} />
+                <Route path="/features" element={<ProtectedRoute><Navigate to="/study" replace /></ProtectedRoute>} />
                 <Route
                   path="/law"
                   element={
@@ -164,6 +167,22 @@ const App = () => (
                   element={
                     <ProtectedRoute requiredPermissions={['role.assign', 'settings.manage']}>
                       <UsersAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings/admin/governance"
+                  element={
+                    <ProtectedRoute requiredPermissions={['role.assign', 'settings.manage']}>
+                      <GovernanceAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings/admin/modules"
+                  element={
+                    <ProtectedRoute requiredPermissions={['role.assign', 'settings.manage']}>
+                      <Features />
                     </ProtectedRoute>
                   }
                 />

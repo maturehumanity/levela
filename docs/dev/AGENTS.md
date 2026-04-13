@@ -49,6 +49,7 @@ This file stores project-specific notes for future AI agent work.
 - Proactively enforce all standing instructions and notes in this file on future work. Do not wait for the user to repeat them when they clearly apply.
 - When the user asks to `update the application`, carry the update through to the actual distributable app artifact and website download path when the project supports it, not just the source code.
 - Do not commit or push APK binaries to GitHub for this project. APKs should exist only as local build artifacts on this machine and as deployed download files on the VPS.
+- For Study/Constitution UI changes, preserve all existing user-visible labels/structure unless the user explicitly asks to modify that exact element. Do not remove, rename, or restyle article/sub-article labels when the request is about behavior only (for example open/close interactions).
 
 ## 4. Remote Environment
 
@@ -130,6 +131,10 @@ This file stores project-specific notes for future AI agent work.
   - the user explicitly asks for another port, or
   - port `8080` is genuinely unavailable and cannot be freed quickly.
 - If a fallback port is temporarily required, clearly state that reason and switch back to `8080` for normal workflows.
+- After every implemented fix, verify the app is actually running before reporting completion:
+  - ensure the dev server is up on `localhost:8080`
+  - verify the relevant page URL responds (for example with `curl -I`)
+  - do not declare the fix complete until runtime is confirmed
 
 ## 9. VPS Deploy Method Guard
 

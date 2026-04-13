@@ -13,6 +13,7 @@ import {
   LogIn,
   Search,
   Scale,
+  Landmark,
   LayoutGrid,
   MessageSquareText,
   Hammer,
@@ -35,8 +36,8 @@ import {
  * Rule: whenever a new feature, workflow, page behavior, or notable asset behavior is added,
  * update this registry and the matching keys in `src/lib/i18n.base.ts`.
  *
- * The Features page renders from this file so both users and AI agents can refer to the same
- * source of truth for sections, pages, workflows, and detailed functionality.
+ * The admin-facing System Modules page renders from this file so both humans and AI agents can
+ * refer to the same source of truth for sections, pages, workflows, and detailed functionality.
  */
 
 export type SectionId =
@@ -69,7 +70,9 @@ export type PageId =
   | 'adminRoles'
   | 'adminUsers'
   | 'adminPermissions'
-  | 'signUp';
+  | 'signUp'
+  | 'adminGovernance'
+  | 'adminModules';
 
 export type FeatureId =
   | 'accessControl'
@@ -100,7 +103,10 @@ export type FeatureId =
   | 'languageTheme'
   | 'pillarCustomization'
   | 'userVerification'
-  | 'termsUse';
+  | 'termsUse'
+  | 'studyLearningCenter'
+  | 'governancePolicies'
+  | 'adminSystemModules';
 
 export type RegistryEntry<T extends string> = {
   id: T;
@@ -133,7 +139,7 @@ export const sectionRegistry: Record<SectionId, RegistryEntry<SectionId>> = {
 export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   contribute: { id: 'contribute', icon: PlusCircle, labelKey: 'features.pages.contribute' },
   home: { id: 'home', icon: LayoutGrid, labelKey: 'features.pages.home' },
-  features: { id: 'features', icon: Compass, labelKey: 'features.pages.features' },
+  features: { id: 'features', icon: BookOpen, labelKey: 'features.pages.features' },
   downloads: { id: 'downloads', icon: Download, labelKey: 'features.pages.downloads' },
   law: { id: 'law', icon: Scale, labelKey: 'features.pages.law' },
   terms: { id: 'terms', icon: FileText, labelKey: 'features.pages.terms' },
@@ -151,6 +157,8 @@ export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   adminUsers: { id: 'adminUsers', icon: Users, labelKey: 'features.pages.adminUsers' },
   adminPermissions: { id: 'adminPermissions', icon: KeyRound, labelKey: 'features.pages.adminPermissions' },
   signUp: { id: 'signUp', icon: UserPlus, labelKey: 'features.pages.signUp' },
+  adminGovernance: { id: 'adminGovernance', icon: Landmark, labelKey: 'features.pages.adminGovernance' },
+  adminModules: { id: 'adminModules', icon: LayoutGrid, labelKey: 'features.pages.adminModules' },
 };
 
 export const featureRegistry: FeatureEntry[] = [
@@ -315,6 +323,16 @@ export const featureRegistry: FeatureEntry[] = [
     page: 'features',
   },
   {
+    id: 'studyLearningCenter',
+    icon: BookOpen,
+    titleKey: 'features.catalog.studyLearningCenter.title',
+    summaryKey: 'features.catalog.studyLearningCenter.summary',
+    workflowKey: 'features.catalog.studyLearningCenter.workflow',
+    detailsKey: 'features.catalog.studyLearningCenter.details',
+    section: 'knowledge',
+    page: 'features',
+  },
+  {
     id: 'identifierLogin',
     icon: LogIn,
     titleKey: 'features.catalog.identifierLogin.title',
@@ -383,6 +401,26 @@ export const featureRegistry: FeatureEntry[] = [
     detailsKey: 'features.catalog.marketPreview.details',
     section: 'marketplace',
     page: 'market',
+  },
+  {
+    id: 'governancePolicies',
+    icon: Landmark,
+    titleKey: 'features.catalog.governancePolicies.title',
+    summaryKey: 'features.catalog.governancePolicies.summary',
+    workflowKey: 'features.catalog.governancePolicies.workflow',
+    detailsKey: 'features.catalog.governancePolicies.details',
+    section: 'administration',
+    page: 'adminGovernance',
+  },
+  {
+    id: 'adminSystemModules',
+    icon: LayoutGrid,
+    titleKey: 'features.catalog.adminSystemModules.title',
+    summaryKey: 'features.catalog.adminSystemModules.summary',
+    workflowKey: 'features.catalog.adminSystemModules.workflow',
+    detailsKey: 'features.catalog.adminSystemModules.details',
+    section: 'administration',
+    page: 'adminModules',
   },
   {
     id: 'phoneFirstSignup',

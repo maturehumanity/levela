@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
-import { Home, LayoutGrid, Store, Settings, PlusCircle } from 'lucide-react';
+import { Home, BookOpen, Store, Settings, PlusCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const navItems = [
   { path: '/', icon: Home, label: 'Home' },
-  { path: '/features', icon: LayoutGrid, label: 'Features' },
+  { path: '/study', icon: BookOpen, label: 'Study' },
   { path: '/contribute', icon: PlusCircle, label: 'Contribute' },
   { path: '/market', icon: Store, label: 'Market' },
   { path: '/settings', icon: Settings, label: 'Settings' },
@@ -25,8 +25,8 @@ export function MobileNav() {
           const labelKey =
             item.label === 'Home'
               ? 'common.home'
-              : item.label === 'Features'
-                ? 'common.features'
+              : item.label === 'Study'
+                ? 'common.study'
                 : item.label === 'Contribute'
                   ? 'common.contribute'
                   : item.label === 'Market'

@@ -26,6 +26,8 @@ import {
   KeyRound,
   ShieldCheck,
   Fingerprint,
+  Landmark,
+  LayoutGrid,
 } from 'lucide-react';
 
 const settingsItems = [
@@ -109,6 +111,18 @@ export default function Settings() {
           labelKey: 'settings.adminPermissions',
           descriptionKey: 'settings.adminPermissionsDescription',
           path: '/settings/admin/permissions',
+        },
+        {
+          icon: Landmark,
+          labelKey: 'settings.adminGovernance',
+          descriptionKey: 'settings.adminGovernanceDescription',
+          path: '/settings/admin/governance',
+        },
+        {
+          icon: LayoutGrid,
+          labelKey: 'settings.adminModules',
+          descriptionKey: 'settings.adminModulesDescription',
+          path: '/settings/admin/modules',
         },
       ]
     : [];
