@@ -50,6 +50,7 @@ This file stores project-specific notes for future AI agent work.
 - When the user asks to `update the application`, carry the update through to the actual distributable app artifact and website download path when the project supports it, not just the source code.
 - Do not commit or push APK binaries to GitHub for this project. APKs should exist only as local build artifacts on this machine and as deployed download files on the VPS.
 - For Study/Constitution UI changes, preserve all existing user-visible labels/structure unless the user explicitly asks to modify that exact element. Do not remove, rename, or restyle article/sub-article labels when the request is about behavior only (for example open/close interactions).
+- When the user asks to update/publish the application for testing, always perform a real release bump first (new `APP_VERSION`, `ANDROID_VERSION_CODE`, and `APP_RELEASE_ID`) before running the update/deploy flow, so installed clients can detect and prompt for the new update.
 
 ## 4. Remote Environment
 
