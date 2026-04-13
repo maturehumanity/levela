@@ -219,6 +219,12 @@ export function ChatBar() {
       .slice(0, 2);
   };
 
+  const formatTime = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const retryMessage = async (messageId: string) => {
     const message = messages.find(msg => msg.id === messageId);
     if (!message) return;
