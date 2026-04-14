@@ -50,6 +50,32 @@ export const PILLARS = [
 
 export type PillarId = typeof PILLARS[number]['id'];
 
+type PillarCustomization = {
+  categoryName?: string;
+  displayName?: string;
+  description?: string;
+};
+
+function readPillarCustomizations(): Partial<Record<PillarId, PillarCustomization>> {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const raw = window.localStorage.getItem('customPillarCustomizations');
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Partial<Record<PillarId, PillarCustomization>>;
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed;
+  } catch {
+    // Recover from malformed persisted JSON that can otherwise white-screen the app.
+    try {
+      window.localStorage.removeItem('customPillarCustomizations');
+    } catch {
+      // Ignore storage access failures.
+    }
+    return {};
+  }
+}
+
 export function getPillarName(pillarId: PillarId): string {
   if (typeof window === 'undefined') {
     // Server-side rendering fallback
@@ -57,7 +83,7 @@ export function getPillarName(pillarId: PillarId): string {
     return pillar?.name || pillarId;
   }
   
-  const customCustomizations = JSON.parse(localStorage.getItem('customPillarCustomizations') || '{}');
+  const customCustomizations = readPillarCustomizations();
   const pillar = PILLARS.find(p => p.id === pillarId);
   return customCustomizations[pillarId]?.categoryName || pillar?.name || pillarId;
 }
@@ -69,7 +95,7 @@ export function getPillarShortName(pillarId: PillarId): string {
     return pillar?.shortName || pillarId;
   }
   
-  const customCustomizations = JSON.parse(localStorage.getItem('customPillarCustomizations') || '{}');
+  const customCustomizations = readPillarCustomizations();
   const pillar = PILLARS.find(p => p.id === pillarId);
   return customCustomizations[pillarId]?.displayName || pillar?.shortName || pillarId;
 }
@@ -81,7 +107,7 @@ export function getPillarDescription(pillarId: PillarId): string {
     return pillar?.description || '';
   }
   
-  const customCustomizations = JSON.parse(localStorage.getItem('customPillarCustomizations') || '{}');
+  const customCustomizations = readPillarCustomizations();
   const pillar = PILLARS.find(p => p.id === pillarId);
   return customCustomizations[pillarId]?.description || pillar?.description || '';
 }
