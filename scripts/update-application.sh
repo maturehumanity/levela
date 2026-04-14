@@ -155,6 +155,9 @@ write_legacy_manifest() {
   cp "$UPDATE_MANIFEST_DIR/android-release.js" "$UPDATE_MANIFEST_DIR/android.js"
 }
 
+echo "Generating icon assets from production SVG sources..."
+npm run icons:generate
+
 echo "Building the web app for Android sync..."
 npm run build:android
 

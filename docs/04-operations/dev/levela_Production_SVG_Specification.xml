@@ -1,0 +1,123 @@
+<!-- =========================================================
+LEVELA — MASTER VECTOR BLUEPRINT (Production SVG Specification)
+Version: Final Approved Option B – Futuristic Tech Innovation
+Use this file as master source artwork for Illustrator / Figma / SVG export
+Canvas: 1600 x 500
+Color Mode: RGB
+========================================================= -->
+
+<!--
+Implementation notes:
+- This master file is used for the brand symbol geometry and gradients.
+- App icon source files derived from this spec:
+  - public/brand/levela-icon-full.svg
+  - public/brand/levela-mark.svg
+- Exported targets currently wired:
+  - public/favicon.svg, public/favicon.png, public/favicon.ico
+  - android/app/src/main/res/mipmap-*/ic_launcher*.png
+-->
+
+<svg width="1600" height="500" viewBox="0 0 1600 500" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <!-- Primary Gradient for Emblem -->
+    <linearGradient id="levelaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6"/>
+      <stop offset="55%" stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#1E3A8A"/>
+    </linearGradient>
+
+    <!-- Gold Flame -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD95A"/>
+      <stop offset="100%" stop-color="#F4C542"/>
+    </linearGradient>
+  </defs>
+
+  <!-- =========================
+       EMBLEM SYMBOL
+  ========================== -->
+
+  <!-- Outer LV Shield Shape -->
+  <path d="
+    M180 60
+    L250 130
+    L250 280
+    Q250 360 180 420
+    Q110 360 110 280
+    L110 130
+    Z"
+    fill="url(#levelaGradient)"
+  />
+
+  <!-- Inner White Negative L/V Channel -->
+  <path d="
+    M155 120
+    L205 145
+    L185 185
+    L150 170
+    L138 285
+    L180 320
+    L225 285
+    L238 315
+    L180 365
+    L120 315
+    L135 165
+    Z"
+    fill="white"
+  />
+
+  <!-- First Inner Stripe -->
+  <path d="
+    M170 190
+    L245 160
+    L250 205
+    L175 240
+    Z"
+    fill="white"
+  />
+
+  <!-- Second Inner Stripe -->
+  <path d="
+    M165 250
+    L248 215
+    L252 258
+    L172 295
+    Z"
+    fill="white"
+  />
+
+  <!-- Flame / Human Uplift Element -->
+  <path d="
+    M180 18
+    Q210 45 205 75
+    Q202 100 180 108
+    Q158 100 155 75
+    Q150 45 180 18
+    Z"
+    fill="url(#goldGradient)"
+  />
+
+  <!-- =========================
+       WORDMARK
+  ========================== -->
+
+  <text x="320" y="255"
+        font-family="Sora, Montserrat, Avenir Next, sans-serif"
+        font-size="120"
+        font-weight="600"
+        letter-spacing="6"
+        fill="#1E3A8A">
+    LEVELA
+  </text>
+
+  <!-- Tagline -->
+  <text x="325" y="330"
+        font-family="Sora, Montserrat, sans-serif"
+        font-size="48"
+        font-weight="400"
+        fill="#555555">
+    Humanity, Evolved.
+  </text>
+
+</svg>

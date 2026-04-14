@@ -16,6 +16,7 @@
   </defs>
 
   <rect x="40" y="40" width="944" height="944" rx="188" fill="url(#levelaIconBg)" />
+
   <g transform="translate(150 120) scale(2)">
     <path
       d="M180 60L250 130L250 280Q250 360 180 420Q110 360 110 280L110 130Z"
@@ -25,8 +26,14 @@
       d="M155 120L205 145L185 185L150 170L138 285L180 320L225 285L238 315L180 365L120 315L135 165Z"
       fill="#FFFFFF"
     />
-    <path d="M170 190L245 160L250 205L175 240Z" fill="#FFFFFF" />
-    <path d="M165 250L248 215L252 258L172 295Z" fill="#FFFFFF" />
+    <path
+      d="M170 190L245 160L250 205L175 240Z"
+      fill="#FFFFFF"
+    />
+    <path
+      d="M165 250L248 215L252 258L172 295Z"
+      fill="#FFFFFF"
+    />
     <path
       d="M180 18Q210 45 205 75Q202 100 180 108Q158 100 155 75Q150 45 180 18Z"
       fill="url(#goldGradient)"
