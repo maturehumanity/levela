@@ -7,8 +7,25 @@ EXPLICIT_REMOTE_DB_NAME="${REMOTE_DB_NAME:-}"
 EXPLICIT_REMOTE_DB_USER="${REMOTE_DB_USER:-}"
 
 if [[ -f ".env.local" ]]; then
-  # shellcheck disable=SC1091
-  source ".env.local"
+  while IFS='=' read -r raw_key raw_value; do
+    [[ -z "${raw_key}" ]] && continue
+    key="$(echo "${raw_key}" | tr -d '[:space:]')"
+    value="$(echo "${raw_value}" | sed -E "s/^['\"]|['\"]$//g")"
+    case "${key}" in
+      REMOTE_DB_HOST)
+        [[ -z "${EXPLICIT_REMOTE_DB_HOST}" ]] && REMOTE_DB_HOST="${value}"
+        ;;
+      REMOTE_DOCKER_DIR)
+        [[ -z "${EXPLICIT_REMOTE_DOCKER_DIR}" ]] && REMOTE_DOCKER_DIR="${value}"
+        ;;
+      REMOTE_DB_NAME)
+        [[ -z "${EXPLICIT_REMOTE_DB_NAME}" ]] && REMOTE_DB_NAME="${value}"
+        ;;
+      REMOTE_DB_USER)
+        [[ -z "${EXPLICIT_REMOTE_DB_USER}" ]] && REMOTE_DB_USER="${value}"
+        ;;
+    esac
+  done < <(grep -E '^(REMOTE_DB_HOST|REMOTE_DOCKER_DIR|REMOTE_DB_NAME|REMOTE_DB_USER)=' ".env.local")
 fi
 
 if [[ $# -ne 1 ]]; then
@@ -29,7 +46,7 @@ fi
 
 echo "Applying migration on ${REMOTE_HOST}: ${MIGRATION_FILE}"
 ssh -o IdentitiesOnly=yes "${REMOTE_HOST}" \
-  "cd ${REMOTE_DOCKER_DIR} && sudo docker compose exec -T db psql -U ${REMOTE_DB_USER} -d ${REMOTE_DB_NAME}" \
+  "cd ${REMOTE_DOCKER_DIR} && sudo docker compose exec -T db psql -v ON_ERROR_STOP=1 -U ${REMOTE_DB_USER} -d ${REMOTE_DB_NAME}" \
   < "${MIGRATION_FILE}"
 
 echo "Migration applied successfully."

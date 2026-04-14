@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.1.14",
+  "version": "0.1.15",
   "type": "module",
   "scripts": {
     "workspace:check": "bash scripts/check-workspace-drift.sh",
@@ -18,7 +18,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test-users:sync": "node scripts/sync-test-users.mjs"
+    "test-users:sync": "node scripts/sync-test-users.mjs",
+    "test-users:cleanup-random": "node scripts/cleanup-random-test-users.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
@@ -80,6 +81,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",

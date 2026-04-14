@@ -117,6 +117,9 @@ export type Database = {
           custom_permissions: Database["public"]["Enums"]["app_permission"][]
           date_of_birth: string | null
           denied_permissions: Database["public"]["Enums"]["app_permission"][]
+          deleted_at: string | null
+          deletion_reason: string | null
+          experience_level: string
           full_name: string | null
           full_name_change_count: number | null
           full_name_last_changed_at: string | null
@@ -148,6 +151,9 @@ export type Database = {
           custom_permissions?: Database["public"]["Enums"]["app_permission"][]
           date_of_birth?: string | null
           denied_permissions?: Database["public"]["Enums"]["app_permission"][]
+          deleted_at?: string | null
+          deletion_reason?: string | null
+          experience_level?: string
           full_name?: string | null
           full_name_change_count?: number | null
           full_name_last_changed_at?: string | null
@@ -179,6 +185,9 @@ export type Database = {
           custom_permissions?: Database["public"]["Enums"]["app_permission"][]
           date_of_birth?: string | null
           denied_permissions?: Database["public"]["Enums"]["app_permission"][]
+          deleted_at?: string | null
+          deletion_reason?: string | null
+          experience_level?: string
           full_name?: string | null
           full_name_change_count?: number | null
           full_name_last_changed_at?: string | null
@@ -202,6 +211,109 @@ export type Database = {
           username_last_changed_at?: string | null
         }
         Relationships: []
+      }
+      linked_accounts: {
+        Row: {
+          business_name_normalized: string | null
+          created_at: string
+          id: string
+          linked_profile_id: string
+          owner_profile_id: string
+          relationship_type: string
+          updated_at: string
+        }
+        Insert: {
+          business_name_normalized?: string | null
+          created_at?: string
+          id?: string
+          linked_profile_id: string
+          owner_profile_id: string
+          relationship_type?: string
+          updated_at?: string
+        }
+        Update: {
+          business_name_normalized?: string | null
+          created_at?: string
+          id?: string
+          linked_profile_id?: string
+          owner_profile_id?: string
+          relationship_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linked_accounts_linked_profile_id_fkey"
+            columns: ["linked_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linked_accounts_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_account_access_requests: {
+        Row: {
+          created_at: string
+          id: string
+          request_note: string | null
+          requester_profile_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_note?: string | null
+          requester_profile_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_note?: string | null
+          requester_profile_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_account_access_requests_requester_profile_id_fkey"
+            columns: ["requester_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_account_access_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_account_access_requests_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {

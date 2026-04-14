@@ -367,7 +367,7 @@ function hasDirectReadableText(element: BuildElement) {
 }
 
 function getAutoBuildRoot() {
-  return document.body;
+  return (document.querySelector('[data-build-root="true"]') as HTMLElement | null) || document.body;
 }
 
 function registerAutoBuildTarget(element: BuildElement, pathname: string, root: HTMLElement) {
@@ -1054,15 +1054,15 @@ function getDefaultButtonPosition() {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   return {
-    x: Math.max(EDGE_GAP, viewportWidth - BUTTON_SIZE - EDGE_GAP),
-    y: Math.max(EDGE_GAP, viewportHeight - BUTTON_SIZE - 96),
+    x: Math.round(Math.max(EDGE_GAP, viewportWidth - BUTTON_SIZE - EDGE_GAP)),
+    y: Math.round(Math.max(EDGE_GAP, viewportHeight - BUTTON_SIZE - 96)),
   };
 }
 
 function clampButtonPosition(position: ButtonPosition) {
   return {
-    x: Math.min(Math.max(position.x, EDGE_GAP), Math.max(EDGE_GAP, window.innerWidth - BUTTON_SIZE - EDGE_GAP)),
-    y: Math.min(Math.max(position.y, EDGE_GAP), Math.max(EDGE_GAP, window.innerHeight - BUTTON_SIZE - EDGE_GAP)),
+    x: Math.round(Math.min(Math.max(position.x, EDGE_GAP), Math.max(EDGE_GAP, window.innerWidth - BUTTON_SIZE - EDGE_GAP))),
+    y: Math.round(Math.min(Math.max(position.y, EDGE_GAP), Math.max(EDGE_GAP, window.innerHeight - BUTTON_SIZE - EDGE_GAP))),
   };
 }
 
@@ -1837,7 +1837,7 @@ export function BuildOverlay() {
   }, [canBuild, pathname]);
 
   useEffect(() => {
-    if (!canBuild) return;
+    if (!canBuild || !active) return;
 
     const handleStorageUpdate = () => {
       reloadPageOffsets();
@@ -1852,10 +1852,10 @@ export function BuildOverlay() {
 
     window.addEventListener(BUILD_STORAGE_EVENT, handleStorageUpdate);
     return () => window.removeEventListener(BUILD_STORAGE_EVENT, handleStorageUpdate);
-  }, [canBuild, pathname]);
+  }, [active, canBuild, pathname]);
 
   useEffect(() => {
-    if (!canBuild) return;
+    if (!canBuild || !active) return;
 
     const root = getAutoBuildRoot();
     let animationFrame = 0;
@@ -1989,17 +1989,16 @@ export function BuildOverlay() {
   }, [active, canBuild]);
 
   useEffect(() => {
-    if (!buttonPosition) return;
+    if (!buttonPosition || !active) return;
 
     const handleResize = () => {
-      setButtonPosition((current) => (current ? clampButtonPosition(current) : current));
       setBuildPanelFrame((current) => (current ? clampPanelFrame(current) : current));
       setLayersPanelFrame((current) => (current ? clampPanelFrame(current) : current));
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [buttonPosition]);
+  }, [active, buttonPosition]);
 
   useEffect(() => {
     if (!active) return;
@@ -3940,12 +3939,18 @@ export function BuildOverlay() {
         type="button"
         size="icon"
         className="pointer-events-auto fixed h-12 w-12 touch-none select-none rounded-full border border-primary/30 bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(15,23,42,0.32)] [&_svg]:!h-7 [&_svg]:!w-7"
-        style={{ left: `${buttonPosition.x}px`, top: `${buttonPosition.y}px` }}
+        style={{
+          left: `${Math.round(buttonPosition.x)}px`,
+          top: `${Math.round(buttonPosition.y)}px`,
+        }}
         onClick={handleButtonClick}
         onPointerDown={handleButtonPointerDown}
         onPointerMove={handleButtonPointerMove}
         onPointerUp={handleButtonPointerUp}
         onPointerCancel={handleButtonPointerUp}
+        data-testid="build-overlay-toggle"
+        data-build-ignore="true"
+        data-build-overlay-ui="true"
         aria-label={active ? 'Exit build mode' : 'Open build mode'}
       >
         <Hammer />
