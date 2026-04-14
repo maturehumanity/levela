@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { AppUpdatePrompt } from "@/components/app/AppUpdatePrompt";
 import { ThemeStorageSync } from "@/components/app/ThemeStorageSync";
+import { AppCrashBoundary } from "@/components/app/AppCrashBoundary";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { BuildOverlay } from "@/components/layout/BuildOverlay";
 
@@ -73,18 +74,19 @@ function RouteFallback() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="levela-theme-v1">
-      <ThemeStorageSync />
-      <TooltipProvider>
-        <AuthProvider>
-          <LanguageProvider>
-            <Toaster />
-            <Sonner />
-            <AppUpdatePrompt />
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Suspense fallback={<RouteFallback />}>
-                <Routes>
+  <AppCrashBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="levela-theme-v1">
+        <ThemeStorageSync />
+        <TooltipProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <Toaster />
+              <Sonner />
+              <AppUpdatePrompt />
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
                   {/* Public routes */}
                   <Route path="/onboarding" element={<AuthRedirect><Onboarding /></AuthRedirect>} />
                   <Route path="/login" element={<AuthRedirect><Login /></AuthRedirect>} />
@@ -218,15 +220,16 @@ const App = () => (
 
                   {/* Fallback */}
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-              <BuildOverlay />
-            </BrowserRouter>
-          </LanguageProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+                  </Routes>
+                </Suspense>
+                <BuildOverlay />
+              </BrowserRouter>
+            </LanguageProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </AppCrashBoundary>
 );
 
 export default App;
