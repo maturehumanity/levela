@@ -1,5 +1,4 @@
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
 import "./index.css";
 
 const BOOT_RECOVERY_SESSION_KEY = "levela-boot-recovery-attempted";
@@ -80,19 +79,27 @@ window.addEventListener("unhandledrejection", (event) => {
   }
 });
 
-try {
-  const rootElement = document.getElementById("root");
-  if (!rootElement) {
-    throw new Error("Root container #root was not found.");
-  }
-  createRoot(rootElement).render(<App />);
+async function bootstrapApp() {
   try {
-    window.sessionStorage.removeItem(BOOT_RECOVERY_SESSION_KEY);
-  } catch {
-    // Ignore storage failures.
-  }
-} catch (error) {
-  if (!attemptBootRecovery(error)) {
-    renderFatalBootScreen(error);
+    const rootElement = document.getElementById("root");
+    if (!rootElement) {
+      throw new Error("Root container #root was not found.");
+    }
+
+    const appModule = await import("./App.tsx");
+    const App = appModule.default;
+    createRoot(rootElement).render(<App />);
+
+    try {
+      window.sessionStorage.removeItem(BOOT_RECOVERY_SESSION_KEY);
+    } catch {
+      // Ignore storage failures.
+    }
+  } catch (error) {
+    if (!attemptBootRecovery(error)) {
+      renderFatalBootScreen(error);
+    }
   }
 }
+
+void bootstrapApp();
