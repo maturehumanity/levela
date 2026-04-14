@@ -29,6 +29,7 @@ import { getAppUpdateChannel, onAppUpdateChannelChange } from '@/lib/update-chan
 const DISMISSED_ANDROID_RELEASE_KEY = 'levela-dismissed-android-release';
 const PENDING_ANDROID_RELEASE_KEY = 'levela-pending-android-release';
 const UPDATE_INSTALL_GRACE_PERIOD_MS = 20 * 60 * 1000;
+const STORAGE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 60;
 
 type PendingAndroidRelease = {
   releaseId: string;
@@ -37,10 +38,49 @@ type PendingAndroidRelease = {
 
 let dismissedReleaseMemory: string | null = null;
 let pendingReleaseMemory: PendingAndroidRelease | null = null;
+let promptedReleaseMemory: string | null = null;
+
+function toCookieKey(key: string) {
+  return `levela_${key.replace(/[^a-z0-9]+/gi, '_')}`;
+}
+
+function readCookieItem(key: string) {
+  if (typeof document === 'undefined') return null;
+
+  const cookieKey = `${toCookieKey(key)}=`;
+  const parts = document.cookie.split(';');
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed.startsWith(cookieKey)) continue;
+    return decodeURIComponent(trimmed.slice(cookieKey.length));
+  }
+
+  return null;
+}
+
+function writeCookieItem(key: string, value: string) {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${toCookieKey(key)}=${encodeURIComponent(value)}; Max-Age=${STORAGE_COOKIE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`;
+}
+
+function removeCookieItem(key: string) {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${toCookieKey(key)}=; Max-Age=0; Path=/; SameSite=Lax`;
+}
 
 function readStorageItem(key: string) {
   try {
-    return window.localStorage.getItem(key);
+    const localValue = window.localStorage.getItem(key);
+    if (localValue !== null) {
+      return localValue;
+    }
+  } catch {
+    // Fall back to cookies when localStorage is unavailable on some mobile WebView states.
+  }
+
+  try {
+    return readCookieItem(key);
   } catch {
     return null;
   }
@@ -50,6 +90,12 @@ function writeStorageItem(key: string, value: string) {
   try {
     window.localStorage.setItem(key, value);
   } catch {
+    // Fall through to cookie persistence.
+  }
+
+  try {
+    writeCookieItem(key, value);
+  } catch {
     // Ignore storage failures and fall back to in-memory state.
   }
 }
@@ -58,7 +104,13 @@ function removeStorageItem(key: string) {
   try {
     window.localStorage.removeItem(key);
   } catch {
-    // Ignore storage failures and fall back to in-memory state.
+    // Fall through to cookie cleanup.
+  }
+
+  try {
+    removeCookieItem(key);
+  } catch {
+    // Ignore storage access failures and fall back to in-memory state.
   }
 }
 
@@ -193,12 +245,20 @@ export function AppUpdatePrompt() {
       const updateAvailable = isAndroidUpdateAvailable(CURRENT_ANDROID_RELEASE, manifest);
 
       if (updateAvailable && shouldPromptForAndroidUpdate(CURRENT_ANDROID_RELEASE, manifest, dismissedReleaseId)) {
+        if (promptedReleaseMemory === manifest.releaseId) {
+          return;
+        }
+        promptedReleaseMemory = manifest.releaseId;
         setAvailableUpdate(manifest);
         return;
       }
 
       if (!updateAvailable && dismissedReleaseId === manifest.releaseId) {
         clearAcknowledgedRelease();
+      }
+
+      if (!updateAvailable) {
+        promptedReleaseMemory = null;
       }
 
       setAvailableUpdate(null);
@@ -245,6 +305,7 @@ export function AppUpdatePrompt() {
 
   const handleLater = () => {
     acknowledgeRelease(availableUpdate.releaseId);
+    promptedReleaseMemory = availableUpdate.releaseId;
     setAvailableUpdate(null);
   };
 
@@ -256,6 +317,7 @@ export function AppUpdatePrompt() {
     // Suppress repeated prompts for the same release while install flow is in progress.
     acknowledgeRelease(availableUpdate.releaseId);
     markReleaseAsInstalling(availableUpdate.releaseId);
+    promptedReleaseMemory = availableUpdate.releaseId;
 
     // On Android WebView, window.open can still return null even when it already launched
     // the external downloader, causing a second fallback navigation and duplicate prompts.
