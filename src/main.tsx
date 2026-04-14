@@ -3,6 +3,17 @@ import "./index.css";
 
 const BOOT_RECOVERY_SESSION_KEY = "levela-boot-recovery-attempted";
 
+declare global {
+  interface Window {
+    __LEVELA_BOOT_READY__?: () => void;
+  }
+}
+
+function markBootReady() {
+  if (typeof window === "undefined") return;
+  window.__LEVELA_BOOT_READY__?.();
+}
+
 function getErrorMessage(reason: unknown) {
   if (reason instanceof Error) return reason.message;
   if (typeof reason === "string") return reason;
@@ -89,6 +100,7 @@ async function bootstrapApp() {
     const appModule = await import("./App.tsx");
     const App = appModule.default;
     createRoot(rootElement).render(<App />);
+    markBootReady();
 
     try {
       window.sessionStorage.removeItem(BOOT_RECOVERY_SESSION_KEY);

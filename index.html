@@ -19,6 +19,57 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@Levela" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <script>
+      (function () {
+        var bootComplete = false;
+
+        function renderFallback(message) {
+          var root = document.getElementById('root');
+          if (!root) return;
+          if (bootComplete) return;
+          if (root.dataset.bootFallbackVisible === 'true') return;
+
+          root.dataset.bootFallbackVisible = 'true';
+          root.innerHTML =
+            '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#050b12;color:#e8f2ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">' +
+            '<div style="width:100%;max-width:540px;border:1px solid rgba(88,117,146,.35);border-radius:24px;background:rgba(10,22,34,.92);padding:20px;">' +
+            '<h1 style="margin:0 0 8px 0;font-size:24px;line-height:1.2;">Levela could not start</h1>' +
+            '<p style="margin:0 0 14px 0;font-size:14px;line-height:1.5;color:#aac2da;">' + message + '</p>' +
+            '<button id="levela-boot-reload" type="button" style="height:40px;border:0;border-radius:12px;background:#34d1c6;color:#02151f;font-weight:600;padding:0 16px;cursor:pointer;">Reload app</button>' +
+            '</div></div>';
+
+          var button = document.getElementById('levela-boot-reload');
+          if (button) {
+            button.addEventListener('click', function () {
+              var url = new URL(window.location.href);
+              url.searchParams.set('boot_reload', Date.now().toString());
+              window.location.replace(url.toString());
+            });
+          }
+        }
+
+        window.__LEVELA_BOOT_READY__ = function () {
+          bootComplete = true;
+        };
+
+        window.addEventListener(
+          'error',
+          function (event) {
+            var target = event && event.target;
+            if (target && target.tagName === 'SCRIPT') {
+              renderFallback('A required app script did not load.');
+            }
+          },
+          true
+        );
+
+        window.setTimeout(function () {
+          if (!bootComplete) {
+            renderFallback('Startup timed out after the update. Please reload once.');
+          }
+        }, 10000);
+      })();
+    </script>
   </head>
 
   <body>
