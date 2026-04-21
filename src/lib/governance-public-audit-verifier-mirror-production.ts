@@ -12,6 +12,7 @@ export interface GovernancePublicAuditVerifierMirrorFailoverPolicySummary {
   requiredDistinctOperators: number;
   mirrorSelectionStrategy: string;
   maxMirrorCandidates: number;
+  minIndependentDirectorySigners: number;
   updatedAt: string | null;
 }
 
@@ -59,6 +60,19 @@ export interface GovernancePublicAuditVerifierMirrorProbeJobSummary {
   completedLookbackCount: number;
   oldestPendingAt: string | null;
   pendingSlaMet: boolean;
+}
+
+export interface GovernancePublicAuditVerifierMirrorDirectoryTrustSummary {
+  directoryId: string;
+  batchId: string | null;
+  directoryHash: string;
+  publishedAt: string;
+  requiredIndependentSigners: number;
+  approvalCount: number;
+  independentApprovalCount: number;
+  communityApprovalCount: number;
+  rejectCount: number;
+  trustQuorumMet: boolean;
 }
 
 export interface GovernancePublicAuditClientMirrorFailoverTarget {
@@ -152,6 +166,7 @@ export function readFailoverPolicyRecord(
     requiredDistinctOperators: Math.max(1, asNonNegativeInteger(row.required_distinct_operators, 1)),
     mirrorSelectionStrategy: asString(row.mirror_selection_strategy, 'health_latency_diversity'),
     maxMirrorCandidates: Math.max(1, asNonNegativeInteger(row.max_mirror_candidates, 8)),
+    minIndependentDirectorySigners: Math.max(1, asNonNegativeInteger(row.min_independent_directory_signers, 1)),
     updatedAt: asNullableString(row.updated_at),
   };
 }
@@ -235,6 +250,32 @@ export function readGovernancePublicAuditVerifierMirrorProbeJobBoardRows(
     .filter((entry) => entry.jobId.length > 0 && entry.mirrorId.length > 0 && entry.mirrorKey.length > 0);
 }
 
+export function readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary(
+  rows: unknown,
+): GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  const directoryId = asNullableString(row.directory_id);
+  const directoryHash = asNullableString(row.directory_hash);
+  const publishedAt = asNullableString(row.published_at);
+  if (!directoryId || !directoryHash || !publishedAt) return null;
+
+  return {
+    directoryId,
+    batchId: asNullableString(row.batch_id),
+    directoryHash,
+    publishedAt,
+    requiredIndependentSigners: Math.max(1, asNonNegativeInteger(row.required_independent_signers, 1)),
+    approvalCount: asNonNegativeInteger(row.approval_count),
+    independentApprovalCount: asNonNegativeInteger(row.independent_approval_count),
+    communityApprovalCount: asNonNegativeInteger(row.community_approval_count),
+    rejectCount: asNonNegativeInteger(row.reject_count),
+    trustQuorumMet: asBoolean(row.trust_quorum_met, false),
+  };
+}
+
 export function readGovernancePublicAuditClientVerifierBundleProductionData(bundlePayload: Record<string, unknown>) {
   const failoverPolicy = readFailoverPolicyRecord(asRecord(bundlePayload.failover_policy));
 
@@ -256,6 +297,7 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
     : [];
 
   const signedDirectory = asRecord(bundlePayload.signed_directory);
+  const signedDirectoryTrust = asRecord(bundlePayload.signed_directory_trust);
 
   return {
     failoverPolicy,
@@ -263,5 +305,8 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
     signedDirectoryHash: signedDirectory ? asNullableString(signedDirectory.directory_hash) : null,
     signedDirectorySignature: signedDirectory ? asNullableString(signedDirectory.signature) : null,
     signedDirectorySignerKey: signedDirectory ? asNullableString(signedDirectory.signer_key) : null,
+    signedDirectoryTrust: signedDirectoryTrust
+      ? readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary([signedDirectoryTrust])
+      : null,
   };
 }

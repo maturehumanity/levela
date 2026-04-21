@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
+import { GovernancePublicAuditVerifierMirrorDirectoryCard } from '@/components/governance/GovernancePublicAuditVerifierMirrorDirectoryCard';
 import { GovernancePublicAuditVerifierMirrorProbeJobsCard } from '@/components/governance/GovernancePublicAuditVerifierMirrorProbeJobsCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,12 +20,6 @@ interface GovernancePublicAuditVerifierMirrorProductionSectionProps {
   formatTimestamp: (value: string | null) => string;
 }
 
-function previewHash(value: string) {
-  if (!value) return 'n/a';
-  if (value.length <= 24) return value;
-  return `${value.slice(0, 12)}...${value.slice(-8)}`;
-}
-
 export function GovernancePublicAuditVerifierMirrorProductionSection({
   latestBatchId,
   formatTimestamp,
@@ -37,16 +31,19 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     savingFailoverPolicy,
     registeringDirectorySigner,
     publishingSignedDirectory,
+    savingDirectoryAttestation,
     schedulingProbeJobs,
     completingProbeJob,
     failoverPolicy,
     directorySummaries,
+    directoryTrustSummary,
     probeJobSummary,
     probeJobs,
     loadProductionData,
     saveFailoverPolicy,
     registerDirectorySigner,
     publishSignedDirectory,
+    recordDirectoryAttestation,
     scheduleProbeJobs,
     completeProbeJob,
   } = useGovernancePublicAuditVerifierMirrorProduction({ latestBatchId });
@@ -61,20 +58,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     requiredDistinctOperators: '1',
     mirrorSelectionStrategy: 'health_latency_diversity',
     maxMirrorCandidates: '8',
-  });
-
-  const [signerDraft, setSignerDraft] = useState({
-    signerKey: '',
-    signerLabel: '',
-    publicKey: '',
-    signingAlgorithm: 'ed25519',
-    trustTier: 'observer',
-  });
-
-  const [publishDraft, setPublishDraft] = useState({
-    signerKey: '',
-    signature: '',
-    signatureAlgorithm: 'ed25519',
+    minIndependentDirectorySigners: '1',
   });
 
   useEffect(() => {
@@ -89,6 +73,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
       requiredDistinctOperators: String(failoverPolicy.requiredDistinctOperators),
       mirrorSelectionStrategy: failoverPolicy.mirrorSelectionStrategy,
       maxMirrorCandidates: String(failoverPolicy.maxMirrorCandidates),
+      minIndependentDirectorySigners: String(failoverPolicy.minIndependentDirectorySigners),
     });
   }, [failoverPolicy]);
 
@@ -132,6 +117,16 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
         {failoverPolicy && (
           <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
             Min healthy mirrors {failoverPolicy.minHealthyMirrors}
+          </Badge>
+        )}
+        {directoryTrustSummary && (
+          <Badge
+            variant="outline"
+            className={directoryTrustSummary.trustQuorumMet
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Directory trust {directoryTrustSummary.trustQuorumMet ? 'met' : 'pending'}
           </Badge>
         )}
       </div>
@@ -182,6 +177,12 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
             disabled={!canManageMirrorProduction}
           />
           <Input
+            value={failoverDraft.minIndependentDirectorySigners}
+            onChange={(event) => setFailoverDraft((current) => ({ ...current, minIndependentDirectorySigners: event.target.value }))}
+            placeholder="Min independent signer approvals"
+            disabled={!canManageMirrorProduction}
+          />
+          <Input
             value={failoverDraft.mirrorSelectionStrategy}
             onChange={(event) => setFailoverDraft((current) => ({ ...current, mirrorSelectionStrategy: event.target.value }))}
             placeholder="Selection strategy"
@@ -222,103 +223,18 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           )}
         </div>
 
-        <div className="space-y-2 rounded-md border border-border/60 bg-card p-2 text-xs">
-          <p className="font-medium text-foreground">Signed mirror directory</p>
-          {canManageMirrorProduction && (
-            <>
-              <Label className="text-xs">Register signer</Label>
-              <Input
-                value={signerDraft.signerKey}
-                onChange={(event) => setSignerDraft((current) => ({ ...current, signerKey: event.target.value }))}
-                placeholder="Signer key"
-              />
-              <Input
-                value={signerDraft.signerLabel}
-                onChange={(event) => setSignerDraft((current) => ({ ...current, signerLabel: event.target.value }))}
-                placeholder="Signer label"
-              />
-              <Input
-                value={signerDraft.publicKey}
-                onChange={(event) => setSignerDraft((current) => ({ ...current, publicKey: event.target.value }))}
-                placeholder="Public key"
-              />
-              <Input
-                value={signerDraft.signingAlgorithm}
-                onChange={(event) => setSignerDraft((current) => ({ ...current, signingAlgorithm: event.target.value }))}
-                placeholder="Signing algorithm"
-              />
-              <Select
-                value={signerDraft.trustTier}
-                onValueChange={(value) => setSignerDraft((current) => ({ ...current, trustTier: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Trust tier" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="observer">Observer</SelectItem>
-                  <SelectItem value="independent">Independent</SelectItem>
-                  <SelectItem value="community">Community</SelectItem>
-                  <SelectItem value="bootstrap">Bootstrap</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="w-full gap-2"
-                disabled={registeringDirectorySigner || !signerDraft.signerKey.trim() || !signerDraft.publicKey.trim()}
-                onClick={() => void registerDirectorySigner(signerDraft)}
-              >
-                {registeringDirectorySigner ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Save signer
-              </Button>
-
-              <Label className="pt-1 text-xs">Publish signed directory</Label>
-              <Input
-                value={publishDraft.signerKey}
-                onChange={(event) => setPublishDraft((current) => ({ ...current, signerKey: event.target.value }))}
-                placeholder="Signer key"
-              />
-              <Input
-                value={publishDraft.signature}
-                onChange={(event) => setPublishDraft((current) => ({ ...current, signature: event.target.value }))}
-                placeholder="Directory signature"
-              />
-              <Input
-                value={publishDraft.signatureAlgorithm}
-                onChange={(event) => setPublishDraft((current) => ({ ...current, signatureAlgorithm: event.target.value }))}
-                placeholder="Signature algorithm"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="w-full gap-2"
-                disabled={publishingSignedDirectory || !publishDraft.signerKey.trim() || !publishDraft.signature.trim()}
-                onClick={() => void publishSignedDirectory(publishDraft)}
-              >
-                {publishingSignedDirectory ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Publish directory
-              </Button>
-            </>
-          )}
-
-          <div className="space-y-2">
-            {directorySummaries.slice(0, 4).map((directory) => (
-              <div key={directory.directoryId} className="rounded-md border border-border/60 bg-background p-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-foreground">{directory.signerLabel || directory.signerKey}</p>
-                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-                    {directory.trustTier}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground">{previewHash(directory.directoryHash)}</p>
-                <p className="text-muted-foreground">{directory.signatureAlgorithm}</p>
-                <p className="text-muted-foreground">{formatTimestamp(directory.publishedAt)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <GovernancePublicAuditVerifierMirrorDirectoryCard
+          canManageMirrorProduction={canManageMirrorProduction}
+          registeringDirectorySigner={registeringDirectorySigner}
+          publishingSignedDirectory={publishingSignedDirectory}
+          savingDirectoryAttestation={savingDirectoryAttestation}
+          directorySummaries={directorySummaries}
+          directoryTrustSummary={directoryTrustSummary}
+          formatTimestamp={formatTimestamp}
+          registerDirectorySigner={registerDirectorySigner}
+          publishSignedDirectory={publishSignedDirectory}
+          recordDirectoryAttestation={recordDirectoryAttestation}
+        />
 
         <GovernancePublicAuditVerifierMirrorProbeJobsCard
           canManageMirrorProduction={canManageMirrorProduction}

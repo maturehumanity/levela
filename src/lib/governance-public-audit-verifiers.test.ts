@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isMissingPublicAuditVerifierBackend,
-  readGovernancePublicAuditClientVerifierBundle,
   readGovernancePublicAuditVerifierMirrorDirectorySummaryRows,
+  readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   readGovernancePublicAuditVerifierMirrorProbeJobBoardRows,
   readGovernancePublicAuditVerifierMirrorProbeJobSummary,
@@ -86,121 +86,6 @@ describe('governance-public-audit-verifiers helpers', () => {
     ]);
   });
 
-  it('parses client verifier bundle rows', () => {
-    const bundle = readGovernancePublicAuditClientVerifierBundle([
-      {
-        bundle_version: 'public_audit_client_verifier_bundle_v1',
-        bundle_hash: 'hash-1',
-        bundle_payload: {
-          generated_at: '2026-04-21T04:00:00.000Z',
-          failover_policy: {
-            policy_key: 'default',
-            policy_name: 'Default mirror failover policy',
-            min_healthy_mirrors: 2,
-            max_mirror_latency_ms: 2500,
-            max_failures_before_cooldown: 2,
-            cooldown_minutes: 10,
-            prefer_same_region: false,
-            required_distinct_regions: 1,
-            required_distinct_operators: 1,
-            mirror_selection_strategy: 'health_latency_diversity',
-            max_mirror_candidates: 8,
-          },
-          failover_order: [
-            {
-              mirror_id: 'mirror-1',
-              mirror_key: 'mirror_primary',
-              mirror_label: 'Primary Mirror',
-              region_code: 'US-WEST',
-              operator_label: 'Levela Ops',
-              health_status: 'healthy',
-              last_check_latency_ms: 120,
-              failover_rank: 1,
-            },
-          ],
-          signed_directory: {
-            directory_hash: 'directory-hash-1',
-            signature: 'sig-1',
-            signer_key: 'ops_signer',
-          },
-        },
-        healthy_mirror_count: 2,
-        quorum_met: true,
-      },
-    ]);
-
-    expect(bundle).toEqual({
-      bundleVersion: 'public_audit_client_verifier_bundle_v1',
-      bundleHash: 'hash-1',
-      bundlePayload: {
-        generated_at: '2026-04-21T04:00:00.000Z',
-        failover_policy: {
-          policy_key: 'default',
-          policy_name: 'Default mirror failover policy',
-          min_healthy_mirrors: 2,
-          max_mirror_latency_ms: 2500,
-          max_failures_before_cooldown: 2,
-          cooldown_minutes: 10,
-          prefer_same_region: false,
-          required_distinct_regions: 1,
-          required_distinct_operators: 1,
-          mirror_selection_strategy: 'health_latency_diversity',
-          max_mirror_candidates: 8,
-        },
-        failover_order: [
-          {
-            mirror_id: 'mirror-1',
-            mirror_key: 'mirror_primary',
-            mirror_label: 'Primary Mirror',
-            region_code: 'US-WEST',
-            operator_label: 'Levela Ops',
-            health_status: 'healthy',
-            last_check_latency_ms: 120,
-            failover_rank: 1,
-          },
-        ],
-        signed_directory: {
-          directory_hash: 'directory-hash-1',
-          signature: 'sig-1',
-          signer_key: 'ops_signer',
-        },
-      },
-      healthyMirrorCount: 2,
-      quorumMet: true,
-      failoverPolicy: {
-        policyId: null,
-        policyKey: 'default',
-        policyName: 'Default mirror failover policy',
-        isActive: true,
-        minHealthyMirrors: 2,
-        maxMirrorLatencyMs: 2500,
-        maxFailuresBeforeCooldown: 2,
-        cooldownMinutes: 10,
-        preferSameRegion: false,
-        requiredDistinctRegions: 1,
-        requiredDistinctOperators: 1,
-        mirrorSelectionStrategy: 'health_latency_diversity',
-        maxMirrorCandidates: 8,
-        updatedAt: null,
-      },
-      failoverOrder: [
-        {
-          mirrorId: 'mirror-1',
-          mirrorKey: 'mirror_primary',
-          mirrorLabel: 'Primary Mirror',
-          regionCode: 'US-WEST',
-          operatorLabel: 'Levela Ops',
-          healthStatus: 'healthy',
-          lastCheckLatencyMs: 120,
-          failoverRank: 1,
-        },
-      ],
-      signedDirectoryHash: 'directory-hash-1',
-      signedDirectorySignature: 'sig-1',
-      signedDirectorySignerKey: 'ops_signer',
-    });
-  });
-
   it('parses mirror failover policy summary row', () => {
     const summary = readGovernancePublicAuditVerifierMirrorFailoverPolicySummary([
       {
@@ -217,6 +102,7 @@ describe('governance-public-audit-verifiers helpers', () => {
         required_distinct_operators: 2,
         mirror_selection_strategy: 'health_latency_diversity',
         max_mirror_candidates: 10,
+        min_independent_directory_signers: 2,
         updated_at: '2026-04-21T04:30:00.000Z',
       },
     ]);
@@ -235,6 +121,7 @@ describe('governance-public-audit-verifiers helpers', () => {
       requiredDistinctOperators: 2,
       mirrorSelectionStrategy: 'health_latency_diversity',
       maxMirrorCandidates: 10,
+      minIndependentDirectorySigners: 2,
       updatedAt: '2026-04-21T04:30:00.000Z',
     });
   });
@@ -339,6 +226,36 @@ describe('governance-public-audit-verifiers helpers', () => {
         errorMessage: null,
       },
     ]);
+  });
+
+  it('parses mirror directory trust summary row', () => {
+    const summary = readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary([
+      {
+        directory_id: 'directory-1',
+        batch_id: 'batch-1',
+        directory_hash: 'directory-hash-1',
+        published_at: '2026-04-21T05:10:00.000Z',
+        required_independent_signers: 2,
+        approval_count: 3,
+        independent_approval_count: 2,
+        community_approval_count: 1,
+        reject_count: 0,
+        trust_quorum_met: true,
+      },
+    ]);
+
+    expect(summary).toEqual({
+      directoryId: 'directory-1',
+      batchId: 'batch-1',
+      directoryHash: 'directory-hash-1',
+      publishedAt: '2026-04-21T05:10:00.000Z',
+      requiredIndependentSigners: 2,
+      approvalCount: 3,
+      independentApprovalCount: 2,
+      communityApprovalCount: 1,
+      rejectCount: 0,
+      trustQuorumMet: true,
+    });
   });
 
   it('detects missing backend errors', () => {

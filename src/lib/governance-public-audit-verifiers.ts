@@ -2,6 +2,7 @@ import type { Database } from '@/integrations/supabase/types';
 import {
   readGovernancePublicAuditClientVerifierBundleProductionData,
   type GovernancePublicAuditClientMirrorFailoverTarget,
+  type GovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   type GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
   type GovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   type GovernancePublicAuditVerifierMirrorProbeJobBoardRow,
@@ -10,6 +11,7 @@ import {
 } from '@/lib/governance-public-audit-verifier-mirror-production';
 
 export type { GovernancePublicAuditClientMirrorFailoverTarget };
+export type { GovernancePublicAuditVerifierMirrorDirectoryTrustSummary };
 export type { GovernancePublicAuditVerifierMirrorDirectorySummaryRow };
 export type { GovernancePublicAuditVerifierMirrorFailoverPolicySummary };
 export type { GovernancePublicAuditVerifierMirrorProbeJobBoardRow };
@@ -18,6 +20,7 @@ export type { GovernancePublicAuditVerifierMirrorProbeJobSummary };
 
 export {
   readGovernancePublicAuditVerifierMirrorDirectorySummaryRows,
+  readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   readGovernancePublicAuditVerifierMirrorProbeJobBoardRows,
   readGovernancePublicAuditVerifierMirrorProbeJobSummary,
@@ -59,6 +62,7 @@ export interface GovernancePublicAuditClientVerifierBundle {
   signedDirectoryHash: string | null;
   signedDirectorySignature: string | null;
   signedDirectorySignerKey: string | null;
+  signedDirectoryTrust: GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null;
 }
 
 export interface GovernancePublicAuditVerifierSummary {
@@ -189,6 +193,7 @@ export function readGovernancePublicAuditClientVerifierBundle(rows: unknown): Go
     signedDirectoryHash: production.signedDirectoryHash,
     signedDirectorySignature: production.signedDirectorySignature,
     signedDirectorySignerKey: production.signedDirectorySignerKey,
+    signedDirectoryTrust: production.signedDirectoryTrust,
   };
 }
 
@@ -209,10 +214,12 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('governance_public_audit_client_verifier_bundle')
     || message.includes('governance_public_audit_verifier_mirror_directory_signers')
     || message.includes('governance_public_audit_verifier_mirror_directories')
+    || message.includes('governance_public_audit_verifier_mirror_directory_attestations')
     || message.includes('governance_public_audit_verifier_mirror_failover_policies')
     || message.includes('governance_public_audit_verifier_mirror_probe_jobs')
     || message.includes('governance_public_audit_verifier_mirror_failover_policy_summary')
     || message.includes('governance_public_audit_verifier_mirror_directory_summary')
+    || message.includes('governance_public_audit_verifier_mirror_directory_trust_summary')
     || message.includes('governance_public_audit_verifier_mirror_probe_job_board')
     || message.includes('governance_public_audit_verifier_mirror_probe_job_summary')
     || message.includes('register_governance_public_audit_verifier_node')
@@ -222,8 +229,10 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('record_governance_public_audit_verifier_mirror_check')
     || message.includes('register_governance_public_audit_verifier_mirror_directory_signer')
     || message.includes('upsert_governance_public_audit_verifier_mirror_failover_policy')
+    || message.includes('set_governance_public_audit_verifier_mirror_min_independent_signers')
     || message.includes('schedule_governance_public_audit_verifier_mirror_probe_jobs')
     || message.includes('complete_governance_public_audit_verifier_mirror_probe_job')
     || message.includes('publish_governance_public_audit_verifier_mirror_directory')
+    || message.includes('record_governance_public_audit_verifier_mirror_directory_attestation')
   );
 }

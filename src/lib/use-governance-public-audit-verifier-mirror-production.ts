@@ -5,9 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   isMissingPublicAuditVerifierBackend,
   readGovernancePublicAuditVerifierMirrorDirectorySummaryRows,
+  readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   readGovernancePublicAuditVerifierMirrorProbeJobBoardRows,
   readGovernancePublicAuditVerifierMirrorProbeJobSummary,
+  type GovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   type GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
   type GovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   type GovernancePublicAuditVerifierMirrorProbeJobBoardRow,
@@ -24,7 +26,6 @@ type RpcResponseLike<T> = {
   data: T | null;
   error: RpcErrorLike;
 };
-
 function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
   const rpc = supabase.rpc as unknown as (
     fn: string,
@@ -42,11 +43,13 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   const [savingFailoverPolicy, setSavingFailoverPolicy] = useState(false);
   const [registeringDirectorySigner, setRegisteringDirectorySigner] = useState(false);
   const [publishingSignedDirectory, setPublishingSignedDirectory] = useState(false);
+  const [savingDirectoryAttestation, setSavingDirectoryAttestation] = useState(false);
   const [schedulingProbeJobs, setSchedulingProbeJobs] = useState(false);
   const [completingProbeJob, setCompletingProbeJob] = useState(false);
 
   const [failoverPolicy, setFailoverPolicy] = useState<GovernancePublicAuditVerifierMirrorFailoverPolicySummary | null>(null);
   const [directorySummaries, setDirectorySummaries] = useState<GovernancePublicAuditVerifierMirrorDirectorySummaryRow[]>([]);
+  const [directoryTrustSummary, setDirectoryTrustSummary] = useState<GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null>(null);
   const [probeJobSummary, setProbeJobSummary] = useState<GovernancePublicAuditVerifierMirrorProbeJobSummary | null>(null);
   const [probeJobs, setProbeJobs] = useState<GovernancePublicAuditVerifierMirrorProbeJobBoardRow[]>([]);
 
@@ -57,6 +60,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       permissionResponse,
       failoverPolicyResponse,
       directorySummaryResponse,
+      directoryTrustSummaryResponse,
       probeSummaryResponse,
       probeBoardResponse,
     ] = await Promise.all([
@@ -67,6 +71,9 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_directory_summary', {
         requested_batch_id: args.latestBatchId,
         max_entries: 12,
+      }),
+      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_directory_trust_summary', {
+        requested_batch_id: args.latestBatchId,
       }),
       callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_probe_job_summary', {
         requested_batch_id: args.latestBatchId,
@@ -82,6 +89,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     const sharedError = permissionResponse.error
       || failoverPolicyResponse.error
       || directorySummaryResponse.error
+      || directoryTrustSummaryResponse.error
       || probeSummaryResponse.error
       || probeBoardResponse.error;
 
@@ -96,6 +104,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
         permissionError: permissionResponse.error,
         failoverPolicyError: failoverPolicyResponse.error,
         directorySummaryError: directorySummaryResponse.error,
+        directoryTrustSummaryError: directoryTrustSummaryResponse.error,
         probeSummaryError: probeSummaryResponse.error,
         probeBoardError: probeBoardResponse.error,
       });
@@ -107,6 +116,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     setCanManageMirrorProduction(Boolean(permissionResponse.data));
     setFailoverPolicy(readGovernancePublicAuditVerifierMirrorFailoverPolicySummary(failoverPolicyResponse.data));
     setDirectorySummaries(readGovernancePublicAuditVerifierMirrorDirectorySummaryRows(directorySummaryResponse.data));
+    setDirectoryTrustSummary(readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary(directoryTrustSummaryResponse.data));
     setProbeJobSummary(readGovernancePublicAuditVerifierMirrorProbeJobSummary(probeSummaryResponse.data));
     setProbeJobs(readGovernancePublicAuditVerifierMirrorProbeJobBoardRows(probeBoardResponse.data));
     setProductionBackendUnavailable(false);
@@ -116,7 +126,6 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   useEffect(() => {
     void loadProductionData();
   }, [loadProductionData]);
-
   const saveFailoverPolicy = useCallback(async (draft: {
     minHealthyMirrors: string;
     maxMirrorLatencyMs: string;
@@ -127,6 +136,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     requiredDistinctOperators: string;
     mirrorSelectionStrategy: string;
     maxMirrorCandidates: string;
+    minIndependentDirectorySigners: string;
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
@@ -137,7 +147,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       return Number.isFinite(parsed) ? parsed : null;
     };
 
-    const { error } = await callUntypedRpc<string>('upsert_governance_public_audit_verifier_mirror_failover_policy', {
+    const { error: upsertError } = await callUntypedRpc<string>('upsert_governance_public_audit_verifier_mirror_failover_policy', {
       policy_key: 'default',
       policy_name: 'Default mirror failover policy',
       is_active: true,
@@ -155,8 +165,19 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       },
     });
 
-    if (error) {
-      console.error('Failed to save mirror failover policy:', error);
+    const { error: trustThresholdError } = await callUntypedRpc<string>(
+      'set_governance_public_audit_verifier_mirror_min_independent_signers',
+      {
+        requested_policy_key: 'default',
+        required_signer_count: toIntegerOrNull(draft.minIndependentDirectorySigners),
+      },
+    );
+
+    if (upsertError || trustThresholdError) {
+      console.error('Failed to save mirror failover policy:', {
+        upsertError,
+        trustThresholdError,
+      });
       toast.error('Could not save mirror failover policy.');
       setSavingFailoverPolicy(false);
       return;
@@ -242,6 +263,43 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     await loadProductionData();
   }, [args.latestBatchId, canManageMirrorProduction, loadProductionData, productionBackendUnavailable]);
 
+  const recordDirectoryAttestation = useCallback(async (draft: {
+    directoryId: string;
+    signerKey: string;
+    attestationDecision: 'approve' | 'reject';
+    attestationSignature: string;
+  }) => {
+    if (productionBackendUnavailable || !canManageMirrorProduction) return;
+
+    if (!draft.directoryId || !draft.signerKey.trim() || !draft.attestationSignature.trim()) {
+      toast.error('Directory, signer key, and signature are required.');
+      return;
+    }
+
+    setSavingDirectoryAttestation(true);
+
+    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_directory_attestation', {
+      target_directory_id: draft.directoryId,
+      signer_key: draft.signerKey.trim(),
+      attestation_decision: draft.attestationDecision,
+      attestation_signature: draft.attestationSignature.trim(),
+      attestation_payload: {
+        source: 'governance_public_audit_verifier_panel',
+      },
+    });
+
+    if (error) {
+      console.error('Failed to record mirror directory attestation:', error);
+      toast.error('Could not save directory attestation.');
+      setSavingDirectoryAttestation(false);
+      return;
+    }
+
+    toast.success('Directory attestation saved.');
+    setSavingDirectoryAttestation(false);
+    await loadProductionData();
+  }, [canManageMirrorProduction, loadProductionData, productionBackendUnavailable]);
+
   const scheduleProbeJobs = useCallback(async (forceReschedule: boolean) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
@@ -323,16 +381,19 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     savingFailoverPolicy,
     registeringDirectorySigner,
     publishingSignedDirectory,
+    savingDirectoryAttestation,
     schedulingProbeJobs,
     completingProbeJob,
     failoverPolicy,
     directorySummaries,
+    directoryTrustSummary,
     probeJobSummary,
     probeJobs,
     loadProductionData,
     saveFailoverPolicy,
     registerDirectorySigner,
     publishSignedDirectory,
+    recordDirectoryAttestation,
     scheduleProbeJobs,
     completeProbeJob,
   };
