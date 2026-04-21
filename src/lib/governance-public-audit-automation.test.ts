@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   isMissingPublicAuditAutomationBackend,
   readGovernancePublicAuditAnchorExecutionJobBoardRows,
+  readGovernancePublicAuditClaimedExecutionJobs,
   readGovernancePublicAuditExternalExecutionCycleResult,
+  readGovernancePublicAuditExternalExecutionPageBoardRows,
+  readGovernancePublicAuditExternalExecutionPagingSummary,
+  readGovernancePublicAuditExternalExecutionPolicySummary,
   readGovernancePublicAuditOperationsSlaSummary,
 } from '@/lib/governance-public-audit-automation';
 
@@ -112,6 +116,145 @@ describe('governance-public-audit-automation helpers', () => {
     });
   });
 
+  it('parses external execution policy summary rows', () => {
+    const summary = readGovernancePublicAuditExternalExecutionPolicySummary([
+      {
+        policy_key: 'default',
+        policy_name: 'Default policy',
+        is_active: true,
+        claim_ttl_minutes: 12,
+        anchor_max_attempts: 4,
+        verifier_max_attempts: 6,
+        retry_base_delay_minutes: 5,
+        retry_max_delay_minutes: 90,
+        paging_enabled: false,
+        paging_stale_pending_minutes: 45,
+        paging_failure_share_percent: '22.5',
+        oncall_channel: 'gov_ops',
+        updated_at: '2026-04-21T01:00:00.000Z',
+      },
+    ]);
+
+    expect(summary).toEqual({
+      policyKey: 'default',
+      policyName: 'Default policy',
+      isActive: true,
+      claimTtlMinutes: 12,
+      anchorMaxAttempts: 4,
+      verifierMaxAttempts: 6,
+      retryBaseDelayMinutes: 5,
+      retryMaxDelayMinutes: 90,
+      pagingEnabled: false,
+      pagingStalePendingMinutes: 45,
+      pagingFailureSharePercent: 22.5,
+      oncallChannel: 'gov_ops',
+      updatedAt: '2026-04-21T01:00:00.000Z',
+    });
+  });
+
+  it('parses external execution paging summary rows', () => {
+    const summary = readGovernancePublicAuditExternalExecutionPagingSummary([
+      {
+        batch_id: 'batch-5',
+        paging_enabled: true,
+        oncall_channel: 'gov_ops',
+        paging_stale_pending_minutes: 30,
+        paging_failure_share_percent: 20,
+        anchor_stale_pending_count: 2,
+        verifier_stale_pending_count: 1,
+        anchor_failure_share_percent: 33.3,
+        verifier_failure_share_percent: null,
+        should_page: true,
+        open_page_count: 1,
+        latest_open_page_at: '2026-04-21T02:00:00.000Z',
+      },
+    ]);
+
+    expect(summary).toEqual({
+      batchId: 'batch-5',
+      pagingEnabled: true,
+      oncallChannel: 'gov_ops',
+      pagingStalePendingMinutes: 30,
+      pagingFailureSharePercent: 20,
+      anchorStalePendingCount: 2,
+      verifierStalePendingCount: 1,
+      anchorFailureSharePercent: 33.3,
+      verifierFailureSharePercent: null,
+      shouldPage: true,
+      openPageCount: 1,
+      latestOpenPageAt: '2026-04-21T02:00:00.000Z',
+    });
+  });
+
+  it('parses external execution page board rows', () => {
+    const pages = readGovernancePublicAuditExternalExecutionPageBoardRows([
+      {
+        page_id: 'page-1',
+        batch_id: 'batch-5',
+        page_key: 'external_execution_sla',
+        severity: 'critical',
+        page_status: 'open',
+        page_message: 'SLA breached',
+        oncall_channel: 'gov_ops',
+        opened_at: '2026-04-21T02:00:00.000Z',
+        resolved_at: null,
+      },
+      {
+        page_id: '',
+        page_key: 'invalid',
+      },
+    ]);
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0]).toEqual({
+      pageId: 'page-1',
+      batchId: 'batch-5',
+      pageKey: 'external_execution_sla',
+      severity: 'critical',
+      pageStatus: 'open',
+      pageMessage: 'SLA breached',
+      oncallChannel: 'gov_ops',
+      openedAt: '2026-04-21T02:00:00.000Z',
+      resolvedAt: null,
+    });
+  });
+
+  it('parses claimed execution jobs', () => {
+    const jobs = readGovernancePublicAuditClaimedExecutionJobs([
+      {
+        job_type: 'anchor',
+        job_id: 'job-7',
+        batch_id: 'batch-5',
+        adapter_id: 'adapter-1',
+        verifier_id: null,
+        network: 'eth-mainnet',
+        scheduled_at: '2026-04-21T00:00:00.000Z',
+        attempt_count: 2,
+        max_attempts: 5,
+        next_attempt_at: '2026-04-21T00:05:00.000Z',
+        claimed_at: '2026-04-21T00:01:00.000Z',
+        claim_expires_at: '2026-04-21T00:11:00.000Z',
+      },
+    ]);
+
+    expect(jobs).toEqual([
+      {
+        jobType: 'anchor',
+        jobId: 'job-7',
+        batchId: 'batch-5',
+        adapterId: 'adapter-1',
+        verifierId: null,
+        network: 'eth-mainnet',
+        scheduledAt: '2026-04-21T00:00:00.000Z',
+        attemptCount: 2,
+        maxAttempts: 5,
+        nextAttemptAt: '2026-04-21T00:05:00.000Z',
+        claimedAt: '2026-04-21T00:01:00.000Z',
+        claimExpiresAt: '2026-04-21T00:11:00.000Z',
+      },
+    ]);
+  });
+
   it('detects missing immutable anchoring automation backend errors', () => {
     expect(
       isMissingPublicAuditAutomationBackend({
@@ -123,7 +266,7 @@ describe('governance-public-audit-automation helpers', () => {
     expect(
       isMissingPublicAuditAutomationBackend({
         code: '22023',
-        message: 'random failure',
+        message: 'random failure without public audit keywords',
       }),
     ).toBe(false);
   });

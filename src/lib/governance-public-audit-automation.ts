@@ -48,6 +48,64 @@ export interface GovernancePublicAuditExternalExecutionCycleResult {
   verifierJobsScheduled: number;
 }
 
+export interface GovernancePublicAuditExternalExecutionPolicySummary {
+  policyKey: string;
+  policyName: string;
+  isActive: boolean;
+  claimTtlMinutes: number;
+  anchorMaxAttempts: number;
+  verifierMaxAttempts: number;
+  retryBaseDelayMinutes: number;
+  retryMaxDelayMinutes: number;
+  pagingEnabled: boolean;
+  pagingStalePendingMinutes: number;
+  pagingFailureSharePercent: number;
+  oncallChannel: string;
+  updatedAt: string | null;
+}
+
+export interface GovernancePublicAuditExternalExecutionPagingSummary {
+  batchId: string | null;
+  pagingEnabled: boolean;
+  oncallChannel: string;
+  pagingStalePendingMinutes: number;
+  pagingFailureSharePercent: number;
+  anchorStalePendingCount: number;
+  verifierStalePendingCount: number;
+  anchorFailureSharePercent: number | null;
+  verifierFailureSharePercent: number | null;
+  shouldPage: boolean;
+  openPageCount: number;
+  latestOpenPageAt: string | null;
+}
+
+export interface GovernancePublicAuditExternalExecutionPageBoardRow {
+  pageId: string;
+  batchId: string | null;
+  pageKey: string;
+  severity: 'info' | 'warning' | 'critical';
+  pageStatus: 'open' | 'acknowledged' | 'resolved';
+  pageMessage: string;
+  oncallChannel: string;
+  openedAt: string;
+  resolvedAt: string | null;
+}
+
+export interface GovernancePublicAuditClaimedExecutionJobRow {
+  jobType: 'anchor' | 'verifier';
+  jobId: string;
+  batchId: string;
+  adapterId: string | null;
+  verifierId: string | null;
+  network: string | null;
+  scheduledAt: string;
+  attemptCount: number;
+  maxAttempts: number;
+  nextAttemptAt: string;
+  claimedAt: string | null;
+  claimExpiresAt: string | null;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
@@ -82,10 +140,33 @@ function asNullableNumber(value: unknown) {
   return null;
 }
 
+function asBoolean(value: unknown, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === 't' || normalized === '1' || normalized === 'yes') return true;
+    if (normalized === 'false' || normalized === 'f' || normalized === '0' || normalized === 'no') return false;
+  }
+  return fallback;
+}
+
 function asAnchorExecutionJobStatus(value: unknown): GovernancePublicAuditAnchorExecutionJobStatus {
   const status = asString(value).trim().toLowerCase();
   if (status === 'completed' || status === 'failed' || status === 'cancelled') return status;
   return 'pending';
+}
+
+function asPageSeverity(value: unknown): GovernancePublicAuditExternalExecutionPageBoardRow['severity'] {
+  const severity = asString(value).trim().toLowerCase();
+  if (severity === 'info' || severity === 'critical') return severity;
+  return 'warning';
+}
+
+function asPageStatus(value: unknown): GovernancePublicAuditExternalExecutionPageBoardRow['pageStatus'] {
+  const status = asString(value).trim().toLowerCase();
+  if (status === 'acknowledged' || status === 'resolved') return status;
+  return 'open';
 }
 
 export function readGovernancePublicAuditOperationsSlaSummary(rows: unknown): GovernancePublicAuditOperationsSlaSummary | null {
@@ -154,6 +235,98 @@ export function readGovernancePublicAuditExternalExecutionCycleResult(rows: unkn
   };
 }
 
+export function readGovernancePublicAuditExternalExecutionPolicySummary(rows: unknown): GovernancePublicAuditExternalExecutionPolicySummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  const policyKey = asNullableString(row.policy_key);
+  if (!policyKey) return null;
+
+  return {
+    policyKey,
+    policyName: asString(row.policy_name, 'Default external execution policy'),
+    isActive: asBoolean(row.is_active, true),
+    claimTtlMinutes: Math.max(1, asNonNegativeInteger(row.claim_ttl_minutes, 10)),
+    anchorMaxAttempts: Math.max(1, asNonNegativeInteger(row.anchor_max_attempts, 5)),
+    verifierMaxAttempts: Math.max(1, asNonNegativeInteger(row.verifier_max_attempts, 5)),
+    retryBaseDelayMinutes: Math.max(1, asNonNegativeInteger(row.retry_base_delay_minutes, 5)),
+    retryMaxDelayMinutes: Math.max(1, asNonNegativeInteger(row.retry_max_delay_minutes, 120)),
+    pagingEnabled: asBoolean(row.paging_enabled, true),
+    pagingStalePendingMinutes: Math.max(1, asNonNegativeInteger(row.paging_stale_pending_minutes, 30)),
+    pagingFailureSharePercent: Math.max(0, asNullableNumber(row.paging_failure_share_percent) ?? 25),
+    oncallChannel: asString(row.oncall_channel, 'public_audit_ops'),
+    updatedAt: asNullableString(row.updated_at),
+  };
+}
+
+export function readGovernancePublicAuditExternalExecutionPagingSummary(rows: unknown): GovernancePublicAuditExternalExecutionPagingSummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  return {
+    batchId: asNullableString(row.batch_id),
+    pagingEnabled: asBoolean(row.paging_enabled, true),
+    oncallChannel: asString(row.oncall_channel, 'public_audit_ops'),
+    pagingStalePendingMinutes: Math.max(1, asNonNegativeInteger(row.paging_stale_pending_minutes, 30)),
+    pagingFailureSharePercent: Math.max(0, asNullableNumber(row.paging_failure_share_percent) ?? 25),
+    anchorStalePendingCount: asNonNegativeInteger(row.anchor_stale_pending_count),
+    verifierStalePendingCount: asNonNegativeInteger(row.verifier_stale_pending_count),
+    anchorFailureSharePercent: asNullableNumber(row.anchor_failure_share_percent),
+    verifierFailureSharePercent: asNullableNumber(row.verifier_failure_share_percent),
+    shouldPage: asBoolean(row.should_page, false),
+    openPageCount: asNonNegativeInteger(row.open_page_count),
+    latestOpenPageAt: asNullableString(row.latest_open_page_at),
+  };
+}
+
+export function readGovernancePublicAuditExternalExecutionPageBoardRows(rows: unknown): GovernancePublicAuditExternalExecutionPageBoardRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      pageId: asString(entry.page_id),
+      batchId: asNullableString(entry.batch_id),
+      pageKey: asString(entry.page_key),
+      severity: asPageSeverity(entry.severity),
+      pageStatus: asPageStatus(entry.page_status),
+      pageMessage: asString(entry.page_message),
+      oncallChannel: asString(entry.oncall_channel, 'public_audit_ops'),
+      openedAt: asString(entry.opened_at),
+      resolvedAt: asNullableString(entry.resolved_at),
+    }))
+    .filter((entry) => entry.pageId.length > 0 && entry.pageKey.length > 0 && entry.pageMessage.length > 0);
+}
+
+export function readGovernancePublicAuditClaimedExecutionJobs(rows: unknown): GovernancePublicAuditClaimedExecutionJobRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => {
+      const jobType = asString(entry.job_type).trim().toLowerCase() === 'verifier' ? 'verifier' : 'anchor';
+      return {
+        jobType,
+        jobId: asString(entry.job_id),
+        batchId: asString(entry.batch_id),
+        adapterId: asNullableString(entry.adapter_id),
+        verifierId: asNullableString(entry.verifier_id),
+        network: asNullableString(entry.network),
+        scheduledAt: asString(entry.scheduled_at),
+        attemptCount: asNonNegativeInteger(entry.attempt_count),
+        maxAttempts: Math.max(1, asNonNegativeInteger(entry.max_attempts, 1)),
+        nextAttemptAt: asString(entry.next_attempt_at),
+        claimedAt: asNullableString(entry.claimed_at),
+        claimExpiresAt: asNullableString(entry.claim_expires_at),
+      };
+    })
+    .filter((entry) => entry.jobId.length > 0 && entry.batchId.length > 0 && entry.scheduledAt.length > 0);
+}
+
 export function isMissingPublicAuditAutomationBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
@@ -174,6 +347,14 @@ export function isMissingPublicAuditAutomationBackend(error: { code?: string | n
     || message.includes('complete_governance_public_audit_verifier_job')
     || message.includes('schedule_governance_public_audit_anchor_execution_jobs')
     || message.includes('complete_governance_public_audit_anchor_execution_job')
+    || message.includes('governance_public_audit_external_execution_policies')
+    || message.includes('governance_public_audit_external_execution_pages')
+    || message.includes('governance_public_audit_external_execution_policy_summary')
+    || message.includes('set_governance_public_audit_external_execution_policy')
+    || message.includes('claim_governance_public_audit_external_execution_jobs')
+    || message.includes('governance_public_audit_external_execution_paging_summary')
+    || message.includes('governance_public_audit_external_execution_page_board')
+    || message.includes('resolve_governance_public_audit_external_execution_page')
     || message.includes('current_profile_can_manage_public_audit_verifiers')
   );
 }
