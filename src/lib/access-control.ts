@@ -51,6 +51,39 @@ export const APP_PERMISSIONS = [
 export type AppRole = (typeof APP_ROLES)[number];
 export type AppPermission = (typeof APP_PERMISSIONS)[number];
 
+export const FOUNDER_BASE_PERMISSIONS: AppPermission[] = [
+  'law.read',
+  'law.contribute',
+  'law.review',
+  'content.read',
+  'content.contribute_unmoderated',
+  'content.contribute_moderated',
+  'content.review',
+  'content.moderate',
+  'profession.verify',
+  'build.use',
+  'profile.read',
+  'profile.update_self',
+  'post.create',
+  'post.edit_self',
+  'post.delete_self',
+  'post.moderate',
+  'comment.create',
+  'comment.edit_self',
+  'comment.delete_self',
+  'comment.moderate',
+  'message.create',
+  'message.edit_self',
+  'message.moderate',
+  'endorsement.create',
+  'endorsement.review',
+  'endorsement.moderate',
+  'report.create',
+  'report.review',
+  'like.create',
+  'like.delete_self',
+];
+
 export const rolePermissionMap: Record<AppRole, AppPermission[]> = {
   guest: ['content.read', 'profile.read'],
   member: [
@@ -186,7 +219,7 @@ export const rolePermissionMap: Record<AppRole, AppPermission[]> = {
     'like.create',
     'like.delete_self',
   ],
-  founder: [...APP_PERMISSIONS],
+  founder: [...FOUNDER_BASE_PERMISSIONS],
   admin: [...APP_PERMISSIONS],
   system: [...APP_PERMISSIONS],
 };

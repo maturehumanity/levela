@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { type LanguageCode } from '@/lib/i18n';
+import { loadLanguageOptions, type LanguageCode, type LanguageOption } from '@/lib/i18n.runtime';
 import { permissionListHasAny, type AppPermission } from '@/lib/access-control';
 import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
 import { getAppUpdateChannel, onAppUpdateChannelChange, setAppUpdateChannel, toggleAppUpdateChannel } from '@/lib/update-channel';
@@ -89,7 +89,8 @@ const settingsItems = [
 export default function Settings() {
   const navigate = useNavigate();
   const { signOut, profile } = useAuth();
-  const { language, setLanguage, languageOptions, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
+  const [languageOptions, setLanguageOptions] = useState<readonly LanguageOption[]>([]);
   const [appUpdateChannel, setLocalAppUpdateChannel] = useState(getAppUpdateChannel);
   const installedReleaseLabel = `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
   const channelReleaseLabel = appUpdateChannel === 'testing'
@@ -156,6 +157,21 @@ export default function Settings() {
   };
 
   useEffect(() => onAppUpdateChannelChange(setLocalAppUpdateChannel), []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadOptions = async () => {
+      const options = await loadLanguageOptions();
+      if (active) setLanguageOptions(options);
+    };
+
+    void loadOptions();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <AppLayout>

@@ -254,10 +254,12 @@ export const baseTranslations = {
     "title": "Governance Policies",
     "subtitle": "Manage the foundational policy controls that guide issuance, stability, and oversight.",
     "localMode": "Governance backend tables are not available yet. Changes are currently local to this device.",
+    "signedIntentLocalMode": "Signed governance intents are not available yet. Policy changes can still save, but signed-event storage is offline.",
     "policyControlsTitle": "Policy control panel",
     "policyControlsDescription": "Update policy values, run immediate simulations, and save the active governance profile locally.",
     "savePolicy": "Save policy",
     "saved": "Saved",
+    "unsignedFallbackSaved": "Policy saved without a registered citizen signing key.",
     "simulationTitle": "Policy simulation",
     "simulationDescription": "This preview applies the active policy values to the foundational quarterly issuance formula.",
     "simulationQuarterlyCeiling": "Projected quarterly issuance ceiling",
@@ -271,6 +273,50 @@ export const baseTranslations = {
     "approvalNotesPlaceholder": "Add review context for this policy decision.",
     "recordApproval": "Record approval",
     "approvalRecorded": "Approval recorded.",
+    "unsignedApprovalRecorded": "Approval recorded without a registered citizen signing key.",
+    "keyManagerTitle": "Citizen signing key",
+    "keyManagerDescription": "Bootstrap a local citizen key for governance actions. Once registered, policy saves and approvals can be mirrored into signed, append-only intent records.",
+    "keyRegistered": "Key registered on profile",
+    "keyNotRegistered": "No key registered yet",
+    "localKeyReady": "Local signing key ready",
+    "localKeyMissing": "Local signing key missing",
+    "keyMismatch": "Registered key does not match this device",
+    "signedIntentsOnline": "Signed intents online",
+    "signedIntentsOffline": "Signed intents unavailable",
+    "fingerprintLabel": "Public key fingerprint",
+    "registerKey": "Generate and register key",
+    "replaceKey": "Replace registered key",
+    "removeLocalKey": "Remove local key",
+    "keyRegisteredSuccess": "Citizen signing key registered.",
+    "keyRemovedSuccess": "Local citizen signing key removed from this device.",
+    "keyRegisterFailed": "Could not register the citizen signing key.",
+    "keyRequired": "Register a citizen signing key before enforcing signed governance actions on this profile.",
+    "keyMismatchBlocking": "This device does not hold the registered citizen signing key for your profile. Governance changes are blocked until the key matches.",
+    "localKeyMissingBlocking": "Your profile has a registered citizen signing key, but this device does not have the local private key needed to sign governance actions.",
+    "keyStatusHelpRegistered": "This profile is ready to sign governance actions from trusted devices.",
+    "keyStatusHelpBootstrap": "Levela is still in bootstrap mode. Without a registered key, governance changes are saved through the legacy path and are less trustworthy.",
+    "keyStatusHelpMismatch": "The profile key and local key do not match. Treat this as a trust issue until you intentionally replace or restore the correct key.",
+    "eligibilityTitle": "Civic governance gate",
+    "eligibilityDescription": "Governance influence is intentionally zero for accounts that are not verified, below the minimum score, or not using the native mobile app.",
+    "eligibilityStatusEligible": "Eligible",
+    "eligibilityStatusIneligible": "Ineligible",
+    "influenceWeightLabel": "Governance influence weight",
+    "scoreLabel": "Current Levela score",
+    "minimumScoreLabel": "Minimum score",
+    "deviceLabel": "Control device",
+    "deviceNative": "Native mobile app",
+    "deviceWeb": "Web or desktop",
+    "verificationLabel": "Verification",
+    "verificationVerified": "Verified",
+    "verificationUnverified": "Unverified",
+    "eligibilityLoading": "Checking score and governance eligibility...",
+    "eligibilityUnavailable": "Governance eligibility could not be verified right now, so governance actions stay blocked.",
+    "zeroInfluenceRule": "Users who fail any requirement have governance weight 0, so they cannot influence governance alone or by forming large low-trust groups.",
+    "requirementsHeading": "Failed requirements",
+    "requirementMobile": "Use the native mobile app for governance actions.",
+    "requirementVerified": "Your account must be verified.",
+    "requirementScore": "Reach the minimum governance score before participating.",
+    "requirementScoreUnavailable": "Your governance score could not be verified yet.",
     "approvalClass": {
       "ordinary": "Ordinary",
       "elevated": "Elevated",
@@ -292,7 +338,8 @@ export const baseTranslations = {
     "errors": {
       "loadFailed": "Could not load governance policy data.",
       "saveFailed": "Could not save the governance policy.",
-      "approvalFailed": "Could not record the approval decision."
+      "approvalFailed": "Could not record the approval decision.",
+      "signedIntentFailed": "Could not record the signed governance intent."
     },
     "fields": {
       "activeCitizens": "Active citizens",
@@ -304,6 +351,193 @@ export const baseTranslations = {
       "autoApprovalLimit": "Auto-approval limit",
       "maxInflationRisk": "Max inflation risk",
       "affordabilityAlertThreshold": "Affordability alert threshold"
+    }
+  },
+  "governanceHub": {
+    "title": "Governance",
+    "subtitle": "Create proposals, vote as an eligible citizen, and let bootstrap or quorum rules finalize outcomes safely.",
+    "loadFailed": "Could not load governance proposals.",
+    "backendUnavailable": "The governance participation tables are not available yet, so proposals and votes cannot be loaded on this device.",
+    "eligible": "Eligible",
+    "ineligible": "Ineligible",
+    "bootstrapMode": "Bootstrap mode",
+    "collectiveMode": "Collective mode",
+    "notActiveCitizen": "Not active yet",
+    "requirementsTitle": "You need all governance requirements before proposing or voting.",
+    "scoreUnavailable": "Your governance score is not available right now.",
+    "cards": {
+      "score": "Governance score",
+      "eligibility": "Eligibility",
+      "eligibleCitizens": "Eligible citizens",
+      "mode": "Decision mode"
+    },
+    "createTitle": "Create proposal",
+    "createDescription": "Eligible citizens can submit proposals here. When you are the only eligible citizen, bootstrap mode can approve immediately without waiting.",
+    "createAction": "Create proposal",
+    "createFailed": "Could not create the governance proposal.",
+    "created": "Governance proposal created.",
+    "createdAndFinalized": "Bootstrap proposal created and finalized immediately.",
+    "requiredFields": "Complete the title, summary, and proposal body first.",
+    "executionFieldsRequired": "Complete the execution target fields for this proposal type first.",
+    "proposeBlocked": "You are not currently eligible to create governance proposals.",
+    "voteBlocked": "You are not currently eligible to vote on governance proposals.",
+    "voteFailed": "Could not record the governance vote.",
+    "voteRecorded": "Vote recorded: {choice}.",
+    "executeAction": "Execute implementation",
+    "executeBlocked": "You are not currently responsible for executing this implementation.",
+    "executeBlockedBySanction": "Execution is blocked while your governance sanction is active.",
+    "executeFailed": "Could not execute the approved implementation.",
+    "executeCompleted": "Approved implementation executed successfully.",
+    "executeBlockedResult": "Execution attempt was recorded, but the implementation is blocked.",
+    "executeManualOnly": "This approved proposal still requires manual unit follow-through.",
+    "bootstrapApprovalNote": "Bootstrap auto-approval because only one eligible citizen exists.",
+    "proposeBlockedBySanction": "Proposal creation is blocked while your governance sanction is active.",
+    "voteBlockedBySanction": "Voting is blocked while your governance sanction is active.",
+    "fields": {
+      "title": "Title",
+      "summary": "Summary",
+      "body": "Proposal body",
+      "decisionClass": "Decision class",
+      "executionAction": "Execution action",
+      "targetRole": "Target role",
+      "targetPermission": "Target permission",
+      "targetUnit": "Target unit",
+      "targetProfile": "Target profile",
+      "targetPolicy": "Target policy",
+      "targetCertification": "Target certification",
+      "targetContentItem": "Target content item",
+      "membershipRole": "Membership role",
+      "activationScope": "Activation scope",
+      "countryCode": "Country code",
+      "executionNotes": "Execution notes"
+    },
+    "placeholders": {
+      "title": "Name the change you want the system to evaluate.",
+      "summary": "Summarize the proposal in a few lines.",
+      "body": "Describe the change, expected impact, transition, and safeguards.",
+      "countryCode": "Enter a country code such as US.",
+      "executionNotes": "Add any notes the responsible unit should preserve while executing this decision."
+    },
+    "decisionClasses": {
+      "ordinary": "Ordinary",
+      "elevated": "Elevated",
+      "constitutional": "Constitutional"
+    },
+    "executionActions": {
+      "manual_follow_through": "Manual follow-through",
+      "grant_role_permission": "Grant role permission",
+      "revoke_role_permission": "Revoke role permission",
+      "assign_unit_member": "Assign unit member",
+      "deactivate_unit_member": "Deactivate unit member",
+      "approve_identity_verification": "Approve identity verification",
+      "revoke_identity_verification": "Revoke identity verification",
+      "activate_citizen_scope": "Activate citizen scope",
+      "deactivate_citizen_scope": "Deactivate citizen scope",
+      "activate_monetary_policy": "Activate monetary policy",
+      "deactivate_monetary_policy": "Deactivate monetary policy",
+      "award_study_certification": "Award study certification",
+      "revoke_study_certification": "Revoke study certification",
+      "approve_content_item": "Approve content item",
+      "reject_content_item": "Reject content item",
+      "archive_content_item": "Archive content item"
+    },
+    "certifications": {
+      "civicFoundations": "Civic Foundations"
+    },
+    "activationScopes": {
+      "world": "World",
+      "country": "Country"
+    },
+    "membershipRoles": {
+      "lead": "Lead",
+      "member": "Member",
+      "observer": "Observer"
+    },
+    "statuses": {
+      "open": "Open",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "voteChoices": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "abstain": "Abstain"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "abstain": "Abstain"
+    },
+    "implementationStatuses": {
+      "queued": "Queued",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "blocked": "Blocked",
+      "cancelled": "Cancelled"
+    },
+    "units": {
+      "civic_operations": "Civic Operations Unit",
+      "policy_legal": "Policy and Legal Unit",
+      "technical_stewardship": "Technical Stewardship Unit",
+      "constitutional_council": "Constitutional Council Unit",
+      "identity_verification": "Identity Verification Unit",
+      "security_response": "Security Response Unit",
+      "treasury_finance": "Treasury and Finance Unit"
+    },
+    "proposalsTitle": "Live proposals",
+    "proposalsDescription": "Open and resolved governance proposals are listed here with quorum, timing, and vote snapshots.",
+    "unitsTitle": "Execution units",
+    "unitsDescription": "These standing units are responsible for carrying approved decisions into implementation.",
+    "unitsEmpty": "No execution units are registered yet.",
+    "unitSeats": "members",
+    "implementationQueueTitle": "Implementation queue",
+    "empty": "No governance proposals have been created yet.",
+    "opensAt": "Opens",
+    "closesAt": "Closes",
+    "quorum": "Quorum",
+    "eligibleSnapshot": "Eligible snapshot",
+    "yourVote": "Your vote: {choice}",
+    "assignedAt": "Assigned",
+    "targetUnitLabel": "Target unit",
+    "targetProfileLabel": "Target profile",
+    "targetPolicyLabel": "Target policy",
+    "targetCertificationLabel": "Target certification",
+    "targetContentItemLabel": "Target content item",
+    "policyActiveBadge": "Active",
+    "sanctionsTitle": "Sanctions and appeals",
+    "sanctionsDescription": "Active governance sanctions are enforced server-side. You can submit appeals for active sanctions here.",
+    "activeSanctionsEmpty": "No active governance sanctions on your account.",
+    "appealsTitle": "Appeals",
+    "appealsEmpty": "No sanction appeals submitted yet.",
+    "appealAlreadyOpen": "An appeal for this sanction is already open.",
+    "appealReasonLabel": "Appeal reason",
+    "appealReasonRequired": "Add an appeal reason before submitting.",
+    "appealReasonPlaceholder": "Explain why this sanction should be reconsidered.",
+    "appealEvidenceLabel": "Evidence notes",
+    "appealEvidencePlaceholder": "Optional: include context, timeline, or supporting details.",
+    "appealSubmit": "Submit appeal",
+    "appealSubmitted": "Appeal submitted.",
+    "appealSubmitFailed": "Could not submit the sanction appeal.",
+    "sanctionReasonLabel": "Reason",
+    "sanctionStartsAtLabel": "Starts",
+    "sanctionEndsAtLabel": "Ends",
+    "sanctionAppealOpenBadge": "Appeal open"
+  },
+  "governanceSanctions": {
+    "scopes": {
+      "all": "All governance actions",
+      "proposal_create": "Proposal creation",
+      "vote": "Voting",
+      "verification_review": "Verification review",
+      "execution": "Execution"
+    },
+    "appealStatuses": {
+      "open": "Open",
+      "under_review": "Under review",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
     }
   },
   "law": {
@@ -480,34 +714,46 @@ export const baseTranslations = {
   },
   "terms": {
     "title": "Terms of Use",
-    "subtitle": "Read the principles, conduct rules, and governing terms that apply when using Levela.",
+    "subtitle": "Read the internal platform, civic, and participation terms that apply when using Levela.",
     "acceptanceTitle": "Platform acceptance",
-    "acceptanceDescription": "By creating an account or continuing to use Levela, you agree to these terms and the operating principles they describe.",
+    "acceptanceDescription": "By creating an account, remaining signed up, or continuing to use Levela, you agree to these terms and to the internal rules, policies, and procedures they reference.",
     "acceptanceBullets": [
       "You agree to use Levela in good faith and contribute truthful, responsible information.",
-      "You accept the platform’s code of conduct, moderation model, and community standards.",
-      "You understand that Levela presents its own organizing law, conduct, and governance principles inside the platform."
+      "You accept the platform’s code of conduct, moderation model, verification procedures, and community standards.",
+      "You understand that Levela may maintain its own internal civic and governance framework for participation inside the Levela system."
     ],
     "sections": {
-      "purpose": {
-        "title": "Purpose",
-        "body": "Levela exists to help people build trust, contribution, and accountability profiles in a structured public-interest platform. The service is designed around evidence, endorsements, conduct, and community participation."
+      "serviceScope": {
+        "title": "Nature of the service",
+        "body": "Levela is a digital platform for trust-building, contribution, study, civic participation, and internal governance inside the Levela ecosystem. These terms govern participation in Levela as a platform and internal civic environment."
       },
-      "conduct": {
-        "title": "Code of conduct",
-        "body": "Users must act honestly, avoid abusive or deceptive behavior, and refrain from using the platform to harass, mislead, exploit, or manipulate other people. Platform participation is conditional on respectful and responsible conduct."
+      "accounts": {
+        "title": "Accounts and truthfulness",
+        "body": "Users must provide truthful, accurate, and non-deceptive information. Users are responsible for protecting their accounts and for activity taken through them unless compromise is properly reported through Levela procedures."
       },
-      "lawPrinciple": {
-        "title": "Law principle",
-        "body": "Levela’s operating principle is that the platform’s Laws, Code of Conduct, and governing principles become the ruling law for a country or territory once 51% of that country’s citizens join the platform. By accepting these terms, users acknowledge that this principle is part of the platform’s internal legal and governance model."
+      "verification": {
+        "title": "Verification",
+        "body": "Certain rights and features require identity and contact verification. Verification may include structured profile completion, live digital verification, discrepancy review, and anti-duplication checks."
+      },
+      "citizenship": {
+        "title": "Citizenship and civic participation",
+        "body": "Levela may recognize internal civic statuses such as citizen, active citizen, and governance-eligible citizen under separate constitutional and policy rules. These statuses govern participation within the Levela system and do not by themselves claim to replace all external law."
+      },
+      "governance": {
+        "title": "Governance eligibility",
+        "body": "Governance rights are conditional. Levela may require verified identity, citizenship status, active status, minimum Levela score, time in good standing, trusted device requirements, and role-specific training or certification before governance permissions are granted or exercised."
+      },
+      "privacy": {
+        "title": "Privacy and sensitive data",
+        "body": "Levela should protect personal and verification data through strict access controls, encryption, segmented storage, and auditable handling. Raw identity materials should not be placed on-chain, while proofs, hashes, attestations, and revocation states may be handled more transparently where appropriate."
       },
       "contributions": {
         "title": "Contributions and content",
-        "body": "Users are responsible for the accuracy and integrity of the information, endorsements, comments, legal suggestions, and other content they contribute. Levela may review, organize, restrict, or remove contributions to protect the integrity of the platform."
+        "body": "Users are responsible for the accuracy and integrity of the information, endorsements, comments, legal suggestions, and other content they contribute. Levela may review, organize, restrict, or remove contributions to protect safety, legitimacy, and institutional integrity."
       },
       "enforcement": {
         "title": "Enforcement and moderation",
-        "body": "Levela may limit visibility, suspend actions, remove content, or restrict accounts when conduct, content, or behavior conflicts with the platform’s rules, safety standards, or governance principles. Continued use of the platform means accepting that moderation and enforcement can occur when needed."
+        "body": "Levela may limit visibility, suspend actions, remove content, restrict permissions, or restrict accounts when conduct, content, or behavior conflicts with the platform’s rules, safety standards, or civic integrity requirements. Levela should also maintain review and appeal pathways appropriate to the seriousness of the action taken."
       }
     }
   },
@@ -1466,7 +1712,45 @@ export const baseTranslations = {
     "emptySubtitle": "Start the conversation! Messages will appear here instantly.",
     "placeholder": "Type a message...",
     "retry": "Retry",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "calls": {
+      "scopeLabel": "Call type",
+      "scopeDirect": "1:1",
+      "scopeGroup": "Group",
+      "targetLabel": "Person",
+      "noTargets": "No recent users to call",
+      "startVoice": "Voice",
+      "startVideo": "Video",
+      "signInRequired": "Please sign in to start a call.",
+      "finishCurrent": "Finish the current call first.",
+      "selectTarget": "Choose someone to call.",
+      "capHint": "Group limits: {video} video, {voice} voice participants.",
+      "permissionsError": "Unable to access your microphone/camera.",
+      "incomingToast": "{name} is calling ({type})",
+      "incomingFrom": "{name} is calling",
+      "incomingStatus": "Incoming {type} call",
+      "calling": "Calling {type}...",
+      "connecting": "Connecting...",
+      "connected": "{type} call connected",
+      "kindVoice": "voice",
+      "kindVideo": "video",
+      "targetBusy": "User is busy right now.",
+      "targetDeclined": "Call was declined.",
+      "groupFull": "This group call is full ({count} max).",
+      "noAnswer": "No one answered the call.",
+      "ended": "Call ended.",
+      "participantLeft": "{name} left the call.",
+      "participantsCount": "{count} participants",
+      "you": "You",
+      "waiting": "Waiting for someone to join...",
+      "accept": "Accept",
+      "decline": "Decline",
+      "end": "End",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "cameraOn": "Camera On",
+      "cameraOff": "Camera Off"
+    }
   },
   "admin": {
     "roles": {
@@ -1489,13 +1773,13 @@ export const baseTranslations = {
       "certified": "Professionally certified contributor access for matching moderated content.",
       "moderator": "Moderation access for content and reports.",
       "market_manager": "Flexible management access without full admin power.",
-      "founder": "Founding authority with full platform access.",
+      "founder": "Founder constitutional-office role with explicit stewardship permissions instead of blanket admin power.",
       "admin": "Full staff access across settings, roles, and moderation.",
       "system": "Reserved for internal system-level operations."
     },
     "rolesPage": {
       "title": "Roles",
-      "subtitle": "Review the role groups and how broad each one is before adjusting live permissions.",
+      "subtitle": "Roles remain the visible permission groups while civic status and governance eligibility increasingly govern citizenship and voting.",
       "loadFailed": "Could not load the role catalog.",
       "scopeLabel": "Permission scope",
       "manageInPermissions": "Manage in Permissions"
@@ -1624,16 +1908,19 @@ export const baseTranslations = {
     },
     "users": {
       "title": "Users",
-      "subtitle": "Manage roles and permission overrides for individual people.",
+      "subtitle": "Manage role access while tracking separate civic status and governance readiness for each person.",
       "adminAccess": "Admin access",
       "totalUsers": "Total users",
       "admins": "Admins",
       "staffRoles": "Staff roles",
-      "searchPlaceholder": "Search by name, username, country, or role...",
+      "searchPlaceholder": "Search by name, username, country, role, or civic status...",
       "loadFailed": "Could not load users.",
       "permissionsLoadFailed": "Could not load role permissions.",
       "professionsLoadFailed": "Could not load profession definitions.",
       "professionAssignmentsLoadFailed": "Could not load user profession assignments.",
+      "verificationCasesLoadFailed": "Could not load verification cases.",
+      "sanctionsLoadFailed": "Could not load governance sanctions.",
+      "appealsLoadFailed": "Could not load governance sanction appeals.",
       "cannotEditSelf": "You cannot change your own role here.",
       "cannotEditOwnPermissions": "You cannot change your own permission overrides here.",
       "roleUpdateFailed": "Could not update the role.",
@@ -1647,6 +1934,9 @@ export const baseTranslations = {
       "noResultsDescription": "Try a broader search to see more people.",
       "userColumn": "User",
       "roleColumn": "Role",
+      "citizenshipColumn": "Citizenship",
+      "governanceStatusColumn": "Governance",
+      "verificationWorkflowColumn": "Verification workflow",
       "joinedColumn": "Joined",
       "accessColumn": "Access",
       "statusColumn": "Status",
@@ -1658,6 +1948,9 @@ export const baseTranslations = {
       "selfPermissionsHint": "Your own permission overrides are locked here to prevent accidental loss of admin access.",
       "verifiedBadge": "Verified",
       "unverifiedBadge": "Unverified",
+      "activeCitizenBadge": "Active Citizen",
+      "governanceEligibleBadge": "Governance Eligible",
+      "governancePendingBadge": "Not governance-ready",
       "verifyUser": "Verify",
       "unverifyUser": "Unverify",
       "userVerified": "{user} is now verified.",
@@ -1665,6 +1958,23 @@ export const baseTranslations = {
       "userIsVerified": "This user is verified.",
       "userIsUnverified": "This user is unverified.",
       "verificationUpdateFailed": "Could not update verification.",
+      "verificationCaseUpdateFailed": "Could not update the verification case.",
+      "verificationReviewFailed": "Could not record the verification review.",
+      "verificationApprovedNote": "Approved through the admin verification workflow.",
+      "verificationRevokedNote": "Revoked through the admin verification workflow.",
+      "citizenshipStatuses": {
+        "registered_member": "Registered member",
+        "verified_member": "Verified member",
+        "citizen": "Citizen"
+      },
+      "verificationCaseStatuses": {
+        "draft": "Draft",
+        "submitted": "Submitted",
+        "in_review": "In review",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "revoked": "Revoked"
+      },
       "officialIdLabel": "ID",
       "ssnLabel": "SSN",
       "manageAccess": "Manage access",
@@ -1694,6 +2004,37 @@ export const baseTranslations = {
       "professionSaveFailed": "Could not save the profession status.",
       "professionSaved": "Profession status updated for {user}.",
       "professionRemoved": "Profession assignment removed for {user}.",
+      "sanctionsTitle": "Governance sanctions",
+      "sanctionsSubtitle": "Issue, lift, and review governance sanctions enforced by server-side RLS.",
+      "activeSanctionsTitle": "Active sanctions",
+      "activeSanctionsEmpty": "No active sanctions for this person.",
+      "issueSanction": "Issue sanction",
+      "issuingSanction": "Issuing sanction...",
+      "sanctionIssued": "Sanction issued.",
+      "sanctionIssueFailed": "Could not issue the governance sanction.",
+      "liftSanction": "Lift sanction",
+      "liftingSanction": "Lifting...",
+      "sanctionLifted": "Sanction lifted.",
+      "sanctionLiftFailed": "Could not lift the governance sanction.",
+      "sanctionScopeLabel": "Sanction scope",
+      "sanctionDurationDaysLabel": "Duration (days)",
+      "sanctionDurationDaysPlaceholder": "Optional, e.g. 30",
+      "sanctionReasonLabel": "Sanction reason",
+      "sanctionReasonPlaceholder": "Describe why this sanction is needed.",
+      "sanctionNotesLabel": "Sanction notes",
+      "sanctionNotesPlaceholder": "Optional internal context for stewardship records.",
+      "appealsTitle": "Sanction appeals",
+      "appealsSubtitle": "Review and resolve appeals submitted by this person for active sanctions.",
+      "appealsEmpty": "No sanction appeals for this person yet.",
+      "appealReasonLabel": "Appeal reason",
+      "appealEvidenceLabel": "Evidence notes",
+      "appealResolutionLabel": "Resolution notes",
+      "appealResolutionPlaceholder": "Add context for the final appeal outcome.",
+      "appealStatusLabel": "Appeal status",
+      "appealSave": "Save appeal outcome",
+      "appealSaving": "Saving appeal...",
+      "appealSaved": "Appeal updated.",
+      "appealSaveFailed": "Could not update the appeal.",
       "professionStatuses": {
         "unassigned": "Unassigned",
         "pending": "Pending",

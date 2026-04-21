@@ -149,7 +149,8 @@ const studyDomains: StudyDomain[] = [
     titleKey: 'study.domains.proposals.title',
     descriptionKey: 'study.domains.proposals.description',
     icon: Globe,
-    availableNow: false,
+    availableNow: true,
+    launchPath: '/governance',
   },
 ];
 

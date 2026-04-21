@@ -1,26 +1,26 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { detectLocalePreferences, languageOptions } from '@/lib/i18n';
-import { createPhoneDraft, getPhoneCountryOptions, getPhoneCountrySummary } from '@/lib/phone';
+import { PhoneCountryPicker } from '@/components/auth/PhoneCountryPicker';
+import { SignUpSuccessState } from '@/components/auth/SignUpSuccessState';
+import { detectLocalePreferences, loadLanguageOptions, type LanguageOption } from '@/lib/i18n.runtime';
+import { getCountryFlag, getCountryName } from '@/lib/countries';
+import { getPhoneCountryOptions, getPhoneCountrySummary, type PhoneCountryOption } from '@/lib/phone';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Lock, User, ArrowRight, CheckCircle, Globe, Phone, Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Mail, Lock, User, ArrowRight, Globe, Phone } from 'lucide-react';
 
 export default function SignUp() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { t, language } = useLanguage();
   const detected = detectLocalePreferences();
-  const countryOptions = getPhoneCountryOptions(language);
+  const [languageOptions, setLanguageOptions] = useState<readonly LanguageOption[]>([]);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,11 +36,28 @@ export default function SignUp() {
   const [success, setSuccess] = useState(false);
   const [successContactLabel, setSuccessContactLabel] = useState('');
   const [successWasPhone, setSuccessWasPhone] = useState(false);
-  const phoneDraft = useMemo(() => createPhoneDraft(selectedCountryCode, phoneNumber), [phoneNumber, selectedCountryCode]);
-  const selectedPhoneCountry = useMemo(
-    () => getPhoneCountrySummary(selectedCountryCode, language),
-    [language, selectedCountryCode],
-  );
+  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState<PhoneCountryOption>({ code: detected.countryCode, label: detected.country, flag: getCountryFlag(detected.countryCode), dialCode: '' });
+  const countryOptions = useMemo(() => getPhoneCountryOptions(language), [language]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadOptions = async () => {
+      const options = await loadLanguageOptions();
+      if (active) setLanguageOptions(options);
+    };
+
+    void loadOptions();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelectedPhoneCountry(getPhoneCountrySummary(selectedCountryCode, language));
+    setCountry(getCountryName(selectedCountryCode, language));
+  }, [language, selectedCountryCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +75,8 @@ export default function SignUp() {
 
     const trimmedEmail = email.trim();
     const trimmedPhone = phoneNumber.trim();
+    const normalizedPhoneDigits = trimmedPhone.replace(/\D/g, '');
+    const latestPhoneCountry = getPhoneCountrySummary(selectedCountryCode, language);
 
     if (!trimmedEmail && !trimmedPhone) {
       setError(t('auth.contactMethodRequired'));
@@ -69,7 +88,7 @@ export default function SignUp() {
       return;
     }
 
-    if (trimmedPhone && !phoneDraft.e164) {
+    if (trimmedPhone && !normalizedPhoneDigits) {
       setError(t('auth.phoneInvalid'));
       return;
     }
@@ -79,17 +98,15 @@ export default function SignUp() {
     const { error } = await signUp({
       email: trimmedEmail || undefined,
       phoneNumber: trimmedPhone || undefined,
-      phoneCountryCode: selectedPhoneCountry.dialCode || undefined,
-      phoneE164: phoneDraft.e164 || undefined,
+      phoneCountryCode: latestPhoneCountry.dialCode || undefined,
     }, password, {
       full_name: fullName || undefined,
       date_of_birth: dateOfBirth || undefined,
       country: country || undefined,
       country_code: selectedCountryCode || undefined,
       language_code: preferredLanguage,
-      phone_country_code: selectedPhoneCountry.dialCode || undefined,
+      phone_country_code: latestPhoneCountry.dialCode || undefined,
       phone_number: trimmedPhone || undefined,
-      phone_e164: phoneDraft.e164 || undefined,
       terms_accepted_at: new Date().toISOString(),
       terms_version: '2026-03-28',
     });
@@ -98,36 +115,23 @@ export default function SignUp() {
       setError(error.message);
       setLoading(false);
     } else {
-      setSuccessContactLabel(trimmedEmail || phoneDraft.e164 || trimmedPhone);
+      setSuccessContactLabel(trimmedEmail || `${latestPhoneCountry.dialCode}${normalizedPhoneDigits}` || trimmedPhone);
       setSuccessWasPhone(!trimmedEmail);
       setSuccess(true);
     }
   };
 
   if (success) {
+    const successTitle = successWasPhone ? t('auth.accountReadyTitle') : t('auth.checkEmailTitle');
+    const successMessage = successWasPhone ? t('auth.accountReadyMessage', { phone: successContactLabel }) : t('auth.checkEmailMessage', { email: successContactLabel });
+
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-        <motion.div
-          className="text-center"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-        >
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-primary" />
-          </div>
-          <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            {successWasPhone ? t('auth.accountReadyTitle') : t('auth.checkEmailTitle')}
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            {successWasPhone
-              ? t('auth.accountReadyMessage', { phone: successContactLabel })
-              : t('auth.checkEmailMessage', { email: successContactLabel })}
-          </p>
-          <Button variant="outline" onClick={() => navigate('/login')}>
-            {t('auth.backToLogin')}
-          </Button>
-        </motion.div>
-      </div>
+      <SignUpSuccessState
+        backToLoginLabel={t('auth.backToLogin')}
+        message={successMessage}
+        onBackToLogin={() => navigate('/login')}
+        title={successTitle}
+      />
     );
   }
 
@@ -183,52 +187,20 @@ export default function SignUp() {
             <div className="space-y-2">
               <Label htmlFor="phone">{t('auth.phone')}</Label>
               <div className="flex gap-2">
-                <Popover open={countryPickerOpen} onOpenChange={setCountryPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="min-w-[122px] justify-between gap-2 px-3"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="text-base">{selectedPhoneCountry.flag}</span>
-                        <span className="text-sm">{selectedPhoneCountry.dialCode}</span>
-                      </span>
-                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t('auth.searchCountryCode')} />
-                      <CommandList>
-                        <CommandEmpty>{t('editProfile.countryNotFound')}</CommandEmpty>
-                        <CommandGroup>
-                          {countryOptions.map((option) => (
-                            <CommandItem
-                              key={option.code}
-                              value={`${option.label} ${option.dialCode}`}
-                              onSelect={() => {
-                                setSelectedCountryCode(option.code);
-                                setCountry(option.label);
-                                setCountryPickerOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  selectedCountryCode === option.code ? 'opacity-100' : 'opacity-0',
-                                )}
-                              />
-                              <span className="mr-2">{option.flag}</span>
-                              <span className="flex-1 truncate">{option.label}</span>
-                              <span className="text-muted-foreground">{option.dialCode}</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <PhoneCountryPicker
+                  countryOptions={countryOptions}
+                  countryPickerOpen={countryPickerOpen}
+                  emptyLabel={t('editProfile.countryNotFound')}
+                  searchPlaceholder={t('auth.searchCountryCode')}
+                  selectedCountryCode={selectedCountryCode}
+                  selectedPhoneCountry={selectedPhoneCountry}
+                  setCountryPickerOpen={setCountryPickerOpen}
+                  onCountrySelect={(option) => {
+                    setSelectedCountryCode(option.code);
+                    setCountry(option.label);
+                    setCountryPickerOpen(false);
+                  }}
+                />
 
                 <div className="relative flex-1">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

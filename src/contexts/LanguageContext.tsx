@@ -1,18 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { loadSupabaseClient } from '@/integrations/supabase/load-client';
 import {
-  baseTranslations,
+  bootstrapTranslations,
   detectLanguageCode,
   getTranslationNode,
   getStoredLanguage,
-  languageOptions,
   isRtlLanguage,
+  loadBaseTranslations,
   loadLanguagePack,
   translateMessage,
   type LanguageCode,
   type TranslationTree,
-} from '@/lib/i18n';
+} from '@/lib/i18n.runtime';
 
 const LANGUAGE_STORAGE_KEY = 'levela-language';
 
@@ -21,7 +21,6 @@ interface LanguageContextType {
   setLanguage: (language: LanguageCode) => Promise<void>;
   t: (key: string, vars?: Record<string, string | number>) => string;
   getNode: (key: string) => unknown;
-  languageOptions: typeof languageOptions;
   isLoadingLanguage: boolean;
 }
 
@@ -39,8 +38,8 @@ function getInitialLanguage(): LanguageCode {
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { profile, refreshProfile } = useAuth();
   const [language, setLanguageState] = useState<LanguageCode>(() => getInitialLanguage());
-  const [messages, setMessages] = useState<TranslationTree>(baseTranslations);
-  const [isLoadingLanguage, setIsLoadingLanguage] = useState(false);
+  const [messages, setMessages] = useState<TranslationTree>(bootstrapTranslations);
+  const [isLoadingLanguage, setIsLoadingLanguage] = useState(true);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -53,19 +52,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     const loadMessages = async () => {
-      if (language === 'en') {
-        if (active) {
-          setMessages(baseTranslations);
-          setIsLoadingLanguage(false);
-        }
-        return;
-      }
-
       if (active) {
         setIsLoadingLanguage(true);
       }
 
-      const nextMessages = await loadLanguagePack(language);
+      const nextMessages = language === 'en'
+        ? await loadBaseTranslations()
+        : await loadLanguagePack(language);
 
       if (!active) return;
 
@@ -99,6 +92,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
 
     if (!profile?.id) return;
+    const supabase = await loadSupabaseClient();
 
     const { error } = await supabase
       .from('profiles')
@@ -116,11 +110,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       setLanguage,
       t: (key, vars) => translateMessage(messages, key, vars),
       getNode: (key) => getTranslationNode(messages, key),
-      languageOptions,
       isLoadingLanguage,
     }),
     [language, messages, isLoadingLanguage, setLanguage]
   );
+
+  if (isLoadingLanguage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse-soft text-muted-foreground">
+          {bootstrapTranslations.common.loading}
+        </div>
+      </div>
+    );
+  }
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

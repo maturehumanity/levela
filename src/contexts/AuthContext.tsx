@@ -1,8 +1,24 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import { loadSupabaseClient } from '@/integrations/supabase/load-client';
 import { type LanguageCode } from '@/lib/i18n';
 import { resolveEffectivePermissions, rolePermissionMap, type AppPermission, type AppRole } from '@/lib/access-control';
+import {
+  ACCOUNT_SESSION_MAP_KEY,
+  ACCOUNT_SWITCH_STACK_KEY,
+  MAX_ACCOUNT_SESSIONS,
+  MAX_ACCOUNT_SWITCH_STACK,
+  clearStoredValue,
+  readStoredSessionMap,
+  readStoredSwitchStack,
+  writeStoredJson,
+  type AccountType,
+  type KnownAccountSession,
+  type StoredAccountSession,
+} from '@/contexts/auth-session-storage';
+
+type CitizenshipStatus = Database['public']['Enums']['citizenship_status'];
 
 interface Profile {
   id: string;
@@ -22,6 +38,17 @@ interface Profile {
   phone_e164?: string | null;
   official_id?: string | null;
   social_security_number?: string | null;
+  citizen_signing_public_key?: string | null;
+  citizen_signing_key_algorithm?: string | null;
+  citizen_signing_key_registered_at?: string | null;
+  citizenship_status?: CitizenshipStatus;
+  citizenship_accepted_at?: string | null;
+  citizenship_acceptance_mode?: string | null;
+  citizenship_review_cleared_at?: string | null;
+  is_active_citizen?: boolean;
+  active_citizen_since?: string | null;
+  is_governance_eligible?: boolean;
+  governance_eligible_at?: string | null;
   deleted_at?: string | null;
   deletion_reason?: string | null;
   full_name_change_count?: number | null;
@@ -39,35 +66,8 @@ interface Profile {
   updated_at: string;
 }
 
-type AccountType = 'personal' | 'business' | 'linked';
-
 type SignInOptions = {
   preserveCurrentSession?: boolean;
-};
-
-type StoredAccountSession = {
-  user_id: string;
-  access_token: string;
-  refresh_token: string;
-  expires_at: number | null;
-  updated_at: string;
-  email: string | null;
-  profile_id: string | null;
-  username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-  account_type: AccountType;
-};
-
-export type KnownAccountSession = {
-  userId: string;
-  profileId: string | null;
-  username: string | null;
-  fullName: string | null;
-  avatarUrl: string | null;
-  email: string | null;
-  accountType: AccountType;
-  updatedAt: string;
 };
 
 interface AuthContextType {
@@ -80,7 +80,6 @@ interface AuthContextType {
       email?: string;
       phoneNumber?: string;
       phoneCountryCode?: string;
-      phoneE164?: string;
     },
     password: string,
     metadata?: {
@@ -111,55 +110,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const ACCOUNT_SESSION_MAP_KEY = 'levela:account-session-map:v1';
-const ACCOUNT_SWITCH_STACK_KEY = 'levela:account-switch-stack:v1';
-const MAX_ACCOUNT_SESSIONS = 8;
-const MAX_ACCOUNT_SWITCH_STACK = 8;
-
-function canUseStorage() {
-  return typeof window !== 'undefined';
-}
-
-function readStoredJson<T>(key: string, fallback: T): T {
-  if (!canUseStorage()) return fallback;
-
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeStoredJson(key: string, value: unknown) {
-  if (!canUseStorage()) return;
-
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // Ignore storage quota and serialization failures.
-  }
-}
-
-function clearStoredValue(key: string) {
-  if (!canUseStorage()) return;
-
-  try {
-    window.localStorage.removeItem(key);
-  } catch {
-    // Ignore storage access failures.
-  }
-}
-
-function readStoredSessionMap() {
-  return readStoredJson<Record<string, StoredAccountSession>>(ACCOUNT_SESSION_MAP_KEY, {});
-}
-
-function readStoredSwitchStack() {
-  return readStoredJson<StoredAccountSession[]>(ACCOUNT_SWITCH_STACK_KEY, []);
-}
 
 function isAbortLikeError(error: { message?: string | null; details?: string | null } | null | undefined) {
   const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
@@ -308,8 +258,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return [nextSnapshot, ...deduped].slice(0, MAX_ACCOUNT_SWITCH_STACK);
     });
   }, [updateAccountSwitchStack]);
+  const getSupabase = useCallback(() => loadSupabaseClient(), []);
 
   const fetchProfile = useCallback(async (userId: string) => {
+    const supabase = await getSupabase();
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -350,13 +302,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...typedProfile,
       effective_permissions: effectivePermissions,
     } as Profile;
-  }, []);
+  }, [getSupabase]);
 
   const touchProfileActivity = useCallback(async (userId: string) => {
     if (!supportsLastActiveRef.current) return;
     const now = Date.now();
     if (now - lastProfileTouchAtRef.current < 30_000) return;
     lastProfileTouchAtRef.current = now;
+    const supabase = await getSupabase();
 
     const { error } = await supabase
       .from('profiles')
@@ -372,7 +325,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error updating last active timestamp:', error);
       }
     }
-  }, []);
+  }, [getSupabase]);
 
   const refreshProfileForUser = useCallback(async (userId: string, force = false) => {
     const now = Date.now();
@@ -410,42 +363,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshProfileForUser, user]);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+    let active = true;
+    let unsubscribe: (() => void) | null = null;
 
-        if (currentSession?.user) {
-          storeSessionSnapshot(
-            buildStoredSession(currentSession, {
-              accountType: 'linked',
-            }),
-          );
-        } else if (event === 'SIGNED_OUT') {
-          clearAccountSwitchState();
+    const initializeAuth = async () => {
+      const supabase = await getSupabase();
+      if (!active) return;
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, currentSession) => {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+
+          if (currentSession?.user) {
+            storeSessionSnapshot(
+              buildStoredSession(currentSession, {
+                accountType: 'linked',
+              }),
+            );
+          } else if (event === 'SIGNED_OUT') {
+            clearAccountSwitchState();
+          }
+
+          const shouldRefreshProfile =
+            event === 'SIGNED_IN' ||
+            event === 'USER_UPDATED' ||
+            event === 'INITIAL_SESSION';
+
+          if (currentSession?.user && shouldRefreshProfile) {
+            void refreshProfileForUser(currentSession.user.id, true).finally(() => {
+              if (active) setLoading(false);
+            });
+          } else if (currentSession?.user) {
+            if (active) setLoading(false);
+          } else {
+            setProfile(null);
+            if (active) setLoading(false);
+          }
         }
+      );
+      unsubscribe = () => subscription.unsubscribe();
 
-        const shouldRefreshProfile =
-          event === 'SIGNED_IN' ||
-          event === 'USER_UPDATED' ||
-          event === 'INITIAL_SESSION';
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!active) return;
 
-        if (currentSession?.user && shouldRefreshProfile) {
-          void refreshProfileForUser(currentSession.user.id, true).finally(() => {
-            setLoading(false);
-          });
-        } else if (currentSession?.user) {
-          setLoading(false);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
 
@@ -458,16 +419,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (currentSession?.user) {
-        refreshProfileForUser(currentSession.user.id, true).finally(() => {
-          setLoading(false);
+        void refreshProfileForUser(currentSession.user.id, true).finally(() => {
+          if (active) setLoading(false);
         });
       } else {
         setLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, [buildStoredSession, clearAccountSwitchState, refreshProfileForUser, storeSessionSnapshot]);
+    void initializeAuth();
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [buildStoredSession, clearAccountSwitchState, getSupabase, refreshProfileForUser, storeSessionSnapshot]);
 
   useEffect(() => {
     if (!user) return;
@@ -502,27 +468,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user?.id) return;
+    let active = true;
+    let cleanup: (() => void) | null = null;
 
-    const profileChannel = supabase
-      .channel(`profile-sync:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          void refreshProfileForUser(user.id, true);
-        },
-      )
-      .subscribe();
+    const bindProfileChannel = async () => {
+      const supabase = await getSupabase();
+      if (!active) return;
+
+      const profileChannel = supabase
+        .channel(`profile-sync:${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'profiles',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            void refreshProfileForUser(user.id, true);
+          },
+        )
+        .subscribe();
+
+      cleanup = () => {
+        void supabase.removeChannel(profileChannel);
+      };
+    };
+
+    void bindProfileChannel();
 
     return () => {
-      void supabase.removeChannel(profileChannel);
+      active = false;
+      cleanup?.();
     };
-  }, [refreshProfileForUser, user?.id]);
+  }, [getSupabase, refreshProfileForUser, user?.id]);
 
   useEffect(() => {
     if (!session?.user || !profile) return;
@@ -554,7 +534,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email?: string;
       phoneNumber?: string;
       phoneCountryCode?: string;
-      phoneE164?: string;
     },
     password: string,
     metadata?: {
@@ -575,6 +554,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const syntheticEmail = normalizedPhoneDigits
       ? `phone-${normalizedPhoneDigits}@phone.levela.local`
       : undefined;
+    const supabase = await getSupabase();
 
     const { error } = await supabase.auth.signUp({
       email: normalizedEmail || syntheticEmail,
@@ -585,7 +565,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...metadata,
           phone_country_code: metadata?.phone_country_code ?? credentials.phoneCountryCode,
           phone_number: metadata?.phone_number ?? credentials.phoneNumber,
-          phone_e164: metadata?.phone_e164 ?? credentials.phoneE164,
           contact_method: normalizedEmail ? 'email' : 'phone',
         },
       },
@@ -597,6 +576,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (identifier: string, password: string, options?: SignInOptions) => {
     const trimmedIdentifier = identifier.trim();
     let email = trimmedIdentifier;
+    const supabase = await getSupabase();
     const previousSessionSnapshot = options?.preserveCurrentSession
       ? captureCurrentSession({
           profileSnapshot: profile,
@@ -637,6 +617,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     payload: { email: string; token: string; type: 'magiclink' },
     options?: SignInOptions,
   ) => {
+    const supabase = await getSupabase();
     const previousSessionSnapshot = options?.preserveCurrentSession
       ? captureCurrentSession({
           profileSnapshot: profile,
@@ -679,6 +660,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             accountType: 'personal',
           })
         : null;
+      const supabase = await getSupabase();
 
       const { error } = await supabase.auth.setSession({
         access_token: nextSnapshot.access_token,
@@ -704,6 +686,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [
       accountSessionMap,
       captureCurrentSession,
+      getSupabase,
       updateAccountSessionMap,
       profile,
       pushSwitchStackSnapshot,
@@ -717,6 +700,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!nextAccount) {
       return { error: new Error('No previous account available') };
     }
+    const supabase = await getSupabase();
 
     const { error } = await supabase.auth.setSession({
       access_token: nextAccount.access_token,
@@ -730,9 +714,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     persistAccountSwitchStack(remainingStack);
     return { error: null };
-  }, [accountSwitchStack, persistAccountSwitchStack]);
+  }, [accountSwitchStack, getSupabase, persistAccountSwitchStack]);
 
   const signOut = async () => {
+    const supabase = await getSupabase();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

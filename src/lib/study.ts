@@ -141,7 +141,8 @@ export const STUDY_DOCUMENTS: StudyDocument[] = [
     titleKey: 'study.domains.proposals.title',
     summaryKey: 'study.domains.proposals.description',
     keywords: ['proposals', 'archive', 'votes', 'review'],
-    availableNow: false,
+    availableNow: true,
+    route: '/governance',
     estimatedMinutes: 10,
   },
 ];
@@ -227,7 +228,7 @@ export const STUDY_PROPOSALS: StudyProposal[] = [
     titleKey: 'study.proposals.governanceCadence.title',
     summaryKey: 'study.proposals.governanceCadence.summary',
     status: 'review',
-    route: '/study?domain=proposals',
+    route: '/governance',
   },
   {
     key: 'reserve-disclosure',

@@ -41,13 +41,15 @@ Deno.serve(async (request) => {
       });
     }
 
-    const { data: profile, error: profileError } = await userClient
-      .from('profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    const { data: effectivePermissions, error: permissionsError } = await userClient.rpc(
+      'current_app_permissions',
+    );
+    const canManageUsers = Array.isArray(effectivePermissions)
+      && (effectivePermissions as string[]).some(
+        (permission) => permission === 'role.assign' || permission === 'settings.manage',
+      );
 
-    if (profileError || !profile || !['founder', 'admin', 'system'].includes(profile.role)) {
+    if (permissionsError || !canManageUsers) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Download, Smartphone } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 
 import { Button } from '@/components/ui/button';
+import { DeferredQrCode } from '@/components/ui/DeferredQrCode';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ANDROID_DOWNLOAD_URL } from '@/lib/downloads';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,7 @@ export function AppDownloadCard({
             </div>
           </div>
           <div className="rounded-2xl border border-border/50 bg-background p-2">
-            <QRCodeSVG value={ANDROID_DOWNLOAD_URL} size={qrSize} includeMargin />
+            <DeferredQrCode value={ANDROID_DOWNLOAD_URL} size={qrSize} includeMargin />
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export function AppDownloadCard({
 
         <div className="flex items-center gap-3 self-start rounded-2xl border border-border/60 bg-background/85 p-3 sm:self-center">
           <div className="rounded-xl bg-white p-2 shadow-sm">
-            <QRCodeSVG value={ANDROID_DOWNLOAD_URL} size={qrSize} includeMargin />
+            <DeferredQrCode value={ANDROID_DOWNLOAD_URL} size={qrSize} includeMargin />
           </div>
           <p className="max-w-[8rem] text-xs leading-5 text-muted-foreground">
             {t('home.scanQrInstall')}

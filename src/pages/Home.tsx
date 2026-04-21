@@ -1,13 +1,11 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { UserPageMenu } from '@/components/layout/UserPageMenu';
 import { LevelaScore } from '@/components/ui/LevelaScore';
-import { ChatBar } from '@/components/ui/chat-bar';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
 import { type PillarId } from '@/lib/constants';
@@ -17,6 +15,8 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+const UserPageMenu = lazy(() => import('@/components/layout/UserPageMenu').then((module) => ({ default: module.UserPageMenu })));
+const ChatBar = lazy(() => import('@/components/ui/chat-bar').then((module) => ({ default: module.ChatBar })));
 
 interface RecentEndorsement {
   id: string;
@@ -766,7 +766,7 @@ export default function Home() {
               </TooltipProvider>
             </div>
           </div>
-          <UserPageMenu />
+          <Suspense fallback={<div className="h-10 w-10 rounded-full border border-border/60 bg-card/60" />}><UserPageMenu /></Suspense>
         </motion.div>
 
         {/* Score Card */}
@@ -1098,7 +1098,7 @@ export default function Home() {
       </div>
 
       {/* Messaging */}
-      <ChatBar />
+      <Suspense fallback={null}><ChatBar /></Suspense>
     </AppLayout>
   );
 }

@@ -1,28 +1,12 @@
-import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
-import { getCountryDialCode, getCountryFlag, getCountryName, getCountryOptions } from './countries';
+import { getCountryDialCode, getCountryFlag, getCountryName, getCountryOptions, type CountryOption } from './countries';
 
-export type PhoneDraft = {
-  countryCode: string;
+export type PhoneCountryOption = CountryOption & {
   dialCode: string;
-  localNumber: string;
-  e164: string | null;
 };
 
-export function createPhoneDraft(countryCode: string, localNumber = ''): PhoneDraft {
+export function getPhoneCountrySummary(countryCode: string, locale: string): PhoneCountryOption {
   const normalizedCountryCode = countryCode.toUpperCase();
-  const trimmedNumber = localNumber.trim();
-  const parsed = parsePhoneNumberFromString(trimmedNumber, normalizedCountryCode as CountryCode);
 
-  return {
-    countryCode: normalizedCountryCode,
-    dialCode: getCountryDialCode(normalizedCountryCode),
-    localNumber: trimmedNumber,
-    e164: parsed?.isValid() ? parsed.number : null,
-  };
-}
-
-export function getPhoneCountrySummary(countryCode: string, locale: string) {
-  const normalizedCountryCode = countryCode.toUpperCase();
   return {
     code: normalizedCountryCode,
     label: getCountryName(normalizedCountryCode, locale),
@@ -31,6 +15,11 @@ export function getPhoneCountrySummary(countryCode: string, locale: string) {
   };
 }
 
-export function getPhoneCountryOptions(locale: string) {
-  return getCountryOptions(locale).filter((option) => option.dialCode);
+export function getPhoneCountryOptions(locale: string): PhoneCountryOption[] {
+  return getCountryOptions(locale)
+    .map((option) => ({
+      ...option,
+      dialCode: getCountryDialCode(option.code),
+    }))
+    .filter((option) => option.dialCode);
 }

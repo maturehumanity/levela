@@ -107,10 +107,75 @@ export type Database = {
           },
         ]
       }
+      constitutional_offices: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          notes: string | null
+          office_key: Database["public"]["Enums"]["constitutional_office_key"]
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          notes?: string | null
+          office_key: Database["public"]["Enums"]["constitutional_office_key"]
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          notes?: string | null
+          office_key?: Database["public"]["Enums"]["constitutional_office_key"]
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "constitutional_offices_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "constitutional_offices_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          active_citizen_since: string | null
           avatar_url: string | null
           bio: string | null
+          citizen_signing_key_algorithm: string | null
+          citizen_signing_key_registered_at: string | null
+          citizen_signing_public_key: string | null
+          citizenship_accepted_at: string | null
+          citizenship_acceptance_mode: string | null
+          citizenship_review_cleared_at: string | null
+          citizenship_status: Database["public"]["Enums"]["citizenship_status"]
           country: string | null
           country_code: string | null
           created_at: string
@@ -124,8 +189,11 @@ export type Database = {
           full_name_change_count: number | null
           full_name_last_changed_at: string | null
           granted_permissions: Database["public"]["Enums"]["app_permission"][]
+          governance_eligible_at: string | null
           id: string
           is_admin: boolean | null
+          is_active_citizen: boolean
+          is_governance_eligible: boolean
           is_verified: boolean | null
           language_code: string | null
           last_active_at: string | null
@@ -143,8 +211,16 @@ export type Database = {
           username_last_changed_at: string | null
         }
         Insert: {
+          active_citizen_since?: string | null
           avatar_url?: string | null
           bio?: string | null
+          citizen_signing_key_algorithm?: string | null
+          citizen_signing_key_registered_at?: string | null
+          citizen_signing_public_key?: string | null
+          citizenship_accepted_at?: string | null
+          citizenship_acceptance_mode?: string | null
+          citizenship_review_cleared_at?: string | null
+          citizenship_status?: Database["public"]["Enums"]["citizenship_status"]
           country?: string | null
           country_code?: string | null
           created_at?: string
@@ -158,8 +234,11 @@ export type Database = {
           full_name_change_count?: number | null
           full_name_last_changed_at?: string | null
           granted_permissions?: Database["public"]["Enums"]["app_permission"][]
+          governance_eligible_at?: string | null
           id?: string
           is_admin?: boolean | null
+          is_active_citizen?: boolean
+          is_governance_eligible?: boolean
           is_verified?: boolean | null
           language_code?: string | null
           last_active_at?: string | null
@@ -177,8 +256,16 @@ export type Database = {
           username_last_changed_at?: string | null
         }
         Update: {
+          active_citizen_since?: string | null
           avatar_url?: string | null
           bio?: string | null
+          citizen_signing_key_algorithm?: string | null
+          citizen_signing_key_registered_at?: string | null
+          citizen_signing_public_key?: string | null
+          citizenship_accepted_at?: string | null
+          citizenship_acceptance_mode?: string | null
+          citizenship_review_cleared_at?: string | null
+          citizenship_status?: Database["public"]["Enums"]["citizenship_status"]
           country?: string | null
           country_code?: string | null
           created_at?: string
@@ -192,8 +279,11 @@ export type Database = {
           full_name_change_count?: number | null
           full_name_last_changed_at?: string | null
           granted_permissions?: Database["public"]["Enums"]["app_permission"][]
+          governance_eligible_at?: string | null
           id?: string
           is_admin?: boolean | null
+          is_active_citizen?: boolean
+          is_governance_eligible?: boolean
           is_verified?: boolean | null
           language_code?: string | null
           last_active_at?: string | null
@@ -332,6 +422,450 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
+      }
+      citizen_activation_scopes: {
+        Row: {
+          activated_at: string
+          activated_by: string | null
+          country_code: string
+          created_at: string
+          id: string
+          notes: string | null
+          profile_id: string
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+        }
+        Insert: {
+          activated_at?: string
+          activated_by?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          profile_id: string
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "citizen_activation_scopes_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "citizen_activation_scopes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_decisions: {
+        Row: {
+          created_at: string
+          decision: Database["public"]["Enums"]["activation_review_decision"]
+          id: string
+          metadata: Json
+          notes: string | null
+          review_id: string
+          reviewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          decision: Database["public"]["Enums"]["activation_review_decision"]
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          review_id: string
+          reviewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          decision?: Database["public"]["Enums"]["activation_review_decision"]
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          review_id?: string
+          reviewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_decisions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "activation_threshold_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_decisions_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_demographic_snapshots: {
+        Row: {
+          country_code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          ingestion_notes: string | null
+          jurisdiction_label: string
+          metadata: Json
+          observed_at: string
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          source_label: string
+          source_url: string | null
+          target_population: number
+          updated_at: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingestion_notes?: string | null
+          jurisdiction_label?: string
+          metadata?: Json
+          observed_at?: string
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          source_label: string
+          source_url?: string | null
+          target_population: number
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingestion_notes?: string | null
+          jurisdiction_label?: string
+          metadata?: Json
+          observed_at?: string
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+          source_label?: string
+          source_url?: string | null
+          target_population?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_snapshots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_demographic_feed_adapters: {
+        Row: {
+          adapter_key: string
+          adapter_name: string
+          adapter_type: Database["public"]["Enums"]["activation_demographic_feed_adapter_type"]
+          added_by: string | null
+          country_code: string
+          created_at: string
+          endpoint_url: string | null
+          id: string
+          is_active: boolean
+          key_algorithm: string
+          last_ingested_at: string | null
+          metadata: Json
+          public_signer_key: string
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          updated_at: string
+        }
+        Insert: {
+          adapter_key: string
+          adapter_name: string
+          adapter_type?: Database["public"]["Enums"]["activation_demographic_feed_adapter_type"]
+          added_by?: string | null
+          country_code?: string
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          last_ingested_at?: string | null
+          metadata?: Json
+          public_signer_key: string
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+          updated_at?: string
+        }
+        Update: {
+          adapter_key?: string
+          adapter_name?: string
+          adapter_type?: Database["public"]["Enums"]["activation_demographic_feed_adapter_type"]
+          added_by?: string | null
+          country_code?: string
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          last_ingested_at?: string | null
+          metadata?: Json
+          public_signer_key?: string
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_adapters_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_demographic_feed_ingestions: {
+        Row: {
+          adapter_id: string
+          country_code: string
+          created_at: string
+          id: string
+          ingested_by: string | null
+          ingestion_metadata: Json
+          ingestion_notes: string | null
+          ingestion_status: string
+          observed_at: string
+          payload_hash: string | null
+          payload_signature: string | null
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          signature_verified: boolean
+          signed_payload: string | null
+          snapshot_id: string | null
+          target_population: number
+        }
+        Insert: {
+          adapter_id: string
+          country_code?: string
+          created_at?: string
+          id?: string
+          ingested_by?: string | null
+          ingestion_metadata?: Json
+          ingestion_notes?: string | null
+          ingestion_status?: string
+          observed_at: string
+          payload_hash?: string | null
+          payload_signature?: string | null
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          signature_verified?: boolean
+          signed_payload?: string | null
+          snapshot_id?: string | null
+          target_population: number
+        }
+        Update: {
+          adapter_id?: string
+          country_code?: string
+          created_at?: string
+          id?: string
+          ingested_by?: string | null
+          ingestion_metadata?: Json
+          ingestion_notes?: string | null
+          ingestion_status?: string
+          observed_at?: string
+          payload_hash?: string | null
+          payload_signature?: string | null
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+          signature_verified?: boolean
+          signed_payload?: string | null
+          snapshot_id?: string | null
+          target_population?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_ingestions_adapter_id_fkey"
+            columns: ["adapter_id"]
+            isOneToOne: false
+            referencedRelation: "activation_demographic_feed_adapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_demographic_feed_ingestions_ingested_by_fkey"
+            columns: ["ingested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_demographic_feed_ingestions_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "activation_demographic_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_evidence: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          evidence_type: string
+          id: string
+          metadata: Json
+          metric_key: string | null
+          metric_value: number | null
+          notes: string | null
+          observed_at: string | null
+          review_id: string
+          source_label: string | null
+          source_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          evidence_type: string
+          id?: string
+          metadata?: Json
+          metric_key?: string | null
+          metric_value?: number | null
+          notes?: string | null
+          observed_at?: string | null
+          review_id: string
+          source_label?: string | null
+          source_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          evidence_type?: string
+          id?: string
+          metadata?: Json
+          metric_key?: string | null
+          metric_value?: number | null
+          notes?: string | null
+          observed_at?: string | null
+          review_id?: string
+          source_label?: string | null
+          source_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_evidence_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_evidence_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "activation_threshold_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_threshold_reviews: {
+        Row: {
+          country_code: string
+          created_at: string
+          declaration_notes: string | null
+          declared_at: string | null
+          declared_by: string | null
+          eligible_verified_citizens_count: number
+          id: string
+          jurisdiction_label: string
+          metadata: Json
+          opened_at: string
+          opened_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          review_notes: string | null
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          status: Database["public"]["Enums"]["activation_review_status"]
+          target_population: number | null
+          threshold_percent: number
+          updated_at: string
+          verified_citizens_count: number
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          declaration_notes?: string | null
+          declared_at?: string | null
+          declared_by?: string | null
+          eligible_verified_citizens_count?: number
+          id?: string
+          jurisdiction_label?: string
+          metadata?: Json
+          opened_at?: string
+          opened_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          review_notes?: string | null
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          status?: Database["public"]["Enums"]["activation_review_status"]
+          target_population?: number | null
+          threshold_percent?: number
+          updated_at?: string
+          verified_citizens_count?: number
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          declaration_notes?: string | null
+          declared_at?: string | null
+          declared_by?: string | null
+          eligible_verified_citizens_count?: number
+          id?: string
+          jurisdiction_label?: string
+          metadata?: Json
+          opened_at?: string
+          opened_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          review_notes?: string | null
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+          status?: Database["public"]["Enums"]["activation_review_status"]
+          target_population?: number | null
+          threshold_percent?: number
+          updated_at?: string
+          verified_citizens_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_threshold_reviews_declared_by_fkey"
+            columns: ["declared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_threshold_reviews_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_threshold_reviews_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professions: {
         Row: {
@@ -1025,6 +1559,2154 @@ export type Database = {
           },
         ]
       }
+      governance_action_intents: {
+        Row: {
+          action_scope: string
+          actor_id: string
+          client_created_at: string
+          created_at: string
+          id: string
+          key_algorithm: string
+          payload: Json
+          payload_hash: string
+          public_key: string
+          signature: string
+          target_id: string | null
+        }
+        Insert: {
+          action_scope: string
+          actor_id: string
+          client_created_at: string
+          created_at?: string
+          id?: string
+          key_algorithm: string
+          payload?: Json
+          payload_hash: string
+          public_key: string
+          signature: string
+          target_id?: string | null
+        }
+        Update: {
+          action_scope?: string
+          actor_id?: string
+          client_created_at?: string
+          created_at?: string
+          id?: string
+          key_algorithm?: string
+          payload?: Json
+          payload_hash?: string
+          public_key?: string
+          signature?: string
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_action_intents_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_domain_roles: {
+        Row: {
+          created_at: string
+          description: string
+          domain_key: string
+          is_system_role: boolean
+          name: string
+          role_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          domain_key: string
+          is_system_role?: boolean
+          name: string
+          role_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          domain_key?: string
+          is_system_role?: boolean
+          name?: string
+          role_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_domain_roles_domain_key_fkey"
+            columns: ["domain_key"]
+            isOneToOne: false
+            referencedRelation: "governance_domains"
+            referencedColumns: ["domain_key"]
+          },
+        ]
+      }
+      governance_domains: {
+        Row: {
+          created_at: string
+          description: string
+          domain_key: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          domain_key: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          domain_key?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      governance_domain_maturity_snapshots: {
+        Row: {
+          created_at: string
+          domain_key: string
+          id: string
+          is_mature: boolean
+          measured_at: string
+          measured_by: string | null
+          metadata: Json
+          notes: string | null
+          source: string
+          threshold_count: number
+          threshold_results: Json
+          thresholds_met_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain_key: string
+          id?: string
+          is_mature: boolean
+          measured_at?: string
+          measured_by?: string | null
+          metadata?: Json
+          notes?: string | null
+          source?: string
+          threshold_count?: number
+          threshold_results?: Json
+          thresholds_met_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain_key?: string
+          id?: string
+          is_mature?: boolean
+          measured_at?: string
+          measured_by?: string | null
+          metadata?: Json
+          notes?: string | null
+          source?: string
+          threshold_count?: number
+          threshold_results?: Json
+          thresholds_met_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_domain_maturity_snapshots_domain_key_fkey"
+            columns: ["domain_key"]
+            isOneToOne: false
+            referencedRelation: "governance_domains"
+            referencedColumns: ["domain_key"]
+          },
+          {
+            foreignKeyName: "governance_domain_maturity_snapshots_measured_by_fkey"
+            columns: ["measured_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_domain_maturity_transitions: {
+        Row: {
+          created_at: string
+          current_is_mature: boolean
+          current_snapshot_id: string
+          current_threshold_count: number
+          current_thresholds_met_count: number
+          domain_key: string
+          id: string
+          metadata: Json
+          previous_is_mature: boolean | null
+          previous_snapshot_id: string | null
+          previous_threshold_count: number | null
+          previous_thresholds_met_count: number | null
+          transition_type: string
+          trigger_source: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_is_mature: boolean
+          current_snapshot_id: string
+          current_threshold_count: number
+          current_thresholds_met_count: number
+          domain_key: string
+          id?: string
+          metadata?: Json
+          previous_is_mature?: boolean | null
+          previous_snapshot_id?: string | null
+          previous_threshold_count?: number | null
+          previous_thresholds_met_count?: number | null
+          transition_type: string
+          trigger_source?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_is_mature?: boolean
+          current_snapshot_id?: string
+          current_threshold_count?: number
+          current_thresholds_met_count?: number
+          domain_key?: string
+          id?: string
+          metadata?: Json
+          previous_is_mature?: boolean | null
+          previous_snapshot_id?: string | null
+          previous_threshold_count?: number | null
+          previous_thresholds_met_count?: number | null
+          transition_type?: string
+          trigger_source?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_domain_maturity_transitions_current_snapshot_id_fkey"
+            columns: ["current_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "governance_domain_maturity_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_domain_maturity_transitions_domain_key_fkey"
+            columns: ["domain_key"]
+            isOneToOne: false
+            referencedRelation: "governance_domains"
+            referencedColumns: ["domain_key"]
+          },
+          {
+            foreignKeyName: "governance_domain_maturity_transitions_previous_snapshot_id_fkey"
+            columns: ["previous_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "governance_domain_maturity_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_domain_maturity_transitions_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_domain_maturity_thresholds: {
+        Row: {
+          created_at: string
+          description: string
+          domain_key: string
+          effective_from: string
+          effective_until: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          required_count: number
+          role_keys: string[]
+          threshold_key: string
+          threshold_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          domain_key: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          required_count: number
+          role_keys?: string[]
+          threshold_key: string
+          threshold_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          domain_key?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          required_count?: number
+          role_keys?: string[]
+          threshold_key?: string
+          threshold_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_domain_maturity_thresholds_domain_key_fkey"
+            columns: ["domain_key"]
+            isOneToOne: false
+            referencedRelation: "governance_domains"
+            referencedColumns: ["domain_key"]
+          },
+        ]
+      }
+      governance_proposal_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          proposal_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          proposal_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposal_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_events_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_proposal_guardian_approvals: {
+        Row: {
+          created_at: string
+          decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          id: string
+          proposal_id: string
+          rationale: string | null
+          signed_at: string
+          signer_profile_id: string
+          snapshot: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          id?: string
+          proposal_id: string
+          rationale?: string | null
+          signed_at?: string
+          signer_profile_id: string
+          snapshot?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decision?: Database["public"]["Enums"]["governance_guardian_decision"]
+          id?: string
+          proposal_id?: string
+          rationale?: string | null
+          signed_at?: string
+          signer_profile_id?: string
+          snapshot?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposal_guardian_approvals_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_guardian_approvals_signer_profile_id_fkey"
+            columns: ["signer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_guardian_external_signers: {
+        Row: {
+          activated_at: string
+          added_by: string | null
+          created_at: string
+          custody_provider: string | null
+          deactivated_at: string | null
+          id: string
+          is_active: boolean
+          key_algorithm: string
+          metadata: Json
+          signer_key: string
+          signer_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string
+          added_by?: string | null
+          created_at?: string
+          custody_provider?: string | null
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          metadata?: Json
+          signer_key: string
+          signer_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string
+          added_by?: string | null
+          created_at?: string
+          custody_provider?: string | null
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          metadata?: Json
+          signer_key?: string
+          signer_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_guardian_external_signers_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_guardian_multisig_policies: {
+        Row: {
+          contract_reference: string | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          metadata: Json
+          network: string | null
+          notes: string | null
+          policy_key: string
+          policy_name: string
+          required_external_approvals: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contract_reference?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          network?: string | null
+          notes?: string | null
+          policy_key: string
+          policy_name: string
+          required_external_approvals?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contract_reference?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          network?: string | null
+          notes?: string | null
+          policy_key?: string
+          policy_name?: string
+          required_external_approvals?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_guardian_multisig_policies_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_proposal_guardian_external_signatures: {
+        Row: {
+          created_at: string
+          decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          external_signer_id: string
+          id: string
+          payload_hash: string | null
+          proposal_id: string
+          rationale: string | null
+          signature: string | null
+          signature_reference: string | null
+          signed_at: string
+          signed_message: string | null
+          snapshot: Json
+          updated_at: string
+          verification_method: string
+          verified_at: string
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          external_signer_id: string
+          id?: string
+          payload_hash?: string | null
+          proposal_id: string
+          rationale?: string | null
+          signature?: string | null
+          signature_reference?: string | null
+          signed_at?: string
+          signed_message?: string | null
+          snapshot?: Json
+          updated_at?: string
+          verification_method?: string
+          verified_at?: string
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          decision?: Database["public"]["Enums"]["governance_guardian_decision"]
+          external_signer_id?: string
+          id?: string
+          payload_hash?: string | null
+          proposal_id?: string
+          rationale?: string | null
+          signature?: string | null
+          signature_reference?: string | null
+          signed_at?: string
+          signed_message?: string | null
+          snapshot?: Json
+          updated_at?: string
+          verification_method?: string
+          verified_at?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposal_guardian_external_signatures_external_signer_id_fkey"
+            columns: ["external_signer_id"]
+            isOneToOne: false
+            referencedRelation: "governance_guardian_external_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_guardian_external_signatures_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_guardian_external_signatures_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_guardian_relay_nodes: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          endpoint_url: string | null
+          id: string
+          is_active: boolean
+          key_algorithm: string
+          metadata: Json
+          relay_key: string
+          relay_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          metadata?: Json
+          relay_key: string
+          relay_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          metadata?: Json
+          relay_key?: string
+          relay_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_guardian_relay_nodes_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_guardian_relay_policies: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          metadata: Json
+          notes: string | null
+          policy_key: string
+          policy_name: string
+          require_chain_proof_match: boolean
+          required_relay_attestations: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          notes?: string | null
+          policy_key: string
+          policy_name: string
+          require_chain_proof_match?: boolean
+          required_relay_attestations?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          notes?: string | null
+          policy_key?: string
+          policy_name?: string
+          require_chain_proof_match?: boolean
+          required_relay_attestations?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_guardian_relay_policies_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_proposal_guardian_relay_attestations: {
+        Row: {
+          attestation_metadata: Json
+          chain_network: string | null
+          chain_reference: string | null
+          created_at: string
+          decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          external_signer_id: string
+          id: string
+          payload_hash: string | null
+          proposal_id: string
+          relay_id: string
+          relay_reference: string | null
+          status: Database["public"]["Enums"]["governance_guardian_relay_attestation_status"]
+          updated_at: string
+          verified_at: string
+          verified_by: string | null
+        }
+        Insert: {
+          attestation_metadata?: Json
+          chain_network?: string | null
+          chain_reference?: string | null
+          created_at?: string
+          decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          external_signer_id: string
+          id?: string
+          payload_hash?: string | null
+          proposal_id: string
+          relay_id: string
+          relay_reference?: string | null
+          status?: Database["public"]["Enums"]["governance_guardian_relay_attestation_status"]
+          updated_at?: string
+          verified_at?: string
+          verified_by?: string | null
+        }
+        Update: {
+          attestation_metadata?: Json
+          chain_network?: string | null
+          chain_reference?: string | null
+          created_at?: string
+          decision?: Database["public"]["Enums"]["governance_guardian_decision"]
+          external_signer_id?: string
+          id?: string
+          payload_hash?: string | null
+          proposal_id?: string
+          relay_id?: string
+          relay_reference?: string | null
+          status?: Database["public"]["Enums"]["governance_guardian_relay_attestation_status"]
+          updated_at?: string
+          verified_at?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposal_guardian_relay_attestations_external_signer_id_fkey"
+            columns: ["external_signer_id"]
+            isOneToOne: false
+            referencedRelation: "governance_guardian_external_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_guardian_relay_attestations_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_guardian_relay_attestations_relay_id_fkey"
+            columns: ["relay_id"]
+            isOneToOne: false
+            referencedRelation: "governance_guardian_relay_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_guardian_relay_attestations_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_batch_items: {
+        Row: {
+          batch_id: string
+          created_at: string
+          event_actor_id: string | null
+          event_created_at: string
+          event_digest: string
+          event_id: string
+          event_payload: Json
+          event_position: number
+          event_source: string
+          id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          event_actor_id?: string | null
+          event_created_at: string
+          event_digest: string
+          event_id: string
+          event_payload?: Json
+          event_position: number
+          event_source: string
+          id?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          event_actor_id?: string | null
+          event_created_at?: string
+          event_digest?: string
+          event_id?: string
+          event_payload?: Json
+          event_position?: number
+          event_source?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_batch_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_batch_items_event_actor_id_fkey"
+            columns: ["event_actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_batches: {
+        Row: {
+          anchor_network: string | null
+          anchor_reference: string | null
+          anchored_at: string | null
+          batch_hash: string
+          batch_index: number
+          batch_scope: string
+          batch_source: string
+          created_at: string
+          created_by: string | null
+          event_count: number
+          from_created_at: string | null
+          id: string
+          metadata: Json
+          previous_batch_hash: string | null
+          previous_batch_id: string | null
+          to_created_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          anchor_network?: string | null
+          anchor_reference?: string | null
+          anchored_at?: string | null
+          batch_hash: string
+          batch_index?: number
+          batch_scope?: string
+          batch_source?: string
+          created_at?: string
+          created_by?: string | null
+          event_count?: number
+          from_created_at?: string | null
+          id?: string
+          metadata?: Json
+          previous_batch_hash?: string | null
+          previous_batch_id?: string | null
+          to_created_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anchor_network?: string | null
+          anchor_reference?: string | null
+          anchored_at?: string | null
+          batch_hash?: string
+          batch_index?: number
+          batch_scope?: string
+          batch_source?: string
+          created_at?: string
+          created_by?: string | null
+          event_count?: number
+          from_created_at?: string | null
+          id?: string
+          metadata?: Json
+          previous_batch_hash?: string | null
+          previous_batch_id?: string | null
+          to_created_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_batches_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_batches_previous_batch_id_fkey"
+            columns: ["previous_batch_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_batch_verifications: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          proof_payload: Json
+          proof_reference: string | null
+          status: Database["public"]["Enums"]["governance_public_audit_verification_status"]
+          updated_at: string
+          verification_hash: string | null
+          verified_at: string
+          verified_by: string | null
+          verifier_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          proof_payload?: Json
+          proof_reference?: string | null
+          status: Database["public"]["Enums"]["governance_public_audit_verification_status"]
+          updated_at?: string
+          verification_hash?: string | null
+          verified_at?: string
+          verified_by?: string | null
+          verifier_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          proof_payload?: Json
+          proof_reference?: string | null
+          status?: Database["public"]["Enums"]["governance_public_audit_verification_status"]
+          updated_at?: string
+          verification_hash?: string | null
+          verified_at?: string
+          verified_by?: string | null
+          verifier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_batch_verifications_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_batch_verifications_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_batch_verifications_verifier_id_fkey"
+            columns: ["verifier_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_verifier_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_anchor_adapters: {
+        Row: {
+          adapter_key: string
+          adapter_name: string
+          added_by: string | null
+          attestation_scheme: string
+          created_at: string
+          endpoint_url: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          network: string
+          updated_at: string
+        }
+        Insert: {
+          adapter_key: string
+          adapter_name: string
+          added_by?: string | null
+          attestation_scheme?: string
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          network: string
+          updated_at?: string
+        }
+        Update: {
+          adapter_key?: string
+          adapter_name?: string
+          added_by?: string | null
+          attestation_scheme?: string
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          network?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_anchor_adapters_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_immutable_anchors: {
+        Row: {
+          adapter_id: string | null
+          anchored_at: string
+          anchored_by: string | null
+          batch_id: string
+          block_height: number | null
+          created_at: string
+          id: string
+          immutable_reference: string
+          network: string
+          proof_payload: Json
+        }
+        Insert: {
+          adapter_id?: string | null
+          anchored_at?: string
+          anchored_by?: string | null
+          batch_id: string
+          block_height?: number | null
+          created_at?: string
+          id?: string
+          immutable_reference: string
+          network: string
+          proof_payload?: Json
+        }
+        Update: {
+          adapter_id?: string | null
+          anchored_at?: string
+          anchored_by?: string | null
+          batch_id?: string
+          block_height?: number | null
+          created_at?: string
+          id?: string
+          immutable_reference?: string
+          network?: string
+          proof_payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_immutable_anchors_adapter_id_fkey"
+            columns: ["adapter_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_anchor_adapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_immutable_anchors_anchored_by_fkey"
+            columns: ["anchored_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_immutable_anchors_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_network_proofs: {
+        Row: {
+          batch_id: string
+          block_height: number | null
+          created_at: string
+          id: string
+          network: string
+          proof_payload: Json
+          proof_reference: string
+          recorded_at: string
+          recorded_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          block_height?: number | null
+          created_at?: string
+          id?: string
+          network: string
+          proof_payload?: Json
+          proof_reference: string
+          recorded_at?: string
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          block_height?: number | null
+          created_at?: string
+          id?: string
+          network?: string
+          proof_payload?: Json
+          proof_reference?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_network_proofs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_network_proofs_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_replication_policies: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          metadata: Json
+          notes: string | null
+          policy_key: string
+          policy_name: string
+          required_network_proof_count: number
+          required_verified_count: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          notes?: string | null
+          policy_key: string
+          policy_name: string
+          required_network_proof_count?: number
+          required_verified_count?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json
+          notes?: string | null
+          policy_key?: string
+          policy_name?: string
+          required_network_proof_count?: number
+          required_verified_count?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_replication_policies_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_verifier_nodes: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          endpoint_url: string | null
+          id: string
+          is_active: boolean
+          key_algorithm: string
+          metadata: Json
+          updated_at: string
+          verifier_key: string
+          verifier_label: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          metadata?: Json
+          updated_at?: string
+          verifier_key: string
+          verifier_label?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          endpoint_url?: string | null
+          id?: string
+          is_active?: boolean
+          key_algorithm?: string
+          metadata?: Json
+          updated_at?: string
+          verifier_key?: string
+          verifier_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_verifier_nodes_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_public_audit_verifier_jobs: {
+        Row: {
+          batch_id: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          result_reference: string | null
+          scheduled_at: string
+          scheduled_by: string | null
+          status: Database["public"]["Enums"]["governance_public_audit_verifier_job_status"]
+          updated_at: string
+          verifier_id: string
+        }
+        Insert: {
+          batch_id: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          result_reference?: string | null
+          scheduled_at?: string
+          scheduled_by?: string | null
+          status?: Database["public"]["Enums"]["governance_public_audit_verifier_job_status"]
+          updated_at?: string
+          verifier_id: string
+        }
+        Update: {
+          batch_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          result_reference?: string | null
+          scheduled_at?: string
+          scheduled_by?: string | null
+          status?: Database["public"]["Enums"]["governance_public_audit_verifier_job_status"]
+          updated_at?: string
+          verifier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_public_audit_verifier_jobs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_verifier_jobs_scheduled_by_fkey"
+            columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_public_audit_verifier_jobs_verifier_id_fkey"
+            columns: ["verifier_id"]
+            isOneToOne: false
+            referencedRelation: "governance_public_audit_verifier_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_execution_unit_memberships: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          membership_role: Database["public"]["Enums"]["governance_unit_membership_role"]
+          notes: string | null
+          profile_id: string
+          unit_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          membership_role?: Database["public"]["Enums"]["governance_unit_membership_role"]
+          notes?: string | null
+          profile_id: string
+          unit_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          membership_role?: Database["public"]["Enums"]["governance_unit_membership_role"]
+          notes?: string | null
+          profile_id?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_execution_unit_memberships_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_execution_unit_memberships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_execution_unit_memberships_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "governance_execution_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_execution_units: {
+        Row: {
+          created_at: string
+          description: string
+          domain_key: string
+          id: string
+          is_active: boolean
+          is_system_unit: boolean
+          name: string
+          unit_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          domain_key: string
+          id?: string
+          is_active?: boolean
+          is_system_unit?: boolean
+          name: string
+          unit_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          domain_key?: string
+          id?: string
+          is_active?: boolean
+          is_system_unit?: boolean
+          name?: string
+          unit_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      governance_execution_threshold_rules: {
+        Row: {
+          action_type: string
+          approval_class: Database["public"]["Enums"]["governance_threshold_approval_class"]
+          created_at: string
+          decision_class: Database["public"]["Enums"]["governance_decision_class"] | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          min_approval_share: number
+          min_approval_votes: number
+          min_decisive_votes: number
+          min_quorum: number
+          notes: string | null
+          requires_window_close: boolean
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          approval_class?: Database["public"]["Enums"]["governance_threshold_approval_class"]
+          created_at?: string
+          decision_class?: Database["public"]["Enums"]["governance_decision_class"] | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          min_approval_share?: number
+          min_approval_votes?: number
+          min_decisive_votes?: number
+          min_quorum?: number
+          notes?: string | null
+          requires_window_close?: boolean
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          approval_class?: Database["public"]["Enums"]["governance_threshold_approval_class"]
+          created_at?: string
+          decision_class?: Database["public"]["Enums"]["governance_decision_class"] | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          min_approval_share?: number
+          min_approval_votes?: number
+          min_decisive_votes?: number
+          min_quorum?: number
+          notes?: string | null
+          requires_window_close?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      governance_implementation_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          details: Json
+          execution_status: Database["public"]["Enums"]["governance_implementation_status"]
+          execution_summary: string
+          id: string
+          implementation_id: string
+          proposal_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          execution_status: Database["public"]["Enums"]["governance_implementation_status"]
+          execution_summary?: string
+          id?: string
+          implementation_id: string
+          proposal_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          execution_status?: Database["public"]["Enums"]["governance_implementation_status"]
+          execution_summary?: string
+          id?: string
+          implementation_id?: string
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_implementation_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_implementation_logs_implementation_id_fkey"
+            columns: ["implementation_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposal_implementations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_implementation_logs_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_proposal_implementations: {
+        Row: {
+          assigned_at: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          implementation_summary: string
+          metadata: Json
+          proposal_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["governance_implementation_status"]
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          implementation_summary?: string
+          metadata?: Json
+          proposal_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["governance_implementation_status"]
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          implementation_summary?: string
+          metadata?: Json
+          proposal_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["governance_implementation_status"]
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposal_implementations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_implementations_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_implementations_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "governance_execution_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_proposal_votes: {
+        Row: {
+          choice: Database["public"]["Enums"]["governance_vote_choice"]
+          created_at: string
+          id: string
+          proposal_id: string
+          rationale: string | null
+          snapshot: Json
+          updated_at: string
+          voter_id: string
+          weight: number
+        }
+        Insert: {
+          choice: Database["public"]["Enums"]["governance_vote_choice"]
+          created_at?: string
+          id?: string
+          proposal_id: string
+          rationale?: string | null
+          snapshot?: Json
+          updated_at?: string
+          voter_id: string
+          weight?: number
+        }
+        Update: {
+          choice?: Database["public"]["Enums"]["governance_vote_choice"]
+          created_at?: string
+          id?: string
+          proposal_id?: string
+          rationale?: string | null
+          snapshot?: Json
+          updated_at?: string
+          voter_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposal_votes_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "governance_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_proposal_votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_proposals: {
+        Row: {
+          approval_threshold: number
+          body: string
+          bootstrap_mode: boolean
+          closes_at: string
+          created_at: string
+          decision_class: Database["public"]["Enums"]["governance_decision_class"]
+          eligible_voter_count_snapshot: number
+          final_decision_summary: string | null
+          id: string
+          metadata: Json
+          opens_at: string
+          proposal_type: string
+          proposer_id: string
+          required_quorum: number
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["governance_proposal_status"]
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approval_threshold?: number
+          body?: string
+          bootstrap_mode?: boolean
+          closes_at?: string
+          created_at?: string
+          decision_class?: Database["public"]["Enums"]["governance_decision_class"]
+          eligible_voter_count_snapshot?: number
+          final_decision_summary?: string | null
+          id?: string
+          metadata?: Json
+          opens_at?: string
+          proposal_type?: string
+          proposer_id: string
+          required_quorum?: number
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["governance_proposal_status"]
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approval_threshold?: number
+          body?: string
+          bootstrap_mode?: boolean
+          closes_at?: string
+          created_at?: string
+          decision_class?: Database["public"]["Enums"]["governance_decision_class"]
+          eligible_voter_count_snapshot?: number
+          final_decision_summary?: string | null
+          id?: string
+          metadata?: Json
+          opens_at?: string
+          proposal_type?: string
+          proposer_id?: string
+          required_quorum?: number
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["governance_proposal_status"]
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_proposals_proposer_id_fkey"
+            columns: ["proposer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_sanction_appeals: {
+        Row: {
+          appeal_reason: string
+          created_at: string
+          evidence_notes: string | null
+          id: string
+          metadata: Json
+          opened_at: string
+          profile_id: string
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sanction_id: string
+          status: Database["public"]["Enums"]["governance_sanction_appeal_status"]
+          updated_at: string
+        }
+        Insert: {
+          appeal_reason?: string
+          created_at?: string
+          evidence_notes?: string | null
+          id?: string
+          metadata?: Json
+          opened_at?: string
+          profile_id: string
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sanction_id: string
+          status?: Database["public"]["Enums"]["governance_sanction_appeal_status"]
+          updated_at?: string
+        }
+        Update: {
+          appeal_reason?: string
+          created_at?: string
+          evidence_notes?: string | null
+          id?: string
+          metadata?: Json
+          opened_at?: string
+          profile_id?: string
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sanction_id?: string
+          status?: Database["public"]["Enums"]["governance_sanction_appeal_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_sanction_appeals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_sanction_appeals_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_sanction_appeals_sanction_id_fkey"
+            columns: ["sanction_id"]
+            isOneToOne: false
+            referencedRelation: "governance_sanctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_sanctions: {
+        Row: {
+          blocks_execution: boolean
+          blocks_governance_all: boolean
+          blocks_proposal_creation: boolean
+          blocks_verification_review: boolean
+          blocks_voting: boolean
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          issued_by: string | null
+          lifted_at: string | null
+          lifted_by: string | null
+          metadata: Json
+          notes: string | null
+          profile_id: string
+          reason: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          blocks_execution?: boolean
+          blocks_governance_all?: boolean
+          blocks_proposal_creation?: boolean
+          blocks_verification_review?: boolean
+          blocks_voting?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          issued_by?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          metadata?: Json
+          notes?: string | null
+          profile_id: string
+          reason?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          blocks_execution?: boolean
+          blocks_governance_all?: boolean
+          blocks_proposal_creation?: boolean
+          blocks_verification_review?: boolean
+          blocks_voting?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          issued_by?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          metadata?: Json
+          notes?: string | null
+          profile_id?: string
+          reason?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_sanctions_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_sanctions_lifted_by_fkey"
+            columns: ["lifted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_sanctions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_governance_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assignment_source: string
+          created_at: string
+          domain_key: string
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          notes: string | null
+          profile_id: string
+          role_key: string
+          source_unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_source?: string
+          created_at?: string
+          domain_key: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          notes?: string | null
+          profile_id: string
+          role_key: string
+          source_unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_source?: string
+          created_at?: string
+          domain_key?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          notes?: string | null
+          profile_id?: string
+          role_key?: string
+          source_unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_governance_roles_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_governance_roles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_governance_roles_role_fkey"
+            columns: ["domain_key", "role_key"]
+            isOneToOne: false
+            referencedRelation: "governance_domain_roles"
+            referencedColumns: ["domain_key", "role_key"]
+          },
+          {
+            foreignKeyName: "profile_governance_roles_source_unit_id_fkey"
+            columns: ["source_unit_id"]
+            isOneToOne: false
+            referencedRelation: "governance_execution_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_eligibility_snapshots: {
+        Row: {
+          calculated_at: string
+          calculation_version: string
+          citizenship_status: Database["public"]["Enums"]["citizenship_status"]
+          created_at: string
+          eligible: boolean
+          governance_score: number
+          id: string
+          influence_weight: number
+          is_active_citizen: boolean
+          is_verified: boolean
+          levela_score: number
+          profile_id: string
+          reason_codes: string[]
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          calculated_at?: string
+          calculation_version?: string
+          citizenship_status: Database["public"]["Enums"]["citizenship_status"]
+          created_at?: string
+          eligible?: boolean
+          governance_score?: number
+          id?: string
+          influence_weight?: number
+          is_active_citizen?: boolean
+          is_verified?: boolean
+          levela_score?: number
+          profile_id: string
+          reason_codes?: string[]
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          calculated_at?: string
+          calculation_version?: string
+          citizenship_status?: Database["public"]["Enums"]["citizenship_status"]
+          created_at?: string
+          eligible?: boolean
+          governance_score?: number
+          id?: string
+          influence_weight?: number
+          is_active_citizen?: boolean
+          is_verified?: boolean
+          levela_score?: number
+          profile_id?: string
+          reason_codes?: string[]
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_eligibility_snapshots_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_verification_artifacts: {
+        Row: {
+          artifact_hash: string | null
+          artifact_kind: Database["public"]["Enums"]["identity_verification_artifact_kind"]
+          case_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          storage_path: string | null
+        }
+        Insert: {
+          artifact_hash?: string | null
+          artifact_kind: Database["public"]["Enums"]["identity_verification_artifact_kind"]
+          case_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          storage_path?: string | null
+        }
+        Update: {
+          artifact_hash?: string | null
+          artifact_kind?: Database["public"]["Enums"]["identity_verification_artifact_kind"]
+          case_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_verification_artifacts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "identity_verification_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_verification_artifacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_verification_cases: {
+        Row: {
+          contact_info_completed: boolean
+          created_at: string
+          discrepancy_flags: string[]
+          id: string
+          last_reviewed_by: string | null
+          live_verification_completed: boolean
+          metadata: Json
+          notes: string | null
+          personal_info_completed: boolean
+          profile_id: string
+          resolved_at: string | null
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["identity_verification_case_status"]
+          submitted_at: string | null
+          updated_at: string
+          verification_method: string
+        }
+        Insert: {
+          contact_info_completed?: boolean
+          created_at?: string
+          discrepancy_flags?: string[]
+          id?: string
+          last_reviewed_by?: string | null
+          live_verification_completed?: boolean
+          metadata?: Json
+          notes?: string | null
+          personal_info_completed?: boolean
+          profile_id: string
+          resolved_at?: string | null
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["identity_verification_case_status"]
+          submitted_at?: string | null
+          updated_at?: string
+          verification_method?: string
+        }
+        Update: {
+          contact_info_completed?: boolean
+          created_at?: string
+          discrepancy_flags?: string[]
+          id?: string
+          last_reviewed_by?: string | null
+          live_verification_completed?: boolean
+          metadata?: Json
+          notes?: string | null
+          personal_info_completed?: boolean
+          profile_id?: string
+          resolved_at?: string | null
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["identity_verification_case_status"]
+          submitted_at?: string | null
+          updated_at?: string
+          verification_method?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_verification_cases_last_reviewed_by_fkey"
+            columns: ["last_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_verification_cases_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_verification_reviews: {
+        Row: {
+          case_id: string
+          created_at: string
+          decision: Database["public"]["Enums"]["identity_verification_decision"]
+          id: string
+          notes: string | null
+          reviewer_id: string | null
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          decision: Database["public"]["Enums"]["identity_verification_decision"]
+          id?: string
+          notes?: string | null
+          reviewer_id?: string | null
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["identity_verification_decision"]
+          id?: string
+          notes?: string | null
+          reviewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_verification_reviews_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "identity_verification_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_verification_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_comments: {
         Row: {
           author_id: string
@@ -1263,6 +3945,84 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activation_scope_is_declared: {
+        Args: {
+          requested_country_code?: string
+          requested_scope_type: Database["public"]["Enums"]["activation_scope_type"]
+        }
+        Returns: boolean
+      }
+      capture_all_governance_domain_maturity_snapshots: {
+        Args: {
+          measured_by_profile_id?: string
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: number
+      }
+      capture_activation_demographic_snapshot: {
+        Args: {
+          measured_by_profile_id?: string
+          requested_country_code?: string
+          requested_scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: string
+      }
+      capture_governance_domain_maturity_snapshot: {
+        Args: {
+          measured_by_profile_id?: string
+          requested_domain_key: string
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: string
+      }
+      capture_governance_domain_maturity_snapshot_if_stale: {
+        Args: {
+          max_snapshot_age?: string
+          measured_by_profile_id?: string
+          requested_domain_key: string
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: string | null
+      }
+      capture_governance_domain_maturity_snapshots_for_profile: {
+        Args: {
+          requested_profile_id: string
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: number
+      }
+      capture_scheduled_governance_domain_maturity_snapshots: {
+        Args: {
+          max_snapshot_age?: string
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: number
+      }
+      capture_scheduled_activation_demographic_snapshots: {
+        Args: {
+          snapshot_notes?: string
+          snapshot_source?: string
+        }
+        Returns: number
+      }
+      capture_governance_public_audit_batch: {
+        Args: {
+          batch_source?: string
+          created_by_profile_id?: string
+          max_events?: number
+          requested_from?: string
+          requested_metadata?: Json
+          requested_to?: string
+        }
+        Returns: string | null
+      }
       can_contribute_to_content_category: {
         Args: { target_category_id: string; target_profile_id?: string }
         Returns: boolean
@@ -1276,6 +4036,322 @@ export type Database = {
         }
         Returns: string
       }
+      current_profile_has_governance_domain_role: {
+        Args: { domain_keys: string[]; role_keys?: string[] }
+        Returns: boolean
+      }
+      current_profile_can_manage_guardian_multisig: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_profile_can_manage_activation_demographic_feeds: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_profile_can_manage_guardian_relays: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_profile_can_manage_public_audit_verifiers: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_profile_is_guardian_signer: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_profile_is_maturity_steward: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_profile_in_governance_domain: {
+        Args: { domain_keys: string[] }
+        Returns: boolean
+      }
+      evaluate_governance_domain_maturity: {
+        Args: { requested_domain_key: string }
+        Returns: Json
+      }
+      governance_domain_is_mature: {
+        Args: { requested_domain_key: string }
+        Returns: boolean
+      }
+      governance_proposal_is_execution_ready: {
+        Args: { target_proposal_id: string }
+        Returns: boolean
+      }
+      governance_proposal_guardian_signoff_summary: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          approval_class: Database["public"]["Enums"]["governance_threshold_approval_class"]
+          approval_count: number
+          decisive_count: number
+          meets_signoff: boolean
+          rejection_count: number
+          required_approvals: number
+          requires_guardian_signoff: boolean
+          requires_window_close: boolean
+        }[]
+      }
+      governance_proposal_external_multisig_summary: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          active_external_signer_count: number
+          external_approval_count: number
+          external_decisive_count: number
+          external_multisig_required: boolean
+          external_rejection_count: number
+          policy_contract_reference: string | null
+          policy_network: string | null
+          required_external_approvals: number
+        }[]
+      }
+      governance_proposal_guardian_relay_summary: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          active_relay_count: number
+          chain_proof_match_met: boolean
+          external_approval_count: number
+          policy_enabled: boolean
+          relay_mismatch_count: number
+          relay_quorum_met: boolean
+          relay_unreachable_count: number
+          relay_verified_count: number
+          require_chain_proof_match: boolean
+          required_relay_attestations: number
+          signers_with_chain_proof_count: number
+          signers_with_relay_quorum_count: number
+        }[]
+      }
+      governance_public_audit_batch_verifier_summary: {
+        Args: { target_batch_id: string }
+        Returns: {
+          active_verifier_count: number
+          meets_replication_threshold: boolean
+          mismatch_count: number
+          network_proof_count: number
+          policy_enabled: boolean
+          required_network_proof_count: number
+          required_verified_count: number
+          unreachable_count: number
+          verified_count: number
+        }[]
+      }
+      governance_proposal_meets_guardian_signoff: {
+        Args: { target_proposal_id: string }
+        Returns: boolean
+      }
+      governance_proposal_meets_execution_threshold: {
+        Args: { target_proposal_id: string }
+        Returns: boolean
+      }
+      governance_proposal_requires_guardian_signoff: {
+        Args: { target_proposal_id: string }
+        Returns: boolean
+      }
+      map_governance_domain_role_from_unit_membership_role: {
+        Args: {
+          membership_role: Database["public"]["Enums"]["governance_unit_membership_role"]
+        }
+        Returns: string
+      }
+      list_pending_governance_public_audit_events: {
+        Args: {
+          max_events?: number
+          requested_from?: string
+          requested_to?: string
+        }
+        Returns: {
+          event_actor_id: string | null
+          event_created_at: string
+          event_digest: string
+          event_id: string
+          event_payload: Json
+          event_position: number
+          event_source: string
+        }[]
+      }
+      resolve_governance_execution_threshold_rule: {
+        Args: {
+          requested_action_type: string
+          requested_decision_class: Database["public"]["Enums"]["governance_decision_class"]
+        }
+        Returns: {
+          approval_class: Database["public"]["Enums"]["governance_threshold_approval_class"]
+          min_approval_share: number
+          min_decisive_votes: number
+          min_approval_votes: number
+          min_quorum: number
+          requires_window_close: boolean
+        }[]
+      }
+      normalize_activation_scope_country_code: {
+        Args: {
+          raw_country_code: string
+          requested_scope_type: Database["public"]["Enums"]["activation_scope_type"]
+        }
+        Returns: string
+      }
+      ingest_signed_activation_demographic_feed_snapshot: {
+        Args: {
+          ingestion_metadata?: Json
+          ingestion_notes?: string
+          measured_by_profile_id?: string
+          payload_hash?: string
+          payload_signature?: string
+          requested_observed_at?: string
+          requested_source_url?: string
+          requested_target_population: number
+          signature_verified?: boolean
+          signed_payload?: string
+          target_adapter_id: string
+        }
+        Returns: string
+      }
+      profile_is_guardian_signer: {
+        Args: { target_profile_id: string }
+        Returns: boolean
+      }
+      record_governance_public_audit_anchor: {
+        Args: {
+          anchor_metadata?: Json
+          anchor_network: string
+          anchor_reference: string
+          target_batch_id: string
+        }
+        Returns: boolean
+      }
+      record_governance_public_audit_batch_verification: {
+        Args: {
+          proof_payload?: Json
+          proof_reference?: string
+          target_batch_id: string
+          target_verifier_id: string
+          verification_hash?: string
+          verification_status: Database["public"]["Enums"]["governance_public_audit_verification_status"]
+          verified_at?: string
+        }
+        Returns: string
+      }
+      record_governance_public_audit_immutable_anchor: {
+        Args: {
+          immutable_reference?: string
+          proof_block_height?: number
+          proof_payload?: Json
+          target_adapter_id?: string
+          target_batch_id: string
+          target_network?: string
+        }
+        Returns: string
+      }
+      complete_governance_public_audit_verifier_job: {
+        Args: {
+          completion_status: Database["public"]["Enums"]["governance_public_audit_verifier_job_status"]
+          error_message?: string
+          proof_payload?: Json
+          proof_reference?: string
+          target_job_id: string
+          verification_hash?: string
+          verification_status?: Database["public"]["Enums"]["governance_public_audit_verification_status"]
+        }
+        Returns: string
+      }
+      record_governance_public_audit_network_proof: {
+        Args: {
+          proof_block_height?: number
+          proof_network: string
+          proof_payload?: Json
+          proof_reference: string
+          target_batch_id: string
+        }
+        Returns: string
+      }
+      register_governance_public_audit_verifier_node: {
+        Args: {
+          endpoint_url?: string
+          key_algorithm?: string
+          metadata?: Json
+          verifier_key: string
+          verifier_label?: string
+        }
+        Returns: string
+      }
+      register_activation_demographic_feed_adapter: {
+        Args: {
+          adapter_key: string
+          adapter_name: string
+          adapter_type?: Database["public"]["Enums"]["activation_demographic_feed_adapter_type"]
+          country_code?: string
+          endpoint_url?: string
+          key_algorithm?: string
+          metadata?: Json
+          public_signer_key?: string
+          scope_type?: Database["public"]["Enums"]["activation_scope_type"]
+        }
+        Returns: string
+      }
+      register_governance_guardian_relay_node: {
+        Args: {
+          endpoint_url?: string
+          key_algorithm?: string
+          metadata?: Json
+          relay_key: string
+          relay_label?: string
+        }
+        Returns: string
+      }
+      register_governance_public_audit_anchor_adapter: {
+        Args: {
+          adapter_key: string
+          adapter_name: string
+          attestation_scheme?: string
+          endpoint_url?: string
+          metadata?: Json
+          network: string
+        }
+        Returns: string
+      }
+      record_governance_guardian_relay_attestation: {
+        Args: {
+          attestation_chain_network?: string
+          attestation_chain_reference?: string
+          attestation_decision: Database["public"]["Enums"]["governance_guardian_decision"]
+          attestation_metadata?: Json
+          attestation_payload_hash?: string
+          attestation_reference?: string
+          attestation_status?: Database["public"]["Enums"]["governance_guardian_relay_attestation_status"]
+          target_external_signer_id: string
+          target_proposal_id: string
+          target_relay_id: string
+          verified_at?: string
+        }
+        Returns: string
+      }
+      run_governance_public_audit_verifier_cycle: {
+        Args: {
+          target_batch_id?: string
+        }
+        Returns: number
+      }
+      schedule_governance_public_audit_verifier_jobs: {
+        Args: {
+          force_reschedule?: boolean
+          target_batch_id?: string
+        }
+        Returns: number
+      }
+      verify_governance_public_audit_chain: {
+        Args: { max_batches?: number }
+        Returns: Json
+      }
+      profile_has_governance_domain_role: {
+        Args: {
+          domain_keys: string[]
+          role_keys?: string[]
+          target_profile_id: string
+        }
+        Returns: boolean
+      }
       profile_has_approved_profession: {
         Args: { allowed_professions: string[]; target_profile_id: string }
         Returns: boolean
@@ -1286,6 +4362,27 @@ export type Database = {
       }
     }
     Enums: {
+      activation_review_decision:
+        | "approve"
+        | "reject"
+        | "request_changes"
+        | "declare_activation"
+        | "revoke_activation"
+      activation_review_status:
+        | "pre_activation"
+        | "pending_review"
+        | "approved_for_activation"
+        | "activated"
+        | "rejected"
+        | "revoked"
+      activation_scope_type:
+        | "country"
+        | "world"
+      activation_demographic_feed_adapter_type:
+        | "signed_json_feed"
+        | "oracle_attestation"
+        | "manual_signed_import"
+      constitutional_office_key: "founder"
       app_permission:
         | "law.read"
         | "law.contribute"
@@ -1332,6 +4429,10 @@ export type Database = {
         | "founder"
         | "admin"
         | "system"
+      citizenship_status:
+        | "registered_member"
+        | "verified_member"
+        | "citizen"
       content_moderation_lane:
         | "unmoderated"
         | "moderated"
@@ -1355,6 +4456,77 @@ export type Database = {
       law_track:
         | "civil"
         | "criminal"
+      identity_verification_artifact_kind:
+        | "personal_info"
+        | "contact_info"
+        | "live_presence"
+        | "duplicate_check"
+        | "supporting_document"
+      identity_verification_case_status:
+        | "draft"
+        | "submitted"
+        | "in_review"
+        | "approved"
+        | "rejected"
+        | "revoked"
+      identity_verification_decision:
+        | "approved"
+        | "rejected"
+        | "revoked"
+      governance_decision_class:
+        | "ordinary"
+        | "elevated"
+        | "constitutional"
+      governance_block_scope:
+        | "proposal_create"
+        | "vote"
+        | "verification_review"
+        | "execution"
+      governance_guardian_decision:
+        | "approve"
+        | "reject"
+      governance_guardian_relay_attestation_status:
+        | "verified"
+        | "mismatch"
+        | "unreachable"
+      governance_public_audit_verification_status:
+        | "verified"
+        | "mismatch"
+        | "unreachable"
+      governance_public_audit_verifier_job_status:
+        | "pending"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      governance_implementation_status:
+        | "queued"
+        | "in_progress"
+        | "completed"
+        | "blocked"
+        | "cancelled"
+      governance_threshold_approval_class:
+        | "ordinary_majority"
+        | "supermajority"
+        | "guardian_threshold"
+      governance_proposal_status:
+        | "open"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+      governance_sanction_appeal_status:
+        | "open"
+        | "under_review"
+        | "accepted"
+        | "rejected"
+        | "withdrawn"
+      governance_unit_membership_role:
+        | "lead"
+        | "member"
+        | "observer"
+      governance_vote_choice:
+        | "approve"
+        | "reject"
+        | "abstain"
       pillar_type:
         | "education_skills"
         | "culture_ethics"
@@ -1493,6 +4665,26 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activation_review_decision: [
+        "approve",
+        "reject",
+        "request_changes",
+        "declare_activation",
+        "revoke_activation",
+      ],
+      activation_review_status: [
+        "pre_activation",
+        "pending_review",
+        "approved_for_activation",
+        "activated",
+        "rejected",
+        "revoked",
+      ],
+      activation_scope_type: [
+        "country",
+        "world",
+      ],
+      constitutional_office_key: ["founder"],
       app_permission: [
         "law.read",
         "law.contribute",
@@ -1541,6 +4733,11 @@ export const Constants = {
         "admin",
         "system",
       ],
+      citizenship_status: [
+        "registered_member",
+        "verified_member",
+        "citizen",
+      ],
       content_moderation_lane: [
         "unmoderated",
         "moderated",
@@ -1553,6 +4750,76 @@ export const Constants = {
         "approved",
         "rejected",
         "archived",
+      ],
+      identity_verification_artifact_kind: [
+        "personal_info",
+        "contact_info",
+        "live_presence",
+        "duplicate_check",
+        "supporting_document",
+      ],
+      identity_verification_case_status: [
+        "draft",
+        "submitted",
+        "in_review",
+        "approved",
+        "rejected",
+        "revoked",
+      ],
+      identity_verification_decision: [
+        "approved",
+        "rejected",
+        "revoked",
+      ],
+      governance_decision_class: [
+        "ordinary",
+        "elevated",
+        "constitutional",
+      ],
+      governance_block_scope: [
+        "proposal_create",
+        "vote",
+        "verification_review",
+        "execution",
+      ],
+      governance_guardian_decision: [
+        "approve",
+        "reject",
+      ],
+      governance_implementation_status: [
+        "queued",
+        "in_progress",
+        "completed",
+        "blocked",
+        "cancelled",
+      ],
+      governance_threshold_approval_class: [
+        "ordinary_majority",
+        "supermajority",
+        "guardian_threshold",
+      ],
+      governance_proposal_status: [
+        "open",
+        "approved",
+        "rejected",
+        "cancelled",
+      ],
+      governance_sanction_appeal_status: [
+        "open",
+        "under_review",
+        "accepted",
+        "rejected",
+        "withdrawn",
+      ],
+      governance_unit_membership_role: [
+        "lead",
+        "member",
+        "observer",
+      ],
+      governance_vote_choice: [
+        "approve",
+        "reject",
+        "abstain",
       ],
       pillar_type: [
         "education_skills",

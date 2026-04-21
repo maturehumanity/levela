@@ -1,19 +1,20 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
-import { AppUpdatePrompt } from "@/components/app/AppUpdatePrompt";
 import { ThemeStorageSync } from "@/components/app/ThemeStorageSync";
 import { AppCrashBoundary } from "@/components/app/AppCrashBoundary";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { BuildOverlay } from "@/components/layout/BuildOverlay";
+import { permissionListHas } from "@/lib/access-control";
 
 // Pages (lazy-loaded to keep bundle sizes small)
+const Toaster = lazy(() => import('@/components/ui/toaster').then((module) => ({ default: module.Toaster })));
+const Sonner = lazy(() => import('@/components/ui/sonner').then((module) => ({ default: module.Toaster })));
+const AppUpdatePrompt = lazy(() => import('@/components/app/AppUpdatePrompt').then((module) => ({ default: module.AppUpdatePrompt })));
+const BuildOverlay = lazy(() => import('@/components/layout/BuildOverlay').then((module) => ({ default: module.BuildOverlay })));
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 const Login = lazy(() => import('@/pages/auth/Login'));
 const SignUp = lazy(() => import('@/pages/auth/SignUp'));
@@ -23,6 +24,7 @@ const Contribute = lazy(() => import('@/pages/Contribute'));
 const DownloadPage = lazy(() => import('@/pages/Download'));
 const Features = lazy(() => import('@/pages/Features'));
 const Study = lazy(() => import('@/pages/Study'));
+const Governance = lazy(() => import('@/pages/Governance'));
 const Home = lazy(() => import('@/pages/Home'));
 const Law = lazy(() => import('@/pages/Law'));
 const Market = lazy(() => import('@/pages/Market'));
@@ -43,6 +45,7 @@ const GovernanceAdmin = lazy(() => import('@/pages/settings/GovernanceAdmin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient();
+const BUILD_OVERLAY_STORAGE_KEY = 'levela-build-overlay-enabled-v1';
 
 function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -73,6 +76,92 @@ function RouteFallback() {
   );
 }
 
+function scheduleAfterIdle(callback: () => void, fallbackDelay = 1200) {
+  if (typeof window === 'undefined') return () => undefined;
+
+  if ('requestIdleCallback' in window) {
+    const idleId = window.requestIdleCallback(callback, { timeout: fallbackDelay });
+    return () => window.cancelIdleCallback(idleId);
+  }
+
+  const timeoutId = window.setTimeout(callback, fallbackDelay);
+  return () => window.clearTimeout(timeoutId);
+}
+
+function DeferredAppUpdatePrompt() {
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => scheduleAfterIdle(() => setShouldLoad(true), 1500), []);
+
+  if (!shouldLoad) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <AppUpdatePrompt />
+    </Suspense>
+  );
+}
+
+function DeferredGlobalFeedback() {
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => scheduleAfterIdle(() => setShouldLoad(true), 900), []);
+
+  if (!shouldLoad) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <Toaster />
+      <Sonner />
+    </Suspense>
+  );
+}
+
+function BuildOverlayLoader() {
+  const { profile } = useAuth();
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const canUseBuildOverlay = permissionListHas(profile?.effective_permissions || [], 'build.use');
+    if (!canUseBuildOverlay) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const buildModeRequested = params.get('build') === '1';
+    const persistedMode = window.localStorage.getItem(BUILD_OVERLAY_STORAGE_KEY) === '1';
+
+    if (buildModeRequested || persistedMode) {
+      setShouldLoad(true);
+      if (buildModeRequested) {
+        window.localStorage.setItem(BUILD_OVERLAY_STORAGE_KEY, '1');
+      }
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.shiftKey && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b')) {
+        return;
+      }
+
+      event.preventDefault();
+      window.localStorage.setItem(BUILD_OVERLAY_STORAGE_KEY, '1');
+      setShouldLoad(true);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [profile?.effective_permissions]);
+
+  if (!shouldLoad) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <BuildOverlay />
+    </Suspense>
+  );
+}
+
 const App = () => (
   <AppCrashBoundary>
     <QueryClientProvider client={queryClient}>
@@ -81,9 +170,8 @@ const App = () => (
         <TooltipProvider>
           <AuthProvider>
             <LanguageProvider>
-              <Toaster />
-              <Sonner />
-              <AppUpdatePrompt />
+              <DeferredGlobalFeedback />
+              <DeferredAppUpdatePrompt />
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Suspense fallback={<RouteFallback />}>
                   <Routes>
@@ -101,6 +189,7 @@ const App = () => (
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/contribute" element={<ProtectedRoute><Contribute /></ProtectedRoute>} />
                   <Route path="/study" element={<ProtectedRoute><Study /></ProtectedRoute>} />
+                  <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
                   <Route path="/features" element={<ProtectedRoute><Navigate to="/study" replace /></ProtectedRoute>} />
                   <Route
                     path="/law"
@@ -222,7 +311,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
-                <BuildOverlay />
+                <BuildOverlayLoader />
               </BrowserRouter>
             </LanguageProvider>
           </AuthProvider>

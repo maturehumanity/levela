@@ -11,3 +11,8 @@ content_type: legal_reference
 professional_domain: law
 contribution_policy: certified_professionals
 ```
+
+Current draft legal documents:
+
+- `levela_terms_of_use.md`
+- `levela_constitution_v0_1.md`

@@ -1,0 +1,30 @@
+{
+  "max_source_lines": 400,
+  "exempt_files": [
+    "src/integrations/supabase/types.ts",
+    "src/lib/i18n.generated.ts"
+  ],
+  "legacy_allowlist": {
+    "src/components/layout/BuildOverlay.tsx": 3960,
+    "src/lib/i18n.base.ts": 2056,
+    "src/pages/settings/EditProfile.tsx": 1882,
+    "src/pages/settings/UsersAdmin.tsx": 1852,
+    "src/pages/Governance.tsx": 1680,
+    "src/components/ui/chat-bar.tsx": 1417,
+    "src/pages/settings/GovernanceAdmin.tsx": 1265,
+    "src/pages/Law.tsx": 1235,
+    "src/lib/i18n.languages.ts": 1189,
+    "src/pages/Home.tsx": 1104,
+    "src/pages/Study.tsx": 1056,
+    "src/components/layout/UserPageMenu.tsx": 944,
+    "src/contexts/AuthContext.tsx": 788,
+    "src/lib/monetary.ts": 647,
+    "src/components/ui/sidebar.tsx": 640,
+    "src/lib/content-governance.ts": 533,
+    "src/lib/feature-registry.ts": 485,
+    "src/components/study/ConstitutionReader.tsx": 419,
+    "src/lib/law-catalog.ts": 412,
+    "src/pages/Profile.tsx": 409,
+    "src/pages/settings/Pillars.tsx": 402
+  }
+}

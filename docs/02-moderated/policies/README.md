@@ -11,3 +11,7 @@ content_type: policy_document
 professional_domain: governance
 contribution_policy: staff_only
 ```
+
+Current draft policy documents:
+
+- `citizenship_and_verification_policy_v0_1.md`
