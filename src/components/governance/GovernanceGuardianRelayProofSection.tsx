@@ -100,6 +100,9 @@ export function GovernanceGuardianRelayProofSection({
               )
             }
           </p>
+          <p>
+            <span className="font-medium text-foreground">Relay ops:</span> {relayClientProofManifest.relayOpsReady ? 'ready' : 'pending'}
+          </p>
         </div>
       )}
 

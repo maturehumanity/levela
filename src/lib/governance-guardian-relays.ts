@@ -108,11 +108,50 @@ export interface GovernanceProposalGuardianRelayTrustMinimizedSummary {
   trustMinimizedQuorumMet: boolean;
 }
 
+export interface GovernanceProposalGuardianRelayOperationsSummary {
+  policyKey: string;
+  requireTrustMinimizedQuorum: boolean;
+  requireRelayOpsReadiness: boolean;
+  maxOpenCriticalRelayAlerts: number;
+  relayAttestationSlaMinutes: number;
+  externalApprovalCount: number;
+  staleSignerCount: number;
+  openWarningAlertCount: number;
+  openCriticalAlertCount: number;
+  lastWorkerRunAt: string | null;
+  lastWorkerRunStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
+  trustMinimizedQuorumMet: boolean;
+  relayOpsReady: boolean;
+}
+
 export interface GovernanceProposalGuardianRelayClientProofManifest {
   manifestVersion: string;
   manifestHash: string;
   manifestPayload: Record<string, unknown>;
   trustMinimizedQuorumMet: boolean;
+  relayOpsReady: boolean;
+}
+
+export interface GovernanceProposalGuardianRelayAlertBoardRow {
+  alertId: string;
+  alertKey: string;
+  severity: 'info' | 'warning' | 'critical' | 'unknown';
+  alertScope: string;
+  alertStatus: 'open' | 'acknowledged' | 'resolved' | 'unknown';
+  alertMessage: string;
+  openedAt: string | null;
+  resolvedAt: string | null;
+}
+
+export interface GovernanceProposalGuardianRelayWorkerRunBoardRow {
+  runId: string;
+  runScope: 'attestation_sweep' | 'diversity_audit' | 'manifest_capture' | 'manual' | 'unknown';
+  runStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
+  processedSignerCount: number;
+  staleSignerCount: number;
+  openAlertCount: number;
+  errorMessage: string | null;
+  observedAt: string | null;
 }
 
 export interface GovernanceProposalGuardianRelayRecentClientManifestRow {
@@ -158,6 +197,30 @@ function asString(value: unknown, fallback = '') {
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
+}
+
+function asRunStatus(value: unknown): GovernanceProposalGuardianRelayOperationsSummary['lastWorkerRunStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'ok' || normalized === 'degraded' || normalized === 'failed') return normalized;
+  return 'unknown';
+}
+
+function asWorkerRunScope(value: unknown): GovernanceProposalGuardianRelayWorkerRunBoardRow['runScope'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'attestation_sweep' || normalized === 'diversity_audit' || normalized === 'manifest_capture' || normalized === 'manual') return normalized;
+  return 'unknown';
+}
+
+function asAlertSeverity(value: unknown): GovernanceProposalGuardianRelayAlertBoardRow['severity'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'info' || normalized === 'warning' || normalized === 'critical') return normalized;
+  return 'unknown';
+}
+
+function asAlertStatus(value: unknown): GovernanceProposalGuardianRelayAlertBoardRow['alertStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'open' || normalized === 'acknowledged' || normalized === 'resolved') return normalized;
+  return 'unknown';
 }
 
 export function readGovernanceProposalGuardianRelaySummary(
@@ -308,6 +371,30 @@ export function readGovernanceProposalGuardianRelayTrustMinimizedSummary(rows: u
   };
 }
 
+export function readGovernanceProposalGuardianRelayOperationsSummary(rows: unknown): GovernanceProposalGuardianRelayOperationsSummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  const policyKey = asString(row.policy_key, 'guardian_relay_default');
+
+  return {
+    policyKey,
+    requireTrustMinimizedQuorum: Boolean(row.require_trust_minimized_quorum),
+    requireRelayOpsReadiness: Boolean(row.require_relay_ops_readiness),
+    maxOpenCriticalRelayAlerts: asNonNegativeInteger(row.max_open_critical_relay_alerts),
+    relayAttestationSlaMinutes: Math.max(1, asNonNegativeInteger(row.relay_attestation_sla_minutes, 120)),
+    externalApprovalCount: asNonNegativeInteger(row.external_approval_count),
+    staleSignerCount: asNonNegativeInteger(row.stale_signer_count),
+    openWarningAlertCount: asNonNegativeInteger(row.open_warning_alert_count),
+    openCriticalAlertCount: asNonNegativeInteger(row.open_critical_alert_count),
+    lastWorkerRunAt: asNullableString(row.last_worker_run_at),
+    lastWorkerRunStatus: asRunStatus(row.last_worker_run_status),
+    trustMinimizedQuorumMet: Boolean(row.trust_minimized_quorum_met),
+    relayOpsReady: Boolean(row.relay_ops_ready),
+  };
+}
+
 export function readGovernanceProposalGuardianRelayClientProofManifest(rows: unknown): GovernanceProposalGuardianRelayClientProofManifest | null {
   if (!Array.isArray(rows) || rows.length === 0) return null;
   const row = asRecord(rows[0]);
@@ -319,12 +406,53 @@ export function readGovernanceProposalGuardianRelayClientProofManifest(rows: unk
 
   if (!manifestVersion || !manifestHash || !manifestPayload) return null;
 
+  const relayOperations = asRecord(manifestPayload.relay_operations);
+
   return {
     manifestVersion,
     manifestHash,
     manifestPayload,
     trustMinimizedQuorumMet: Boolean(row.trust_minimized_quorum_met),
+    relayOpsReady: relayOperations ? Boolean(relayOperations.relay_ops_ready) : false,
   };
+}
+
+export function readGovernanceProposalGuardianRelayAlertBoardRows(rows: unknown): GovernanceProposalGuardianRelayAlertBoardRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      alertId: asString(entry.alert_id),
+      alertKey: asString(entry.alert_key),
+      severity: asAlertSeverity(entry.severity),
+      alertScope: asString(entry.alert_scope, 'manual'),
+      alertStatus: asAlertStatus(entry.alert_status),
+      alertMessage: asString(entry.alert_message),
+      openedAt: asNullableString(entry.opened_at),
+      resolvedAt: asNullableString(entry.resolved_at),
+    }))
+    .filter((entry) => entry.alertId.length > 0 && entry.alertKey.length > 0 && entry.alertMessage.length > 0);
+}
+
+export function readGovernanceProposalGuardianRelayWorkerRunBoardRows(rows: unknown): GovernanceProposalGuardianRelayWorkerRunBoardRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      runId: asString(entry.run_id),
+      runScope: asWorkerRunScope(entry.run_scope),
+      runStatus: asRunStatus(entry.run_status),
+      processedSignerCount: asNonNegativeInteger(entry.processed_signer_count),
+      staleSignerCount: asNonNegativeInteger(entry.stale_signer_count),
+      openAlertCount: asNonNegativeInteger(entry.open_alert_count),
+      errorMessage: asNullableString(entry.error_message),
+      observedAt: asNullableString(entry.observed_at),
+    }))
+    .filter((entry) => entry.runId.length > 0);
 }
 
 export function readGovernanceProposalGuardianRelayRecentClientManifestRows(rows: unknown): GovernanceProposalGuardianRelayRecentClientManifestRow[] {
@@ -363,9 +491,18 @@ export function isMissingGuardianRelayBackend(error: { code?: string | null; mes
     || message.includes('governance_proposal_guardian_relay_trust_minimized_summary')
     || message.includes('governance_proposal_guardian_relay_client_proof_manifest')
     || message.includes('governance_proposal_guardian_relay_recent_client_manifests')
+    || message.includes('governance_guardian_relay_worker_runs')
+    || message.includes('governance_guardian_relay_alerts')
+    || message.includes('governance_proposal_guardian_relay_operations_summary')
+    || message.includes('governance_proposal_guardian_relay_alert_board')
+    || message.includes('governance_proposal_guardian_relay_worker_run_board')
     || message.includes('governance_proposal_client_verification_manifests')
     || message.includes('capture_governance_proposal_guardian_relay_client_manifest')
     || message.includes('capture_governance_guardian_relay_audit_report')
+    || message.includes('record_governance_guardian_relay_worker_run')
+    || message.includes('open_governance_guardian_relay_alert')
+    || message.includes('resolve_governance_guardian_relay_alert')
+    || message.includes('set_governance_guardian_relay_ops_requirement')
     || message.includes('current_profile_can_manage_guardian_relays')
     || message.includes('register_governance_guardian_relay_node')
     || message.includes('record_governance_guardian_relay_attestation')

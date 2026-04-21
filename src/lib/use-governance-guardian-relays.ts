@@ -5,20 +5,26 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import {
   isMissingGuardianRelayBackend,
+  readGovernanceProposalGuardianRelayAlertBoardRows,
   readGovernanceProposalGuardianRelayAttestationAuditRows,
   readGovernanceProposalGuardianRelayClientProofManifest,
   readGovernanceProposalGuardianRelayDiversityAudit,
+  readGovernanceProposalGuardianRelayOperationsSummary,
   readGovernanceProposalGuardianRelayRecentClientManifestRows,
   readGovernanceProposalGuardianRelayRecentAuditRows,
   readGovernanceProposalGuardianRelaySummary,
   readGovernanceProposalGuardianRelayTrustMinimizedSummary,
+  readGovernanceProposalGuardianRelayWorkerRunBoardRows,
+  type GovernanceProposalGuardianRelayAlertBoardRow,
   type GovernanceProposalGuardianRelayAttestationAuditRow,
   type GovernanceProposalGuardianRelayClientProofManifest,
   type GovernanceProposalGuardianRelayDiversityAudit,
+  type GovernanceProposalGuardianRelayOperationsSummary,
   type GovernanceProposalGuardianRelayRecentClientManifestRow,
   type GovernanceProposalGuardianRelayRecentAuditRow,
   type GovernanceProposalGuardianRelaySummary,
   type GovernanceProposalGuardianRelayTrustMinimizedSummary,
+  type GovernanceProposalGuardianRelayWorkerRunBoardRow,
   type GuardianRelayAttestationRow,
   type GuardianRelayNodeRow,
   type GuardianRelayPolicyRow,
@@ -44,6 +50,11 @@ function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
   return rpc(fnName, params);
 }
 
+function asIntegerOrNull(value: string) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function useGovernanceGuardianRelays(args: { proposalId: string }) {
   const [loadingRelayData, setLoadingRelayData] = useState(true);
   const [relayBackendUnavailable, setRelayBackendUnavailable] = useState(false);
@@ -52,6 +63,10 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
   const [recordingRelayAttestation, setRecordingRelayAttestation] = useState(false);
   const [capturingRelayAuditReport, setCapturingRelayAuditReport] = useState(false);
   const [capturingRelayClientManifest, setCapturingRelayClientManifest] = useState(false);
+  const [savingRelayOpsRequirement, setSavingRelayOpsRequirement] = useState(false);
+  const [recordingRelayWorkerRun, setRecordingRelayWorkerRun] = useState(false);
+  const [openingRelayAlert, setOpeningRelayAlert] = useState(false);
+  const [resolvingRelayAlert, setResolvingRelayAlert] = useState(false);
   const [togglingRelayNodeId, setTogglingRelayNodeId] = useState<string | null>(null);
 
   const [relayPolicy, setRelayPolicy] = useState<GuardianRelayPolicyRow | null>(null);
@@ -59,11 +74,14 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
   const [relayAttestations, setRelayAttestations] = useState<GuardianRelayAttestationRow[]>([]);
   const [relaySummary, setRelaySummary] = useState<GovernanceProposalGuardianRelaySummary | null>(null);
   const [relayTrustMinimizedSummary, setRelayTrustMinimizedSummary] = useState<GovernanceProposalGuardianRelayTrustMinimizedSummary | null>(null);
+  const [relayOperationsSummary, setRelayOperationsSummary] = useState<GovernanceProposalGuardianRelayOperationsSummary | null>(null);
   const [relayClientProofManifest, setRelayClientProofManifest] = useState<GovernanceProposalGuardianRelayClientProofManifest | null>(null);
   const [relayDiversityAudit, setRelayDiversityAudit] = useState<GovernanceProposalGuardianRelayDiversityAudit | null>(null);
   const [relayAttestationAuditRows, setRelayAttestationAuditRows] = useState<GovernanceProposalGuardianRelayAttestationAuditRow[]>([]);
   const [relayRecentAuditReports, setRelayRecentAuditReports] = useState<GovernanceProposalGuardianRelayRecentAuditRow[]>([]);
   const [relayRecentClientManifests, setRelayRecentClientManifests] = useState<GovernanceProposalGuardianRelayRecentClientManifestRow[]>([]);
+  const [relayAlertBoardRows, setRelayAlertBoardRows] = useState<GovernanceProposalGuardianRelayAlertBoardRow[]>([]);
+  const [relayWorkerRunBoardRows, setRelayWorkerRunBoardRows] = useState<GovernanceProposalGuardianRelayWorkerRunBoardRow[]>([]);
 
   const loadRelayData = useCallback(async () => {
     setLoadingRelayData(true);
@@ -78,8 +96,11 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
       attestationAuditResponse,
       recentAuditsResponse,
       trustMinimizedSummaryResponse,
+      operationsSummaryResponse,
       clientProofManifestResponse,
       recentClientManifestsResponse,
+      alertBoardResponse,
+      workerRunBoardResponse,
     ] = await Promise.all([
       supabase
         .from('governance_guardian_relay_policies')
@@ -117,12 +138,26 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
       callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_trust_minimized_summary', {
         target_proposal_id: args.proposalId,
       }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_operations_summary', {
+        target_proposal_id: args.proposalId,
+        requested_policy_key: 'guardian_relay_default',
+        requested_attestation_sla_minutes: null,
+      }),
       callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_proof_manifest', {
         target_proposal_id: args.proposalId,
       }),
       callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_recent_client_manifests', {
         target_proposal_id: args.proposalId,
         max_manifests: 12,
+      }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_alert_board', {
+        target_proposal_id: args.proposalId,
+        status_filter: null,
+        max_entries: 80,
+      }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_worker_run_board', {
+        target_proposal_id: args.proposalId,
+        max_entries: 80,
       }),
     ]);
 
@@ -136,8 +171,11 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
       || attestationAuditResponse.error
       || recentAuditsResponse.error
       || trustMinimizedSummaryResponse.error
+      || operationsSummaryResponse.error
       || clientProofManifestResponse.error
-      || recentClientManifestsResponse.error;
+      || recentClientManifestsResponse.error
+      || alertBoardResponse.error
+      || workerRunBoardResponse.error;
 
     if (isMissingGuardianRelayBackend(sharedError)) {
       setRelayBackendUnavailable(true);
@@ -156,8 +194,11 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
         attestationAuditError: attestationAuditResponse.error,
         recentAuditsError: recentAuditsResponse.error,
         trustMinimizedSummaryError: trustMinimizedSummaryResponse.error,
+        operationsSummaryError: operationsSummaryResponse.error,
         clientProofManifestError: clientProofManifestResponse.error,
         recentClientManifestsError: recentClientManifestsResponse.error,
+        alertBoardError: alertBoardResponse.error,
+        workerRunBoardError: workerRunBoardResponse.error,
       });
       toast.error('Could not load guardian relay data.');
       setLoadingRelayData(false);
@@ -169,11 +210,14 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
     setRelayAttestations((attestationResponse.data as GuardianRelayAttestationRow[]) || []);
     setRelaySummary(readGovernanceProposalGuardianRelaySummary(summaryResponse.data));
     setRelayTrustMinimizedSummary(readGovernanceProposalGuardianRelayTrustMinimizedSummary(trustMinimizedSummaryResponse.data));
+    setRelayOperationsSummary(readGovernanceProposalGuardianRelayOperationsSummary(operationsSummaryResponse.data));
     setRelayClientProofManifest(readGovernanceProposalGuardianRelayClientProofManifest(clientProofManifestResponse.data));
     setRelayDiversityAudit(readGovernanceProposalGuardianRelayDiversityAudit(diversityResponse.data));
     setRelayAttestationAuditRows(readGovernanceProposalGuardianRelayAttestationAuditRows(attestationAuditResponse.data));
     setRelayRecentAuditReports(readGovernanceProposalGuardianRelayRecentAuditRows(recentAuditsResponse.data));
     setRelayRecentClientManifests(readGovernanceProposalGuardianRelayRecentClientManifestRows(recentClientManifestsResponse.data));
+    setRelayAlertBoardRows(readGovernanceProposalGuardianRelayAlertBoardRows(alertBoardResponse.data));
+    setRelayWorkerRunBoardRows(readGovernanceProposalGuardianRelayWorkerRunBoardRows(workerRunBoardResponse.data));
     setCanManageGuardianRelays(Boolean(permissionResponse.data));
     setRelayBackendUnavailable(false);
     setLoadingRelayData(false);
@@ -351,6 +395,143 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
     await loadRelayData();
   }, [args.proposalId, canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
 
+  const saveRelayOpsRequirement = useCallback(async (draft: {
+    requireTrustMinimizedQuorum: boolean;
+    requireRelayOpsReadiness: boolean;
+    maxOpenCriticalRelayAlerts: string;
+    relayAttestationSlaMinutes: string;
+  }) => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    setSavingRelayOpsRequirement(true);
+
+    const { error } = await callUntypedRpc<string>('set_governance_guardian_relay_ops_requirement', {
+      requested_policy_key: 'guardian_relay_default',
+      requested_require_trust_minimized_quorum: draft.requireTrustMinimizedQuorum,
+      requested_require_relay_ops_readiness: draft.requireRelayOpsReadiness,
+      requested_max_open_critical_relay_alerts: asIntegerOrNull(draft.maxOpenCriticalRelayAlerts),
+      requested_relay_attestation_sla_minutes: asIntegerOrNull(draft.relayAttestationSlaMinutes),
+    });
+
+    if (error) {
+      console.error('Failed to save guardian relay operations requirement:', error);
+      toast.error('Could not save relay operations requirement.');
+      setSavingRelayOpsRequirement(false);
+      return;
+    }
+
+    toast.success('Guardian relay operations requirement saved.');
+    setSavingRelayOpsRequirement(false);
+    await loadRelayData();
+  }, [canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
+
+  const recordRelayWorkerRun = useCallback(async (draft: {
+    runScope: 'attestation_sweep' | 'diversity_audit' | 'manifest_capture' | 'manual';
+    runStatus: 'ok' | 'degraded' | 'failed';
+    processedSignerCount: string;
+    staleSignerCount: string;
+    openAlertCount: string;
+    errorMessage: string;
+  }) => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    setRecordingRelayWorkerRun(true);
+
+    const { error } = await callUntypedRpc<string>('record_governance_guardian_relay_worker_run', {
+      target_proposal_id: args.proposalId,
+      run_scope: draft.runScope,
+      run_status: draft.runStatus,
+      processed_signer_count: asIntegerOrNull(draft.processedSignerCount),
+      stale_signer_count: asIntegerOrNull(draft.staleSignerCount),
+      open_alert_count: asIntegerOrNull(draft.openAlertCount),
+      error_message: draft.errorMessage.trim() || null,
+      run_payload: {
+        source: 'governance_guardian_relay_panel',
+      },
+    });
+
+    if (error) {
+      console.error('Failed to record guardian relay worker run:', error);
+      toast.error('Could not record relay worker run.');
+      setRecordingRelayWorkerRun(false);
+      return;
+    }
+
+    toast.success('Guardian relay worker run recorded.');
+    setRecordingRelayWorkerRun(false);
+    await loadRelayData();
+  }, [args.proposalId, canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
+
+  const openRelayAlert = useCallback(async (draft: {
+    alertKey: string;
+    severity: 'info' | 'warning' | 'critical';
+    alertScope: string;
+    alertMessage: string;
+  }) => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    const alertKey = draft.alertKey.trim();
+    const alertMessage = draft.alertMessage.trim();
+    if (!alertKey || !alertMessage) {
+      toast.error('Alert key and message are required.');
+      return;
+    }
+
+    setOpeningRelayAlert(true);
+
+    const { error } = await callUntypedRpc<string>('open_governance_guardian_relay_alert', {
+      target_proposal_id: args.proposalId,
+      alert_key: alertKey,
+      severity: draft.severity,
+      alert_scope: draft.alertScope.trim() || 'manual',
+      alert_message: alertMessage,
+      metadata: {
+        source: 'governance_guardian_relay_panel',
+      },
+    });
+
+    if (error) {
+      console.error('Failed to open guardian relay alert:', error);
+      toast.error('Could not open relay alert.');
+      setOpeningRelayAlert(false);
+      return;
+    }
+
+    toast.success('Guardian relay alert opened.');
+    setOpeningRelayAlert(false);
+    await loadRelayData();
+  }, [args.proposalId, canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
+
+  const resolveRelayAlert = useCallback(async (draft: {
+    alertId: string;
+    resolutionNotes: string;
+  }) => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    if (!draft.alertId) {
+      toast.error('Select an alert first.');
+      return;
+    }
+
+    setResolvingRelayAlert(true);
+
+    const { error } = await callUntypedRpc<string>('resolve_governance_guardian_relay_alert', {
+      target_alert_id: draft.alertId,
+      resolution_notes: draft.resolutionNotes.trim() || null,
+    });
+
+    if (error) {
+      console.error('Failed to resolve guardian relay alert:', error);
+      toast.error('Could not resolve relay alert.');
+      setResolvingRelayAlert(false);
+      return;
+    }
+
+    toast.success('Guardian relay alert resolved.');
+    setResolvingRelayAlert(false);
+    await loadRelayData();
+  }, [canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
+
   return {
     loadingRelayData,
     relayBackendUnavailable,
@@ -359,22 +540,33 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
     recordingRelayAttestation,
     capturingRelayAuditReport,
     capturingRelayClientManifest,
+    savingRelayOpsRequirement,
+    recordingRelayWorkerRun,
+    openingRelayAlert,
+    resolvingRelayAlert,
     togglingRelayNodeId,
     relayPolicy,
     relayNodes,
     relayAttestations,
     relaySummary,
     relayTrustMinimizedSummary,
+    relayOperationsSummary,
     relayClientProofManifest,
     relayDiversityAudit,
     relayAttestationAuditRows,
     relayRecentAuditReports,
     relayRecentClientManifests,
+    relayAlertBoardRows,
+    relayWorkerRunBoardRows,
     loadRelayData,
     registerRelayNode,
     setRelayNodeActive,
     recordRelayAttestation,
     captureRelayAuditReport,
     captureRelayClientManifest,
+    saveRelayOpsRequirement,
+    recordRelayWorkerRun,
+    openRelayAlert,
+    resolveRelayAlert,
   };
 }

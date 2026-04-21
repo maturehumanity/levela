@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isMissingGuardianRelayBackend,
+  readGovernanceProposalGuardianRelayAlertBoardRows,
   readGovernanceProposalGuardianRelayAttestationAuditRows,
   readGovernanceProposalGuardianRelayClientProofManifest,
   readGovernanceProposalGuardianRelayDiversityAudit,
+  readGovernanceProposalGuardianRelayOperationsSummary,
   readGovernanceProposalGuardianRelayRecentClientManifestRows,
   readGovernanceProposalGuardianRelayRecentAuditRows,
   readGovernanceProposalGuardianRelaySummary,
   readGovernanceProposalGuardianRelayTrustMinimizedSummary,
+  readGovernanceProposalGuardianRelayWorkerRunBoardRows,
 } from '@/lib/governance-guardian-relays';
 
 describe('governance-guardian-relays helpers', () => {
@@ -209,6 +212,9 @@ describe('governance-guardian-relays helpers', () => {
         manifest_hash: 'abc123',
         manifest_payload: {
           generated_at: '2026-04-21T01:00:00.000Z',
+          relay_operations: {
+            relay_ops_ready: true,
+          },
         },
         trust_minimized_quorum_met: false,
       },
@@ -219,8 +225,12 @@ describe('governance-guardian-relays helpers', () => {
       manifestHash: 'abc123',
       manifestPayload: {
         generated_at: '2026-04-21T01:00:00.000Z',
+        relay_operations: {
+          relay_ops_ready: true,
+        },
       },
       trustMinimizedQuorumMet: false,
+      relayOpsReady: true,
     });
   });
 
@@ -248,6 +258,90 @@ describe('governance-guardian-relays helpers', () => {
         relayQuorumMet: true,
         chainProofMatchMet: false,
         manifestNotes: 'Nightly capture',
+      },
+    ]);
+  });
+
+  it('parses relay operations summary, alerts, and worker-run rows', () => {
+    const operationsSummary = readGovernanceProposalGuardianRelayOperationsSummary([
+      {
+        policy_key: 'guardian_relay_default',
+        require_trust_minimized_quorum: true,
+        require_relay_ops_readiness: true,
+        max_open_critical_relay_alerts: 1,
+        relay_attestation_sla_minutes: 120,
+        external_approval_count: 3,
+        stale_signer_count: 1,
+        open_warning_alert_count: 2,
+        open_critical_alert_count: 1,
+        last_worker_run_at: '2026-04-21T02:00:00.000Z',
+        last_worker_run_status: 'degraded',
+        trust_minimized_quorum_met: true,
+        relay_ops_ready: false,
+      },
+    ]);
+    const alerts = readGovernanceProposalGuardianRelayAlertBoardRows([
+      {
+        alert_id: 'alert-1',
+        alert_key: 'stale_attestation',
+        severity: 'critical',
+        alert_scope: 'attestation_sweep',
+        alert_status: 'open',
+        alert_message: 'Signer relay attestations are stale',
+        opened_at: '2026-04-21T02:05:00.000Z',
+        resolved_at: null,
+      },
+    ]);
+    const workerRuns = readGovernanceProposalGuardianRelayWorkerRunBoardRows([
+      {
+        run_id: 'run-1',
+        run_scope: 'attestation_sweep',
+        run_status: 'ok',
+        processed_signer_count: 3,
+        stale_signer_count: 0,
+        open_alert_count: 1,
+        error_message: null,
+        observed_at: '2026-04-21T02:10:00.000Z',
+      },
+    ]);
+
+    expect(operationsSummary).toEqual({
+      policyKey: 'guardian_relay_default',
+      requireTrustMinimizedQuorum: true,
+      requireRelayOpsReadiness: true,
+      maxOpenCriticalRelayAlerts: 1,
+      relayAttestationSlaMinutes: 120,
+      externalApprovalCount: 3,
+      staleSignerCount: 1,
+      openWarningAlertCount: 2,
+      openCriticalAlertCount: 1,
+      lastWorkerRunAt: '2026-04-21T02:00:00.000Z',
+      lastWorkerRunStatus: 'degraded',
+      trustMinimizedQuorumMet: true,
+      relayOpsReady: false,
+    });
+    expect(alerts).toEqual([
+      {
+        alertId: 'alert-1',
+        alertKey: 'stale_attestation',
+        severity: 'critical',
+        alertScope: 'attestation_sweep',
+        alertStatus: 'open',
+        alertMessage: 'Signer relay attestations are stale',
+        openedAt: '2026-04-21T02:05:00.000Z',
+        resolvedAt: null,
+      },
+    ]);
+    expect(workerRuns).toEqual([
+      {
+        runId: 'run-1',
+        runScope: 'attestation_sweep',
+        runStatus: 'ok',
+        processedSignerCount: 3,
+        staleSignerCount: 0,
+        openAlertCount: 1,
+        errorMessage: null,
+        observedAt: '2026-04-21T02:10:00.000Z',
       },
     ]);
   });
