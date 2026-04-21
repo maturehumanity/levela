@@ -4,6 +4,9 @@ import {
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
+  readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows,
+  readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
+  readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows,
   readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
@@ -206,5 +209,113 @@ describe('governance-public-audit-verifier-federation helpers', () => {
         governanceLastReviewedAt: '2026-04-21T05:19:00.000Z',
       },
     ]);
+  });
+
+  it('parses federation onboarding and alert board rows', () => {
+    const onboardingRows = readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows([
+      {
+        request_id: 'request-1',
+        operator_id: 'operator-1',
+        operator_key: 'operator_key_1',
+        operator_label: 'Operator 1',
+        operator_onboarding_status: 'approved',
+        request_status: 'approved',
+        requested_mirror_key: 'mirror_key_1',
+        requested_mirror_label: 'Mirror 1',
+        requested_endpoint_url: 'https://mirror1.example.com',
+        requested_region_code: 'US-WEST',
+        requested_trust_domain: 'public',
+        onboarded_mirror_id: null,
+        reviewed_at: '2026-04-21T05:25:00.000Z',
+        created_at: '2026-04-21T05:24:00.000Z',
+      },
+    ]);
+    const alertRows = readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows([
+      {
+        alert_id: 'alert-1',
+        alert_key: 'federation-alert-1',
+        severity: 'critical',
+        alert_scope: 'operator_health_audit',
+        alert_status: 'open',
+        alert_message: 'Operator heartbeat missing',
+        opened_at: '2026-04-21T05:26:00.000Z',
+        resolved_at: null,
+      },
+    ]);
+
+    expect(onboardingRows).toEqual([
+      {
+        requestId: 'request-1',
+        operatorId: 'operator-1',
+        operatorKey: 'operator_key_1',
+        operatorLabel: 'Operator 1',
+        operatorOnboardingStatus: 'approved',
+        requestStatus: 'approved',
+        requestedMirrorKey: 'mirror_key_1',
+        requestedMirrorLabel: 'Mirror 1',
+        requestedEndpointUrl: 'https://mirror1.example.com',
+        requestedRegionCode: 'US-WEST',
+        requestedTrustDomain: 'public',
+        onboardedMirrorId: null,
+        reviewedAt: '2026-04-21T05:25:00.000Z',
+        createdAt: '2026-04-21T05:24:00.000Z',
+      },
+    ]);
+    expect(alertRows).toEqual([
+      {
+        alertId: 'alert-1',
+        alertKey: 'federation-alert-1',
+        severity: 'critical',
+        alertScope: 'operator_health_audit',
+        alertStatus: 'open',
+        alertMessage: 'Operator heartbeat missing',
+        openedAt: '2026-04-21T05:26:00.000Z',
+        resolvedAt: null,
+      },
+    ]);
+  });
+
+  it('parses federation operations summary rows', () => {
+    const summary = readGovernancePublicAuditVerifierMirrorFederationOperationsSummary([
+      {
+        policy_key: 'default',
+        require_federation_ops_readiness: true,
+        max_open_critical_federation_alerts: 1,
+        min_onboarded_federation_operators: 2,
+        registered_operator_count: 3,
+        approved_operator_count: 2,
+        onboarded_operator_count: 2,
+        pending_request_count: 1,
+        approved_request_count: 1,
+        onboarded_request_count: 2,
+        open_warning_alert_count: 1,
+        open_critical_alert_count: 0,
+        alert_sla_hours: 12,
+        alert_sla_breached_count: 0,
+        last_worker_run_at: '2026-04-21T05:30:00.000Z',
+        last_worker_run_status: 'ok',
+        federation_ops_ready: true,
+      },
+    ]);
+
+    expect(summary).toEqual({
+      policyKey: 'default',
+      requireFederationOpsReadiness: true,
+      maxOpenCriticalFederationAlerts: 1,
+      minOnboardedFederationOperators: 2,
+      registeredOperatorCount: 3,
+      approvedOperatorCount: 2,
+      onboardedOperatorCount: 2,
+      pendingRequestCount: 1,
+      approvedRequestCount: 1,
+      onboardedRequestCount: 2,
+      openWarningAlertCount: 1,
+      openCriticalAlertCount: 0,
+      alertSlaHours: 12,
+      alertSlaBreachedCount: 0,
+      lastWorkerRunAt: '2026-04-21T05:30:00.000Z',
+      lastWorkerRunStatus: 'ok',
+      federationOpsReady: true,
+    });
   });
 });

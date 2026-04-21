@@ -5,6 +5,9 @@ import type {
   GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   GovernancePublicAuditVerifierMirrorDiscoverySummary,
+  GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
+  GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
+  GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
   GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
@@ -17,14 +20,25 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   upsertingDiscoveredCandidate: boolean;
   promotingDiscoveredCandidate: boolean;
   savingPolicyRatification: boolean;
+  savingFederationOpsRequirement: boolean;
+  registeringFederationOperator: boolean;
+  submittingOnboardingRequest: boolean;
+  reviewingOnboardingRequest: boolean;
+  onboardingFederationRequest: boolean;
+  recordingFederationWorkerRun: boolean;
+  openingFederationAlert: boolean;
+  resolvingFederationAlert: boolean;
   canManageSignerGovernance: boolean;
   savingSignerGovernanceRequirement: boolean;
   savingSignerGovernanceAttestation: boolean;
   policyRatificationSummary: GovernancePublicAuditVerifierMirrorPolicyRatificationSummary | null;
   discoverySummary: GovernancePublicAuditVerifierMirrorDiscoverySummary | null;
+  federationOperationsSummary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   signerGovernanceSummary: GovernancePublicAuditVerifierMirrorSignerGovernanceSummary | null;
   discoverySources: GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow[];
   discoveredCandidates: GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow[];
+  federationOnboardingBoard: GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow[];
+  federationAlertBoard: GovernancePublicAuditVerifierMirrorFederationAlertBoardRow[];
   signerGovernanceBoard: GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow[];
   formatTimestamp: (value: string | null) => string;
   registerDiscoverySource: (draft: {
@@ -62,6 +76,56 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
     ratificationDecision: 'approve' | 'reject';
     ratificationSignature: string;
   }) => Promise<void> | void;
+  saveFederationOpsRequirement: (draft: {
+    requireFederationOpsReadiness: boolean;
+    maxOpenCriticalAlerts: string;
+    minOnboardedOperators: string;
+  }) => Promise<void> | void;
+  registerFederationOperator: (draft: {
+    operatorKey: string;
+    operatorLabel: string;
+    contactEndpoint: string;
+    jurisdictionCountryCode: string;
+    trustDomain: string;
+  }) => Promise<void> | void;
+  submitFederationOnboardingRequest: (draft: {
+    operatorKey: string;
+    requestedMirrorKey: string;
+    requestedMirrorLabel: string;
+    requestedEndpointUrl: string;
+    requestedMirrorType: string;
+    requestedRegionCode: string;
+    requestedJurisdictionCountryCode: string;
+    requestedTrustDomain: string;
+  }) => Promise<void> | void;
+  reviewFederationOnboardingRequest: (draft: {
+    requestId: string;
+    reviewDecision: 'approve' | 'reject';
+    reviewNotes: string;
+  }) => Promise<void> | void;
+  onboardFederationRequest: (draft: {
+    requestId: string;
+    activateMirror: boolean;
+  }) => Promise<void> | void;
+  recordFederationWorkerRun: (draft: {
+    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'manual';
+    runStatus: 'ok' | 'degraded' | 'failed';
+    discoveredRequestCount: string;
+    approvedRequestCount: string;
+    onboardedRequestCount: string;
+    openAlertCount: string;
+    errorMessage: string;
+  }) => Promise<void> | void;
+  openFederationAlert: (draft: {
+    alertKey: string;
+    severity: 'info' | 'warning' | 'critical';
+    alertScope: string;
+    alertMessage: string;
+  }) => Promise<void> | void;
+  resolveFederationAlert: (draft: {
+    alertId: string;
+    resolutionNotes: string;
+  }) => Promise<void> | void;
   saveSignerGovernanceRequirement: (draft: {
     requireSignerGovernanceApproval: boolean;
     minSignerGovernanceIndependentApprovals: string;
@@ -87,14 +151,25 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   upsertingDiscoveredCandidate,
   promotingDiscoveredCandidate,
   savingPolicyRatification,
+  savingFederationOpsRequirement,
+  registeringFederationOperator,
+  submittingOnboardingRequest,
+  reviewingOnboardingRequest,
+  onboardingFederationRequest,
+  recordingFederationWorkerRun,
+  openingFederationAlert,
+  resolvingFederationAlert,
   canManageSignerGovernance,
   savingSignerGovernanceRequirement,
   savingSignerGovernanceAttestation,
   policyRatificationSummary,
   discoverySummary,
+  federationOperationsSummary,
   signerGovernanceSummary,
   discoverySources,
   discoveredCandidates,
+  federationOnboardingBoard,
+  federationAlertBoard,
   signerGovernanceBoard,
   formatTimestamp,
   registerDiscoverySource,
@@ -102,6 +177,14 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   upsertDiscoveredCandidate,
   promoteDiscoveredCandidate,
   recordPolicyRatification,
+  saveFederationOpsRequirement,
+  registerFederationOperator,
+  submitFederationOnboardingRequest,
+  reviewFederationOnboardingRequest,
+  onboardFederationRequest,
+  recordFederationWorkerRun,
+  openFederationAlert,
+  resolveFederationAlert,
   saveSignerGovernanceRequirement,
   saveSignerGovernanceAttestation,
 }: GovernancePublicAuditVerifierMirrorFederationCardProps) {
@@ -139,6 +222,16 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
             Signer governance {signerGovernanceSummary.governanceReady ? 'ready' : 'pending'}
           </Badge>
         )}
+        {federationOperationsSummary && (
+          <Badge
+            variant="outline"
+            className={federationOperationsSummary.federationOpsReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Federation ops {federationOperationsSummary.federationOpsReady ? 'ready' : 'pending'}
+          </Badge>
+        )}
       </div>
 
       <GovernancePublicAuditVerifierMirrorFederationControls
@@ -148,13 +241,32 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         upsertingDiscoveredCandidate={upsertingDiscoveredCandidate}
         promotingDiscoveredCandidate={promotingDiscoveredCandidate}
         savingPolicyRatification={savingPolicyRatification}
+        savingFederationOpsRequirement={savingFederationOpsRequirement}
+        registeringFederationOperator={registeringFederationOperator}
+        submittingOnboardingRequest={submittingOnboardingRequest}
+        reviewingOnboardingRequest={reviewingOnboardingRequest}
+        onboardingFederationRequest={onboardingFederationRequest}
+        recordingFederationWorkerRun={recordingFederationWorkerRun}
+        openingFederationAlert={openingFederationAlert}
+        resolvingFederationAlert={resolvingFederationAlert}
         discoverySources={discoverySources}
         discoveredCandidates={discoveredCandidates}
+        federationOperationsSummary={federationOperationsSummary}
+        federationOnboardingBoard={federationOnboardingBoard}
+        federationAlertBoard={federationAlertBoard}
         registerDiscoverySource={registerDiscoverySource}
         recordDiscoveryRun={recordDiscoveryRun}
         upsertDiscoveredCandidate={upsertDiscoveredCandidate}
         promoteDiscoveredCandidate={promoteDiscoveredCandidate}
         recordPolicyRatification={recordPolicyRatification}
+        saveFederationOpsRequirement={saveFederationOpsRequirement}
+        registerFederationOperator={registerFederationOperator}
+        submitFederationOnboardingRequest={submitFederationOnboardingRequest}
+        reviewFederationOnboardingRequest={reviewFederationOnboardingRequest}
+        onboardFederationRequest={onboardFederationRequest}
+        recordFederationWorkerRun={recordFederationWorkerRun}
+        openFederationAlert={openFederationAlert}
+        resolveFederationAlert={resolveFederationAlert}
       />
       <GovernancePublicAuditVerifierMirrorSignerGovernanceControls
         canManageSignerGovernance={canManageSignerGovernance}
@@ -176,6 +288,13 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
           New {discoverySummary.newCandidateCount} • Promoted {discoverySummary.promotedCandidateCount} • Last run {formatTimestamp(discoverySummary.lastRunAt)}
         </p>
       )}
+      {federationOperationsSummary && (
+        <p className="text-muted-foreground">
+          Onboarded operators {federationOperationsSummary.onboardedOperatorCount}/{federationOperationsSummary.minOnboardedFederationOperators}
+          {' '}• Open critical alerts {federationOperationsSummary.openCriticalAlertCount}/{federationOperationsSummary.maxOpenCriticalFederationAlerts}
+          {' '}• SLA breaches {federationOperationsSummary.alertSlaBreachedCount}
+        </p>
+      )}
       <div className="space-y-1 text-muted-foreground">
         {discoverySources.slice(0, 3).map((source) => (
           <p key={source.sourceId}>
@@ -187,6 +306,20 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         {discoveredCandidates.slice(0, 3).map((candidate) => (
           <p key={candidate.candidateId}>
             {candidate.candidateLabel || candidate.candidateKey} • {candidate.candidateStatus} • {candidate.discoveryConfidence}
+          </p>
+        ))}
+      </div>
+      <div className="space-y-1 text-muted-foreground">
+        {federationOnboardingBoard.slice(0, 3).map((request) => (
+          <p key={request.requestId}>
+            {request.operatorLabel || request.operatorKey} • {request.requestStatus} • {request.requestedMirrorKey}
+          </p>
+        ))}
+      </div>
+      <div className="space-y-1 text-muted-foreground">
+        {federationAlertBoard.slice(0, 3).map((alert) => (
+          <p key={alert.alertId}>
+            {alert.alertKey} • {alert.severity} • {alert.alertStatus}
           </p>
         ))}
       </div>

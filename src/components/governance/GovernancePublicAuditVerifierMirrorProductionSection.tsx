@@ -59,16 +59,35 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     upsertingDiscoveredCandidate,
     promotingDiscoveredCandidate,
     savingPolicyRatification,
+    savingFederationOpsRequirement,
+    registeringFederationOperator,
+    submittingOnboardingRequest,
+    reviewingOnboardingRequest,
+    onboardingFederationRequest,
+    recordingFederationWorkerRun,
+    openingFederationAlert,
+    resolvingFederationAlert,
     policyRatificationSummary,
     discoverySummary,
+    federationOperationsSummary,
     discoverySources,
     discoveredCandidates,
+    federationOnboardingBoard,
+    federationAlertBoard,
     loadFederationData,
     registerDiscoverySource,
     recordDiscoveryRun,
     upsertDiscoveredCandidate,
     promoteDiscoveredCandidate,
     recordPolicyRatification,
+    saveFederationOpsRequirement,
+    registerFederationOperator,
+    submitFederationOnboardingRequest,
+    reviewFederationOnboardingRequest,
+    onboardFederationRequest,
+    recordFederationWorkerRun,
+    openFederationAlert,
+    resolveFederationAlert,
   } = useGovernancePublicAuditVerifierMirrorFederation({ latestBatchId });
   const {
     loadingSignerGovernanceData,
@@ -193,6 +212,16 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
               : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
           >
             Signer governance {signerGovernanceSummary.governanceReady ? 'ready' : 'pending'}
+          </Badge>
+        )}
+        {federationOperationsSummary && (
+          <Badge
+            variant="outline"
+            className={federationOperationsSummary.federationOpsReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Federation ops {federationOperationsSummary.federationOpsReady ? 'ready' : 'pending'}
           </Badge>
         )}
         {directoryTrustSummary && (
@@ -348,14 +377,25 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           upsertingDiscoveredCandidate={upsertingDiscoveredCandidate}
           promotingDiscoveredCandidate={promotingDiscoveredCandidate}
           savingPolicyRatification={savingPolicyRatification}
+          savingFederationOpsRequirement={savingFederationOpsRequirement}
+          registeringFederationOperator={registeringFederationOperator}
+          submittingOnboardingRequest={submittingOnboardingRequest}
+          reviewingOnboardingRequest={reviewingOnboardingRequest}
+          onboardingFederationRequest={onboardingFederationRequest}
+          recordingFederationWorkerRun={recordingFederationWorkerRun}
+          openingFederationAlert={openingFederationAlert}
+          resolvingFederationAlert={resolvingFederationAlert}
           canManageSignerGovernance={canManageSignerGovernance}
           savingSignerGovernanceRequirement={savingSignerGovernanceRequirement}
           savingSignerGovernanceAttestation={savingSignerGovernanceAttestation}
           policyRatificationSummary={policyRatificationSummary}
           discoverySummary={discoverySummary}
+          federationOperationsSummary={federationOperationsSummary}
           signerGovernanceSummary={signerGovernanceSummary}
           discoverySources={discoverySources}
           discoveredCandidates={discoveredCandidates}
+          federationOnboardingBoard={federationOnboardingBoard}
+          federationAlertBoard={federationAlertBoard}
           signerGovernanceBoard={signerGovernanceBoard}
           formatTimestamp={formatTimestamp}
           registerDiscoverySource={registerDiscoverySource}
@@ -363,6 +403,14 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           upsertDiscoveredCandidate={upsertDiscoveredCandidate}
           promoteDiscoveredCandidate={promoteDiscoveredCandidate}
           recordPolicyRatification={recordPolicyRatification}
+          saveFederationOpsRequirement={saveFederationOpsRequirement}
+          registerFederationOperator={registerFederationOperator}
+          submitFederationOnboardingRequest={submitFederationOnboardingRequest}
+          reviewFederationOnboardingRequest={reviewFederationOnboardingRequest}
+          onboardFederationRequest={onboardFederationRequest}
+          recordFederationWorkerRun={recordFederationWorkerRun}
+          openFederationAlert={openFederationAlert}
+          resolveFederationAlert={resolveFederationAlert}
           saveSignerGovernanceRequirement={saveSignerGovernanceRequirement}
           saveSignerGovernanceAttestation={saveSignerGovernanceAttestation}
         />

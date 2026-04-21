@@ -1,4 +1,7 @@
-import type { GovernancePublicAuditVerifierMirrorPolicyRatificationSummary } from '@/lib/governance-public-audit-verifier-federation';
+import type {
+  GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
+} from '@/lib/governance-public-audit-verifier-federation';
 
 export interface GovernancePublicAuditVerifierMirrorFailoverPolicySummary {
   policyId: string | null;
@@ -17,6 +20,11 @@ export interface GovernancePublicAuditVerifierMirrorFailoverPolicySummary {
   minIndependentDirectorySigners: number;
   requirePolicyRatification: boolean;
   minPolicyRatificationApprovals: number;
+  requireSignerGovernanceApproval: boolean;
+  minSignerGovernanceIndependentApprovals: number;
+  requireFederationOpsReadiness: boolean;
+  maxOpenCriticalFederationAlerts: number;
+  minOnboardedFederationOperators: number;
   updatedAt: string | null;
 }
 
@@ -196,6 +204,11 @@ export function readFailoverPolicyRecord(
     minIndependentDirectorySigners: Math.max(1, asNonNegativeInteger(row.min_independent_directory_signers, 1)),
     requirePolicyRatification: asBoolean(row.require_policy_ratification, false),
     minPolicyRatificationApprovals: Math.max(1, asNonNegativeInteger(row.min_policy_ratification_approvals, 1)),
+    requireSignerGovernanceApproval: asBoolean(row.require_signer_governance_approval, false),
+    minSignerGovernanceIndependentApprovals: Math.max(1, asNonNegativeInteger(row.min_signer_governance_independent_approvals, 1)),
+    requireFederationOpsReadiness: asBoolean(row.require_federation_ops_readiness, false),
+    maxOpenCriticalFederationAlerts: asNonNegativeInteger(row.max_open_critical_federation_alerts),
+    minOnboardedFederationOperators: Math.max(1, asNonNegativeInteger(row.min_onboarded_federation_operators, 1)),
     updatedAt: asNullableString(row.updated_at),
   };
 }
@@ -329,6 +342,7 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
   const signedDirectoryTrust = asRecord(bundlePayload.signed_directory_trust);
   const policyRatification = asRecord(bundlePayload.policy_ratification);
   const federationDiversity = asRecord(bundlePayload.federation_diversity);
+  const federationOperations = asRecord(bundlePayload.federation_operations);
 
   return {
     failoverPolicy,
@@ -353,6 +367,27 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
         meetsRegionDiversity: asBoolean(federationDiversity.meets_region_diversity, false),
         meetsOperatorDiversity: asBoolean(federationDiversity.meets_operator_diversity, false),
       } as GovernancePublicAuditVerifierMirrorFederationDiversitySummary
+      : null,
+    federationOperations: federationOperations
+      ? {
+        policyKey: asString(federationOperations.policy_key, 'default'),
+        requireFederationOpsReadiness: asBoolean(federationOperations.require_federation_ops_readiness, false),
+        maxOpenCriticalFederationAlerts: asNonNegativeInteger(federationOperations.max_open_critical_federation_alerts),
+        minOnboardedFederationOperators: Math.max(1, asNonNegativeInteger(federationOperations.min_onboarded_federation_operators, 1)),
+        registeredOperatorCount: asNonNegativeInteger(federationOperations.registered_operator_count),
+        approvedOperatorCount: asNonNegativeInteger(federationOperations.approved_operator_count),
+        onboardedOperatorCount: asNonNegativeInteger(federationOperations.onboarded_operator_count),
+        pendingRequestCount: asNonNegativeInteger(federationOperations.pending_request_count),
+        approvedRequestCount: asNonNegativeInteger(federationOperations.approved_request_count),
+        onboardedRequestCount: asNonNegativeInteger(federationOperations.onboarded_request_count),
+        openWarningAlertCount: asNonNegativeInteger(federationOperations.open_warning_alert_count),
+        openCriticalAlertCount: asNonNegativeInteger(federationOperations.open_critical_alert_count),
+        alertSlaHours: Math.max(1, asNonNegativeInteger(federationOperations.alert_sla_hours, 12)),
+        alertSlaBreachedCount: asNonNegativeInteger(federationOperations.alert_sla_breached_count),
+        lastWorkerRunAt: asNullableString(federationOperations.last_worker_run_at),
+        lastWorkerRunStatus: asMirrorStatus(federationOperations.last_worker_run_status),
+        federationOpsReady: asBoolean(federationOperations.federation_ops_ready, false),
+      } as GovernancePublicAuditVerifierMirrorFederationOperationsSummary
       : null,
     policyRatification: policyRatification
       ? {

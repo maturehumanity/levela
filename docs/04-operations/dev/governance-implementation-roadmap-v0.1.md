@@ -571,14 +571,13 @@ Partially implemented:
 - governance execution is now threshold-backed with guardian signoff, cryptographic external signatures, relay quorum/chain-proof reconciliation, and diversity/audit reporting baselines, but production relay-network diversity guarantees, independent attestation workers, and continuous quorum-health SLA alerting are not yet complete
 - public audit and replicated-state anchoring now include immutable anchor adapters, external execution worker orchestration, and SLA monitoring dashboard baselines, but production queue-draining runners, retry/backoff policies, and escalation paging are not yet complete
 - trust-minimized relay quorum and client-verifiable governance proof surfaces now have baseline policy thresholds and append-only manifest capture, but third-party verifier interoperability, deterministic client verification packages, and distribution signing are not yet complete
-- minimized trusted-backend rollout now includes replaceable verifier mirror registration, signed directory publication, failover-policy configuration, probe-job automation, signed-directory trust-quorum baselines, autonomous mirror-discovery federation sources/candidates, federated mirror-policy ratification baselines, independent directory-signer governance attestations/approval workflows, and client-bundle federation diversity quorum gating for distinct operator/region thresholds, but external multi-operator federation onboarding and operational hardening remain incomplete
+- minimized trusted-backend rollout now includes replaceable verifier mirror registration, signed directory publication, failover-policy configuration, probe-job automation, signed-directory trust-quorum baselines, autonomous mirror-discovery federation sources/candidates, federated mirror-policy ratification baselines, independent directory-signer governance attestations/approval workflows, client-bundle federation diversity quorum gating for distinct operator/region thresholds, and externally operated multi-operator federation onboarding plus operations-hardening workflows
 
 Not yet implemented:
 
 - production-hardened trust-minimized relay quorum for guardian external multisig
 - immutable public-state anchoring adapters with independent verifier automation
 - minimized trusted-backend model with broadly distributed client-verifiable governance proofs
-- externally operated multi-operator verifier federation onboarding and operations hardening
 
 ## 14. Immediate Next Steps
 

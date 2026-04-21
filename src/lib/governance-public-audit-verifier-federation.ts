@@ -85,6 +85,54 @@ export interface GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow {
   governanceLastReviewedAt: string | null;
 }
 
+export interface GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow {
+  requestId: string;
+  operatorId: string;
+  operatorKey: string;
+  operatorLabel: string | null;
+  operatorOnboardingStatus: 'pending' | 'approved' | 'onboarded' | 'rejected' | 'suspended' | 'unknown';
+  requestStatus: 'pending' | 'approved' | 'onboarded' | 'rejected' | 'unknown';
+  requestedMirrorKey: string;
+  requestedMirrorLabel: string | null;
+  requestedEndpointUrl: string;
+  requestedRegionCode: string;
+  requestedTrustDomain: string;
+  onboardedMirrorId: string | null;
+  reviewedAt: string | null;
+  createdAt: string | null;
+}
+
+export interface GovernancePublicAuditVerifierMirrorFederationAlertBoardRow {
+  alertId: string;
+  alertKey: string;
+  severity: 'info' | 'warning' | 'critical' | 'unknown';
+  alertScope: string;
+  alertStatus: 'open' | 'acknowledged' | 'resolved' | 'unknown';
+  alertMessage: string;
+  openedAt: string | null;
+  resolvedAt: string | null;
+}
+
+export interface GovernancePublicAuditVerifierMirrorFederationOperationsSummary {
+  policyKey: string;
+  requireFederationOpsReadiness: boolean;
+  maxOpenCriticalFederationAlerts: number;
+  minOnboardedFederationOperators: number;
+  registeredOperatorCount: number;
+  approvedOperatorCount: number;
+  onboardedOperatorCount: number;
+  pendingRequestCount: number;
+  approvedRequestCount: number;
+  onboardedRequestCount: number;
+  openWarningAlertCount: number;
+  openCriticalAlertCount: number;
+  alertSlaHours: number;
+  alertSlaBreachedCount: number;
+  lastWorkerRunAt: string | null;
+  lastWorkerRunStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
+  federationOpsReady: boolean;
+}
+
 function asString(value: unknown, fallback = '') {
   if (typeof value !== 'string') return fallback;
   return value;
@@ -136,6 +184,30 @@ function asCandidateStatus(value: unknown): GovernancePublicAuditVerifierMirrorD
 function asGovernanceStatus(value: unknown): GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow['governanceStatus'] {
   const normalized = asString(value).trim().toLowerCase();
   if (normalized === 'pending' || normalized === 'approved' || normalized === 'rejected' || normalized === 'suspended') return normalized;
+  return 'unknown';
+}
+
+function asOperatorOnboardingStatus(value: unknown): GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow['operatorOnboardingStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'pending' || normalized === 'approved' || normalized === 'onboarded' || normalized === 'rejected' || normalized === 'suspended') return normalized;
+  return 'unknown';
+}
+
+function asOnboardingRequestStatus(value: unknown): GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow['requestStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'pending' || normalized === 'approved' || normalized === 'onboarded' || normalized === 'rejected') return normalized;
+  return 'unknown';
+}
+
+function asAlertSeverity(value: unknown): GovernancePublicAuditVerifierMirrorFederationAlertBoardRow['severity'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'info' || normalized === 'warning' || normalized === 'critical') return normalized;
+  return 'unknown';
+}
+
+function asAlertStatus(value: unknown): GovernancePublicAuditVerifierMirrorFederationAlertBoardRow['alertStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'open' || normalized === 'acknowledged' || normalized === 'resolved') return normalized;
   return 'unknown';
 }
 
@@ -285,4 +357,83 @@ export function readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows
       governanceLastReviewedAt: asNullableString(entry.governance_last_reviewed_at),
     }))
     .filter((entry) => entry.signerId.length > 0 && entry.signerKey.length > 0);
+}
+
+export function readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      requestId: asString(entry.request_id),
+      operatorId: asString(entry.operator_id),
+      operatorKey: asString(entry.operator_key),
+      operatorLabel: asNullableString(entry.operator_label),
+      operatorOnboardingStatus: asOperatorOnboardingStatus(entry.operator_onboarding_status),
+      requestStatus: asOnboardingRequestStatus(entry.request_status),
+      requestedMirrorKey: asString(entry.requested_mirror_key),
+      requestedMirrorLabel: asNullableString(entry.requested_mirror_label),
+      requestedEndpointUrl: asString(entry.requested_endpoint_url),
+      requestedRegionCode: asString(entry.requested_region_code, 'GLOBAL'),
+      requestedTrustDomain: asString(entry.requested_trust_domain, 'public'),
+      onboardedMirrorId: asNullableString(entry.onboarded_mirror_id),
+      reviewedAt: asNullableString(entry.reviewed_at),
+      createdAt: asNullableString(entry.created_at),
+    }))
+    .filter((entry) => entry.requestId.length > 0 && entry.operatorId.length > 0 && entry.operatorKey.length > 0 && entry.requestedMirrorKey.length > 0);
+}
+
+export function readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierMirrorFederationAlertBoardRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      alertId: asString(entry.alert_id),
+      alertKey: asString(entry.alert_key),
+      severity: asAlertSeverity(entry.severity),
+      alertScope: asString(entry.alert_scope, 'manual'),
+      alertStatus: asAlertStatus(entry.alert_status),
+      alertMessage: asString(entry.alert_message),
+      openedAt: asNullableString(entry.opened_at),
+      resolvedAt: asNullableString(entry.resolved_at),
+    }))
+    .filter((entry) => entry.alertId.length > 0 && entry.alertKey.length > 0 && entry.alertMessage.length > 0);
+}
+
+export function readGovernancePublicAuditVerifierMirrorFederationOperationsSummary(
+  rows: unknown,
+): GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  const policyKey = asString(row.policy_key);
+  if (!policyKey) return null;
+
+  return {
+    policyKey,
+    requireFederationOpsReadiness: asBoolean(row.require_federation_ops_readiness, false),
+    maxOpenCriticalFederationAlerts: asNonNegativeInteger(row.max_open_critical_federation_alerts),
+    minOnboardedFederationOperators: Math.max(1, asNonNegativeInteger(row.min_onboarded_federation_operators, 1)),
+    registeredOperatorCount: asNonNegativeInteger(row.registered_operator_count),
+    approvedOperatorCount: asNonNegativeInteger(row.approved_operator_count),
+    onboardedOperatorCount: asNonNegativeInteger(row.onboarded_operator_count),
+    pendingRequestCount: asNonNegativeInteger(row.pending_request_count),
+    approvedRequestCount: asNonNegativeInteger(row.approved_request_count),
+    onboardedRequestCount: asNonNegativeInteger(row.onboarded_request_count),
+    openWarningAlertCount: asNonNegativeInteger(row.open_warning_alert_count),
+    openCriticalAlertCount: asNonNegativeInteger(row.open_critical_alert_count),
+    alertSlaHours: Math.max(1, asNonNegativeInteger(row.alert_sla_hours, 12)),
+    alertSlaBreachedCount: asNonNegativeInteger(row.alert_sla_breached_count),
+    lastWorkerRunAt: asNullableString(row.last_worker_run_at),
+    lastWorkerRunStatus: asRunStatus(row.last_worker_run_status),
+    federationOpsReady: asBoolean(row.federation_ops_ready, false),
+  };
 }

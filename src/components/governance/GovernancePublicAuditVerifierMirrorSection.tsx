@@ -140,6 +140,16 @@ export function GovernancePublicAuditVerifierMirrorSection({
               Policy ratification {clientVerifierBundle.policyRatification.ratificationMet ? 'met' : 'pending'}
             </Badge>
           )}
+          {clientVerifierBundle.federationOperations && (
+            <Badge
+              variant="outline"
+              className={clientVerifierBundle.federationOperations.federationOpsReady
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+            >
+              Federation ops {clientVerifierBundle.federationOperations.federationOpsReady ? 'ready' : 'pending'}
+            </Badge>
+          )}
         </div>
       )}
 

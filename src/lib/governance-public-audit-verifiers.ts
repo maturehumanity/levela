@@ -11,12 +11,18 @@ import {
   type GovernancePublicAuditVerifierMirrorProbeJobSummary,
 } from '@/lib/governance-public-audit-verifier-mirror-production';
 import {
+  readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows,
+  readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
+  readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
   readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows,
   readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
+  type GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
+  type GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
+  type GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -30,9 +36,12 @@ export type { GovernancePublicAuditVerifierMirrorFederationDiversitySummary };
 export type { GovernancePublicAuditVerifierMirrorDirectoryTrustSummary };
 export type { GovernancePublicAuditVerifierMirrorDirectorySummaryRow };
 export type { GovernancePublicAuditVerifierMirrorFailoverPolicySummary };
+export type { GovernancePublicAuditVerifierMirrorFederationOperationsSummary };
 export type { GovernancePublicAuditVerifierMirrorProbeJobBoardRow };
 export type { GovernancePublicAuditVerifierMirrorProbeJobStatus };
 export type { GovernancePublicAuditVerifierMirrorProbeJobSummary };
+export type { GovernancePublicAuditVerifierMirrorFederationAlertBoardRow };
+export type { GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow };
 export type { GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow };
 export type { GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow };
 export type { GovernancePublicAuditVerifierMirrorDiscoverySummary };
@@ -48,6 +57,9 @@ export {
   readGovernancePublicAuditVerifierMirrorProbeJobSummary,
 } from '@/lib/governance-public-audit-verifier-mirror-production';
 export {
+  readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows,
+  readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
+  readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -94,6 +106,7 @@ export interface GovernancePublicAuditClientVerifierBundle {
   signedDirectorySignerKey: string | null;
   signedDirectoryTrust: GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null;
   federationDiversity: GovernancePublicAuditVerifierMirrorFederationDiversitySummary | null;
+  federationOperations: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   policyRatification: GovernancePublicAuditVerifierMirrorPolicyRatificationSummary | null;
 }
 
@@ -227,6 +240,7 @@ export function readGovernancePublicAuditClientVerifierBundle(rows: unknown): Go
     signedDirectorySignerKey: production.signedDirectorySignerKey,
     signedDirectoryTrust: production.signedDirectoryTrust,
     federationDiversity: production.federationDiversity,
+    federationOperations: production.federationOperations,
     policyRatification: production.policyRatification,
   };
 }
@@ -269,6 +283,13 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('governance_public_audit_verifier_mirror_signer_governance_summary')
     || message.includes('governance_public_audit_verifier_mirror_policy_hash')
     || message.includes('governance_public_audit_verifier_mirror_policy_ratification_summary')
+    || message.includes('governance_public_audit_verifier_mirror_federation_operators')
+    || message.includes('governance_public_audit_verifier_mirror_federation_onboarding_requests')
+    || message.includes('governance_public_audit_verifier_mirror_federation_worker_runs')
+    || message.includes('governance_public_audit_verifier_mirror_federation_alerts')
+    || message.includes('governance_public_audit_verifier_mirror_federation_onboarding_board')
+    || message.includes('governance_public_audit_verifier_mirror_federation_alert_board')
+    || message.includes('governance_public_audit_verifier_mirror_federation_operations_summary')
     || message.includes('register_governance_public_audit_verifier_node')
     || message.includes('record_governance_public_audit_batch_verification')
     || message.includes('record_governance_public_audit_network_proof')
@@ -290,5 +311,13 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('sync_governance_public_audit_verifier_mirror_signer_governance_status')
     || message.includes('record_governance_public_audit_verifier_mirror_signer_governance_attestation')
     || message.includes('set_governance_public_audit_verifier_mirror_signer_governance_requirement')
+    || message.includes('register_governance_public_audit_verifier_mirror_federation_operator')
+    || message.includes('submit_governance_public_audit_verifier_mirror_federation_onboarding_request')
+    || message.includes('review_governance_public_audit_verifier_mirror_federation_onboarding_request')
+    || message.includes('onboard_governance_public_audit_verifier_mirror_federation_request')
+    || message.includes('record_governance_public_audit_verifier_mirror_federation_worker_run')
+    || message.includes('open_governance_public_audit_verifier_mirror_federation_alert')
+    || message.includes('resolve_governance_public_audit_verifier_mirror_federation_alert')
+    || message.includes('set_governance_public_audit_verifier_mirror_federation_ops_requirement')
   );
 }
