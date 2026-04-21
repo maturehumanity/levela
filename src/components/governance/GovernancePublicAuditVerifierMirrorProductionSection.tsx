@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import { GovernancePublicAuditVerifierMirrorDirectoryCard } from '@/components/governance/GovernancePublicAuditVerifierMirrorDirectoryCard';
+import { GovernancePublicAuditVerifierMirrorFederationCard } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationCard';
 import { GovernancePublicAuditVerifierMirrorProbeJobsCard } from '@/components/governance/GovernancePublicAuditVerifierMirrorProbeJobsCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGovernancePublicAuditVerifierMirrorProduction } from '@/lib/use-governance-public-audit-verifier-mirror-production';
+import { useGovernancePublicAuditVerifierMirrorFederation } from '@/lib/use-governance-public-audit-verifier-mirror-federation';
 
 interface GovernancePublicAuditVerifierMirrorProductionSectionProps {
   latestBatchId: string | null;
@@ -47,6 +49,26 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     scheduleProbeJobs,
     completeProbeJob,
   } = useGovernancePublicAuditVerifierMirrorProduction({ latestBatchId });
+  const {
+    loadingFederationData,
+    federationBackendUnavailable,
+    canManageMirrorFederation,
+    registeringDiscoverySource,
+    recordingDiscoveryRun,
+    upsertingDiscoveredCandidate,
+    promotingDiscoveredCandidate,
+    savingPolicyRatification,
+    policyRatificationSummary,
+    discoverySummary,
+    discoverySources,
+    discoveredCandidates,
+    loadFederationData,
+    registerDiscoverySource,
+    recordDiscoveryRun,
+    upsertDiscoveredCandidate,
+    promoteDiscoveredCandidate,
+    recordPolicyRatification,
+  } = useGovernancePublicAuditVerifierMirrorFederation({ latestBatchId });
 
   const [failoverDraft, setFailoverDraft] = useState({
     minHealthyMirrors: '1',
@@ -59,6 +81,8 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     mirrorSelectionStrategy: 'health_latency_diversity',
     maxMirrorCandidates: '8',
     minIndependentDirectorySigners: '1',
+    requirePolicyRatification: false,
+    minPolicyRatificationApprovals: '1',
   });
 
   useEffect(() => {
@@ -74,10 +98,12 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
       mirrorSelectionStrategy: failoverPolicy.mirrorSelectionStrategy,
       maxMirrorCandidates: String(failoverPolicy.maxMirrorCandidates),
       minIndependentDirectorySigners: String(failoverPolicy.minIndependentDirectorySigners),
+      requirePolicyRatification: failoverPolicy.requirePolicyRatification,
+      minPolicyRatificationApprovals: String(failoverPolicy.minPolicyRatificationApprovals),
     });
   }, [failoverPolicy]);
 
-  if (productionBackendUnavailable) {
+  if (productionBackendUnavailable && federationBackendUnavailable) {
     return null;
   }
 
@@ -90,10 +116,12 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           size="sm"
           variant="outline"
           className="gap-2"
-          disabled={loadingProductionData}
-          onClick={() => void loadProductionData()}
+          disabled={loadingProductionData || loadingFederationData}
+          onClick={() => {
+            void Promise.all([loadProductionData(), loadFederationData()]);
+          }}
         >
-          {loadingProductionData ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {loadingProductionData || loadingFederationData ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Refresh rollout
         </Button>
       </div>
@@ -119,6 +147,31 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
             Min healthy mirrors {failoverPolicy.minHealthyMirrors}
           </Badge>
         )}
+        {failoverPolicy && (
+          <Badge
+            variant="outline"
+            className={failoverPolicy.requirePolicyRatification
+              ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              : 'border-border bg-muted text-muted-foreground'}
+          >
+            Policy ratification {failoverPolicy.requirePolicyRatification ? 'required' : 'optional'}
+          </Badge>
+        )}
+        {policyRatificationSummary && (
+          <Badge
+            variant="outline"
+            className={policyRatificationSummary.ratificationMet
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Ratification quorum {policyRatificationSummary.ratificationMet ? 'met' : 'pending'}
+          </Badge>
+        )}
+        {discoverySummary && (
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Discovery candidates {discoverySummary.candidateCount}
+          </Badge>
+        )}
         {directoryTrustSummary && (
           <Badge
             variant="outline"
@@ -131,7 +184,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
         )}
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
+      <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-4">
         <div className="space-y-2 rounded-md border border-border/60 bg-card p-2 text-xs">
           <p className="font-medium text-foreground">Client failover policy</p>
           <Input
@@ -183,6 +236,12 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
             disabled={!canManageMirrorProduction}
           />
           <Input
+            value={failoverDraft.minPolicyRatificationApprovals}
+            onChange={(event) => setFailoverDraft((current) => ({ ...current, minPolicyRatificationApprovals: event.target.value }))}
+            placeholder="Min policy ratification approvals"
+            disabled={!canManageMirrorProduction}
+          />
+          <Input
             value={failoverDraft.mirrorSelectionStrategy}
             onChange={(event) => setFailoverDraft((current) => ({ ...current, mirrorSelectionStrategy: event.target.value }))}
             placeholder="Selection strategy"
@@ -199,6 +258,19 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
             <SelectContent>
               <SelectItem value="yes">Prefer same region</SelectItem>
               <SelectItem value="no">Do not prefer same region</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={failoverDraft.requirePolicyRatification ? 'yes' : 'no'}
+            onValueChange={(value) => setFailoverDraft((current) => ({ ...current, requirePolicyRatification: value === 'yes' }))}
+            disabled={!canManageMirrorProduction}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Require policy ratification" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Require ratification</SelectItem>
+              <SelectItem value="no">Allow without ratification</SelectItem>
             </SelectContent>
           </Select>
 
@@ -245,6 +317,24 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           formatTimestamp={formatTimestamp}
           scheduleProbeJobs={scheduleProbeJobs}
           completeProbeJob={completeProbeJob}
+        />
+        <GovernancePublicAuditVerifierMirrorFederationCard
+          canManageMirrorFederation={canManageMirrorFederation}
+          registeringDiscoverySource={registeringDiscoverySource}
+          recordingDiscoveryRun={recordingDiscoveryRun}
+          upsertingDiscoveredCandidate={upsertingDiscoveredCandidate}
+          promotingDiscoveredCandidate={promotingDiscoveredCandidate}
+          savingPolicyRatification={savingPolicyRatification}
+          policyRatificationSummary={policyRatificationSummary}
+          discoverySummary={discoverySummary}
+          discoverySources={discoverySources}
+          discoveredCandidates={discoveredCandidates}
+          formatTimestamp={formatTimestamp}
+          registerDiscoverySource={registerDiscoverySource}
+          recordDiscoveryRun={recordDiscoveryRun}
+          upsertDiscoveredCandidate={upsertDiscoveredCandidate}
+          promoteDiscoveredCandidate={promoteDiscoveredCandidate}
+          recordPolicyRatification={recordPolicyRatification}
         />
       </div>
     </div>

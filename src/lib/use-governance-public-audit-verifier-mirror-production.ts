@@ -39,14 +39,12 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   const [loadingProductionData, setLoadingProductionData] = useState(true);
   const [productionBackendUnavailable, setProductionBackendUnavailable] = useState(false);
   const [canManageMirrorProduction, setCanManageMirrorProduction] = useState(false);
-
   const [savingFailoverPolicy, setSavingFailoverPolicy] = useState(false);
   const [registeringDirectorySigner, setRegisteringDirectorySigner] = useState(false);
   const [publishingSignedDirectory, setPublishingSignedDirectory] = useState(false);
   const [savingDirectoryAttestation, setSavingDirectoryAttestation] = useState(false);
   const [schedulingProbeJobs, setSchedulingProbeJobs] = useState(false);
   const [completingProbeJob, setCompletingProbeJob] = useState(false);
-
   const [failoverPolicy, setFailoverPolicy] = useState<GovernancePublicAuditVerifierMirrorFailoverPolicySummary | null>(null);
   const [directorySummaries, setDirectorySummaries] = useState<GovernancePublicAuditVerifierMirrorDirectorySummaryRow[]>([]);
   const [directoryTrustSummary, setDirectoryTrustSummary] = useState<GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null>(null);
@@ -126,6 +124,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   useEffect(() => {
     void loadProductionData();
   }, [loadProductionData]);
+
   const saveFailoverPolicy = useCallback(async (draft: {
     minHealthyMirrors: string;
     maxMirrorLatencyMs: string;
@@ -137,6 +136,8 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     mirrorSelectionStrategy: string;
     maxMirrorCandidates: string;
     minIndependentDirectorySigners: string;
+    requirePolicyRatification: boolean;
+    minPolicyRatificationApprovals: string;
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
@@ -173,10 +174,20 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       },
     );
 
-    if (upsertError || trustThresholdError) {
+    const { error: policyRatificationRequirementError } = await callUntypedRpc<string>(
+      'set_governance_public_audit_verifier_mirror_policy_ratification_requirement',
+      {
+        requested_policy_key: 'default',
+        require_ratification: draft.requirePolicyRatification,
+        min_approval_count: toIntegerOrNull(draft.minPolicyRatificationApprovals),
+      },
+    );
+
+    if (upsertError || trustThresholdError || policyRatificationRequirementError) {
       console.error('Failed to save mirror failover policy:', {
         upsertError,
         trustThresholdError,
+        policyRatificationRequirementError,
       });
       toast.error('Could not save mirror failover policy.');
       setSavingFailoverPolicy(false);
@@ -197,11 +208,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
-    if (!draft.signerKey.trim() || !draft.publicKey.trim()) {
-      toast.error('Signer key and public key are required.');
-      return;
-    }
-
+    if (!draft.signerKey.trim() || !draft.publicKey.trim()) return void toast.error('Signer key and public key are required.');
     setRegisteringDirectorySigner(true);
 
     const { error } = await callUntypedRpc<string>('register_governance_public_audit_verifier_mirror_directory_signer', {
@@ -234,11 +241,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
-    if (!draft.signerKey.trim() || !draft.signature.trim()) {
-      toast.error('Signer key and signature are required.');
-      return;
-    }
-
+    if (!draft.signerKey.trim() || !draft.signature.trim()) return void toast.error('Signer key and signature are required.');
     setPublishingSignedDirectory(true);
 
     const { error } = await callUntypedRpc<string>('publish_governance_public_audit_verifier_mirror_directory', {
@@ -271,11 +274,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
-    if (!draft.directoryId || !draft.signerKey.trim() || !draft.attestationSignature.trim()) {
-      toast.error('Directory, signer key, and signature are required.');
-      return;
-    }
-
+    if (!draft.directoryId || !draft.signerKey.trim() || !draft.attestationSignature.trim()) return void toast.error('Directory, signer key, and signature are required.');
     setSavingDirectoryAttestation(true);
 
     const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_directory_attestation', {
@@ -341,13 +340,8 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
-    if (!draft.jobId) {
-      toast.error('Select a probe job first.');
-      return;
-    }
-
+    if (!draft.jobId) return void toast.error('Select a probe job first.');
     setCompletingProbeJob(true);
-
     const parsedLatency = Number.parseInt(draft.observedLatencyMs, 10);
 
     const { error } = await callUntypedRpc<string>('complete_governance_public_audit_verifier_mirror_probe_job', {

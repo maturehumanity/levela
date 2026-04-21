@@ -103,6 +103,8 @@ describe('governance-public-audit-verifiers helpers', () => {
         mirror_selection_strategy: 'health_latency_diversity',
         max_mirror_candidates: 10,
         min_independent_directory_signers: 2,
+        require_policy_ratification: true,
+        min_policy_ratification_approvals: 2,
         updated_at: '2026-04-21T04:30:00.000Z',
       },
     ]);
@@ -122,6 +124,8 @@ describe('governance-public-audit-verifiers helpers', () => {
       mirrorSelectionStrategy: 'health_latency_diversity',
       maxMirrorCandidates: 10,
       minIndependentDirectorySigners: 2,
+      requirePolicyRatification: true,
+      minPolicyRatificationApprovals: 2,
       updatedAt: '2026-04-21T04:30:00.000Z',
     });
   });

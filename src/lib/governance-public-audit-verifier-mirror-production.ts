@@ -1,3 +1,5 @@
+import type { GovernancePublicAuditVerifierMirrorPolicyRatificationSummary } from '@/lib/governance-public-audit-verifier-federation';
+
 export interface GovernancePublicAuditVerifierMirrorFailoverPolicySummary {
   policyId: string | null;
   policyKey: string;
@@ -13,6 +15,8 @@ export interface GovernancePublicAuditVerifierMirrorFailoverPolicySummary {
   mirrorSelectionStrategy: string;
   maxMirrorCandidates: number;
   minIndependentDirectorySigners: number;
+  requirePolicyRatification: boolean;
+  minPolicyRatificationApprovals: number;
   updatedAt: string | null;
 }
 
@@ -167,6 +171,8 @@ export function readFailoverPolicyRecord(
     mirrorSelectionStrategy: asString(row.mirror_selection_strategy, 'health_latency_diversity'),
     maxMirrorCandidates: Math.max(1, asNonNegativeInteger(row.max_mirror_candidates, 8)),
     minIndependentDirectorySigners: Math.max(1, asNonNegativeInteger(row.min_independent_directory_signers, 1)),
+    requirePolicyRatification: asBoolean(row.require_policy_ratification, false),
+    minPolicyRatificationApprovals: Math.max(1, asNonNegativeInteger(row.min_policy_ratification_approvals, 1)),
     updatedAt: asNullableString(row.updated_at),
   };
 }
@@ -298,6 +304,7 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
 
   const signedDirectory = asRecord(bundlePayload.signed_directory);
   const signedDirectoryTrust = asRecord(bundlePayload.signed_directory_trust);
+  const policyRatification = asRecord(bundlePayload.policy_ratification);
 
   return {
     failoverPolicy,
@@ -307,6 +314,21 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
     signedDirectorySignerKey: signedDirectory ? asNullableString(signedDirectory.signer_key) : null,
     signedDirectoryTrust: signedDirectoryTrust
       ? readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary([signedDirectoryTrust])
+      : null,
+    policyRatification: policyRatification
+      ? {
+        policyKey: asString(policyRatification.policy_key),
+        policyHash: asString(policyRatification.policy_hash),
+        requirePolicyRatification: asBoolean(policyRatification.require_policy_ratification, false),
+        minPolicyRatificationApprovals: Math.max(1, asNonNegativeInteger(policyRatification.min_policy_ratification_approvals, 1)),
+        requiredIndependentSigners: Math.max(1, asNonNegativeInteger(policyRatification.required_independent_signers, 1)),
+        approvalCount: asNonNegativeInteger(policyRatification.approval_count),
+        independentApprovalCount: asNonNegativeInteger(policyRatification.independent_approval_count),
+        communityApprovalCount: asNonNegativeInteger(policyRatification.community_approval_count),
+        rejectCount: asNonNegativeInteger(policyRatification.reject_count),
+        ratificationMet: asBoolean(policyRatification.ratification_met, false),
+        latestRatifiedAt: asNullableString(policyRatification.latest_ratified_at),
+      } as GovernancePublicAuditVerifierMirrorPolicyRatificationSummary
       : null,
   };
 }
