@@ -2,6 +2,7 @@ import type { Database } from '@/integrations/supabase/types';
 import {
   readGovernancePublicAuditClientVerifierBundleProductionData,
   type GovernancePublicAuditClientMirrorFailoverTarget,
+  type GovernancePublicAuditVerifierMirrorFederationDiversitySummary,
   type GovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   type GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
   type GovernancePublicAuditVerifierMirrorFailoverPolicySummary,
@@ -25,6 +26,7 @@ import {
 } from '@/lib/governance-public-audit-verifier-federation';
 
 export type { GovernancePublicAuditClientMirrorFailoverTarget };
+export type { GovernancePublicAuditVerifierMirrorFederationDiversitySummary };
 export type { GovernancePublicAuditVerifierMirrorDirectoryTrustSummary };
 export type { GovernancePublicAuditVerifierMirrorDirectorySummaryRow };
 export type { GovernancePublicAuditVerifierMirrorFailoverPolicySummary };
@@ -91,6 +93,7 @@ export interface GovernancePublicAuditClientVerifierBundle {
   signedDirectorySignature: string | null;
   signedDirectorySignerKey: string | null;
   signedDirectoryTrust: GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null;
+  federationDiversity: GovernancePublicAuditVerifierMirrorFederationDiversitySummary | null;
   policyRatification: GovernancePublicAuditVerifierMirrorPolicyRatificationSummary | null;
 }
 
@@ -223,6 +226,7 @@ export function readGovernancePublicAuditClientVerifierBundle(rows: unknown): Go
     signedDirectorySignature: production.signedDirectorySignature,
     signedDirectorySignerKey: production.signedDirectorySignerKey,
     signedDirectoryTrust: production.signedDirectoryTrust,
+    federationDiversity: production.federationDiversity,
     policyRatification: production.policyRatification,
   };
 }
@@ -260,6 +264,7 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('governance_public_audit_verifier_mirror_discovery_source_board')
     || message.includes('governance_public_audit_verifier_mirror_discovered_candidate_board')
     || message.includes('governance_public_audit_verifier_mirror_discovery_summary')
+    || message.includes('governance_public_audit_verifier_mirror_federation_diversity_summary')
     || message.includes('governance_public_audit_verifier_mirror_signer_governance_board')
     || message.includes('governance_public_audit_verifier_mirror_signer_governance_summary')
     || message.includes('governance_public_audit_verifier_mirror_policy_hash')

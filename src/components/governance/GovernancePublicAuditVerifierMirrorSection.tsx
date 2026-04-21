@@ -119,6 +119,17 @@ export function GovernancePublicAuditVerifierMirrorSection({
               Directory trust {clientVerifierBundle.signedDirectoryTrust.trustQuorumMet ? 'met' : 'pending'}
             </Badge>
           )}
+          {clientVerifierBundle.federationDiversity && (
+            <Badge
+              variant="outline"
+              className={clientVerifierBundle.federationDiversity.meetsRegionDiversity && clientVerifierBundle.federationDiversity.meetsOperatorDiversity
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+            >
+              Diversity R{clientVerifierBundle.federationDiversity.distinctRegionCount}/{clientVerifierBundle.federationDiversity.requiredDistinctRegions}
+              {' '}O{clientVerifierBundle.federationDiversity.distinctOperatorCount}/{clientVerifierBundle.federationDiversity.requiredDistinctOperators}
+            </Badge>
+          )}
           {clientVerifierBundle.policyRatification && (
             <Badge
               variant="outline"

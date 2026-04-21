@@ -79,6 +79,20 @@ export interface GovernancePublicAuditVerifierMirrorDirectoryTrustSummary {
   trustQuorumMet: boolean;
 }
 
+export interface GovernancePublicAuditVerifierMirrorFederationDiversitySummary {
+  batchId: string | null;
+  requiredDistinctRegions: number;
+  requiredDistinctOperators: number;
+  selectedMirrorCount: number;
+  healthyMirrorCount: number;
+  distinctRegionCount: number;
+  distinctOperatorCount: number;
+  largestOperatorMirrorCount: number;
+  largestOperatorSharePercent: number;
+  meetsRegionDiversity: boolean;
+  meetsOperatorDiversity: boolean;
+}
+
 export interface GovernancePublicAuditClientMirrorFailoverTarget {
   mirrorId: string;
   mirrorKey: string;
@@ -106,6 +120,15 @@ function asNullableInteger(value: unknown) {
     if (Number.isFinite(parsed)) return Math.max(0, parsed);
   }
   return null;
+}
+
+function asNonNegativeNumber(value: unknown, fallback = 0) {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, value);
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) return Math.max(0, parsed);
+  }
+  return fallback;
 }
 
 function asString(value: unknown, fallback = '') {
@@ -305,6 +328,7 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
   const signedDirectory = asRecord(bundlePayload.signed_directory);
   const signedDirectoryTrust = asRecord(bundlePayload.signed_directory_trust);
   const policyRatification = asRecord(bundlePayload.policy_ratification);
+  const federationDiversity = asRecord(bundlePayload.federation_diversity);
 
   return {
     failoverPolicy,
@@ -314,6 +338,21 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
     signedDirectorySignerKey: signedDirectory ? asNullableString(signedDirectory.signer_key) : null,
     signedDirectoryTrust: signedDirectoryTrust
       ? readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary([signedDirectoryTrust])
+      : null,
+    federationDiversity: federationDiversity
+      ? {
+        batchId: asNullableString(federationDiversity.batch_id),
+        requiredDistinctRegions: Math.max(1, asNonNegativeInteger(federationDiversity.required_distinct_regions, 1)),
+        requiredDistinctOperators: Math.max(1, asNonNegativeInteger(federationDiversity.required_distinct_operators, 1)),
+        selectedMirrorCount: asNonNegativeInteger(federationDiversity.selected_mirror_count),
+        healthyMirrorCount: asNonNegativeInteger(federationDiversity.healthy_mirror_count),
+        distinctRegionCount: asNonNegativeInteger(federationDiversity.distinct_region_count),
+        distinctOperatorCount: asNonNegativeInteger(federationDiversity.distinct_operator_count),
+        largestOperatorMirrorCount: asNonNegativeInteger(federationDiversity.largest_operator_mirror_count),
+        largestOperatorSharePercent: asNonNegativeNumber(federationDiversity.largest_operator_share_percent),
+        meetsRegionDiversity: asBoolean(federationDiversity.meets_region_diversity, false),
+        meetsOperatorDiversity: asBoolean(federationDiversity.meets_operator_diversity, false),
+      } as GovernancePublicAuditVerifierMirrorFederationDiversitySummary
       : null,
     policyRatification: policyRatification
       ? {
