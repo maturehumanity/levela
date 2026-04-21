@@ -55,6 +55,36 @@ export interface GovernancePublicAuditVerifierMirrorDiscoverySummary {
   lastRunStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
 }
 
+export interface GovernancePublicAuditVerifierMirrorSignerGovernanceSummary {
+  policyKey: string;
+  requireSignerGovernanceApproval: boolean;
+  minSignerGovernanceIndependentApprovals: number;
+  approvedSignerCount: number;
+  approvedIndependentSignerCount: number;
+  pendingSignerCount: number;
+  rejectedSignerCount: number;
+  suspendedSignerCount: number;
+  governanceReady: boolean;
+  latestAttestedAt: string | null;
+}
+
+export interface GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow {
+  signerId: string;
+  signerKey: string;
+  signerLabel: string | null;
+  trustTier: string;
+  isActive: boolean;
+  governanceStatus: 'pending' | 'approved' | 'rejected' | 'suspended' | 'unknown';
+  requiredIndependentApprovals: number;
+  approvalCount: number;
+  independentApprovalCount: number;
+  communityApprovalCount: number;
+  rejectCount: number;
+  governanceMet: boolean;
+  latestAttestedAt: string | null;
+  governanceLastReviewedAt: string | null;
+}
+
 function asString(value: unknown, fallback = '') {
   if (typeof value !== 'string') return fallback;
   return value;
@@ -100,6 +130,12 @@ function asRunStatus(value: unknown): GovernancePublicAuditVerifierMirrorDiscove
 function asCandidateStatus(value: unknown): GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow['candidateStatus'] {
   const normalized = asString(value).trim().toLowerCase();
   if (normalized === 'new' || normalized === 'reviewed' || normalized === 'promoted' || normalized === 'rejected' || normalized === 'inactive') return normalized;
+  return 'unknown';
+}
+
+function asGovernanceStatus(value: unknown): GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow['governanceStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'pending' || normalized === 'approved' || normalized === 'rejected' || normalized === 'suspended') return normalized;
   return 'unknown';
 }
 
@@ -198,4 +234,55 @@ export function readGovernancePublicAuditVerifierMirrorDiscoverySummary(
     lastRunAt: asNullableString(row.last_run_at),
     lastRunStatus: asRunStatus(row.last_run_status),
   };
+}
+
+export function readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary(
+  rows: unknown,
+): GovernancePublicAuditVerifierMirrorSignerGovernanceSummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  const policyKey = asString(row.policy_key);
+  if (!policyKey) return null;
+
+  return {
+    policyKey,
+    requireSignerGovernanceApproval: asBoolean(row.require_signer_governance_approval, false),
+    minSignerGovernanceIndependentApprovals: Math.max(1, asNonNegativeInteger(row.min_signer_governance_independent_approvals, 1)),
+    approvedSignerCount: asNonNegativeInteger(row.approved_signer_count),
+    approvedIndependentSignerCount: asNonNegativeInteger(row.approved_independent_signer_count),
+    pendingSignerCount: asNonNegativeInteger(row.pending_signer_count),
+    rejectedSignerCount: asNonNegativeInteger(row.rejected_signer_count),
+    suspendedSignerCount: asNonNegativeInteger(row.suspended_signer_count),
+    governanceReady: asBoolean(row.governance_ready, false),
+    latestAttestedAt: asNullableString(row.latest_attested_at),
+  };
+}
+
+export function readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      signerId: asString(entry.signer_id),
+      signerKey: asString(entry.signer_key),
+      signerLabel: asNullableString(entry.signer_label),
+      trustTier: asString(entry.trust_tier, 'observer'),
+      isActive: asBoolean(entry.is_active, true),
+      governanceStatus: asGovernanceStatus(entry.governance_status),
+      requiredIndependentApprovals: Math.max(1, asNonNegativeInteger(entry.required_independent_approvals, 1)),
+      approvalCount: asNonNegativeInteger(entry.approval_count),
+      independentApprovalCount: asNonNegativeInteger(entry.independent_approval_count),
+      communityApprovalCount: asNonNegativeInteger(entry.community_approval_count),
+      rejectCount: asNonNegativeInteger(entry.reject_count),
+      governanceMet: asBoolean(entry.governance_met, false),
+      latestAttestedAt: asNullableString(entry.latest_attested_at),
+      governanceLastReviewedAt: asNullableString(entry.governance_last_reviewed_at),
+    }))
+    .filter((entry) => entry.signerId.length > 0 && entry.signerKey.length > 0);
 }

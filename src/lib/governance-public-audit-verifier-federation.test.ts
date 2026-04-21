@@ -5,6 +5,8 @@ import {
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
+  readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows,
+  readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
 } from '@/lib/governance-public-audit-verifier-federation';
 
 describe('governance-public-audit-verifier-federation helpers', () => {
@@ -137,5 +139,72 @@ describe('governance-public-audit-verifier-federation helpers', () => {
       lastRunAt: '2026-04-21T05:15:00.000Z',
       lastRunStatus: 'degraded',
     });
+  });
+
+  it('parses signer governance summary and board rows', () => {
+    const summary = readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary([
+      {
+        policy_key: 'default',
+        require_signer_governance_approval: true,
+        min_signer_governance_independent_approvals: 2,
+        approved_signer_count: 3,
+        approved_independent_signer_count: 2,
+        pending_signer_count: 1,
+        rejected_signer_count: 0,
+        suspended_signer_count: 0,
+        governance_ready: true,
+        latest_attested_at: '2026-04-21T05:20:00.000Z',
+      },
+    ]);
+
+    const board = readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows([
+      {
+        signer_id: 'signer-1',
+        signer_key: 'independent_signer_1',
+        signer_label: 'Independent Signer 1',
+        trust_tier: 'independent',
+        is_active: true,
+        governance_status: 'pending',
+        required_independent_approvals: 2,
+        approval_count: 2,
+        independent_approval_count: 2,
+        community_approval_count: 0,
+        reject_count: 0,
+        governance_met: true,
+        latest_attested_at: '2026-04-21T05:18:00.000Z',
+        governance_last_reviewed_at: '2026-04-21T05:19:00.000Z',
+      },
+    ]);
+
+    expect(summary).toEqual({
+      policyKey: 'default',
+      requireSignerGovernanceApproval: true,
+      minSignerGovernanceIndependentApprovals: 2,
+      approvedSignerCount: 3,
+      approvedIndependentSignerCount: 2,
+      pendingSignerCount: 1,
+      rejectedSignerCount: 0,
+      suspendedSignerCount: 0,
+      governanceReady: true,
+      latestAttestedAt: '2026-04-21T05:20:00.000Z',
+    });
+    expect(board).toEqual([
+      {
+        signerId: 'signer-1',
+        signerKey: 'independent_signer_1',
+        signerLabel: 'Independent Signer 1',
+        trustTier: 'independent',
+        isActive: true,
+        governanceStatus: 'pending',
+        requiredIndependentApprovals: 2,
+        approvalCount: 2,
+        independentApprovalCount: 2,
+        communityApprovalCount: 0,
+        rejectCount: 0,
+        governanceMet: true,
+        latestAttestedAt: '2026-04-21T05:18:00.000Z',
+        governanceLastReviewedAt: '2026-04-21T05:19:00.000Z',
+      },
+    ]);
   });
 });

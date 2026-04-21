@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useGovernancePublicAuditVerifierMirrorProduction } from '@/lib/use-governance-public-audit-verifier-mirror-production';
 import { useGovernancePublicAuditVerifierMirrorFederation } from '@/lib/use-governance-public-audit-verifier-mirror-federation';
+import { useGovernancePublicAuditVerifierMirrorSignerGovernance } from '@/lib/use-governance-public-audit-verifier-mirror-signer-governance';
 
 interface GovernancePublicAuditVerifierMirrorProductionSectionProps {
   latestBatchId: string | null;
@@ -69,6 +70,18 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     promoteDiscoveredCandidate,
     recordPolicyRatification,
   } = useGovernancePublicAuditVerifierMirrorFederation({ latestBatchId });
+  const {
+    loadingSignerGovernanceData,
+    signerGovernanceBackendUnavailable,
+    canManageSignerGovernance,
+    savingSignerGovernanceRequirement,
+    savingSignerGovernanceAttestation,
+    signerGovernanceSummary,
+    signerGovernanceBoard,
+    loadSignerGovernanceData,
+    saveSignerGovernanceRequirement,
+    saveSignerGovernanceAttestation,
+  } = useGovernancePublicAuditVerifierMirrorSignerGovernance();
 
   const [failoverDraft, setFailoverDraft] = useState({
     minHealthyMirrors: '1',
@@ -103,7 +116,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     });
   }, [failoverPolicy]);
 
-  if (productionBackendUnavailable && federationBackendUnavailable) {
+  if (productionBackendUnavailable && federationBackendUnavailable && signerGovernanceBackendUnavailable) {
     return null;
   }
 
@@ -116,12 +129,12 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           size="sm"
           variant="outline"
           className="gap-2"
-          disabled={loadingProductionData || loadingFederationData}
+          disabled={loadingProductionData || loadingFederationData || loadingSignerGovernanceData}
           onClick={() => {
-            void Promise.all([loadProductionData(), loadFederationData()]);
+            void Promise.all([loadProductionData(), loadFederationData(), loadSignerGovernanceData()]);
           }}
         >
-          {loadingProductionData || loadingFederationData ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {loadingProductionData || loadingFederationData || loadingSignerGovernanceData ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Refresh rollout
         </Button>
       </div>
@@ -170,6 +183,16 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
         {discoverySummary && (
           <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
             Discovery candidates {discoverySummary.candidateCount}
+          </Badge>
+        )}
+        {signerGovernanceSummary && (
+          <Badge
+            variant="outline"
+            className={signerGovernanceSummary.governanceReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Signer governance {signerGovernanceSummary.governanceReady ? 'ready' : 'pending'}
           </Badge>
         )}
         {directoryTrustSummary && (
@@ -325,16 +348,23 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           upsertingDiscoveredCandidate={upsertingDiscoveredCandidate}
           promotingDiscoveredCandidate={promotingDiscoveredCandidate}
           savingPolicyRatification={savingPolicyRatification}
+          canManageSignerGovernance={canManageSignerGovernance}
+          savingSignerGovernanceRequirement={savingSignerGovernanceRequirement}
+          savingSignerGovernanceAttestation={savingSignerGovernanceAttestation}
           policyRatificationSummary={policyRatificationSummary}
           discoverySummary={discoverySummary}
+          signerGovernanceSummary={signerGovernanceSummary}
           discoverySources={discoverySources}
           discoveredCandidates={discoveredCandidates}
+          signerGovernanceBoard={signerGovernanceBoard}
           formatTimestamp={formatTimestamp}
           registerDiscoverySource={registerDiscoverySource}
           recordDiscoveryRun={recordDiscoveryRun}
           upsertDiscoveredCandidate={upsertDiscoveredCandidate}
           promoteDiscoveredCandidate={promoteDiscoveredCandidate}
           recordPolicyRatification={recordPolicyRatification}
+          saveSignerGovernanceRequirement={saveSignerGovernanceRequirement}
+          saveSignerGovernanceAttestation={saveSignerGovernanceAttestation}
         />
       </div>
     </div>

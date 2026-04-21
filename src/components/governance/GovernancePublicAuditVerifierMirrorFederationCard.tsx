@@ -1,10 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { GovernancePublicAuditVerifierMirrorFederationControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationControls';
+import { GovernancePublicAuditVerifierMirrorSignerGovernanceControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorSignerGovernanceControls';
 import type {
   GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   GovernancePublicAuditVerifierMirrorDiscoverySummary,
   GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
+  GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
+  GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorFederationCardProps {
@@ -14,10 +17,15 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   upsertingDiscoveredCandidate: boolean;
   promotingDiscoveredCandidate: boolean;
   savingPolicyRatification: boolean;
+  canManageSignerGovernance: boolean;
+  savingSignerGovernanceRequirement: boolean;
+  savingSignerGovernanceAttestation: boolean;
   policyRatificationSummary: GovernancePublicAuditVerifierMirrorPolicyRatificationSummary | null;
   discoverySummary: GovernancePublicAuditVerifierMirrorDiscoverySummary | null;
+  signerGovernanceSummary: GovernancePublicAuditVerifierMirrorSignerGovernanceSummary | null;
   discoverySources: GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow[];
   discoveredCandidates: GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow[];
+  signerGovernanceBoard: GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow[];
   formatTimestamp: (value: string | null) => string;
   registerDiscoverySource: (draft: {
     sourceKey: string;
@@ -54,6 +62,16 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
     ratificationDecision: 'approve' | 'reject';
     ratificationSignature: string;
   }) => Promise<void> | void;
+  saveSignerGovernanceRequirement: (draft: {
+    requireSignerGovernanceApproval: boolean;
+    minSignerGovernanceIndependentApprovals: string;
+  }) => Promise<void> | void;
+  saveSignerGovernanceAttestation: (draft: {
+    targetSignerId: string;
+    attestorSignerKey: string;
+    attestationDecision: 'approve' | 'reject';
+    attestationSignature: string;
+  }) => Promise<void> | void;
 }
 
 function previewHash(value: string) {
@@ -69,16 +87,23 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   upsertingDiscoveredCandidate,
   promotingDiscoveredCandidate,
   savingPolicyRatification,
+  canManageSignerGovernance,
+  savingSignerGovernanceRequirement,
+  savingSignerGovernanceAttestation,
   policyRatificationSummary,
   discoverySummary,
+  signerGovernanceSummary,
   discoverySources,
   discoveredCandidates,
+  signerGovernanceBoard,
   formatTimestamp,
   registerDiscoverySource,
   recordDiscoveryRun,
   upsertDiscoveredCandidate,
   promoteDiscoveredCandidate,
   recordPolicyRatification,
+  saveSignerGovernanceRequirement,
+  saveSignerGovernanceAttestation,
 }: GovernancePublicAuditVerifierMirrorFederationCardProps) {
   return (
     <div className="space-y-2 rounded-md border border-border/60 bg-card p-2 text-xs">
@@ -104,6 +129,16 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
             Sources {discoverySummary.activeSourceCount}
           </Badge>
         )}
+        {signerGovernanceSummary && (
+          <Badge
+            variant="outline"
+            className={signerGovernanceSummary.governanceReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Signer governance {signerGovernanceSummary.governanceReady ? 'ready' : 'pending'}
+          </Badge>
+        )}
       </div>
 
       <GovernancePublicAuditVerifierMirrorFederationControls
@@ -120,6 +155,15 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         upsertDiscoveredCandidate={upsertDiscoveredCandidate}
         promoteDiscoveredCandidate={promoteDiscoveredCandidate}
         recordPolicyRatification={recordPolicyRatification}
+      />
+      <GovernancePublicAuditVerifierMirrorSignerGovernanceControls
+        canManageSignerGovernance={canManageSignerGovernance}
+        savingSignerGovernanceRequirement={savingSignerGovernanceRequirement}
+        savingSignerGovernanceAttestation={savingSignerGovernanceAttestation}
+        signerGovernanceSummary={signerGovernanceSummary}
+        signerGovernanceBoard={signerGovernanceBoard}
+        saveSignerGovernanceRequirement={saveSignerGovernanceRequirement}
+        saveSignerGovernanceAttestation={saveSignerGovernanceAttestation}
       />
 
       {policyRatificationSummary && (
@@ -143,6 +187,13 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         {discoveredCandidates.slice(0, 3).map((candidate) => (
           <p key={candidate.candidateId}>
             {candidate.candidateLabel || candidate.candidateKey} • {candidate.candidateStatus} • {candidate.discoveryConfidence}
+          </p>
+        ))}
+      </div>
+      <div className="space-y-1 text-muted-foreground">
+        {signerGovernanceBoard.slice(0, 3).map((signer) => (
+          <p key={signer.signerId}>
+            {signer.signerLabel || signer.signerKey} • {signer.governanceStatus} • independent approvals {signer.independentApprovalCount}/{signer.requiredIndependentApprovals}
           </p>
         ))}
       </div>

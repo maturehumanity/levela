@@ -13,10 +13,14 @@ import {
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
+  readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows,
+  readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySummary,
+  type GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
+  type GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
   type GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
 } from '@/lib/governance-public-audit-verifier-federation';
 
@@ -30,6 +34,8 @@ export type { GovernancePublicAuditVerifierMirrorProbeJobSummary };
 export type { GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow };
 export type { GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow };
 export type { GovernancePublicAuditVerifierMirrorDiscoverySummary };
+export type { GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow };
+export type { GovernancePublicAuditVerifierMirrorSignerGovernanceSummary };
 export type { GovernancePublicAuditVerifierMirrorPolicyRatificationSummary };
 
 export {
@@ -43,6 +49,8 @@ export {
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
+  readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows,
+  readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
 } from '@/lib/governance-public-audit-verifier-federation';
 
@@ -243,6 +251,7 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('governance_public_audit_verifier_mirror_discovery_runs')
     || message.includes('governance_public_audit_verifier_mirror_discovered_candidates')
     || message.includes('governance_public_audit_verifier_mirror_policy_ratifications')
+    || message.includes('governance_public_audit_verifier_mirror_signer_governance_attestations')
     || message.includes('governance_public_audit_verifier_mirror_failover_policy_summary')
     || message.includes('governance_public_audit_verifier_mirror_directory_summary')
     || message.includes('governance_public_audit_verifier_mirror_directory_trust_summary')
@@ -251,6 +260,8 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('governance_public_audit_verifier_mirror_discovery_source_board')
     || message.includes('governance_public_audit_verifier_mirror_discovered_candidate_board')
     || message.includes('governance_public_audit_verifier_mirror_discovery_summary')
+    || message.includes('governance_public_audit_verifier_mirror_signer_governance_board')
+    || message.includes('governance_public_audit_verifier_mirror_signer_governance_summary')
     || message.includes('governance_public_audit_verifier_mirror_policy_hash')
     || message.includes('governance_public_audit_verifier_mirror_policy_ratification_summary')
     || message.includes('register_governance_public_audit_verifier_node')
@@ -271,5 +282,8 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('promote_governance_public_audit_verifier_mirror_discovered_candidate')
     || message.includes('set_governance_public_audit_verifier_mirror_policy_ratification_requirement')
     || message.includes('record_governance_public_audit_verifier_mirror_policy_ratification')
+    || message.includes('sync_governance_public_audit_verifier_mirror_signer_governance_status')
+    || message.includes('record_governance_public_audit_verifier_mirror_signer_governance_attestation')
+    || message.includes('set_governance_public_audit_verifier_mirror_signer_governance_requirement')
   );
 }
