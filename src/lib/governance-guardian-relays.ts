@@ -384,6 +384,7 @@ export function isMissingGuardianRelayBackend(error: { code?: string | null; mes
     || message.includes('maybe_escalate_guardian_relay_critical_public_execution_page')
     || message.includes('sync_guardian_relay_attestation_sla_alerts')
     || message.includes('governance_proposal_meets_guardian_relay_distribution_gate')
+    || message.includes('maybe_escalate_guardian_relay_proof_distribution_exec_page')
     || message.includes('open_governance_guardian_relay_alert')
     || message.includes('resolve_governance_guardian_relay_alert')
     || message.includes('set_governance_guardian_relay_ops_requirement')

@@ -18,6 +18,7 @@ export function useGovernanceGuardianRelayDistributionActions({
 }: UseGovernanceGuardianRelayDistributionActionsArgs) {
   const [capturingRelayClientVerificationPackage, setCapturingRelayClientVerificationPackage] = useState(false);
   const [signingRelayClientVerificationPackage, setSigningRelayClientVerificationPackage] = useState(false);
+  const [escalatingProofDistributionPublicExecution, setEscalatingProofDistributionPublicExecution] = useState(false);
 
   const captureRelayClientVerificationPackage = useCallback(async (packageNotes: string) => {
     if (relayBackendUnavailable || !canManageGuardianRelays) return;
@@ -98,10 +99,37 @@ export function useGovernanceGuardianRelayDistributionActions({
     await loadRelayData();
   }, [canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
 
+  const escalateProofDistributionToPublicExecution = useCallback(async () => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    setEscalatingProofDistributionPublicExecution(true);
+
+    const { error } = await callUntypedRpc<unknown>('maybe_escalate_guardian_relay_proof_distribution_exec_page', {
+      target_proposal_id: proposalId,
+      target_batch_id: null,
+      escalation_context: {
+        source: 'governance_guardian_relay_panel',
+      },
+    });
+
+    if (error) {
+      console.error('Failed to escalate guardian relay proof distribution:', error);
+      toast.error('Could not update the public audit external execution page for proof distribution.');
+      setEscalatingProofDistributionPublicExecution(false);
+      return;
+    }
+
+    toast.success('Public audit external execution page updated for proof distribution.');
+    setEscalatingProofDistributionPublicExecution(false);
+    await loadRelayData();
+  }, [canManageGuardianRelays, loadRelayData, proposalId, relayBackendUnavailable]);
+
   return {
     capturingRelayClientVerificationPackage,
     signingRelayClientVerificationPackage,
+    escalatingProofDistributionPublicExecution,
     captureRelayClientVerificationPackage,
     signRelayClientVerificationPackage,
+    escalateProofDistributionToPublicExecution,
   };
 }

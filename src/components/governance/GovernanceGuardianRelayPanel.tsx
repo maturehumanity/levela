@@ -33,6 +33,7 @@ export function GovernanceGuardianRelayPanel({
     capturingRelayAuditReport,
     capturingRelayClientManifest,
     capturingRelayClientVerificationPackage,
+    escalatingProofDistributionPublicExecution,
     savingRelayOpsRequirement,
     recordingRelayWorkerRun,
     openingRelayAlert,
@@ -72,6 +73,7 @@ export function GovernanceGuardianRelayPanel({
     escalateOpenCriticalRelayAlertsToPublicExecution,
     syncRelayAttestationSlaAlerts,
     signRelayClientVerificationPackage,
+    escalateProofDistributionToPublicExecution,
   } = useGovernanceGuardianRelays({ proposalId });
 
   if (relayBackendUnavailable) {
@@ -197,9 +199,11 @@ export function GovernanceGuardianRelayPanel({
         capturingRelayClientManifest={capturingRelayClientManifest}
         capturingRelayClientVerificationPackage={capturingRelayClientVerificationPackage}
         signingRelayClientVerificationPackage={signingRelayClientVerificationPackage}
+        escalatingProofDistributionPublicExecution={escalatingProofDistributionPublicExecution}
         onCaptureRelayClientManifest={captureRelayClientManifest}
         onCaptureRelayClientVerificationPackage={captureRelayClientVerificationPackage}
         onSignRelayClientVerificationPackage={signRelayClientVerificationPackage}
+        onEscalateProofDistributionToPublicExecution={escalateProofDistributionToPublicExecution}
         formatTimestamp={formatTimestamp}
       />
 

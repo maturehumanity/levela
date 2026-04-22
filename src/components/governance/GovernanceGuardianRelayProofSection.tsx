@@ -28,6 +28,7 @@ interface GovernanceGuardianRelayProofSectionProps {
   capturingRelayClientManifest: boolean;
   capturingRelayClientVerificationPackage: boolean;
   signingRelayClientVerificationPackage: boolean;
+  escalatingProofDistributionPublicExecution: boolean;
   onCaptureRelayClientManifest: (manifestNotes: string) => Promise<void> | void;
   onCaptureRelayClientVerificationPackage: (packageNotes: string) => Promise<void> | void;
   onSignRelayClientVerificationPackage: (draft: {
@@ -40,6 +41,7 @@ interface GovernanceGuardianRelayProofSectionProps {
     signerIdentityUri: string;
     distributionChannel: string;
   }) => Promise<void> | void;
+  onEscalateProofDistributionToPublicExecution: () => Promise<void> | void;
   formatTimestamp: (value: string | null) => string;
 }
 
@@ -67,9 +69,11 @@ export function GovernanceGuardianRelayProofSection({
   capturingRelayClientManifest,
   capturingRelayClientVerificationPackage,
   signingRelayClientVerificationPackage,
+  escalatingProofDistributionPublicExecution,
   onCaptureRelayClientManifest,
   onCaptureRelayClientVerificationPackage,
   onSignRelayClientVerificationPackage,
+  onEscalateProofDistributionToPublicExecution,
   formatTimestamp,
 }: GovernanceGuardianRelayProofSectionProps) {
   const [manifestNotes, setManifestNotes] = useState('');
@@ -207,13 +211,41 @@ export function GovernanceGuardianRelayProofSection({
               Policy requires trust-minimized relay quorum, so approved proposals cannot move to execution until enough independent distribution signatures exist on the latest verification package.
             </p>
           )}
+          {canManageGuardianRelays && clientDistributionRequiredForExecution && !relayClientVerificationDistributionSummary.distributionReady && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="w-full gap-2"
+              disabled={escalatingProofDistributionPublicExecution}
+              onClick={() => void onEscalateProofDistributionToPublicExecution()}
+            >
+              {escalatingProofDistributionPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Update external execution page for proof distribution
+            </Button>
+          )}
         </div>
       )}
 
       {clientDistributionRequiredForExecution && !relayClientVerificationDistributionSummary && (
-        <p className="text-muted-foreground">
-          Policy requires trust-minimized relay quorum. Capture a deterministic verification package and collect distribution signatures before execution can proceed.
-        </p>
+        <div className="space-y-2">
+          <p className="text-muted-foreground">
+            Policy requires trust-minimized relay quorum. Capture a deterministic verification package and collect distribution signatures before execution can proceed.
+          </p>
+          {canManageGuardianRelays && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="w-full gap-2"
+              disabled={escalatingProofDistributionPublicExecution}
+              onClick={() => void onEscalateProofDistributionToPublicExecution()}
+            >
+              {escalatingProofDistributionPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Update external execution page for proof distribution
+            </Button>
+          )}
+        </div>
       )}
 
       {canManageGuardianRelays && (
