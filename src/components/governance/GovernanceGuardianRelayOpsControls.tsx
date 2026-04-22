@@ -26,6 +26,7 @@ interface GovernanceGuardianRelayOpsControlsProps {
   openingRelayAlert: boolean;
   resolvingRelayAlert: boolean;
   escalatingCriticalRelayPublicExecution: boolean;
+  syncingRelaySlaAlerts: boolean;
   formatTimestamp: (value: string | null) => string;
   onSaveRelayOpsRequirement: (draft: {
     requireTrustMinimizedQuorum: boolean;
@@ -52,6 +53,7 @@ interface GovernanceGuardianRelayOpsControlsProps {
     resolutionNotes: string;
   }) => Promise<void> | void;
   onEscalateOpenCriticalRelayAlertsToPublicExecution: (openCriticalAlertCount: number) => Promise<void> | void;
+  onSyncRelayAttestationSlaAlerts: () => Promise<void> | void;
 }
 
 export function GovernanceGuardianRelayOpsControls({
@@ -63,12 +65,14 @@ export function GovernanceGuardianRelayOpsControls({
   openingRelayAlert,
   resolvingRelayAlert,
   escalatingCriticalRelayPublicExecution,
+  syncingRelaySlaAlerts,
   formatTimestamp,
   onSaveRelayOpsRequirement,
   onRecordRelayWorkerRun,
   onOpenRelayAlert,
   onResolveRelayAlert,
   onEscalateOpenCriticalRelayAlertsToPublicExecution,
+  onSyncRelayAttestationSlaAlerts,
 }: GovernanceGuardianRelayOpsControlsProps) {
   const [opsRequirementDraft, setOpsRequirementDraft] = useState({
     requireTrustMinimizedQuorum: false,
@@ -144,6 +148,24 @@ export function GovernanceGuardianRelayOpsControls({
           </p>
         </div>
       )}
+
+      <div className="space-y-1.5 rounded-lg border border-border/60 bg-card p-2.5 text-xs">
+        <p className="font-medium text-foreground">Relay attestation freshness</p>
+        <p className="text-muted-foreground">
+          Recompute SLA-based warning alerts from live signer attestations. This also runs automatically when you save a worker run or record an attestation.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="w-full gap-2"
+          disabled={syncingRelaySlaAlerts}
+          onClick={() => void onSyncRelayAttestationSlaAlerts()}
+        >
+          {syncingRelaySlaAlerts ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Refresh relay attestation SLA alerts
+        </Button>
+      </div>
 
       <div className="space-y-1.5 rounded-lg border border-border/60 bg-card p-2.5 text-xs">
         <p className="font-medium text-foreground">Public audit paging for critical relay alerts</p>

@@ -28,6 +28,7 @@ export function useGovernanceGuardianRelayActions({
   const [openingRelayAlert, setOpeningRelayAlert] = useState(false);
   const [resolvingRelayAlert, setResolvingRelayAlert] = useState(false);
   const [escalatingCriticalRelayPublicExecution, setEscalatingCriticalRelayPublicExecution] = useState(false);
+  const [syncingRelaySlaAlerts, setSyncingRelaySlaAlerts] = useState(false);
   const [togglingRelayNodeId, setTogglingRelayNodeId] = useState<string | null>(null);
 
   const registerRelayNode = useCallback(async (draft: {
@@ -305,6 +306,29 @@ export function useGovernanceGuardianRelayActions({
     await loadRelayData();
   }, [canManageGuardianRelays, loadRelayData, proposalId, relayBackendUnavailable]);
 
+  const syncRelayAttestationSlaAlerts = useCallback(async () => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    setSyncingRelaySlaAlerts(true);
+
+    const { error } = await callUntypedRpc<unknown>('sync_guardian_relay_attestation_sla_alerts', {
+      target_proposal_id: proposalId,
+      requested_policy_key: 'guardian_relay_default',
+      requested_attestation_sla_minutes: null,
+    });
+
+    if (error) {
+      console.error('Failed to sync guardian relay SLA alerts:', error);
+      toast.error('Could not refresh relay attestation SLA alerts.');
+      setSyncingRelaySlaAlerts(false);
+      return;
+    }
+
+    toast.success('Relay attestation SLA alerts refreshed.');
+    setSyncingRelaySlaAlerts(false);
+    await loadRelayData();
+  }, [canManageGuardianRelays, loadRelayData, proposalId, relayBackendUnavailable]);
+
   const escalateOpenCriticalRelayAlertsToPublicExecution = useCallback(async (openCriticalAlertCount: number) => {
     if (relayBackendUnavailable || !canManageGuardianRelays) return;
 
@@ -383,6 +407,7 @@ export function useGovernanceGuardianRelayActions({
     openingRelayAlert,
     resolvingRelayAlert,
     escalatingCriticalRelayPublicExecution,
+    syncingRelaySlaAlerts,
     togglingRelayNodeId,
     registerRelayNode,
     setRelayNodeActive,
@@ -394,6 +419,7 @@ export function useGovernanceGuardianRelayActions({
     openRelayAlert,
     resolveRelayAlert,
     escalateOpenCriticalRelayAlertsToPublicExecution,
+    syncRelayAttestationSlaAlerts,
     ...distributionActions,
   };
 }
