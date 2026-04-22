@@ -6,10 +6,10 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conname = 'governance_public_audit_verifier_mirror_failover_policies_min_independent_directory_signers_check'
+    WHERE conname = 'gpav_mirror_failover_min_ind_dir_signers_chk'
   ) THEN
     ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
-      ADD CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_min_independent_directory_signers_check
+      ADD CONSTRAINT gpav_mirror_failover_min_ind_dir_signers_chk
       CHECK (min_independent_directory_signers >= 1);
   END IF;
 END $$;
@@ -29,12 +29,12 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_direct
   attested_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_directory_attestations_signer_key_not_empty_check CHECK (length(trim(signer_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_directory_attestations_decision_check CHECK (
+  CONSTRAINT gpav_mirror_dir_attest_signer_key_chk CHECK (length(trim(signer_key)) > 0),
+  CONSTRAINT gpav_mirror_dir_attest_decision_chk CHECK (
     attestation_decision IN ('approve', 'reject')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_directory_attestations_signature_not_empty_check CHECK (length(trim(attestation_signature)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_directory_attestations_payload_object_check CHECK (jsonb_typeof(attestation_payload) = 'object')
+  CONSTRAINT gpav_mirror_dir_attest_sig_chk CHECK (length(trim(attestation_signature)) > 0),
+  CONSTRAINT gpav_mirror_dir_attest_payload_chk CHECK (jsonb_typeof(attestation_payload) = 'object')
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_governance_public_audit_verifier_mirror_directory_attestations_unique
@@ -449,6 +449,7 @@ latest_directory AS (
   FROM public.governance_public_audit_verifier_mirror_directories AS directory
   LEFT JOIN public.governance_public_audit_verifier_mirror_directory_signers AS signer
     ON signer.id = directory.signer_id
+  CROSS JOIN resolved_batch
   WHERE resolved_batch.batch_id IS NULL
      OR directory.batch_id = resolved_batch.batch_id
   ORDER BY directory.published_at DESC, directory.created_at DESC
@@ -511,7 +512,7 @@ healthy_mirror_count_cte AS (
 SELECT
   'public_audit_client_verifier_bundle_v1'::text AS bundle_version,
   encode(
-    digest(
+    extensions.digest(
       (payload_cte.bundle_payload::text)::bytea,
       'sha256'
     ),

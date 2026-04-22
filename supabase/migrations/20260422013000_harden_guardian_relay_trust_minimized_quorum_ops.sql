@@ -666,7 +666,7 @@ manifest_payload_cte AS (
           'relay_trust_domain', relay.relay_trust_domain,
           'status', attestation.status,
           'payload_hash', attestation.payload_hash,
-          'attestation_reference', attestation.attestation_reference,
+          'attestation_reference', attestation.relay_reference,
           'chain_network', attestation.chain_network,
           'chain_reference', attestation.chain_reference,
           'verified_at', attestation.verified_at
@@ -683,7 +683,7 @@ manifest_payload_cte AS (
 SELECT
   'guardian_relay_client_proof_v1'::text AS manifest_version,
   encode(
-    digest(
+    extensions.digest(
       (manifest_payload_cte.manifest_payload::text)::bytea,
       'sha256'
     ),

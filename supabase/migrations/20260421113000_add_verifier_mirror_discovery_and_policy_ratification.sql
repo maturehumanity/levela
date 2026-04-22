@@ -7,10 +7,10 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conname = 'governance_public_audit_verifier_mirror_failover_policies_min_policy_ratification_approvals_check'
+    WHERE conname = 'gpav_mirror_failover_min_pol_ratif_app_chk'
   ) THEN
     ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
-      ADD CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_min_policy_ratification_approvals_check
+      ADD CONSTRAINT gpav_mirror_failover_min_pol_ratif_app_chk
       CHECK (min_policy_ratification_approvals >= 1);
   END IF;
 END $$;
@@ -32,15 +32,15 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_discov
   added_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_sources_key_not_empty_check CHECK (length(trim(source_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_sources_endpoint_not_empty_check CHECK (length(trim(endpoint_url)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_sources_scope_check CHECK (
+  CONSTRAINT gpav_dsrc_key_chk CHECK (length(trim(source_key)) > 0),
+  CONSTRAINT gpav_dsrc_endpoint_chk CHECK (length(trim(endpoint_url)) > 0),
+  CONSTRAINT gpav_dsrc_scope_chk CHECK (
     discovery_scope IN ('public_registry', 'signed_catalog', 'community_feed', 'manual_seed')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_sources_tier_check CHECK (
+  CONSTRAINT gpav_dsrc_tier_chk CHECK (
     trust_tier IN ('bootstrap', 'observer', 'independent', 'community')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_sources_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object')
+  CONSTRAINT gpav_dsrc_metadata_chk CHECK (jsonb_typeof(metadata) = 'object')
 );
 
 CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_discovery_runs (
@@ -57,16 +57,16 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_discov
   created_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_runs_status_check CHECK (
+  CONSTRAINT gpav_drun_status_chk CHECK (
     run_status IN ('ok', 'degraded', 'failed')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_runs_discovered_count_check CHECK (discovered_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_runs_accepted_count_check CHECK (accepted_candidate_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_runs_stale_count_check CHECK (stale_candidate_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_runs_error_not_empty_check CHECK (
+  CONSTRAINT gpav_drun_discovered_cnt_chk CHECK (discovered_count >= 0),
+  CONSTRAINT gpav_drun_accepted_cnt_chk CHECK (accepted_candidate_count >= 0),
+  CONSTRAINT gpav_drun_stale_cnt_chk CHECK (stale_candidate_count >= 0),
+  CONSTRAINT gpav_drun_err_chk CHECK (
     error_message IS NULL OR length(trim(error_message)) > 0
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovery_runs_payload_object_check CHECK (jsonb_typeof(run_payload) = 'object')
+  CONSTRAINT gpav_drun_payload_chk CHECK (jsonb_typeof(run_payload) = 'object')
 );
 
 CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_discovered_candidates (
@@ -88,23 +88,23 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_discov
   last_seen_at timestamptz NOT NULL DEFAULT now(),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_key_not_empty_check CHECK (length(trim(candidate_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_endpoint_not_empty_check CHECK (length(trim(endpoint_url)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_mirror_type_not_empty_check CHECK (length(trim(mirror_type)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_region_not_empty_check CHECK (length(trim(region_code)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_operator_not_empty_check CHECK (length(trim(operator_label)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_country_code_check CHECK (
+  CONSTRAINT gpav_dcand_key_chk CHECK (length(trim(candidate_key)) > 0),
+  CONSTRAINT gpav_dcand_endpoint_chk CHECK (length(trim(endpoint_url)) > 0),
+  CONSTRAINT gpav_dcand_mirror_type_chk CHECK (length(trim(mirror_type)) > 0),
+  CONSTRAINT gpav_dcand_region_chk CHECK (length(trim(region_code)) > 0),
+  CONSTRAINT gpav_dcand_operator_chk CHECK (length(trim(operator_label)) > 0),
+  CONSTRAINT gpav_dcand_country_chk CHECK (
     jurisdiction_country_code = '' OR length(jurisdiction_country_code) = 2
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_trust_domain_not_empty_check CHECK (length(trim(trust_domain)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_confidence_check CHECK (
+  CONSTRAINT gpav_dcand_trust_domain_chk CHECK (length(trim(trust_domain)) > 0),
+  CONSTRAINT gpav_dcand_confidence_chk CHECK (
     discovery_confidence >= 0 AND discovery_confidence <= 100
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_status_check CHECK (
+  CONSTRAINT gpav_dcand_status_chk CHECK (
     candidate_status IN ('new', 'reviewed', 'promoted', 'rejected', 'inactive')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object'),
-  CONSTRAINT governance_public_audit_verifier_mirror_discovered_candidates_unique_source_candidate UNIQUE (source_id, candidate_key)
+  CONSTRAINT gpav_dcand_metadata_chk CHECK (jsonb_typeof(metadata) = 'object'),
+  CONSTRAINT gpav_dcand_unique_src_cand UNIQUE (source_id, candidate_key)
 );
 
 CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_policy_ratifications (
@@ -120,15 +120,15 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_policy
   ratified_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_policy_key_not_empty_check CHECK (length(trim(policy_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_policy_hash_not_empty_check CHECK (length(trim(policy_hash)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_signer_key_not_empty_check CHECK (length(trim(signer_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_decision_check CHECK (
+  CONSTRAINT gpav_prat_policy_key_chk CHECK (length(trim(policy_key)) > 0),
+  CONSTRAINT gpav_prat_policy_hash_chk CHECK (length(trim(policy_hash)) > 0),
+  CONSTRAINT gpav_prat_signer_key_chk CHECK (length(trim(signer_key)) > 0),
+  CONSTRAINT gpav_prat_decision_chk CHECK (
     ratification_decision IN ('approve', 'reject')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_signature_not_empty_check CHECK (length(trim(ratification_signature)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_payload_object_check CHECK (jsonb_typeof(ratification_payload) = 'object'),
-  CONSTRAINT governance_public_audit_verifier_mirror_policy_ratifications_unique_signer UNIQUE (policy_key, policy_hash, signer_id)
+  CONSTRAINT gpav_prat_sig_chk CHECK (length(trim(ratification_signature)) > 0),
+  CONSTRAINT gpav_prat_payload_chk CHECK (jsonb_typeof(ratification_payload) = 'object'),
+  CONSTRAINT gpav_prat_unique_signer UNIQUE (policy_key, policy_hash, signer_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_governance_public_audit_verifier_mirror_discovery_sources_active
@@ -833,7 +833,7 @@ payload_cte AS (
 SELECT
   coalesce((SELECT policy.policy_key FROM policy LIMIT 1), lower(coalesce(nullif(btrim(coalesce(requested_policy_key, '')), ''), 'default'))) AS policy_key,
   encode(
-    digest(
+    extensions.digest(
       coalesce((SELECT (payload_cte.policy_payload::text)::bytea FROM payload_cte LIMIT 1), '{}'::text::bytea),
       'sha256'
     ),
@@ -1124,6 +1124,7 @@ latest_directory AS (
   FROM public.governance_public_audit_verifier_mirror_directories AS directory
   LEFT JOIN public.governance_public_audit_verifier_mirror_directory_signers AS signer
     ON signer.id = directory.signer_id
+  CROSS JOIN resolved_batch
   WHERE resolved_batch.batch_id IS NULL
      OR directory.batch_id = resolved_batch.batch_id
   ORDER BY directory.published_at DESC, directory.created_at DESC
@@ -1204,7 +1205,7 @@ healthy_mirror_count_cte AS (
 SELECT
   'public_audit_client_verifier_bundle_v1'::text AS bundle_version,
   encode(
-    digest(
+    extensions.digest(
       (payload_cte.bundle_payload::text)::bytea,
       'sha256'
     ),

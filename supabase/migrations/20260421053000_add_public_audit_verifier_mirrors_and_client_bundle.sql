@@ -369,7 +369,7 @@ healthy_mirror_count_cte AS (
 SELECT
   'public_audit_client_verifier_bundle_v1'::text AS bundle_version,
   encode(
-    digest(
+    extensions.digest(
       (payload_cte.bundle_payload::text)::bytea,
       'sha256'
     ),

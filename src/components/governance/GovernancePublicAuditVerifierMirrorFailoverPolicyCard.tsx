@@ -25,6 +25,11 @@ interface GovernancePublicAuditVerifierMirrorFailoverPolicyDraft {
   minIndependentDirectorySigners: string;
   requirePolicyRatification: boolean;
   minPolicyRatificationApprovals: string;
+  requireSignerGovernanceApproval: boolean;
+  minSignerGovernanceIndependentApprovals: string;
+  requireFederationOpsReadiness: boolean;
+  maxOpenCriticalFederationAlerts: string;
+  minOnboardedFederationOperators: string;
 }
 
 interface GovernancePublicAuditVerifierMirrorFailoverPolicyCardProps {
@@ -48,6 +53,11 @@ const DEFAULT_DRAFT: GovernancePublicAuditVerifierMirrorFailoverPolicyDraft = {
   minIndependentDirectorySigners: '1',
   requirePolicyRatification: false,
   minPolicyRatificationApprovals: '1',
+  requireSignerGovernanceApproval: false,
+  minSignerGovernanceIndependentApprovals: '1',
+  requireFederationOpsReadiness: false,
+  maxOpenCriticalFederationAlerts: '0',
+  minOnboardedFederationOperators: '1',
 };
 
 export function GovernancePublicAuditVerifierMirrorFailoverPolicyCard({
@@ -74,6 +84,11 @@ export function GovernancePublicAuditVerifierMirrorFailoverPolicyCard({
       minIndependentDirectorySigners: String(failoverPolicy.minIndependentDirectorySigners),
       requirePolicyRatification: failoverPolicy.requirePolicyRatification,
       minPolicyRatificationApprovals: String(failoverPolicy.minPolicyRatificationApprovals),
+      requireSignerGovernanceApproval: failoverPolicy.requireSignerGovernanceApproval,
+      minSignerGovernanceIndependentApprovals: String(failoverPolicy.minSignerGovernanceIndependentApprovals),
+      requireFederationOpsReadiness: failoverPolicy.requireFederationOpsReadiness,
+      maxOpenCriticalFederationAlerts: String(failoverPolicy.maxOpenCriticalFederationAlerts),
+      minOnboardedFederationOperators: String(failoverPolicy.minOnboardedFederationOperators),
     });
   }, [failoverPolicy]);
 
@@ -135,6 +150,24 @@ export function GovernancePublicAuditVerifierMirrorFailoverPolicyCard({
         disabled={!canManageMirrorProduction}
       />
       <Input
+        value={failoverDraft.minSignerGovernanceIndependentApprovals}
+        onChange={(event) => setFailoverDraft((current) => ({ ...current, minSignerGovernanceIndependentApprovals: event.target.value }))}
+        placeholder="Min signer governance approvals"
+        disabled={!canManageMirrorProduction}
+      />
+      <Input
+        value={failoverDraft.maxOpenCriticalFederationAlerts}
+        onChange={(event) => setFailoverDraft((current) => ({ ...current, maxOpenCriticalFederationAlerts: event.target.value }))}
+        placeholder="Max open critical federation alerts"
+        disabled={!canManageMirrorProduction}
+      />
+      <Input
+        value={failoverDraft.minOnboardedFederationOperators}
+        onChange={(event) => setFailoverDraft((current) => ({ ...current, minOnboardedFederationOperators: event.target.value }))}
+        placeholder="Min onboarded federation operators"
+        disabled={!canManageMirrorProduction}
+      />
+      <Input
         value={failoverDraft.mirrorSelectionStrategy}
         onChange={(event) => setFailoverDraft((current) => ({ ...current, mirrorSelectionStrategy: event.target.value }))}
         placeholder="Selection strategy"
@@ -164,6 +197,32 @@ export function GovernancePublicAuditVerifierMirrorFailoverPolicyCard({
         <SelectContent>
           <SelectItem value="yes">Require ratification</SelectItem>
           <SelectItem value="no">Allow without ratification</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select
+        value={failoverDraft.requireSignerGovernanceApproval ? 'yes' : 'no'}
+        onValueChange={(value) => setFailoverDraft((current) => ({ ...current, requireSignerGovernanceApproval: value === 'yes' }))}
+        disabled={!canManageMirrorProduction}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Require signer governance" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="yes">Require signer governance</SelectItem>
+          <SelectItem value="no">Allow without signer governance</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select
+        value={failoverDraft.requireFederationOpsReadiness ? 'yes' : 'no'}
+        onValueChange={(value) => setFailoverDraft((current) => ({ ...current, requireFederationOpsReadiness: value === 'yes' }))}
+        disabled={!canManageMirrorProduction}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Require federation ops readiness" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="yes">Require federation ops readiness</SelectItem>
+          <SelectItem value="no">Allow without federation ops gate</SelectItem>
         </SelectContent>
       </Select>
 

@@ -21,7 +21,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test-users:sync": "node scripts/sync-test-users.mjs",
-    "test-users:cleanup-random": "node scripts/cleanup-random-test-users.mjs"
+    "test-users:cleanup-random": "node scripts/cleanup-random-test-users.mjs",
+    "db:apply-remote-migration": "bash scripts/db-apply-remote-migration.sh",
+    "db:apply-remote:federation-distribution": "bash scripts/apply-remote-federation-distribution-migrations.sh",
+    "db:vps-install-agent-key": "bash scripts/vps-install-levela-agent-ssh-key.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",

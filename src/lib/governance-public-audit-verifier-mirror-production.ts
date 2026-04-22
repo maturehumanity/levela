@@ -2,6 +2,10 @@ import type {
   GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
 } from '@/lib/governance-public-audit-verifier-federation';
+import {
+  readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
+} from '@/lib/governance-public-audit-verifier-federation-distribution';
 import type {
   GovernancePublicAuditClientMirrorFailoverTarget,
   GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
@@ -255,6 +259,7 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
   const policyRatification = asRecord(bundlePayload.policy_ratification);
   const federationDiversity = asRecord(bundlePayload.federation_diversity);
   const federationOperations = asRecord(bundlePayload.federation_operations);
+  const federationDistribution = asRecord(bundlePayload.federation_distribution);
 
   return {
     failoverPolicy,
@@ -298,8 +303,19 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
         alertSlaBreachedCount: asNonNegativeInteger(federationOperations.alert_sla_breached_count),
         lastWorkerRunAt: asNullableString(federationOperations.last_worker_run_at),
         lastWorkerRunStatus: asMirrorStatus(federationOperations.last_worker_run_status),
+        distributionVerificationLookbackHours: Math.max(1, asNonNegativeInteger(federationOperations.distribution_verification_lookback_hours, 24)),
+        lastDistributionVerificationRunAt: asNullableString(federationOperations.last_distribution_verification_run_at),
+        lastDistributionVerificationRunStatus: asMirrorStatus(federationOperations.last_distribution_verification_run_status),
+        distributionVerificationStale: asBoolean(federationOperations.distribution_verification_stale, true),
+        openDistributionStalePackageAlertCount: asNonNegativeInteger(federationOperations.open_distribution_stale_package_alert_count),
+        openDistributionBadSignatureAlertCount: asNonNegativeInteger(federationOperations.open_distribution_bad_signature_alert_count),
+        openDistributionPolicyMismatchAlertCount: asNonNegativeInteger(federationOperations.open_distribution_policy_mismatch_alert_count),
+        openDistributionVerificationAlertCount: asNonNegativeInteger(federationOperations.open_distribution_verification_alert_count),
         federationOpsReady: asBoolean(federationOperations.federation_ops_ready, false),
       } as GovernancePublicAuditVerifierMirrorFederationOperationsSummary
+      : null,
+    federationDistribution: federationDistribution
+      ? readGovernancePublicAuditVerifierFederationPackageDistributionSummary([federationDistribution]) as GovernancePublicAuditVerifierFederationPackageDistributionSummary | null
       : null,
     policyRatification: policyRatification
       ? {

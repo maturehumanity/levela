@@ -250,11 +250,11 @@ SELECT
   count(*)::bigint,
   'Backfilled from existing activation scopes',
   'Bootstrap declaration imported from existing activation scopes',
-  min(scope.activated_by),
+  (array_agg(scope.activated_by ORDER BY scope.activated_at ASC) FILTER (WHERE scope.activated_by IS NOT NULL))[1],
   min(scope.activated_at),
-  min(scope.activated_by),
+  (array_agg(scope.activated_by ORDER BY scope.activated_at ASC) FILTER (WHERE scope.activated_by IS NOT NULL))[1],
   max(scope.activated_at),
-  min(scope.activated_by),
+  (array_agg(scope.activated_by ORDER BY scope.activated_at ASC) FILTER (WHERE scope.activated_by IS NOT NULL))[1],
   max(scope.activated_at),
   jsonb_build_object('source', 'legacy_activation_scope_projection')
 FROM public.citizen_activation_scopes AS scope

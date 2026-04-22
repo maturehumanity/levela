@@ -34,7 +34,7 @@ vi.mock('@/contexts/LanguageContext', async () => {
 });
 
 describe('Onboarding download access', () => {
-  it('shows the public app download card with qr code and actions', () => {
+  it('shows the public app download card with qr code and actions', async () => {
     render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Onboarding />
@@ -45,6 +45,6 @@ describe('Onboarding download access', () => {
     expect(screen.getByText('Scan to install on your phone')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download the Android test build' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open download page' })).toBeInTheDocument();
-    expect(screen.getByTestId('qr-code')).toHaveAttribute('data-value', ANDROID_DOWNLOAD_URL);
+    expect(await screen.findByTestId('qr-code')).toHaveAttribute('data-value', ANDROID_DOWNLOAD_URL);
   });
 });

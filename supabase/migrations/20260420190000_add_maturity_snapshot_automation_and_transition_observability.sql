@@ -411,11 +411,11 @@ BEGIN
         SELECT cron.schedule(
           'governance_domain_maturity_snapshot_refresh',
           '15 */6 * * *',
-          $$SELECT public.capture_scheduled_governance_domain_maturity_snapshots(
+          $job$SELECT public.capture_scheduled_governance_domain_maturity_snapshots(
             '12 hours'::interval,
             'scheduled_refresh',
             'Automated scheduled maturity snapshot refresh'
-          );$$
+          );$job$
         )
       $cron$;
     EXCEPTION

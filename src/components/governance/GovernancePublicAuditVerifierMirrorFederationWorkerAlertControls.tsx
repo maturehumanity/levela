@@ -19,7 +19,7 @@ interface GovernancePublicAuditVerifierMirrorFederationWorkerAlertControlsProps 
   openingFederationAlert: boolean;
   resolvingFederationAlert: boolean;
   recordFederationWorkerRun: (draft: {
-    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'manual';
+    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'package_distribution_verification' | 'manual';
     runStatus: 'ok' | 'degraded' | 'failed';
     discoveredRequestCount: string;
     approvedRequestCount: string;
@@ -49,7 +49,7 @@ export function GovernancePublicAuditVerifierMirrorFederationWorkerAlertControls
   resolveFederationAlert,
 }: GovernancePublicAuditVerifierMirrorFederationWorkerAlertControlsProps) {
   const [workerRunDraft, setWorkerRunDraft] = useState({
-    runScope: 'manual' as 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'manual',
+    runScope: 'manual' as 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'package_distribution_verification' | 'manual',
     runStatus: 'ok' as 'ok' | 'degraded' | 'failed',
     discoveredRequestCount: '',
     approvedRequestCount: '',
@@ -63,6 +63,7 @@ export function GovernancePublicAuditVerifierMirrorFederationWorkerAlertControls
     alertScope: 'manual',
     alertMessage: '',
   });
+  const [distributionAlertTemplate, setDistributionAlertTemplate] = useState<'none' | 'stale_package' | 'bad_signature' | 'policy_mismatch'>('none');
   const [resolveAlertDraft, setResolveAlertDraft] = useState({
     alertId: '',
     resolutionNotes: '',
@@ -84,6 +85,7 @@ export function GovernancePublicAuditVerifierMirrorFederationWorkerAlertControls
           <SelectItem value="onboarding_sweep">Onboarding sweep</SelectItem>
           <SelectItem value="operator_health_audit">Operator health audit</SelectItem>
           <SelectItem value="diversity_audit">Diversity audit</SelectItem>
+          <SelectItem value="package_distribution_verification">Package distribution verification</SelectItem>
           <SelectItem value="manual">Manual</SelectItem>
         </SelectContent>
       </Select>
@@ -108,6 +110,48 @@ export function GovernancePublicAuditVerifierMirrorFederationWorkerAlertControls
       </Button>
 
       <Label className="pt-1 text-xs">Open federation alert</Label>
+      <Select
+        value={distributionAlertTemplate}
+        onValueChange={(value) => {
+          const next = value as typeof distributionAlertTemplate;
+          setDistributionAlertTemplate(next);
+          if (next === 'none') return;
+          if (next === 'stale_package') {
+            setAlertDraft({
+              alertKey: 'verifier_federation_distribution_stale_package',
+              severity: 'critical',
+              alertScope: 'federation_distribution_stale_package',
+              alertMessage: 'Latest federation distribution package is stale or missing (manual drill).',
+            });
+            return;
+          }
+          if (next === 'bad_signature') {
+            setAlertDraft({
+              alertKey: 'verifier_federation_distribution_bad_signature',
+              severity: 'critical',
+              alertScope: 'federation_distribution_bad_signature',
+              alertMessage: 'Malformed or unsupported federation package signature detected (manual drill).',
+            });
+            return;
+          }
+          setAlertDraft({
+            alertKey: 'verifier_federation_distribution_policy_mismatch',
+            severity: 'critical',
+            alertScope: 'federation_distribution_policy_mismatch',
+            alertMessage: 'Federation distribution policy mismatch vs captured package state (manual drill).',
+          });
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Distribution alert template" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Custom (no template)</SelectItem>
+          <SelectItem value="stale_package">Distribution: stale / missing package</SelectItem>
+          <SelectItem value="bad_signature">Distribution: bad signature</SelectItem>
+          <SelectItem value="policy_mismatch">Distribution: policy mismatch</SelectItem>
+        </SelectContent>
+      </Select>
       <Input value={alertDraft.alertKey} onChange={(event) => setAlertDraft((current) => ({ ...current, alertKey: event.target.value }))} placeholder="Alert key" />
       <Select value={alertDraft.severity} onValueChange={(value) => setAlertDraft((current) => ({ ...current, severity: value as typeof current.severity }))}>
         <SelectTrigger>

@@ -3,15 +3,20 @@ ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
   ADD COLUMN IF NOT EXISTS max_open_critical_federation_alerts integer NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS min_onboarded_federation_operators integer NOT NULL DEFAULT 1;
 
+ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
+  DROP CONSTRAINT IF EXISTS governance_public_audit_verifier_mirror_failover_policies_max_o;
+ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
+  DROP CONSTRAINT IF EXISTS governance_public_audit_verifier_mirror_failover_policies_min_o;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conname = 'governance_public_audit_verifier_mirror_failover_policies_max_open_critical_federation_alerts_check'
+    WHERE conname = 'gpav_mirror_failover_max_crit_fed_alerts_chk'
   ) THEN
     ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
-      ADD CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_max_open_critical_federation_alerts_check
+      ADD CONSTRAINT gpav_mirror_failover_max_crit_fed_alerts_chk
       CHECK (max_open_critical_federation_alerts >= 0);
   END IF;
 END $$;
@@ -21,10 +26,10 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conname = 'governance_public_audit_verifier_mirror_failover_policies_min_onboarded_federation_operators_check'
+    WHERE conname = 'gpav_mirror_failover_min_onboard_fed_ops_chk'
   ) THEN
     ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
-      ADD CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_min_onboarded_federation_operators_check
+      ADD CONSTRAINT gpav_mirror_failover_min_onboard_fed_ops_chk
       CHECK (min_onboarded_federation_operators >= 1);
   END IF;
 END $$;
@@ -48,18 +53,18 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federa
   updated_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_operators_key_not_empty_check CHECK (length(trim(operator_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_operators_contact_not_empty_check CHECK (
+  CONSTRAINT gpav_fed_op_key_nonempty_chk CHECK (length(trim(operator_key)) > 0),
+  CONSTRAINT gpav_fed_op_contact_nonempty_chk CHECK (
     contact_endpoint IS NULL OR length(trim(contact_endpoint)) > 0
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_operators_country_code_check CHECK (
+  CONSTRAINT gpav_fed_op_country_code_chk CHECK (
     jurisdiction_country_code = '' OR length(jurisdiction_country_code) = 2
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_operators_trust_domain_not_empty_check CHECK (length(trim(trust_domain)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_operators_onboarding_status_check CHECK (
+  CONSTRAINT gpav_fed_op_trust_domain_nonempty_chk CHECK (length(trim(trust_domain)) > 0),
+  CONSTRAINT gpav_fed_op_onboard_status_chk CHECK (
     onboarding_status IN ('pending', 'approved', 'onboarded', 'rejected', 'suspended')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_operators_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object')
+  CONSTRAINT gpav_fed_op_metadata_obj_chk CHECK (jsonb_typeof(metadata) = 'object')
 );
 
 CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federation_onboarding_requests (
@@ -82,22 +87,22 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federa
   requested_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_operator_key_not_empty_check CHECK (length(trim(operator_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_status_check CHECK (
+  CONSTRAINT gpav_fed_obreq_op_key_chk CHECK (length(trim(operator_key)) > 0),
+  CONSTRAINT gpav_fed_obreq_status_chk CHECK (
     request_status IN ('pending', 'approved', 'rejected', 'onboarded')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_mirror_key_not_empty_check CHECK (length(trim(requested_mirror_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_endpoint_not_empty_check CHECK (length(trim(requested_endpoint_url)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_mirror_type_not_empty_check CHECK (length(trim(requested_mirror_type)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_region_not_empty_check CHECK (length(trim(requested_region_code)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_country_code_check CHECK (
+  CONSTRAINT gpav_fed_obreq_mirror_key_chk CHECK (length(trim(requested_mirror_key)) > 0),
+  CONSTRAINT gpav_fed_obreq_endpoint_chk CHECK (length(trim(requested_endpoint_url)) > 0),
+  CONSTRAINT gpav_fed_obreq_mirror_type_chk CHECK (length(trim(requested_mirror_type)) > 0),
+  CONSTRAINT gpav_fed_obreq_region_chk CHECK (length(trim(requested_region_code)) > 0),
+  CONSTRAINT gpav_fed_obreq_country_code_chk CHECK (
     requested_jurisdiction_country_code = '' OR length(requested_jurisdiction_country_code) = 2
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_trust_domain_not_empty_check CHECK (length(trim(requested_trust_domain)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_review_notes_not_empty_check CHECK (
+  CONSTRAINT gpav_fed_obreq_trust_domain_chk CHECK (length(trim(requested_trust_domain)) > 0),
+  CONSTRAINT gpav_fed_obreq_review_notes_chk CHECK (
     review_notes IS NULL OR length(trim(review_notes)) > 0
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_onboarding_requests_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object')
+  CONSTRAINT gpav_fed_obreq_metadata_obj_chk CHECK (jsonb_typeof(metadata) = 'object')
 );
 
 CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federation_worker_runs (
@@ -114,20 +119,20 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federa
   created_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_scope_check CHECK (
+  CONSTRAINT gpav_fed_wr_scope_chk CHECK (
     run_scope IN ('onboarding_sweep', 'operator_health_audit', 'diversity_audit', 'manual')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_status_check CHECK (
+  CONSTRAINT gpav_fed_wr_status_chk CHECK (
     run_status IN ('ok', 'degraded', 'failed')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_discovered_count_check CHECK (discovered_request_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_approved_count_check CHECK (approved_request_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_onboarded_count_check CHECK (onboarded_request_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_open_alert_count_check CHECK (open_alert_count >= 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_error_not_empty_check CHECK (
+  CONSTRAINT gpav_fed_wr_discovered_cnt_chk CHECK (discovered_request_count >= 0),
+  CONSTRAINT gpav_fed_wr_approved_cnt_chk CHECK (approved_request_count >= 0),
+  CONSTRAINT gpav_fed_wr_onboarded_cnt_chk CHECK (onboarded_request_count >= 0),
+  CONSTRAINT gpav_fed_wr_open_alert_cnt_chk CHECK (open_alert_count >= 0),
+  CONSTRAINT gpav_fed_wr_err_nonempty_chk CHECK (
     error_message IS NULL OR length(trim(error_message)) > 0
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_worker_runs_payload_object_check CHECK (jsonb_typeof(run_payload) = 'object')
+  CONSTRAINT gpav_fed_wr_payload_obj_chk CHECK (jsonb_typeof(run_payload) = 'object')
 );
 
 CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federation_alerts (
@@ -145,16 +150,16 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_federa
   created_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_alerts_key_not_empty_check CHECK (length(trim(alert_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_alerts_severity_check CHECK (
+  CONSTRAINT gpav_fed_alert_key_nonempty_chk CHECK (length(trim(alert_key)) > 0),
+  CONSTRAINT gpav_fed_alert_severity_chk CHECK (
     severity IN ('info', 'warning', 'critical')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_alerts_scope_not_empty_check CHECK (length(trim(alert_scope)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_alerts_status_check CHECK (
+  CONSTRAINT gpav_fed_alert_scope_nonempty_chk CHECK (length(trim(alert_scope)) > 0),
+  CONSTRAINT gpav_fed_alert_status_chk CHECK (
     alert_status IN ('open', 'acknowledged', 'resolved')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_alerts_message_not_empty_check CHECK (length(trim(alert_message)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_federation_alerts_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object')
+  CONSTRAINT gpav_fed_alert_msg_nonempty_chk CHECK (length(trim(alert_message)) > 0),
+  CONSTRAINT gpav_fed_alert_metadata_obj_chk CHECK (jsonb_typeof(metadata) = 'object')
 );
 
 CREATE INDEX IF NOT EXISTS idx_governance_public_audit_verifier_mirror_federation_operators_status
@@ -802,6 +807,63 @@ ORDER BY
 LIMIT greatest(1, coalesce(max_entries, 60));
 $$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
 
+DROP FUNCTION IF EXISTS public.governance_public_audit_verifier_mirror_failover_policy_summary(text);
+CREATE FUNCTION public.governance_public_audit_verifier_mirror_failover_policy_summary(
+  requested_policy_key text DEFAULT 'default'
+)
+RETURNS TABLE (
+  policy_id uuid,
+  policy_key text,
+  policy_name text,
+  is_active boolean,
+  min_healthy_mirrors integer,
+  max_mirror_latency_ms integer,
+  max_failures_before_cooldown integer,
+  cooldown_minutes integer,
+  prefer_same_region boolean,
+  required_distinct_regions integer,
+  required_distinct_operators integer,
+  mirror_selection_strategy text,
+  max_mirror_candidates integer,
+  min_independent_directory_signers integer,
+  require_policy_ratification boolean,
+  min_policy_ratification_approvals integer,
+  require_signer_governance_approval boolean,
+  min_signer_governance_independent_approvals integer,
+  require_federation_ops_readiness boolean,
+  max_open_critical_federation_alerts integer,
+  min_onboarded_federation_operators integer,
+  updated_at timestamptz
+) AS $$
+SELECT
+  policy.id AS policy_id,
+  policy.policy_key,
+  policy.policy_name,
+  policy.is_active,
+  policy.min_healthy_mirrors,
+  policy.max_mirror_latency_ms,
+  policy.max_failures_before_cooldown,
+  policy.cooldown_minutes,
+  policy.prefer_same_region,
+  policy.required_distinct_regions,
+  policy.required_distinct_operators,
+  policy.mirror_selection_strategy,
+  policy.max_mirror_candidates,
+  policy.min_independent_directory_signers,
+  policy.require_policy_ratification,
+  policy.min_policy_ratification_approvals,
+  policy.require_signer_governance_approval,
+  policy.min_signer_governance_independent_approvals,
+  policy.require_federation_ops_readiness,
+  policy.max_open_critical_federation_alerts,
+  policy.min_onboarded_federation_operators,
+  policy.updated_at
+FROM public.governance_public_audit_verifier_mirror_failover_policies AS policy
+WHERE policy.policy_key = lower(coalesce(nullif(btrim(coalesce(requested_policy_key, '')), ''), 'default'))
+ORDER BY policy.updated_at DESC, policy.created_at DESC, policy.id DESC
+LIMIT 1;
+$$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
+
 CREATE OR REPLACE FUNCTION public.governance_public_audit_verifier_mirror_federation_operations_summary(
   requested_policy_key text DEFAULT 'default',
   requested_lookback_hours integer DEFAULT 24,
@@ -908,63 +970,6 @@ CROSS JOIN operator_counts
 CROSS JOIN request_counts
 CROSS JOIN alert_counts
 LEFT JOIN last_worker_run ON true;
-$$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
-
-DROP FUNCTION IF EXISTS public.governance_public_audit_verifier_mirror_failover_policy_summary(text);
-CREATE FUNCTION public.governance_public_audit_verifier_mirror_failover_policy_summary(
-  requested_policy_key text DEFAULT 'default'
-)
-RETURNS TABLE (
-  policy_id uuid,
-  policy_key text,
-  policy_name text,
-  is_active boolean,
-  min_healthy_mirrors integer,
-  max_mirror_latency_ms integer,
-  max_failures_before_cooldown integer,
-  cooldown_minutes integer,
-  prefer_same_region boolean,
-  required_distinct_regions integer,
-  required_distinct_operators integer,
-  mirror_selection_strategy text,
-  max_mirror_candidates integer,
-  min_independent_directory_signers integer,
-  require_policy_ratification boolean,
-  min_policy_ratification_approvals integer,
-  require_signer_governance_approval boolean,
-  min_signer_governance_independent_approvals integer,
-  require_federation_ops_readiness boolean,
-  max_open_critical_federation_alerts integer,
-  min_onboarded_federation_operators integer,
-  updated_at timestamptz
-) AS $$
-SELECT
-  policy.id AS policy_id,
-  policy.policy_key,
-  policy.policy_name,
-  policy.is_active,
-  policy.min_healthy_mirrors,
-  policy.max_mirror_latency_ms,
-  policy.max_failures_before_cooldown,
-  policy.cooldown_minutes,
-  policy.prefer_same_region,
-  policy.required_distinct_regions,
-  policy.required_distinct_operators,
-  policy.mirror_selection_strategy,
-  policy.max_mirror_candidates,
-  policy.min_independent_directory_signers,
-  policy.require_policy_ratification,
-  policy.min_policy_ratification_approvals,
-  policy.require_signer_governance_approval,
-  policy.min_signer_governance_independent_approvals,
-  policy.require_federation_ops_readiness,
-  policy.max_open_critical_federation_alerts,
-  policy.min_onboarded_federation_operators,
-  policy.updated_at
-FROM public.governance_public_audit_verifier_mirror_failover_policies AS policy
-WHERE policy.policy_key = lower(coalesce(nullif(btrim(coalesce(requested_policy_key, '')), ''), 'default'))
-ORDER BY policy.updated_at DESC, policy.created_at DESC, policy.id DESC
-LIMIT 1;
 $$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
 
 DROP FUNCTION IF EXISTS public.governance_public_audit_client_verifier_bundle(uuid, integer);
@@ -1107,6 +1112,7 @@ latest_directory AS (
   FROM public.governance_public_audit_verifier_mirror_directories AS directory
   LEFT JOIN public.governance_public_audit_verifier_mirror_directory_signers AS signer
     ON signer.id = directory.signer_id
+  CROSS JOIN resolved_batch
   WHERE resolved_batch.batch_id IS NULL
      OR directory.batch_id = resolved_batch.batch_id
   ORDER BY directory.published_at DESC, directory.created_at DESC
@@ -1205,7 +1211,7 @@ healthy_mirror_count_cte AS (
 SELECT
   'public_audit_client_verifier_bundle_v1'::text AS bundle_version,
   encode(
-    digest(
+    extensions.digest(
       (payload_cte.bundle_payload::text)::bytea,
       'sha256'
     ),

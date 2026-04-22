@@ -1,23 +1,26 @@
-CREATE OR REPLACE FUNCTION public.governance_public_audit_verifier_mirror_federation_diversity_summary(
-  requested_batch_id uuid DEFAULT NULL,
-  max_mirrors integer DEFAULT 8
+CREATE OR REPLACE FUNCTION public.governance_public_audit_verifier_federation_distribution_gate(
+  target_batch_id uuid DEFAULT NULL,
+  requested_policy_key text DEFAULT 'default'
 )
 RETURNS TABLE (
+  package_id uuid,
   batch_id uuid,
-  required_distinct_regions integer,
-  required_distinct_operators integer,
-  selected_mirror_count integer,
-  healthy_mirror_count integer,
-  distinct_region_count integer,
-  distinct_operator_count integer,
-  largest_operator_mirror_count integer,
-  largest_operator_share_percent numeric,
-  meets_region_diversity boolean,
-  meets_operator_diversity boolean
+  captured_at timestamptz,
+  package_version text,
+  package_hash text,
+  source_directory_hash text,
+  required_distribution_signatures integer,
+  signature_count integer,
+  distinct_signer_count integer,
+  distinct_signer_jurisdictions_count integer,
+  distinct_signer_trust_domains_count integer,
+  last_signed_at timestamptz,
+  federation_ops_ready boolean,
+  distribution_ready boolean
 ) AS $$
 WITH resolved_batch AS (
   SELECT coalesce(
-    requested_batch_id,
+    target_batch_id,
     (
       SELECT batch.id
       FROM public.governance_public_audit_batches AS batch
@@ -26,116 +29,79 @@ WITH resolved_batch AS (
     )
   ) AS batch_id
 ),
-failover_policy AS (
-  SELECT *
-  FROM public.governance_public_audit_verifier_mirror_failover_policy_summary('default')
-),
-fallback_failover_policy AS (
+policy AS (
   SELECT
-    NULL::uuid AS policy_id,
-    'default'::text AS policy_key,
-    'Default mirror failover policy'::text AS policy_name,
-    true AS is_active,
-    1::integer AS min_healthy_mirrors,
-    2500::integer AS max_mirror_latency_ms,
-    2::integer AS max_failures_before_cooldown,
-    10::integer AS cooldown_minutes,
-    false AS prefer_same_region,
-    1::integer AS required_distinct_regions,
-    1::integer AS required_distinct_operators,
-    'health_latency_diversity'::text AS mirror_selection_strategy,
-    8::integer AS max_mirror_candidates,
-    1::integer AS min_independent_directory_signers,
-    false AS require_policy_ratification,
-    1::integer AS min_policy_ratification_approvals,
-    now()::timestamptz AS updated_at
-  WHERE NOT EXISTS (SELECT 1 FROM failover_policy)
+    greatest(
+      1,
+      coalesce(
+        policy.min_policy_ratification_approvals,
+        policy.min_independent_directory_signers,
+        1
+      )
+    )::integer AS required_signatures
+  FROM public.governance_public_audit_verifier_mirror_failover_policies AS policy
+  WHERE policy.policy_key = lower(coalesce(nullif(btrim(coalesce(requested_policy_key, '')), ''), 'default'))
+  ORDER BY policy.updated_at DESC, policy.created_at DESC, policy.id DESC
+  LIMIT 1
 ),
-effective_failover_policy AS (
-  SELECT * FROM failover_policy
+fallback_policy AS (
+  SELECT 1::integer AS required_signatures
+  WHERE NOT EXISTS (SELECT 1 FROM policy)
+),
+effective_policy AS (
+  SELECT * FROM policy
   UNION ALL
-  SELECT * FROM fallback_failover_policy
+  SELECT * FROM fallback_policy
 ),
-mirror_health AS (
-  SELECT *
-  FROM public.governance_public_audit_verifier_mirror_health_summary((SELECT batch_id FROM resolved_batch), 90)
-  WHERE is_active = true
+latest_package AS (
+  SELECT package.*
+  FROM public.governance_public_audit_verifier_federation_packages AS package
+  JOIN resolved_batch ON resolved_batch.batch_id = package.batch_id
+  WHERE package.package_scope = 'verifier_federation_distribution'
+  ORDER BY package.captured_at DESC, package.created_at DESC, package.id DESC
+  LIMIT 1
 ),
-ranked_mirrors AS (
+signature_tally AS (
   SELECT
-    mirror.*,
-    row_number() OVER (
-      ORDER BY
-        CASE
-          WHEN mirror.health_status = 'healthy' THEN 0
-          WHEN mirror.health_status = 'degraded' THEN 1
-          WHEN mirror.health_status = 'unknown' THEN 2
-          ELSE 3
-        END,
-        mirror.is_stale,
-        CASE
-          WHEN mirror.last_check_latency_ms IS NULL THEN 2147483647
-          ELSE mirror.last_check_latency_ms
-        END,
-        mirror.region_code,
-        mirror.operator_label,
-        mirror.mirror_key
-    ) AS failover_rank
-  FROM mirror_health AS mirror
-),
-selected_mirrors AS (
-  SELECT *
-  FROM ranked_mirrors
-  ORDER BY failover_rank
-  LIMIT greatest(
-    1,
-    least(
-      coalesce(max_mirrors, 8),
-      coalesce((SELECT max_mirror_candidates FROM effective_failover_policy LIMIT 1), 8)
-    )
-  )
-),
-healthy_selected_mirrors AS (
-  SELECT *
-  FROM selected_mirrors
-  WHERE health_status = 'healthy'
-),
-operator_counts AS (
-  SELECT
-    coalesce(nullif(btrim(coalesce(mirror.operator_label, '')), ''), 'unspecified') AS operator_label,
-    count(*)::integer AS operator_mirror_count
-  FROM healthy_selected_mirrors AS mirror
-  GROUP BY coalesce(nullif(btrim(coalesce(mirror.operator_label, '')), ''), 'unspecified')
-),
-counts AS (
-  SELECT
-    coalesce((SELECT count(*)::integer FROM selected_mirrors), 0) AS selected_mirror_count,
-    coalesce((SELECT count(*)::integer FROM healthy_selected_mirrors), 0) AS healthy_mirror_count,
-    coalesce((SELECT count(DISTINCT upper(coalesce(nullif(btrim(coalesce(mirror.region_code, '')), ''), 'GLOBAL')))::integer FROM healthy_selected_mirrors AS mirror), 0) AS distinct_region_count,
-    coalesce((SELECT count(DISTINCT coalesce(nullif(btrim(coalesce(mirror.operator_label, '')), ''), 'unspecified'))::integer FROM healthy_selected_mirrors AS mirror), 0) AS distinct_operator_count,
-    coalesce((SELECT max(operator_counts.operator_mirror_count) FROM operator_counts), 0) AS largest_operator_mirror_count
+    latest_package.id AS package_id,
+    coalesce(count(signature_row.*), 0)::integer AS signature_count,
+    coalesce(count(DISTINCT lower(btrim(signature_row.signer_key))), 0)::integer AS distinct_signer_count,
+    coalesce(count(DISTINCT upper(nullif(btrim(coalesce(signature_row.signer_jurisdiction_country_code, '')), ''))), 0)::integer AS distinct_signer_jurisdictions_count,
+    coalesce(count(DISTINCT lower(nullif(btrim(coalesce(signature_row.signer_trust_domain, '')), ''))), 0)::integer AS distinct_signer_trust_domains_count,
+    max(signature_row.signed_at) AS last_signed_at
+  FROM latest_package
+  LEFT JOIN public.governance_public_audit_verifier_federation_package_signatures AS signature_row
+    ON signature_row.package_id = latest_package.id
+  GROUP BY latest_package.id
 )
 SELECT
-  resolved_batch.batch_id,
-  greatest(1, coalesce((SELECT required_distinct_regions FROM effective_failover_policy LIMIT 1), 1)) AS required_distinct_regions,
-  greatest(1, coalesce((SELECT required_distinct_operators FROM effective_failover_policy LIMIT 1), 1)) AS required_distinct_operators,
-  counts.selected_mirror_count,
-  counts.healthy_mirror_count,
-  counts.distinct_region_count,
-  counts.distinct_operator_count,
-  counts.largest_operator_mirror_count,
-  CASE
-    WHEN counts.healthy_mirror_count <= 0 THEN 0::numeric
-    ELSE round((counts.largest_operator_mirror_count::numeric * 100.0) / counts.healthy_mirror_count::numeric, 2)
-  END AS largest_operator_share_percent,
-  counts.distinct_region_count >= greatest(1, coalesce((SELECT required_distinct_regions FROM effective_failover_policy LIMIT 1), 1)) AS meets_region_diversity,
-  counts.distinct_operator_count >= greatest(1, coalesce((SELECT required_distinct_operators FROM effective_failover_policy LIMIT 1), 1)) AS meets_operator_diversity
-FROM resolved_batch
-CROSS JOIN counts;
+  latest_package.id AS package_id,
+  latest_package.batch_id,
+  latest_package.captured_at,
+  latest_package.package_version,
+  latest_package.package_hash,
+  source_directory.directory_hash AS source_directory_hash,
+  effective_policy.required_signatures AS required_distribution_signatures,
+  coalesce(signature_tally.signature_count, 0) AS signature_count,
+  coalesce(signature_tally.distinct_signer_count, 0) AS distinct_signer_count,
+  coalesce(signature_tally.distinct_signer_jurisdictions_count, 0) AS distinct_signer_jurisdictions_count,
+  coalesce(signature_tally.distinct_signer_trust_domains_count, 0) AS distinct_signer_trust_domains_count,
+  signature_tally.last_signed_at,
+  coalesce((latest_package.package_payload #>> '{federation_ops_summary,federation_ops_ready}')::boolean, false) AS federation_ops_ready,
+  (
+    latest_package.id IS NOT NULL
+    AND coalesce(signature_tally.distinct_signer_count, 0) >= effective_policy.required_signatures
+    AND coalesce((latest_package.package_payload #>> '{federation_ops_summary,federation_ops_ready}')::boolean, false)
+  ) AS distribution_ready
+FROM effective_policy
+LEFT JOIN latest_package ON true
+LEFT JOIN public.governance_public_audit_verifier_mirror_directories AS source_directory
+  ON source_directory.id = latest_package.source_directory_id
+LEFT JOIN signature_tally
+  ON signature_tally.package_id = latest_package.id;
 $$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
 
-DROP FUNCTION IF EXISTS public.governance_public_audit_client_verifier_bundle(uuid, integer);
-CREATE FUNCTION public.governance_public_audit_client_verifier_bundle(
+CREATE OR REPLACE FUNCTION public.governance_public_audit_client_verifier_bundle(
   target_batch_id uuid DEFAULT NULL,
   max_mirrors integer DEFAULT 8
 )
@@ -179,6 +145,11 @@ fallback_failover_policy AS (
     1::integer AS min_independent_directory_signers,
     false AS require_policy_ratification,
     1::integer AS min_policy_ratification_approvals,
+    false AS require_signer_governance_approval,
+    1::integer AS min_signer_governance_independent_approvals,
+    false AS require_federation_ops_readiness,
+    0::integer AS max_open_critical_federation_alerts,
+    1::integer AS min_onboarded_federation_operators,
     now()::timestamptz AS updated_at
   WHERE NOT EXISTS (SELECT 1 FROM failover_policy)
 ),
@@ -291,6 +262,14 @@ federation_diversity_summary AS (
   SELECT *
   FROM public.governance_public_audit_verifier_mirror_federation_diversity_summary((SELECT batch_id FROM resolved_batch), max_mirrors)
 ),
+federation_operations_summary AS (
+  SELECT *
+  FROM public.governance_public_audit_verifier_mirror_federation_operations_summary('default', 24, 12)
+),
+federation_distribution_summary AS (
+  SELECT *
+  FROM public.governance_public_audit_verifier_federation_distribution_gate((SELECT batch_id FROM resolved_batch), 'default')
+),
 payload_cte AS (
   SELECT jsonb_build_object(
     'bundle_version', 'public_audit_client_verifier_bundle_v1',
@@ -324,6 +303,16 @@ payload_cte AS (
     'federation_diversity', coalesce((
       SELECT to_jsonb(row_data)
       FROM federation_diversity_summary AS row_data
+      LIMIT 1
+    ), '{}'::jsonb),
+    'federation_operations', coalesce((
+      SELECT to_jsonb(row_data)
+      FROM federation_operations_summary AS row_data
+      LIMIT 1
+    ), '{}'::jsonb),
+    'federation_distribution', coalesce((
+      SELECT to_jsonb(row_data)
+      FROM federation_distribution_summary AS row_data
       LIMIT 1
     ), '{}'::jsonb),
     'network_proofs', coalesce((
@@ -378,10 +367,76 @@ SELECT
       NOT coalesce((payload_cte.bundle_payload #>> '{failover_policy,require_policy_ratification}')::boolean, false)
       OR coalesce((payload_cte.bundle_payload #>> '{policy_ratification,ratification_met}')::boolean, false)
     )
+    AND (
+      NOT coalesce((payload_cte.bundle_payload #>> '{failover_policy,require_federation_ops_readiness}')::boolean, false)
+      OR coalesce((payload_cte.bundle_payload #>> '{federation_operations,federation_ops_ready}')::boolean, false)
+    )
+    AND (
+      NOT coalesce((payload_cte.bundle_payload #>> '{failover_policy,require_federation_ops_readiness}')::boolean, false)
+      OR coalesce((payload_cte.bundle_payload #>> '{federation_distribution,distribution_ready}')::boolean, false)
+    )
   ) AS quorum_met
 FROM payload_cte
 CROSS JOIN healthy_mirror_count_cte;
 $$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
 
-GRANT EXECUTE ON FUNCTION public.governance_public_audit_verifier_mirror_federation_diversity_summary(uuid, integer) TO authenticated;
+CREATE OR REPLACE FUNCTION public.governance_proposal_meets_verifier_federation_distribution_gate(
+  target_proposal_id uuid
+)
+RETURNS boolean AS $$
+WITH policy AS (
+  SELECT coalesce(failover_policy.require_federation_ops_readiness, false) AS require_distribution_gate
+  FROM public.governance_public_audit_verifier_mirror_failover_policies AS failover_policy
+  WHERE failover_policy.policy_key = 'default'
+  ORDER BY failover_policy.updated_at DESC, failover_policy.created_at DESC, failover_policy.id DESC
+  LIMIT 1
+),
+fallback_policy AS (
+  SELECT false AS require_distribution_gate
+  WHERE NOT EXISTS (SELECT 1 FROM policy)
+),
+effective_policy AS (
+  SELECT * FROM policy
+  UNION ALL
+  SELECT * FROM fallback_policy
+),
+latest_batch AS (
+  SELECT batch.id AS batch_id
+  FROM public.governance_public_audit_batches AS batch
+  ORDER BY batch.batch_index DESC
+  LIMIT 1
+),
+distribution AS (
+  SELECT *
+  FROM public.governance_public_audit_verifier_federation_distribution_gate((SELECT batch_id FROM latest_batch), 'default')
+  LIMIT 1
+)
+SELECT CASE
+  WHEN coalesce((SELECT require_distribution_gate FROM effective_policy LIMIT 1), false) = false THEN true
+  WHEN (SELECT batch_id FROM latest_batch LIMIT 1) IS NULL THEN true
+  ELSE coalesce((SELECT distribution_ready FROM distribution LIMIT 1), false)
+END;
+$$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION public.governance_proposal_is_execution_ready(
+  target_proposal_id uuid
+)
+RETURNS boolean AS $$
+  SELECT coalesce(
+    EXISTS (
+      SELECT 1
+      FROM public.governance_proposals AS proposal
+      WHERE proposal.id = target_proposal_id
+        AND proposal.status = 'approved'::public.governance_proposal_status
+        AND public.governance_proposal_meets_execution_threshold(proposal.id)
+        AND public.governance_proposal_meets_guardian_signoff(proposal.id)
+        AND public.governance_proposal_meets_verifier_federation_distribution_gate(proposal.id)
+    ),
+    false
+  );
+$$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
+
+GRANT EXECUTE ON FUNCTION public.governance_public_audit_verifier_federation_distribution_gate(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.governance_public_audit_client_verifier_bundle(uuid, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.governance_proposal_meets_verifier_federation_distribution_gate(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.governance_proposal_is_execution_ready(uuid) TO authenticated;

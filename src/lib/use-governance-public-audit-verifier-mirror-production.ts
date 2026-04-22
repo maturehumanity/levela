@@ -138,6 +138,11 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     minIndependentDirectorySigners: string;
     requirePolicyRatification: boolean;
     minPolicyRatificationApprovals: string;
+    requireSignerGovernanceApproval: boolean;
+    minSignerGovernanceIndependentApprovals: string;
+    requireFederationOpsReadiness: boolean;
+    maxOpenCriticalFederationAlerts: string;
+    minOnboardedFederationOperators: string;
   }) => {
     if (productionBackendUnavailable || !canManageMirrorProduction) return;
 
@@ -183,11 +188,38 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       },
     );
 
-    if (upsertError || trustThresholdError || policyRatificationRequirementError) {
+    const { error: signerGovernanceRequirementError } = await callUntypedRpc<string>(
+      'set_governance_public_audit_verifier_mirror_signer_governance_requirement',
+      {
+        requested_policy_key: 'default',
+        require_governance_approval: draft.requireSignerGovernanceApproval,
+        required_independent_approvals: toIntegerOrNull(draft.minSignerGovernanceIndependentApprovals),
+      },
+    );
+
+    const { error: federationOpsRequirementError } = await callUntypedRpc<string>(
+      'set_governance_public_audit_verifier_mirror_federation_ops_requirement',
+      {
+        requested_policy_key: 'default',
+        requested_require_federation_ops_readiness: draft.requireFederationOpsReadiness,
+        max_open_critical_alerts: toIntegerOrNull(draft.maxOpenCriticalFederationAlerts),
+        min_onboarded_operators: toIntegerOrNull(draft.minOnboardedFederationOperators),
+      },
+    );
+
+    if (
+      upsertError
+      || trustThresholdError
+      || policyRatificationRequirementError
+      || signerGovernanceRequirementError
+      || federationOpsRequirementError
+    ) {
       console.error('Failed to save mirror failover policy:', {
         upsertError,
         trustThresholdError,
         policyRatificationRequirementError,
+        signerGovernanceRequirementError,
+        federationOpsRequirementError,
       });
       toast.error('Could not save mirror failover policy.');
       setSavingFailoverPolicy(false);

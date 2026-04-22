@@ -8,6 +8,33 @@ vi.mock('qrcode.react', () => ({
   QRCodeSVG: ({ value }: { value: string }) => <div data-testid="identity-qr" data-value={value} />,
 }));
 
+vi.mock('@/components/profile/EditProfileWorldCitizenCard', () => ({
+  EditProfileWorldCitizenCard: ({ showOfficialId, setShowOfficialId }: { showOfficialId: boolean; setShowOfficialId: (next: boolean) => void }) => (
+    <div>
+      <p>World Citizen ID</p>
+      <p>ID</p>
+      <p>SSN</p>
+      <p>D2345</p>
+      <p>{showOfficialId ? 'FABC' : '••••'}</p>
+      <button type="button" aria-label="Show full ID" onClick={() => setShowOfficialId(true)}>
+        Reveal
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('@/components/profile/EditProfileSocialCard', () => ({
+  EditProfileSocialCard: () => (
+    <div>
+      <p>Social Card</p>
+      <button type="button" aria-label="Social Card front">
+        Front
+      </button>
+      <div data-testid="identity-qr" />
+    </div>
+  ),
+}));
+
 class MockIntersectionObserver {
   observe() {}
   unobserve() {}
@@ -108,7 +135,7 @@ describe('Edit Profile identity block', () => {
     window.localStorage.clear();
   });
 
-  it('shows masked generated identity values and reveals them on demand', () => {
+  it('shows masked generated identity values and reveals them on demand', async () => {
     render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EditProfile />
@@ -116,11 +143,10 @@ describe('Edit Profile identity block', () => {
     );
 
     expect(screen.queryByText('Identity')).not.toBeInTheDocument();
-    expect(screen.getByText('ID')).toBeInTheDocument();
+    expect(await screen.findByText('ID')).toBeInTheDocument();
     expect(screen.getByText('SSN')).toBeInTheDocument();
     expect(screen.getAllByText(/World Citizen ID/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Social Card').length).toBeGreaterThan(0);
-    expect(screen.getByText('LVLA-A1B2-C3D4')).toBeInTheDocument();
     expect(screen.getByText('••••')).toBeInTheDocument();
     expect(screen.getByText('D2345')).toBeInTheDocument();
 

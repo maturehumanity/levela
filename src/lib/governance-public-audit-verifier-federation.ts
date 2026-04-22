@@ -323,6 +323,14 @@ export function readGovernancePublicAuditVerifierMirrorFederationOperationsSumma
     alertSlaBreachedCount: asNonNegativeInteger(row.alert_sla_breached_count),
     lastWorkerRunAt: asNullableString(row.last_worker_run_at),
     lastWorkerRunStatus: asRunStatus(row.last_worker_run_status),
+    distributionVerificationLookbackHours: Math.max(1, asNonNegativeInteger(row.distribution_verification_lookback_hours, 24)),
+    lastDistributionVerificationRunAt: asNullableString(row.last_distribution_verification_run_at),
+    lastDistributionVerificationRunStatus: asRunStatus(row.last_distribution_verification_run_status),
+    distributionVerificationStale: asBoolean(row.distribution_verification_stale, true),
+    openDistributionStalePackageAlertCount: asNonNegativeInteger(row.open_distribution_stale_package_alert_count),
+    openDistributionBadSignatureAlertCount: asNonNegativeInteger(row.open_distribution_bad_signature_alert_count),
+    openDistributionPolicyMismatchAlertCount: asNonNegativeInteger(row.open_distribution_policy_mismatch_alert_count),
+    openDistributionVerificationAlertCount: asNonNegativeInteger(row.open_distribution_verification_alert_count),
     federationOpsReady: asBoolean(row.federation_ops_ready, false),
   };
 }

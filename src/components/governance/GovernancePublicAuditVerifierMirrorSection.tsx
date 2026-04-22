@@ -150,6 +150,21 @@ export function GovernancePublicAuditVerifierMirrorSection({
               Federation ops {clientVerifierBundle.federationOperations.federationOpsReady ? 'ready' : 'pending'}
             </Badge>
           )}
+          {clientVerifierBundle.federationDistribution && (
+            <Badge
+              variant="outline"
+              className={clientVerifierBundle.federationDistribution.distributionReady
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+            >
+              Federation package {clientVerifierBundle.federationDistribution.distributionReady ? 'ready' : 'pending'}
+            </Badge>
+          )}
+          {clientVerifierBundle.federationDistribution && (
+            <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+              Federation signers {clientVerifierBundle.federationDistribution.distinctSignerCount}/{clientVerifierBundle.federationDistribution.requiredDistributionSignatures}
+            </Badge>
+          )}
         </div>
       )}
 

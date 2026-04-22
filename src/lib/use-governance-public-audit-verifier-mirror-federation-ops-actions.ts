@@ -192,7 +192,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
   }, [canManageMirrorFederation, federationBackendUnavailable, loadFederationData]);
 
   const recordFederationWorkerRun = useCallback(async (draft: {
-    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'manual';
+    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'package_distribution_verification' | 'manual';
     runStatus: 'ok' | 'degraded' | 'failed';
     discoveredRequestCount: string;
     approvedRequestCount: string;

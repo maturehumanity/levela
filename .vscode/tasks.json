@@ -3,8 +3,12 @@
   "tasks": [
     {
       "label": "Start Levela Dev Server",
-      "type": "shell",
-      "command": "npm run dev",
+      "type": "process",
+      "command": "/bin/bash",
+      "args": ["-c", "npm run dev"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "runOptions": {
         "runOn": "folderOpen"
       },
@@ -12,7 +16,8 @@
         "reveal": "always",
         "panel": "dedicated",
         "clear": true
-      }
+      },
+      "problemMatcher": []
     }
   ]
 }

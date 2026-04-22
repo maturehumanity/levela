@@ -2,15 +2,19 @@ ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
   ADD COLUMN IF NOT EXISTS require_signer_governance_approval boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS min_signer_governance_independent_approvals integer NOT NULL DEFAULT 1;
 
+-- PG truncates long names to 63 chars; a failed prior apply may have left the legacy name.
+ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
+  DROP CONSTRAINT IF EXISTS governance_public_audit_verifier_mirror_failover_policies_min_s;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conname = 'governance_public_audit_verifier_mirror_failover_policies_min_signer_governance_independent_approvals_check'
+    WHERE conname = 'gpav_mirror_failover_min_sgov_app_chk'
   ) THEN
     ALTER TABLE public.governance_public_audit_verifier_mirror_failover_policies
-      ADD CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_min_signer_governance_independent_approvals_check
+      ADD CONSTRAINT gpav_mirror_failover_min_sgov_app_chk
       CHECK (min_signer_governance_independent_approvals >= 1);
   END IF;
 END $$;
@@ -24,15 +28,18 @@ ALTER TABLE public.governance_public_audit_verifier_mirror_directory_signers
   ADD COLUMN IF NOT EXISTS governance_status text NOT NULL DEFAULT 'pending',
   ADD COLUMN IF NOT EXISTS governance_last_reviewed_at timestamptz;
 
+ALTER TABLE public.governance_public_audit_verifier_mirror_directory_signers
+  DROP CONSTRAINT IF EXISTS governance_public_audit_verifier_mirror_directory_signers_gover;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conname = 'governance_public_audit_verifier_mirror_directory_signers_governance_status_check'
+    WHERE conname = 'gpav_mirror_dir_signers_gov_status_chk'
   ) THEN
     ALTER TABLE public.governance_public_audit_verifier_mirror_directory_signers
-      ADD CONSTRAINT governance_public_audit_verifier_mirror_directory_signers_governance_status_check
+      ADD CONSTRAINT gpav_mirror_dir_signers_gov_status_chk
       CHECK (governance_status IN ('pending', 'approved', 'rejected', 'suspended'));
   END IF;
 END $$;
@@ -58,14 +65,14 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_signer
   attested_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_public_audit_verifier_mirror_signer_governance_attestations_no_self_check CHECK (target_signer_id <> attestor_signer_id),
-  CONSTRAINT governance_public_audit_verifier_mirror_signer_governance_attestations_signer_key_not_empty_check CHECK (length(trim(attestor_signer_key)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_signer_governance_attestations_decision_check CHECK (
+  CONSTRAINT gpav_sgov_att_no_self_chk CHECK (target_signer_id <> attestor_signer_id),
+  CONSTRAINT gpav_sgov_att_signer_key_chk CHECK (length(trim(attestor_signer_key)) > 0),
+  CONSTRAINT gpav_sgov_att_decision_chk CHECK (
     attestation_decision IN ('approve', 'reject')
   ),
-  CONSTRAINT governance_public_audit_verifier_mirror_signer_governance_attestations_signature_not_empty_check CHECK (length(trim(attestation_signature)) > 0),
-  CONSTRAINT governance_public_audit_verifier_mirror_signer_governance_attestations_payload_object_check CHECK (jsonb_typeof(attestation_payload) = 'object'),
-  CONSTRAINT governance_public_audit_verifier_mirror_signer_governance_attestations_unique_attestor UNIQUE (target_signer_id, attestor_signer_id)
+  CONSTRAINT gpav_sgov_att_sig_nonempty_chk CHECK (length(trim(attestation_signature)) > 0),
+  CONSTRAINT gpav_sgov_att_payload_obj_chk CHECK (jsonb_typeof(attestation_payload) = 'object'),
+  CONSTRAINT gpav_sgov_att_tgt_attestor_uniq UNIQUE (target_signer_id, attestor_signer_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_governance_public_audit_verifier_mirror_directory_signers_governance
@@ -644,7 +651,7 @@ BEGIN
   );
 
   directory_hash := encode(
-    digest((payload::text)::bytea, 'sha256'),
+    extensions.digest((payload::text)::bytea, 'sha256'),
     'hex'
   );
 

@@ -29,6 +29,7 @@ This file stores project-specific notes for future AI agent work.
 
 ## 3. Persistent User Directives
 
+- Do not ask the user to do work the agent can do itself (run commands, read or edit repo files, search the tree, run tests, inspect local config under the workspace). Only ask when something is genuinely impossible from here (for example passphrase entry on their TTY, secrets only they hold, or actions inside an account or UI only they control)—and then say briefly why.
 - When the user gives recursive or standing instructions using phrases such as `Always`, `Never`, `make sure`, `don't`, `keep`, `preserve`, or similar strong directive language, treat them as persistent project rules, not one-off comments.
 - Capture those instructions in context and continue following them across later requests unless the user explicitly changes or cancels them.
 - Before making a change, check whether it conflicts with any previously stated standing instruction from the user.
@@ -61,7 +62,8 @@ This file stores project-specific notes for future AI agent work.
   - Port: `26747`
   - User: `ubuntu`
   - Identity file: `~/.ssh/soc-yeremyan-net`
-- The SSH key is passphrase-protected. In this environment, the server accepts the key, but non-interactive SSH fails unless that key is already unlocked in `ssh-agent`.
+- **Headless / Cursor agents / remote DB scripts** use a separate host alias **`soc-yeremyan-net-agent`** with **`~/.ssh/levela_cursor_agent_ed25519`** (passphrase-less; public key must be in `ubuntu`’s `authorized_keys` on the VPS). See `docs/04-operations/dev/VPS_CURSOR_AGENT_SSH.md`. Prefer **`REMOTE_DB_HOST=soc-yeremyan-net-agent`** in `.env.local` for migrations from agents.
+- The human key (`soc-yeremyan-net`) is passphrase-protected; **non-interactive** SSH to that alias still requires **`ssh-agent`**. Dev machines can use the **stable agent socket** in `docs/04-operations/dev/REMOTE_DB_ACCESS.md` for interactive workflows.
 - Existing history confirms the VPS also hosts a Supabase stack at `~/supabase-stack/supabase/docker`.
 - Live web traffic for `levela.yeremyan.net` is served by the Docker container `caddy-supabase` (`caddy:2.9.1-alpine`).
 - The container mounts the actual host web root from `/www/wwwroot/levela` into the container as `/srv/levela` read-only.

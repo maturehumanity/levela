@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_batches (
   CONSTRAINT governance_public_audit_batches_batch_hash_unique UNIQUE (batch_hash)
 );
 
+ALTER TABLE public.governance_public_audit_batches
+  ADD COLUMN IF NOT EXISTS anchor_proof jsonb;
+
 CREATE INDEX IF NOT EXISTS idx_governance_public_audit_batches_created
   ON public.governance_public_audit_batches (created_at DESC, batch_index DESC);
 
@@ -205,7 +208,7 @@ SELECT
   ordered_events.event_actor_id,
   ordered_events.event_payload,
   encode(
-    digest(
+    extensions.digest(
       concat_ws(
         '|',
         ordered_events.event_source,
@@ -310,7 +313,7 @@ BEGIN
     previous_batch.id,
     previous_batch.batch_hash,
     encode(
-      digest(
+      extensions.digest(
         concat_ws('|', coalesce(previous_batch.batch_hash, ''), summary.digest_chain),
         'sha256'
       ),
@@ -442,7 +445,7 @@ recomputed_hashes AS (
   SELECT
     batch.id,
     encode(
-      digest(
+      extensions.digest(
         concat_ws(
           '|',
           coalesce(batch.previous_batch_hash, ''),

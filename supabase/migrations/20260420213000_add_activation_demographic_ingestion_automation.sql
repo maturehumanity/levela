@@ -328,10 +328,10 @@ BEGIN
         SELECT cron.schedule(
           'activation_demographic_snapshot_refresh',
           '20 */6 * * *',
-          $$SELECT public.capture_scheduled_activation_demographic_snapshots(
+          $job$SELECT public.capture_scheduled_activation_demographic_snapshots(
             'scheduled_refresh',
             'Automated scheduled activation demographic ingestion'
-          );$$
+          );$job$
         )
       $cron$;
     EXCEPTION

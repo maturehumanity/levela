@@ -11,15 +11,15 @@ CREATE TABLE IF NOT EXISTS public.governance_proposal_client_verification_packag
   captured_at timestamptz NOT NULL DEFAULT now(),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_proposal_client_verification_packages_scope_not_empty_check CHECK (length(trim(package_scope)) > 0),
-  CONSTRAINT governance_proposal_client_verification_packages_version_not_empty_check CHECK (length(trim(package_version)) > 0),
-  CONSTRAINT governance_proposal_client_verification_packages_hash_not_empty_check CHECK (length(trim(package_hash)) > 0),
-  CONSTRAINT governance_proposal_client_verification_packages_payload_object_check CHECK (jsonb_typeof(package_payload) = 'object'),
-  CONSTRAINT governance_proposal_client_verification_packages_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object'),
-  CONSTRAINT governance_proposal_client_verification_packages_scope_enum_check CHECK (
+  CONSTRAINT gpav_prop_cvpkg_scope_chk CHECK (length(trim(package_scope)) > 0),
+  CONSTRAINT gpav_prop_cvpkg_version_chk CHECK (length(trim(package_version)) > 0),
+  CONSTRAINT gpav_prop_cvpkg_hash_chk CHECK (length(trim(package_hash)) > 0),
+  CONSTRAINT gpav_prop_cvpkg_payload_obj_chk CHECK (jsonb_typeof(package_payload) = 'object'),
+  CONSTRAINT gpav_prop_cvpkg_metadata_obj_chk CHECK (jsonb_typeof(metadata) = 'object'),
+  CONSTRAINT gpav_prop_cvpkg_scope_enum_chk CHECK (
     package_scope IN ('guardian_relay_quorum_client_proof_distribution')
   ),
-  CONSTRAINT governance_proposal_client_verification_packages_unique_hash UNIQUE (proposal_id, package_scope, package_hash)
+  CONSTRAINT gpav_prop_cvpkg_hash_uniq UNIQUE (proposal_id, package_scope, package_hash)
 );
 
 CREATE INDEX IF NOT EXISTS idx_governance_proposal_client_verification_packages_proposal_scope
@@ -76,20 +76,20 @@ CREATE TABLE IF NOT EXISTS public.governance_proposal_client_verification_packag
   created_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_scope_check CHECK (
+  CONSTRAINT gpav_prop_cvpsig_scope_chk CHECK (
     package_scope IN ('guardian_relay_quorum_client_proof_distribution')
   ),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_signer_key_check CHECK (length(trim(signer_key)) > 0),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_algorithm_check CHECK (length(trim(signature_algorithm)) > 0),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_signature_check CHECK (length(trim(signature)) > 0),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_trust_domain_check CHECK (length(trim(signer_trust_domain)) > 0),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_jurisdiction_check CHECK (
+  CONSTRAINT gpav_prop_cvpsig_signer_key_chk CHECK (length(trim(signer_key)) > 0),
+  CONSTRAINT gpav_prop_cvpsig_algo_chk CHECK (length(trim(signature_algorithm)) > 0),
+  CONSTRAINT gpav_prop_cvpsig_sig_nonempty_chk CHECK (length(trim(signature)) > 0),
+  CONSTRAINT gpav_prop_cvpsig_trust_domain_chk CHECK (length(trim(signer_trust_domain)) > 0),
+  CONSTRAINT gpav_prop_cvpsig_jurisdiction_chk CHECK (
     signer_jurisdiction_country_code IS NULL
     OR length(trim(signer_jurisdiction_country_code)) = 2
   ),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_channel_check CHECK (length(trim(distribution_channel)) > 0),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object'),
-  CONSTRAINT governance_proposal_client_verification_package_signatures_unique_signature UNIQUE (package_id, signer_key, signature)
+  CONSTRAINT gpav_prop_cvpsig_channel_chk CHECK (length(trim(distribution_channel)) > 0),
+  CONSTRAINT gpav_prop_cvpsig_metadata_obj_chk CHECK (jsonb_typeof(metadata) = 'object'),
+  CONSTRAINT gpav_prop_cvpsig_pkg_signer_sig_uniq UNIQUE (package_id, signer_key, signature)
 );
 
 CREATE INDEX IF NOT EXISTS idx_governance_proposal_client_verification_package_signatures_package
@@ -168,7 +168,7 @@ package_payload_cte AS (
 SELECT
   'guardian_relay_client_verification_package_v1'::text AS package_version,
   encode(
-    digest(
+    extensions.digest(
       (package_payload_cte.package_payload::text)::bytea,
       'sha256'
     ),

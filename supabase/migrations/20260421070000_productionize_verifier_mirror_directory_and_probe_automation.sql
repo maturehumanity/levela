@@ -69,8 +69,8 @@ CREATE TABLE IF NOT EXISTS public.governance_public_audit_verifier_mirror_failov
   CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_max_latency_check CHECK (max_mirror_latency_ms >= 100),
   CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_max_failures_check CHECK (max_failures_before_cooldown >= 1),
   CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_cooldown_check CHECK (cooldown_minutes >= 1),
-  CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_required_regions_check CHECK (required_distinct_regions >= 1),
-  CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_required_operators_check CHECK (required_distinct_operators >= 1),
+  CONSTRAINT gpav_mirror_failover_req_distinct_regions_chk CHECK (required_distinct_regions >= 1),
+  CONSTRAINT gpav_mirror_failover_req_distinct_operators_chk CHECK (required_distinct_operators >= 1),
   CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_strategy_not_empty_check CHECK (length(trim(mirror_selection_strategy)) > 0),
   CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_max_candidates_check CHECK (max_mirror_candidates >= 1),
   CONSTRAINT governance_public_audit_verifier_mirror_failover_policies_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object')
@@ -849,7 +849,7 @@ BEGIN
   );
 
   directory_hash := encode(
-    digest((payload::text)::bytea, 'sha256'),
+    extensions.digest((payload::text)::bytea, 'sha256'),
     'hex'
   );
 
@@ -1026,6 +1026,7 @@ latest_directory AS (
   FROM public.governance_public_audit_verifier_mirror_directories AS directory
   LEFT JOIN public.governance_public_audit_verifier_mirror_directory_signers AS signer
     ON signer.id = directory.signer_id
+  CROSS JOIN resolved_batch
   WHERE resolved_batch.batch_id IS NULL
      OR directory.batch_id = resolved_batch.batch_id
   ORDER BY directory.published_at DESC, directory.created_at DESC
@@ -1079,7 +1080,7 @@ healthy_mirror_count_cte AS (
 SELECT
   'public_audit_client_verifier_bundle_v1'::text AS bundle_version,
   encode(
-    digest(
+    extensions.digest(
       (payload_cte.bundle_payload::text)::bytea,
       'sha256'
     ),

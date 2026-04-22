@@ -126,6 +126,11 @@ describe('governance-public-audit-verifiers helpers', () => {
       minIndependentDirectorySigners: 2,
       requirePolicyRatification: true,
       minPolicyRatificationApprovals: 2,
+      requireSignerGovernanceApproval: false,
+      minSignerGovernanceIndependentApprovals: 1,
+      requireFederationOpsReadiness: false,
+      maxOpenCriticalFederationAlerts: 0,
+      minOnboardedFederationOperators: 1,
       updatedAt: '2026-04-21T04:30:00.000Z',
     });
   });

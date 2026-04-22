@@ -1399,7 +1399,7 @@ SELECT
   ordered_events.event_actor_id,
   ordered_events.event_payload,
   encode(
-    digest(
+    extensions.digest(
       concat_ws(
         '|',
         ordered_events.event_source,

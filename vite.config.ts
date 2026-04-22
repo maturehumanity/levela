@@ -6,17 +6,21 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    // Listen on all interfaces (IPv4 + IPv6). Using only "::" can break some
+    // Windows↔WSL port-forwarding setups where the browser hits 127.0.0.1.
+    host: true,
     port: 8080,
-    strictPort: true,
+    // If 8080 is still held by a previous dev server, pick the next free port
+    // instead of exiting — avoids "can't connect" after an unclean restart.
+    strictPort: false,
     hmr: {
       overlay: false,
     },
   },
   preview: {
-    host: "::",
+    host: true,
     port: 8080,
-    strictPort: true,
+    strictPort: false,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
