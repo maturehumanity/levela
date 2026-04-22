@@ -214,5 +214,12 @@ export async function runActivationDemographicFeedWorkerSweep(args: {
     }
   }
 
+  const { error: escalationError } = await supabase.rpc('maybe_escalate_activation_feed_worker_exec_page', {
+    requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
+  });
+  if (escalationError) {
+    console.error('Activation demographic feed worker escalation check failed:', escalationError);
+  }
+
   return stats;
 }
