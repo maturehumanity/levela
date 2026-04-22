@@ -186,6 +186,7 @@ export function GovernanceGuardianRelayPanel({
 
       <GovernanceGuardianRelayProofSection
         canManageGuardianRelays={canManageGuardianRelays}
+        clientDistributionRequiredForExecution={Boolean(relayOperationsSummary?.requireTrustMinimizedQuorum)}
         relayTrustMinimizedSummary={relayTrustMinimizedSummary}
         relayClientProofManifest={relayClientProofManifest}
         relayRecentClientManifests={relayRecentClientManifests}

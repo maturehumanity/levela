@@ -16,6 +16,8 @@ import type {
 
 interface GovernanceGuardianRelayProofSectionProps {
   canManageGuardianRelays: boolean;
+  /** When relay ops policy requires trust-minimized quorum, execution waits on distribution signatures. */
+  clientDistributionRequiredForExecution: boolean;
   relayTrustMinimizedSummary: GovernanceProposalGuardianRelayTrustMinimizedSummary | null;
   relayClientProofManifest: GovernanceProposalGuardianRelayClientProofManifest | null;
   relayRecentClientManifests: GovernanceProposalGuardianRelayRecentClientManifestRow[];
@@ -54,6 +56,7 @@ function previewHash(value: string) {
 
 export function GovernanceGuardianRelayProofSection({
   canManageGuardianRelays,
+  clientDistributionRequiredForExecution,
   relayTrustMinimizedSummary,
   relayClientProofManifest,
   relayRecentClientManifests,
@@ -95,6 +98,7 @@ export function GovernanceGuardianRelayProofSection({
     && relayRecentClientVerificationPackages.length === 0
     && !relayClientVerificationDistributionSummary
     && relayClientVerificationSignatures.length === 0
+    && !clientDistributionRequiredForExecution
   ) {
     return null;
   }
@@ -178,25 +182,38 @@ export function GovernanceGuardianRelayProofSection({
       )}
 
       {relayClientVerificationDistributionSummary && (
-        <div className="flex flex-wrap gap-2">
-          <Badge
-            variant="outline"
-            className={relayClientVerificationDistributionSummary.distributionReady
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
-          >
-            Distribution {relayClientVerificationDistributionSummary.distributionReady ? 'ready' : 'pending'}
-          </Badge>
-          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-            Signatures {relayClientVerificationDistributionSummary.distinctSignerCount}/{relayClientVerificationDistributionSummary.requiredDistributionSignatures}
-          </Badge>
-          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-            Jurisdictions {relayClientVerificationDistributionSummary.distinctSignerJurisdictionsCount}
-          </Badge>
-          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-            Trust domains {relayClientVerificationDistributionSummary.distinctSignerTrustDomainsCount}
-          </Badge>
+        <div className="space-y-1">
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant="outline"
+              className={relayClientVerificationDistributionSummary.distributionReady
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+            >
+              Distribution {relayClientVerificationDistributionSummary.distributionReady ? 'ready' : 'pending'}
+            </Badge>
+            <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+              Signatures {relayClientVerificationDistributionSummary.distinctSignerCount}/{relayClientVerificationDistributionSummary.requiredDistributionSignatures}
+            </Badge>
+            <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+              Jurisdictions {relayClientVerificationDistributionSummary.distinctSignerJurisdictionsCount}
+            </Badge>
+            <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+              Trust domains {relayClientVerificationDistributionSummary.distinctSignerTrustDomainsCount}
+            </Badge>
+          </div>
+          {clientDistributionRequiredForExecution && !relayClientVerificationDistributionSummary.distributionReady && (
+            <p className="text-muted-foreground">
+              Policy requires trust-minimized relay quorum, so approved proposals cannot move to execution until enough independent distribution signatures exist on the latest verification package.
+            </p>
+          )}
         </div>
+      )}
+
+      {clientDistributionRequiredForExecution && !relayClientVerificationDistributionSummary && (
+        <p className="text-muted-foreground">
+          Policy requires trust-minimized relay quorum. Capture a deterministic verification package and collect distribution signatures before execution can proceed.
+        </p>
       )}
 
       {canManageGuardianRelays && (
