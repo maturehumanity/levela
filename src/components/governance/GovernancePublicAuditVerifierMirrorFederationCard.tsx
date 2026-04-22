@@ -1,7 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 import { GovernancePublicAuditVerifierMirrorFederationControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationControls';
+import { GovernancePublicAuditVerifierMirrorFederationDistributionControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationDistributionControls';
 import { GovernancePublicAuditVerifierMirrorSignerGovernanceControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorSignerGovernanceControls';
 import type {
+  GovernancePublicAuditVerifierFederationPackage,
+  GovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  GovernancePublicAuditVerifierFederationPackageHistoryRow,
+  GovernancePublicAuditVerifierFederationPackageSignatureRow,
   GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   GovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -20,6 +25,9 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   upsertingDiscoveredCandidate: boolean;
   promotingDiscoveredCandidate: boolean;
   savingPolicyRatification: boolean;
+  capturingFederationPackage: boolean;
+  signingFederationPackage: boolean;
+  verifyingFederationDistribution: boolean;
   savingFederationOpsRequirement: boolean;
   registeringFederationOperator: boolean;
   submittingOnboardingRequest: boolean;
@@ -34,6 +42,10 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   policyRatificationSummary: GovernancePublicAuditVerifierMirrorPolicyRatificationSummary | null;
   discoverySummary: GovernancePublicAuditVerifierMirrorDiscoverySummary | null;
   federationOperationsSummary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
+  federationPackage: GovernancePublicAuditVerifierFederationPackage | null;
+  federationPackageDistributionSummary: GovernancePublicAuditVerifierFederationPackageDistributionSummary | null;
+  federationPackageSignatures: GovernancePublicAuditVerifierFederationPackageSignatureRow[];
+  federationPackageHistory: GovernancePublicAuditVerifierFederationPackageHistoryRow[];
   signerGovernanceSummary: GovernancePublicAuditVerifierMirrorSignerGovernanceSummary | null;
   discoverySources: GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow[];
   discoveredCandidates: GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow[];
@@ -76,6 +88,18 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
     ratificationDecision: 'approve' | 'reject';
     ratificationSignature: string;
   }) => Promise<void> | void;
+  captureFederationPackage: (packageNotes: string) => Promise<void> | void;
+  signFederationPackage: (draft: {
+    packageId: string;
+    signerKey: string;
+    signature: string;
+    signatureAlgorithm: string;
+    signerTrustDomain: string;
+    signerJurisdictionCountryCode: string;
+    signerIdentityUri: string;
+    distributionChannel: string;
+  }) => Promise<void> | void;
+  runFederationDistributionVerification: (staleAfterHours: string) => Promise<void> | void;
   saveFederationOpsRequirement: (draft: {
     requireFederationOpsReadiness: boolean;
     maxOpenCriticalAlerts: string;
@@ -108,7 +132,7 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
     activateMirror: boolean;
   }) => Promise<void> | void;
   recordFederationWorkerRun: (draft: {
-    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'manual';
+    runScope: 'onboarding_sweep' | 'operator_health_audit' | 'diversity_audit' | 'package_distribution_verification' | 'manual';
     runStatus: 'ok' | 'degraded' | 'failed';
     discoveredRequestCount: string;
     approvedRequestCount: string;
@@ -151,6 +175,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   upsertingDiscoveredCandidate,
   promotingDiscoveredCandidate,
   savingPolicyRatification,
+  capturingFederationPackage,
+  signingFederationPackage,
+  verifyingFederationDistribution,
   savingFederationOpsRequirement,
   registeringFederationOperator,
   submittingOnboardingRequest,
@@ -165,6 +192,10 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   policyRatificationSummary,
   discoverySummary,
   federationOperationsSummary,
+  federationPackage,
+  federationPackageDistributionSummary,
+  federationPackageSignatures,
+  federationPackageHistory,
   signerGovernanceSummary,
   discoverySources,
   discoveredCandidates,
@@ -177,6 +208,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   upsertDiscoveredCandidate,
   promoteDiscoveredCandidate,
   recordPolicyRatification,
+  captureFederationPackage,
+  signFederationPackage,
+  runFederationDistributionVerification,
   saveFederationOpsRequirement,
   registerFederationOperator,
   submitFederationOnboardingRequest,
@@ -268,6 +302,21 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         openFederationAlert={openFederationAlert}
         resolveFederationAlert={resolveFederationAlert}
       />
+      <GovernancePublicAuditVerifierMirrorFederationDistributionControls
+        canManageMirrorFederation={canManageMirrorFederation}
+        federationPackage={federationPackage}
+        federationPackageDistributionSummary={federationPackageDistributionSummary}
+        federationPackageSignatures={federationPackageSignatures}
+        federationPackageHistory={federationPackageHistory}
+        federationOperationsSummary={federationOperationsSummary}
+        capturingFederationPackage={capturingFederationPackage}
+        signingFederationPackage={signingFederationPackage}
+        verifyingFederationDistribution={verifyingFederationDistribution}
+        captureFederationPackage={captureFederationPackage}
+        signFederationPackage={signFederationPackage}
+        runFederationDistributionVerification={runFederationDistributionVerification}
+        formatTimestamp={formatTimestamp}
+      />
       <GovernancePublicAuditVerifierMirrorSignerGovernanceControls
         canManageSignerGovernance={canManageSignerGovernance}
         savingSignerGovernanceRequirement={savingSignerGovernanceRequirement}
@@ -293,6 +342,8 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
           Onboarded operators {federationOperationsSummary.onboardedOperatorCount}/{federationOperationsSummary.minOnboardedFederationOperators}
           {' '}• Open critical alerts {federationOperationsSummary.openCriticalAlertCount}/{federationOperationsSummary.maxOpenCriticalFederationAlerts}
           {' '}• SLA breaches {federationOperationsSummary.alertSlaBreachedCount}
+          {' '}• Distribution verification {federationOperationsSummary.distributionVerificationStale ? 'stale' : 'fresh'}
+          {' '}• Distribution alerts {federationOperationsSummary.openDistributionVerificationAlertCount}
         </p>
       )}
       <div className="space-y-1 text-muted-foreground">

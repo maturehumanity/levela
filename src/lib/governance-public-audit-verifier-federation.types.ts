@@ -130,5 +130,77 @@ export interface GovernancePublicAuditVerifierMirrorFederationOperationsSummary 
   alertSlaBreachedCount: number;
   lastWorkerRunAt: string | null;
   lastWorkerRunStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
+  distributionVerificationLookbackHours: number;
+  lastDistributionVerificationRunAt: string | null;
+  lastDistributionVerificationRunStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
+  distributionVerificationStale: boolean;
+  openDistributionStalePackageAlertCount: number;
+  openDistributionBadSignatureAlertCount: number;
+  openDistributionPolicyMismatchAlertCount: number;
+  openDistributionVerificationAlertCount: number;
   federationOpsReady: boolean;
+}
+
+export interface GovernancePublicAuditVerifierFederationPackage {
+  packageVersion: string;
+  packageHash: string;
+  packagePayload: Record<string, unknown>;
+  batchId: string;
+  sourceDirectoryId: string;
+  sourceDirectoryHash: string;
+  federationOpsReady: boolean;
+  /** Postgres `package_payload::text` byte-identical to digest input for `package_hash`. */
+  digestSourceText: string | null;
+}
+
+export interface GovernancePublicAuditVerifierFederationPackageHistoryRow {
+  packageId: string;
+  batchId: string;
+  capturedAt: string;
+  packageVersion: string;
+  packageHash: string;
+  sourceDirectoryId: string;
+  signatureCount: number;
+}
+
+export interface GovernancePublicAuditVerifierFederationRecentPackageRow {
+  packageId: string;
+  batchId: string;
+  capturedAt: string;
+  packageVersion: string;
+  packageHash: string;
+  sourceDirectoryId: string;
+  sourceDirectoryHash: string;
+  signatureCount: number;
+  distributionReady: boolean;
+  packageNotes: string | null;
+}
+
+export interface GovernancePublicAuditVerifierFederationPackageDistributionSummary {
+  packageId: string;
+  batchId: string;
+  capturedAt: string;
+  packageVersion: string;
+  packageHash: string;
+  sourceDirectoryHash: string;
+  requiredDistributionSignatures: number;
+  signatureCount: number;
+  distinctSignerCount: number;
+  distinctSignerJurisdictionsCount: number;
+  distinctSignerTrustDomainsCount: number;
+  lastSignedAt: string | null;
+  federationOpsReady: boolean;
+  distributionReady: boolean;
+}
+
+export interface GovernancePublicAuditVerifierFederationPackageSignatureRow {
+  signatureId: string;
+  packageId: string;
+  packageHash: string;
+  signerKey: string;
+  signatureAlgorithm: string;
+  distributionChannel: string;
+  signerTrustDomain: string;
+  signerJurisdictionCountryCode: string | null;
+  signedAt: string | null;
 }

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { asIntegerOrNull, asNumericOrNull, callUntypedRpc } from '@/lib/governance-rpc';
+import { useGovernancePublicAuditVerifierFederationDistributionActions } from '@/lib/use-governance-public-audit-verifier-federation-distribution-actions';
 import { useGovernancePublicAuditVerifierMirrorFederationOpsActions } from '@/lib/use-governance-public-audit-verifier-mirror-federation-ops-actions';
 
 interface UseGovernancePublicAuditVerifierMirrorFederationActionsArgs {
@@ -24,6 +25,12 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
   const [savingPolicyRatification, setSavingPolicyRatification] = useState(false);
 
   const opsActions = useGovernancePublicAuditVerifierMirrorFederationOpsActions({
+    canManageMirrorFederation,
+    federationBackendUnavailable,
+    loadFederationData,
+  });
+  const distributionActions = useGovernancePublicAuditVerifierFederationDistributionActions({
+    latestBatchId,
     canManageMirrorFederation,
     federationBackendUnavailable,
     loadFederationData,
@@ -223,6 +230,9 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     upsertingDiscoveredCandidate,
     promotingDiscoveredCandidate,
     savingPolicyRatification,
+    capturingFederationPackage: distributionActions.capturingFederationPackage,
+    signingFederationPackage: distributionActions.signingFederationPackage,
+    verifyingFederationDistribution: distributionActions.verifyingFederationDistribution,
     savingFederationOpsRequirement: opsActions.savingFederationOpsRequirement,
     registeringFederationOperator: opsActions.registeringFederationOperator,
     submittingOnboardingRequest: opsActions.submittingOnboardingRequest,
@@ -236,6 +246,9 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     upsertDiscoveredCandidate,
     promoteDiscoveredCandidate,
     recordPolicyRatification,
+    captureFederationPackage: distributionActions.captureFederationPackage,
+    signFederationPackage: distributionActions.signFederationPackage,
+    runFederationDistributionVerification: distributionActions.runFederationDistributionVerification,
     saveFederationOpsRequirement: opsActions.saveFederationOpsRequirement,
     registerFederationOperator: opsActions.registerFederationOperator,
     submitFederationOnboardingRequest: opsActions.submitFederationOnboardingRequest,

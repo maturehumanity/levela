@@ -51,6 +51,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     upsertingDiscoveredCandidate,
     promotingDiscoveredCandidate,
     savingPolicyRatification,
+    capturingFederationPackage,
+    signingFederationPackage,
+    verifyingFederationDistribution,
     savingFederationOpsRequirement,
     registeringFederationOperator,
     submittingOnboardingRequest,
@@ -62,6 +65,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     policyRatificationSummary,
     discoverySummary,
     federationOperationsSummary,
+    federationPackage,
+    federationPackageDistributionSummary,
+    federationPackageSignatures,
+    federationPackageHistory,
     discoverySources,
     discoveredCandidates,
     federationOnboardingBoard,
@@ -72,6 +79,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     upsertDiscoveredCandidate,
     promoteDiscoveredCandidate,
     recordPolicyRatification,
+    captureFederationPackage,
+    signFederationPackage,
+    runFederationDistributionVerification,
     saveFederationOpsRequirement,
     registerFederationOperator,
     submitFederationOnboardingRequest,
@@ -183,6 +193,16 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
             Federation ops {federationOperationsSummary.federationOpsReady ? 'ready' : 'pending'}
           </Badge>
         )}
+        {federationPackageDistributionSummary && (
+          <Badge
+            variant="outline"
+            className={federationPackageDistributionSummary.distributionReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Federation package {federationPackageDistributionSummary.distributionReady ? 'ready' : 'pending'}
+          </Badge>
+        )}
         {directoryTrustSummary && (
           <Badge
             variant="outline"
@@ -234,6 +254,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           upsertingDiscoveredCandidate={upsertingDiscoveredCandidate}
           promotingDiscoveredCandidate={promotingDiscoveredCandidate}
           savingPolicyRatification={savingPolicyRatification}
+          capturingFederationPackage={capturingFederationPackage}
+          signingFederationPackage={signingFederationPackage}
+          verifyingFederationDistribution={verifyingFederationDistribution}
           savingFederationOpsRequirement={savingFederationOpsRequirement}
           registeringFederationOperator={registeringFederationOperator}
           submittingOnboardingRequest={submittingOnboardingRequest}
@@ -248,6 +271,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           policyRatificationSummary={policyRatificationSummary}
           discoverySummary={discoverySummary}
           federationOperationsSummary={federationOperationsSummary}
+          federationPackage={federationPackage}
+          federationPackageDistributionSummary={federationPackageDistributionSummary}
+          federationPackageSignatures={federationPackageSignatures}
+          federationPackageHistory={federationPackageHistory}
           signerGovernanceSummary={signerGovernanceSummary}
           discoverySources={discoverySources}
           discoveredCandidates={discoveredCandidates}
@@ -260,6 +287,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           upsertDiscoveredCandidate={upsertDiscoveredCandidate}
           promoteDiscoveredCandidate={promoteDiscoveredCandidate}
           recordPolicyRatification={recordPolicyRatification}
+          captureFederationPackage={captureFederationPackage}
+          signFederationPackage={signFederationPackage}
+          runFederationDistributionVerification={runFederationDistributionVerification}
           saveFederationOpsRequirement={saveFederationOpsRequirement}
           registerFederationOperator={registerFederationOperator}
           submitFederationOnboardingRequest={submitFederationOnboardingRequest}

@@ -1,0 +1,422 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type {
+  GovernancePublicAuditVerifierFederationPackage,
+  GovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  GovernancePublicAuditVerifierFederationPackageHistoryRow,
+  GovernancePublicAuditVerifierFederationPackageSignatureRow,
+  GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+} from '@/lib/governance-public-audit-verifiers';
+import { previewVerifierFederationPackagePayloadSha256Hex, sha256HexFromUtf8 } from '@/lib/verifier-federation-deterministic-json';
+
+interface GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps {
+  canManageMirrorFederation: boolean;
+  federationPackage: GovernancePublicAuditVerifierFederationPackage | null;
+  federationPackageDistributionSummary: GovernancePublicAuditVerifierFederationPackageDistributionSummary | null;
+  federationPackageSignatures: GovernancePublicAuditVerifierFederationPackageSignatureRow[];
+  federationPackageHistory: GovernancePublicAuditVerifierFederationPackageHistoryRow[];
+  federationOperationsSummary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
+  capturingFederationPackage: boolean;
+  signingFederationPackage: boolean;
+  verifyingFederationDistribution: boolean;
+  captureFederationPackage: (packageNotes: string) => Promise<void> | void;
+  signFederationPackage: (draft: {
+    packageId: string;
+    signerKey: string;
+    signature: string;
+    signatureAlgorithm: string;
+    signerTrustDomain: string;
+    signerJurisdictionCountryCode: string;
+    signerIdentityUri: string;
+    distributionChannel: string;
+  }) => Promise<void> | void;
+  runFederationDistributionVerification: (staleAfterHours: string) => Promise<void> | void;
+  formatTimestamp: (value: string | null) => string;
+}
+
+function previewHash(value: string) {
+  if (!value) return 'n/a';
+  if (value.length <= 24) return value;
+  return `${value.slice(0, 12)}...${value.slice(-8)}`;
+}
+
+export function GovernancePublicAuditVerifierMirrorFederationDistributionControls({
+  canManageMirrorFederation,
+  federationPackage,
+  federationPackageDistributionSummary,
+  federationPackageSignatures,
+  federationPackageHistory,
+  federationOperationsSummary,
+  capturingFederationPackage,
+  signingFederationPackage,
+  verifyingFederationDistribution,
+  captureFederationPackage,
+  signFederationPackage,
+  runFederationDistributionVerification,
+  formatTimestamp,
+}: GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps) {
+  const [packageNotes, setPackageNotes] = useState('');
+  const [staleAfterHours, setStaleAfterHours] = useState(
+    federationOperationsSummary ? String(federationOperationsSummary.distributionVerificationLookbackHours) : '24',
+  );
+  const [signatureDraft, setSignatureDraft] = useState({
+    signerKey: '',
+    signature: '',
+    signatureAlgorithm: 'ed25519',
+    signerTrustDomain: 'public',
+    signerJurisdictionCountryCode: '',
+    signerIdentityUri: '',
+    distributionChannel: 'primary',
+  });
+  const [hashPreviewLoading, setHashPreviewLoading] = useState(false);
+  const [hashPreview, setHashPreview] = useState<{ hex: string; matches: boolean } | null>(null);
+  const [serverDigestLoading, setServerDigestLoading] = useState(false);
+  const [serverDigestPreview, setServerDigestPreview] = useState<{ hex: string; matches: boolean } | null>(null);
+
+  const signingTargetPackageId = useMemo(
+    () => federationPackageDistributionSummary?.packageId || '',
+    [federationPackageDistributionSummary?.packageId],
+  );
+
+  useEffect(() => {
+    if (!federationOperationsSummary) return;
+    setStaleAfterHours(String(federationOperationsSummary.distributionVerificationLookbackHours));
+  }, [federationOperationsSummary?.distributionVerificationLookbackHours]);
+
+  useEffect(() => {
+    setHashPreview(null);
+    setServerDigestPreview(null);
+  }, [federationPackage?.packageHash, federationPackage?.packagePayload, federationPackage?.digestSourceText]);
+
+  const runSortedKeyHashPreview = useCallback(async () => {
+    if (!federationPackage) return;
+    setHashPreviewLoading(true);
+    try {
+      const hex = await previewVerifierFederationPackagePayloadSha256Hex(federationPackage.packagePayload);
+      const recorded = federationPackage.packageHash.trim().toLowerCase();
+      setHashPreview({ hex, matches: hex === recorded });
+    } finally {
+      setHashPreviewLoading(false);
+    }
+  }, [federationPackage]);
+
+  const runServerDigestHashMatch = useCallback(async () => {
+    if (!federationPackage?.digestSourceText) return;
+    setServerDigestLoading(true);
+    try {
+      const hex = await sha256HexFromUtf8(federationPackage.digestSourceText);
+      const recorded = federationPackage.packageHash.trim().toLowerCase();
+      setServerDigestPreview({ hex, matches: hex === recorded });
+    } finally {
+      setServerDigestLoading(false);
+    }
+  }, [federationPackage]);
+
+  if (
+    !federationPackage
+    && !federationPackageDistributionSummary
+    && federationPackageSignatures.length === 0
+    && federationPackageHistory.length === 0
+    && !canManageMirrorFederation
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-border/60 bg-background p-2 text-muted-foreground">
+      <p className="font-medium text-foreground">Federation package distribution</p>
+
+      {federationPackageDistributionSummary && (
+        <div className="flex flex-wrap gap-2">
+          <Badge
+            variant="outline"
+            className={federationPackageDistributionSummary.distributionReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Distribution {federationPackageDistributionSummary.distributionReady ? 'ready' : 'pending'}
+          </Badge>
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Signers {federationPackageDistributionSummary.distinctSignerCount}/{federationPackageDistributionSummary.requiredDistributionSignatures}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={federationPackageDistributionSummary.federationOpsReady
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'}
+          >
+            Federation ops {federationPackageDistributionSummary.federationOpsReady ? 'ready' : 'pending'}
+          </Badge>
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Jurisdictions {federationPackageDistributionSummary.distinctSignerJurisdictionsCount}
+          </Badge>
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Trust domains {federationPackageDistributionSummary.distinctSignerTrustDomainsCount}
+          </Badge>
+        </div>
+      )}
+      {federationOperationsSummary && (
+        <div className="flex flex-wrap gap-2">
+          <Badge
+            variant="outline"
+            className={federationOperationsSummary.distributionVerificationStale
+              ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}
+          >
+            Verification run {federationOperationsSummary.distributionVerificationStale ? 'stale' : 'fresh'}
+          </Badge>
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Distribution alerts {federationOperationsSummary.openDistributionVerificationAlertCount}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={
+              federationOperationsSummary.openDistributionStalePackageAlertCount > 0
+                ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-border bg-muted text-muted-foreground'
+            }
+          >
+            Stale package alerts {federationOperationsSummary.openDistributionStalePackageAlertCount}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={
+              federationOperationsSummary.openDistributionBadSignatureAlertCount > 0
+                ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-border bg-muted text-muted-foreground'
+            }
+          >
+            Bad signature alerts {federationOperationsSummary.openDistributionBadSignatureAlertCount}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={
+              federationOperationsSummary.openDistributionPolicyMismatchAlertCount > 0
+                ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-border bg-muted text-muted-foreground'
+            }
+          >
+            Policy mismatch alerts {federationOperationsSummary.openDistributionPolicyMismatchAlertCount}
+          </Badge>
+        </div>
+      )}
+
+      {federationPackage && (
+        <div className="space-y-1 rounded-md border border-border/60 bg-card p-2 text-xs">
+          <p>
+            <span className="font-medium text-foreground">Package:</span> {federationPackage.packageVersion}
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Hash:</span> {previewHash(federationPackage.packageHash)}
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Directory:</span> {previewHash(federationPackage.sourceDirectoryHash)}
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Ops readiness:</span> {federationPackage.federationOpsReady ? 'ready' : 'pending'}
+          </p>
+          <div className="mt-2 space-y-1 border-t border-border/60 pt-2">
+            {federationPackage.digestSourceText ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto w-full justify-start px-0 py-1 text-xs text-muted-foreground hover:text-foreground"
+                disabled={serverDigestLoading}
+                onClick={() => void runServerDigestHashMatch()}
+              >
+                {serverDigestLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                Verify SHA-256 of server digest text (matches package hash)
+              </Button>
+            ) : null}
+            {serverDigestPreview ? (
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                <span className="font-medium text-foreground">Server digest SHA-256:</span> {previewHash(serverDigestPreview.hex)}
+                {' — '}
+                {serverDigestPreview.matches
+                  ? 'Matches recorded package hash (inter-operator safe).'
+                  : 'Does not match recorded hash.'}
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-auto w-full justify-start px-0 py-1 text-xs text-muted-foreground hover:text-foreground"
+              disabled={hashPreviewLoading}
+              onClick={() => void runSortedKeyHashPreview()}
+            >
+              {hashPreviewLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+              Preview sorted-key JSON SHA-256 (offline cross-check)
+            </Button>
+            {hashPreview ? (
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                <span className="font-medium text-foreground">Preview:</span> {previewHash(hashPreview.hex)}
+                {' — '}
+                {hashPreview.matches
+                  ? 'Matches recorded package hash.'
+                  : 'Does not match recorded hash (Postgres jsonb text can differ from sorted JSON).'}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {canManageMirrorFederation && (
+        <div className="space-y-2 rounded-md border border-border/60 bg-card p-2 text-xs">
+          <Input
+            value={packageNotes}
+            onChange={(event) => setPackageNotes(event.target.value)}
+            placeholder="Package capture notes (optional)"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            disabled={capturingFederationPackage}
+            onClick={() => void captureFederationPackage(packageNotes)}
+          >
+            {capturingFederationPackage ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Capture federation distribution package
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Capture uses the latest signed mirror directory for the batch; its publishing signer must be active and governance-approved.
+          </p>
+          <Input
+            value={staleAfterHours}
+            onChange={(event) => setStaleAfterHours(event.target.value)}
+            placeholder="Stale package window in hours (default: 24)"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            disabled={verifyingFederationDistribution}
+            onClick={() => void runFederationDistributionVerification(staleAfterHours)}
+          >
+            {verifyingFederationDistribution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Run distribution verification
+          </Button>
+
+          <Input
+            value={signatureDraft.signerKey}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, signerKey: event.target.value }))}
+            placeholder="Distribution signer key"
+          />
+          <Input
+            value={signatureDraft.signature}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, signature: event.target.value }))}
+            placeholder="Distribution signature"
+          />
+          <Input
+            value={signatureDraft.signatureAlgorithm}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, signatureAlgorithm: event.target.value }))}
+            placeholder="Signature algorithm"
+          />
+          <Input
+            value={signatureDraft.signerTrustDomain}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, signerTrustDomain: event.target.value }))}
+            placeholder="Signer trust domain"
+          />
+          <Input
+            value={signatureDraft.signerJurisdictionCountryCode}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, signerJurisdictionCountryCode: event.target.value.toUpperCase() }))}
+            placeholder="Signer jurisdiction country code (optional)"
+            maxLength={2}
+          />
+          <Input
+            value={signatureDraft.signerIdentityUri}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, signerIdentityUri: event.target.value }))}
+            placeholder="Signer identity URI (optional)"
+          />
+          <Input
+            value={signatureDraft.distributionChannel}
+            onChange={(event) => setSignatureDraft((current) => ({ ...current, distributionChannel: event.target.value }))}
+            placeholder="Distribution channel"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            disabled={signingFederationPackage || !signingTargetPackageId || !signatureDraft.signerKey.trim() || !signatureDraft.signature.trim()}
+            onClick={() => void signFederationPackage({
+              packageId: signingTargetPackageId,
+              signerKey: signatureDraft.signerKey,
+              signature: signatureDraft.signature,
+              signatureAlgorithm: signatureDraft.signatureAlgorithm,
+              signerTrustDomain: signatureDraft.signerTrustDomain,
+              signerJurisdictionCountryCode: signatureDraft.signerJurisdictionCountryCode,
+              signerIdentityUri: signatureDraft.signerIdentityUri,
+              distributionChannel: signatureDraft.distributionChannel,
+            })}
+          >
+            {signingFederationPackage ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Sign federation package distribution
+          </Button>
+          {!signingTargetPackageId && (
+            <p className="text-xs text-muted-foreground">
+              Capture a federation package first before recording signatures.
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            The distribution signer key must match an active, governance-approved entry in verifier mirror directory signers.
+          </p>
+        </div>
+      )}
+
+      {federationPackageDistributionSummary && (
+        <p className="text-xs text-muted-foreground">
+          Latest capture {formatTimestamp(federationPackageDistributionSummary.capturedAt)}
+          {' '}• Last signature {formatTimestamp(federationPackageDistributionSummary.lastSignedAt)}
+        </p>
+      )}
+      {federationOperationsSummary && (
+        <p className="text-xs text-muted-foreground">
+          Last distribution verification {formatTimestamp(federationOperationsSummary.lastDistributionVerificationRunAt)}
+          {' '}• status {federationOperationsSummary.lastDistributionVerificationRunStatus}
+          {' '}• lookback {federationOperationsSummary.distributionVerificationLookbackHours}h
+        </p>
+      )}
+
+      {federationPackageHistory.length > 0 && (
+        <div className="space-y-1 rounded-md border border-border/60 bg-card p-2 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Recent federation packages (this batch)</p>
+          {federationPackageHistory.map((row) => (
+            <div key={row.packageId} className="flex flex-wrap justify-between gap-2 border-t border-border/40 pt-1 first:border-t-0 first:pt-0">
+              <span>{formatTimestamp(row.capturedAt)}</span>
+              <span>sig {row.signatureCount}</span>
+              <span className="w-full font-mono text-[10px] text-muted-foreground">{previewHash(row.packageHash)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {federationPackageSignatures.length > 0 && (
+        <div className="space-y-1">
+          {federationPackageSignatures.map((signature) => (
+            <div key={signature.signatureId} className="rounded-md border border-border/60 bg-card p-2 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-foreground">{signature.signerKey}</p>
+                <span>{formatTimestamp(signature.signedAt)}</span>
+              </div>
+              <p className="mt-1">
+                Package {previewHash(signature.packageHash)} • {signature.signatureAlgorithm} • channel {signature.distributionChannel}
+              </p>
+              <p>
+                Trust domain {signature.signerTrustDomain}
+                {signature.signerJurisdictionCountryCode ? ` • ${signature.signerJurisdictionCountryCode}` : ''}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

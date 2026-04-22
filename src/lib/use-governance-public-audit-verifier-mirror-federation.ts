@@ -5,6 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { callUntypedRpc } from '@/lib/governance-rpc';
 import {
   isMissingPublicAuditVerifierBackend,
+  readGovernancePublicAuditVerifierFederationPackage,
+  readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  readGovernancePublicAuditVerifierFederationPackageHistoryRows,
+  readGovernancePublicAuditVerifierFederationPackageSignatureRows,
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -12,6 +16,10 @@ import {
   readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
+  type GovernancePublicAuditVerifierFederationPackage,
+  type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  type GovernancePublicAuditVerifierFederationPackageHistoryRow,
+  type GovernancePublicAuditVerifierFederationPackageSignatureRow,
   type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -38,6 +46,13 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
     useState<GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow[]>([]);
   const [federationAlertBoard, setFederationAlertBoard] =
     useState<GovernancePublicAuditVerifierMirrorFederationAlertBoardRow[]>([]);
+  const [federationPackage, setFederationPackage] = useState<GovernancePublicAuditVerifierFederationPackage | null>(null);
+  const [federationPackageDistributionSummary, setFederationPackageDistributionSummary] =
+    useState<GovernancePublicAuditVerifierFederationPackageDistributionSummary | null>(null);
+  const [federationPackageSignatures, setFederationPackageSignatures] =
+    useState<GovernancePublicAuditVerifierFederationPackageSignatureRow[]>([]);
+  const [federationPackageHistory, setFederationPackageHistory] =
+    useState<GovernancePublicAuditVerifierFederationPackageHistoryRow[]>([]);
 
   const loadFederationData = useCallback(async () => {
     setLoadingFederationData(true);
@@ -51,6 +66,10 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
       operationsSummaryResponse,
       onboardingBoardResponse,
       alertBoardResponse,
+      packageWithDigestResponse,
+      packageDistributionSummaryResponse,
+      packageSignatureBoardResponse,
+      packageHistoryResponse,
     ] = await Promise.all([
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
       callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_policy_ratification_summary', {
@@ -80,6 +99,22 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
         status_filter: null,
         max_entries: 80,
       }),
+      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_pkg_digest_text', {
+        target_batch_id: args.latestBatchId,
+        requested_policy_key: 'default',
+      }),
+      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_package_distribution_summary', {
+        target_batch_id: args.latestBatchId,
+        requested_policy_key: 'default',
+      }),
+      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_package_signature_board', {
+        target_batch_id: args.latestBatchId,
+        max_entries: 80,
+      }),
+      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_dist_pkg_history', {
+        target_batch_id: args.latestBatchId,
+        max_entries: 40,
+      }),
     ]);
 
     const sharedError = permissionResponse.error
@@ -89,7 +124,11 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
       || discoveredCandidatesResponse.error
       || operationsSummaryResponse.error
       || onboardingBoardResponse.error
-      || alertBoardResponse.error;
+      || alertBoardResponse.error
+      || packageWithDigestResponse.error
+      || packageDistributionSummaryResponse.error
+      || packageSignatureBoardResponse.error
+      || packageHistoryResponse.error;
 
     if (isMissingPublicAuditVerifierBackend(sharedError)) {
       setFederationBackendUnavailable(true);
@@ -107,6 +146,10 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
         operationsSummaryError: operationsSummaryResponse.error,
         onboardingBoardError: onboardingBoardResponse.error,
         alertBoardError: alertBoardResponse.error,
+        packageError: packageWithDigestResponse.error,
+        packageDistributionSummaryError: packageDistributionSummaryResponse.error,
+        packageSignatureBoardError: packageSignatureBoardResponse.error,
+        packageHistoryError: packageHistoryResponse.error,
       });
       toast.error('Could not load verifier mirror federation data.');
       setLoadingFederationData(false);
@@ -121,6 +164,12 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
     setFederationOperationsSummary(readGovernancePublicAuditVerifierMirrorFederationOperationsSummary(operationsSummaryResponse.data));
     setFederationOnboardingBoard(readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows(onboardingBoardResponse.data));
     setFederationAlertBoard(readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows(alertBoardResponse.data));
+    setFederationPackage(readGovernancePublicAuditVerifierFederationPackage(packageWithDigestResponse.data));
+    setFederationPackageDistributionSummary(
+      readGovernancePublicAuditVerifierFederationPackageDistributionSummary(packageDistributionSummaryResponse.data),
+    );
+    setFederationPackageSignatures(readGovernancePublicAuditVerifierFederationPackageSignatureRows(packageSignatureBoardResponse.data));
+    setFederationPackageHistory(readGovernancePublicAuditVerifierFederationPackageHistoryRows(packageHistoryResponse.data));
     setFederationBackendUnavailable(false);
     setLoadingFederationData(false);
   }, [args.latestBatchId]);
@@ -147,6 +196,10 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
     discoveredCandidates,
     federationOnboardingBoard,
     federationAlertBoard,
+    federationPackage,
+    federationPackageDistributionSummary,
+    federationPackageSignatures,
+    federationPackageHistory,
     loadFederationData,
     ...actions,
   };
