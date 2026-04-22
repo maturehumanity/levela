@@ -590,6 +590,8 @@ The next implementation sequence should now be:
 4. productionize minimized trusted-backend rollout with signed verifier mirror directories, autonomous health probing, and client-side mirror failover policy
 5. begin distributed mirror-governance and verifier-federation rollout planning
 
+Step 5 kickoff artifact: `docs/04-operations/dev/verifier-federation-rollout-plan-v0.1.md`
+
 ## 15. Suggested Ownership Sequence
 
 To keep implementation coherent, work in this order:

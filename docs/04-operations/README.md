@@ -5,4 +5,5 @@ Operational and developer-facing material lives here. These files are moderated 
 Current implementation planning documents:
 
 - `dev/governance-implementation-roadmap-v0.1.md`
+- `dev/verifier-federation-rollout-plan-v0.1.md`
 - `dev/ENGINEERING_STANDARDS.md`
