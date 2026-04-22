@@ -589,6 +589,7 @@ export type Database = {
           public_signer_key: string
           scope_type: Database["public"]["Enums"]["activation_scope_type"]
           updated_at: string
+          worker_sweep_interval_minutes: number | null
         }
         Insert: {
           adapter_key: string
@@ -606,6 +607,7 @@ export type Database = {
           public_signer_key: string
           scope_type?: Database["public"]["Enums"]["activation_scope_type"]
           updated_at?: string
+          worker_sweep_interval_minutes?: number | null
         }
         Update: {
           adapter_key?: string
@@ -623,6 +625,7 @@ export type Database = {
           public_signer_key?: string
           scope_type?: Database["public"]["Enums"]["activation_scope_type"]
           updated_at?: string
+          worker_sweep_interval_minutes?: number | null
         }
         Relationships: [
           {
@@ -712,6 +715,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      activation_demographic_feed_worker_outbox: {
+        Row: {
+          adapter_id: string
+          attempt_count: number
+          claim_expires_at: string | null
+          claimed_at: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          metadata: Json
+          requested_at: string
+          status: string
+          updated_at: string
+          worker_identity: string | null
+        }
+        Insert: {
+          adapter_id: string
+          attempt_count?: number
+          claim_expires_at?: string | null
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          requested_at?: string
+          status?: string
+          updated_at?: string
+          worker_identity?: string | null
+        }
+        Update: {
+          adapter_id?: string
+          attempt_count?: number
+          claim_expires_at?: string | null
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          requested_at?: string
+          status?: string
+          updated_at?: string
+          worker_identity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_worker_outbox_adapter_id_fkey"
+            columns: ["adapter_id"]
+            isOneToOne: false
+            referencedRelation: "activation_demographic_feed_adapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_demographic_feed_worker_outbox_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_demographic_feed_worker_schedule_policies: {
+        Row: {
+          claim_ttl_minutes: number
+          default_interval_minutes: number
+          id: string
+          policy_key: string
+          updated_at: string
+        }
+        Insert: {
+          claim_ttl_minutes?: number
+          default_interval_minutes?: number
+          id?: string
+          policy_key: string
+          updated_at?: string
+        }
+        Update: {
+          claim_ttl_minutes?: number
+          default_interval_minutes?: number
+          id?: string
+          policy_key?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       activation_evidence: {
         Row: {

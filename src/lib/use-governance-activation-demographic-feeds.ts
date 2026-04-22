@@ -49,7 +49,10 @@ export function useGovernanceActivationDemographicFeeds() {
   const [registeringFeedAdapter, setRegisteringFeedAdapter] = useState(false);
   const [ingestingSignedFeedSnapshot, setIngestingSignedFeedSnapshot] = useState(false);
   const [runningFeedWorkers, setRunningFeedWorkers] = useState(false);
+  const [schedulingFeedWorkerJobs, setSchedulingFeedWorkerJobs] = useState(false);
+  const [processingFeedOutbox, setProcessingFeedOutbox] = useState(false);
   const [resolvingFeedAlertKey, setResolvingFeedAlertKey] = useState<string | null>(null);
+  const [pendingFeedOutboxCount, setPendingFeedOutboxCount] = useState(0);
   const [feedAdapters, setFeedAdapters] = useState<ActivationDemographicFeedAdapterRow[]>([]);
   const [feedIngestions, setFeedIngestions] = useState<ActivationDemographicFeedIngestionRow[]>([]);
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
@@ -96,7 +99,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const loadFeedData = useCallback(async () => {
     setLoadingFeedData(true);
 
-    const [adapterResponse, ingestionResponse, permissionResponse, workerSummaryResponse] = await Promise.all([
+    const [adapterResponse, ingestionResponse, permissionResponse, workerSummaryResponse, pendingOutboxResponse] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
         .select('*')
@@ -111,6 +114,10 @@ export function useGovernanceActivationDemographicFeeds() {
       callUntypedRpc<ActivationDemographicFeedWorkerAlertSummaryRow[]>('activation_demographic_feed_worker_alert_summary', {
         requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
       }),
+      supabase
+        .from('activation_demographic_feed_worker_outbox')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending'),
     ]);
 
     const sharedError = adapterResponse.error || ingestionResponse.error || permissionResponse.error;
@@ -152,12 +159,35 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerBackendUnavailable(false);
     }
 
+    if (pendingOutboxResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(pendingOutboxResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setPendingFeedOutboxCount(0);
+    } else {
+      setPendingFeedOutboxCount(pendingOutboxResponse.count ?? 0);
+    }
+
     setLoadingFeedData(false);
   }, []);
 
   useEffect(() => {
     void loadFeedData();
   }, [loadFeedData]);
+
+  const fetchFeedAdapterById = useCallback(async (adapterId: string) => {
+    const { data, error } = await supabase
+      .from('activation_demographic_feed_adapters')
+      .select('*')
+      .eq('id', adapterId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data as ActivationDemographicFeedAdapterRow;
+  }, []);
 
   const registerFeedAdapter = useCallback(async (draft: {
     adapterKey: string;
@@ -292,8 +322,138 @@ export function useGovernanceActivationDemographicFeeds() {
     await loadFeedData();
   }, [canManageFeeds, feedAdapters, feedBackendUnavailable, loadFeedData]);
 
+  const scheduleFeedWorkerJobs = useCallback(async (forceReschedule = false) => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
+
+    setSchedulingFeedWorkerJobs(true);
+    const { data, error } = await callUntypedRpc<number>('schedule_activation_demographic_feed_worker_jobs', {
+      force_reschedule: forceReschedule,
+    });
+
+    if (error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to schedule activation demographic feed worker jobs:', error);
+        toast.error('Could not queue scheduled feed worker sweeps.');
+      }
+      setSchedulingFeedWorkerJobs(false);
+      return;
+    }
+
+    const count = typeof data === 'number' && Number.isFinite(data) ? Math.max(0, Math.floor(data)) : 0;
+    toast.success(
+      count > 0
+        ? `Queued ${count} feed worker sweep job${count === 1 ? '' : 's'}.`
+        : 'No additional feed worker sweeps are due for the configured cadence.',
+    );
+    setSchedulingFeedWorkerJobs(false);
+    await loadFeedData();
+  }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
+
+  const processFeedWorkerOutboxQueue = useCallback(async () => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
+
+    setProcessingFeedOutbox(true);
+
+    const authResponse = await supabase.auth.getUser();
+    const userId = authResponse.data.user?.id;
+    const workerIdentity = userId
+      ? `governance_activation_feed_ui:${userId}`
+      : `governance_activation_feed_ui:${typeof globalThis.crypto?.randomUUID === 'function'
+        ? globalThis.crypto.randomUUID()
+        : String(Date.now())}`;
+
+    const { data: claimedRows, error: claimError } = await callUntypedRpc<
+      { outbox_job_id: string; adapter_id: string }[]
+    >('claim_activation_demographic_feed_worker_jobs', {
+      worker_identity: workerIdentity,
+      job_limit: 8,
+    });
+
+    if (claimError) {
+      if (isMissingActivationDemographicFeedWorkerBackend(claimError)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to claim feed worker outbox jobs:', claimError);
+        toast.error('Could not claim queued feed worker jobs.');
+      }
+      setProcessingFeedOutbox(false);
+      return;
+    }
+
+    const rows = Array.isArray(claimedRows) ? claimedRows : [];
+    if (rows.length === 0) {
+      toast.message('No pending feed worker jobs in the queue.');
+      setProcessingFeedOutbox(false);
+      await loadFeedData();
+      return;
+    }
+
+    for (const row of rows) {
+      let adapterRow = feedAdapters.find((adapter) => adapter.id === row.adapter_id) ?? null;
+      if (!adapterRow) {
+        adapterRow = await fetchFeedAdapterById(row.adapter_id);
+      }
+
+      if (!adapterRow) {
+        await callUntypedRpc<unknown>('complete_activation_demographic_feed_worker_outbox', {
+          target_outbox_id: row.outbox_job_id,
+          completed_ok: false,
+          resolution_message: 'Adapter row not found while processing outbox job.',
+        });
+        continue;
+      }
+
+      let completedOk = false;
+      let resolutionMessage: string | null = null;
+
+      try {
+        if (!adapterRow.endpoint_url?.trim()) {
+          resolutionMessage = 'Adapter is missing an endpoint URL.';
+        } else {
+          const stats = await runActivationDemographicFeedWorkerSweep({
+            adapters: [adapterRow],
+            recordFeedWorkerRun,
+          });
+          const failures =
+            stats.signatureFailures + stats.fetchFailures + stats.invalidPayloads + stats.ingestionFailures;
+          completedOk = failures === 0;
+          if (!completedOk) {
+            resolutionMessage = 'Worker sweep finished with ingestion, signature, or connectivity failures.';
+          }
+        }
+      } catch (caught) {
+        completedOk = false;
+        resolutionMessage = caught instanceof Error ? caught.message : String(caught);
+      }
+
+      const { error: completeError } = await callUntypedRpc<unknown>('complete_activation_demographic_feed_worker_outbox', {
+        target_outbox_id: row.outbox_job_id,
+        completed_ok: completedOk,
+        resolution_message: resolutionMessage,
+      });
+
+      if (completeError) {
+        console.error('Failed to complete feed worker outbox job:', completeError);
+      }
+    }
+
+    toast.success(`Processed ${rows.length} queued feed worker job${rows.length === 1 ? '' : 's'}.`);
+    setProcessingFeedOutbox(false);
+    await loadFeedData();
+  }, [
+    canManageFeeds,
+    feedBackendUnavailable,
+    feedWorkerBackendUnavailable,
+    feedAdapters,
+    recordFeedWorkerRun,
+    fetchFeedAdapterById,
+    loadFeedData,
+  ]);
+
   const runFeedWorkerSweep = useCallback(async () => {
-    if (!canManageFeeds || feedBackendUnavailable || runningFeedWorkers) return;
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable || runningFeedWorkers) return;
 
     const activeAdaptersWithEndpoints = feedAdapters.filter((adapter) =>
       adapter.is_active && Boolean(adapter.endpoint_url?.trim()));
@@ -320,7 +480,7 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     toast.success(`Feed worker sweep completed: ${stats.ingested} signed snapshots ingested.`);
-  }, [canManageFeeds, feedAdapters, feedBackendUnavailable, loadFeedData, recordFeedWorkerRun, runningFeedWorkers]);
+  }, [canManageFeeds, feedAdapters, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData, recordFeedWorkerRun, runningFeedWorkers]);
 
   const resolveFeedAlert = useCallback(async (adapterId: string, alertType: ActivationDemographicFeedAlertType | null = null) => {
     if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
@@ -357,6 +517,9 @@ export function useGovernanceActivationDemographicFeeds() {
     registeringFeedAdapter,
     ingestingSignedFeedSnapshot,
     runningFeedWorkers,
+    schedulingFeedWorkerJobs,
+    processingFeedOutbox,
+    pendingFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
     feedAdapters,
@@ -365,6 +528,8 @@ export function useGovernanceActivationDemographicFeeds() {
     loadFeedData,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
+    scheduleFeedWorkerJobs,
+    processFeedWorkerOutboxQueue,
     runFeedWorkerSweep,
     resolveFeedAlert,
   };

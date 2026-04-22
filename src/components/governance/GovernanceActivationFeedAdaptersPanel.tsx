@@ -46,6 +46,9 @@ export function GovernanceActivationFeedAdaptersPanel({
     registeringFeedAdapter,
     ingestingSignedFeedSnapshot,
     runningFeedWorkers,
+    schedulingFeedWorkerJobs,
+    processingFeedOutbox,
+    pendingFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
     feedAdapters,
@@ -54,6 +57,8 @@ export function GovernanceActivationFeedAdaptersPanel({
     loadFeedData,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
+    scheduleFeedWorkerJobs,
+    processFeedWorkerOutboxQueue,
     runFeedWorkerSweep,
     resolveFeedAlert,
   } = useGovernanceActivationDemographicFeeds();
@@ -108,13 +113,43 @@ export function GovernanceActivationFeedAdaptersPanel({
           >
             {openFeedWorkerAlertsCount > 0 ? `${openFeedWorkerAlertsCount} worker alerts` : 'Worker alerts clear'}
           </Badge>
+          <Badge
+            variant="outline"
+            className={pendingFeedOutboxCount > 0
+              ? 'border-sky-500/20 bg-sky-500/10 text-sky-800 dark:text-sky-200'
+              : 'border-border bg-muted text-muted-foreground'}
+          >
+            {pendingFeedOutboxCount > 0 ? `${pendingFeedOutboxCount} queued sweeps` : 'Sweep queue empty'}
+          </Badge>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={() => void scheduleFeedWorkerJobs(false)}
+            disabled={schedulingFeedWorkerJobs || !canManageFeeds || feedWorkerBackendUnavailable}
+          >
+            {schedulingFeedWorkerJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Queue due sweeps
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={() => void processFeedWorkerOutboxQueue()}
+            disabled={processingFeedOutbox || !canManageFeeds || feedWorkerBackendUnavailable}
+          >
+            {processingFeedOutbox ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Process sweep queue
+          </Button>
           <Button
             type="button"
             size="sm"
             variant="outline"
             className="gap-2"
             onClick={() => void runFeedWorkerSweep()}
-            disabled={runningFeedWorkers || !canManageFeeds}
+            disabled={runningFeedWorkers || !canManageFeeds || feedWorkerBackendUnavailable}
           >
             {runningFeedWorkers ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Run worker sweep

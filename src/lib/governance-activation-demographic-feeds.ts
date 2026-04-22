@@ -46,6 +46,12 @@ const activationDemographicFeedWorkerBackendTokens = [
   'resolve_activation_demographic_feed_worker_alerts',
   'activation_demographic_feed_worker_alert_summary',
   'maybe_escalate_activation_feed_worker_exec_page',
+  'activation_demographic_feed_worker_outbox',
+  'activation_demographic_feed_worker_schedule_policies',
+  'schedule_activation_demographic_feed_worker_jobs',
+  'claim_activation_demographic_feed_worker_jobs',
+  'complete_activation_demographic_feed_worker_outbox',
+  'release_stale_activation_demographic_feed_worker_claims',
 ] as const;
 
 function includesMissingBackendToken(message: string, tokens: readonly string[]) {
