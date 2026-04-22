@@ -37,6 +37,7 @@ export function GovernanceGuardianRelayPanel({
     recordingRelayWorkerRun,
     openingRelayAlert,
     resolvingRelayAlert,
+    escalatingCriticalRelayPublicExecution,
     signingRelayClientVerificationPackage,
     togglingRelayNodeId,
     relayPolicy,
@@ -67,6 +68,7 @@ export function GovernanceGuardianRelayPanel({
     recordRelayWorkerRun,
     openRelayAlert,
     resolveRelayAlert,
+    escalateOpenCriticalRelayAlertsToPublicExecution,
     signRelayClientVerificationPackage,
   } = useGovernanceGuardianRelays({ proposalId });
 
@@ -207,11 +209,13 @@ export function GovernanceGuardianRelayPanel({
           recordingRelayWorkerRun={recordingRelayWorkerRun}
           openingRelayAlert={openingRelayAlert}
           resolvingRelayAlert={resolvingRelayAlert}
+          escalatingCriticalRelayPublicExecution={escalatingCriticalRelayPublicExecution}
           formatTimestamp={formatTimestamp}
           onSaveRelayOpsRequirement={saveRelayOpsRequirement}
           onRecordRelayWorkerRun={recordRelayWorkerRun}
           onOpenRelayAlert={openRelayAlert}
           onResolveRelayAlert={resolveRelayAlert}
+          onEscalateOpenCriticalRelayAlertsToPublicExecution={escalateOpenCriticalRelayAlertsToPublicExecution}
         />
       )}
 

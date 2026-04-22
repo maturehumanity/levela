@@ -25,6 +25,7 @@ interface GovernanceGuardianRelayOpsControlsProps {
   recordingRelayWorkerRun: boolean;
   openingRelayAlert: boolean;
   resolvingRelayAlert: boolean;
+  escalatingCriticalRelayPublicExecution: boolean;
   formatTimestamp: (value: string | null) => string;
   onSaveRelayOpsRequirement: (draft: {
     requireTrustMinimizedQuorum: boolean;
@@ -50,6 +51,7 @@ interface GovernanceGuardianRelayOpsControlsProps {
     alertId: string;
     resolutionNotes: string;
   }) => Promise<void> | void;
+  onEscalateOpenCriticalRelayAlertsToPublicExecution: (openCriticalAlertCount: number) => Promise<void> | void;
 }
 
 export function GovernanceGuardianRelayOpsControls({
@@ -60,11 +62,13 @@ export function GovernanceGuardianRelayOpsControls({
   recordingRelayWorkerRun,
   openingRelayAlert,
   resolvingRelayAlert,
+  escalatingCriticalRelayPublicExecution,
   formatTimestamp,
   onSaveRelayOpsRequirement,
   onRecordRelayWorkerRun,
   onOpenRelayAlert,
   onResolveRelayAlert,
+  onEscalateOpenCriticalRelayAlertsToPublicExecution,
 }: GovernanceGuardianRelayOpsControlsProps) {
   const [opsRequirementDraft, setOpsRequirementDraft] = useState({
     requireTrustMinimizedQuorum: false,
@@ -93,6 +97,11 @@ export function GovernanceGuardianRelayOpsControls({
 
   const openRelayAlerts = useMemo(
     () => relayAlertBoardRows.filter((alert) => alert.alertStatus === 'open' || alert.alertStatus === 'acknowledged'),
+    [relayAlertBoardRows],
+  );
+
+  const openCriticalRelayAlertCount = useMemo(
+    () => relayAlertBoardRows.filter((alert) => alert.alertStatus === 'open' && alert.severity === 'critical').length,
     [relayAlertBoardRows],
   );
 
@@ -135,6 +144,24 @@ export function GovernanceGuardianRelayOpsControls({
           </p>
         </div>
       )}
+
+      <div className="space-y-1.5 rounded-lg border border-border/60 bg-card p-2.5 text-xs">
+        <p className="font-medium text-foreground">Public audit paging for critical relay alerts</p>
+        <p className="text-muted-foreground">
+          Open critical relay alerts on this proposal: {openCriticalRelayAlertCount}. Use this when you want verifier ops to see the same external execution channel without recording another worker run.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="w-full gap-2"
+          disabled={escalatingCriticalRelayPublicExecution || openCriticalRelayAlertCount <= 0}
+          onClick={() => void onEscalateOpenCriticalRelayAlertsToPublicExecution(openCriticalRelayAlertCount)}
+        >
+          {escalatingCriticalRelayPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Update external execution page for critical alerts
+        </Button>
+      </div>
 
       <div className="grid gap-3 xl:grid-cols-2">
         <div className="space-y-2 rounded-lg border border-border/60 bg-card p-2.5">

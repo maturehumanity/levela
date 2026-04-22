@@ -30,6 +30,7 @@ This file stores project-specific notes for future AI agent work.
 ## 3. Persistent User Directives
 
 - Do not ask the user to do work the agent can do itself (run commands, read or edit repo files, search the tree, run tests, inspect local config under the workspace). Only ask when something is genuinely impossible from here (for example passphrase entry on their TTY, secrets only they hold, or actions inside an account or UI only they control)—and then say briefly why.
+- **Delegation stop rule:** Never end a turn with “you should apply the migration” (or similar) when the repo already ships a non-interactive path the agent can run. In this project, **remote Postgres migrations** are applied by running `bash scripts/db/apply-remote-migration.sh <path-to-sql>` from the workspace (uses `REMOTE_DB_HOST` / `.env.local` and the agent SSH key when available). Run it, capture the outcome, and only involve the developer if the script exits non-zero after the script’s own diagnostics (for example SSH `BatchMode` failure or missing agent key on the VPS).
 - When the user gives recursive or standing instructions using phrases such as `Always`, `Never`, `make sure`, `don't`, `keep`, `preserve`, or similar strong directive language, treat them as persistent project rules, not one-off comments.
 - Capture those instructions in context and continue following them across later requests unless the user explicitly changes or cancels them.
 - Before making a change, check whether it conflicts with any previously stated standing instruction from the user.
@@ -56,6 +57,7 @@ This file stores project-specific notes for future AI agent work.
 ## 4. Remote Environment
 
 - Production for `levela.yeremyan.net` is not served by Lovable. Treat it as a VPS-managed deployment.
+- When a change includes a new file under `supabase/migrations/`, treat **applying that SQL on the VPS** as part of the same agent session unless SSH is definitively unavailable from this environment; do not hand that step back to the developer as a default closing instruction.
 - Current known VPS entrypoint:
   - SSH host alias: `soc-yeremyan-net`
   - Host: `130.61.32.187`
@@ -124,6 +126,7 @@ This file stores project-specific notes for future AI agent work.
   - the mandatory preflight/validation check
   - the stop condition that blocks repeating the same error
 - Do not rely on memory alone for repeated-release safeguards; encode them as explicit written rules.
+- **2026-04 correction — migration handoffs:** Failure pattern: closing with “apply this migration on the VPS” without having run `scripts/db/apply-remote-migration.sh`. Mandatory check: after adding or changing `supabase/migrations/*.sql`, run the apply script from the workspace when agent SSH is configured; confirm success or paste the script’s stderr. Stop condition: do not ask the developer to run that script unless the agent environment truly cannot reach the VPS after the script’s documented recovery paths.
 
 ## 8. Local Dev Port Policy
 

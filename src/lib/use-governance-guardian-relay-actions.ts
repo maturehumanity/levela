@@ -27,6 +27,7 @@ export function useGovernanceGuardianRelayActions({
   const [recordingRelayWorkerRun, setRecordingRelayWorkerRun] = useState(false);
   const [openingRelayAlert, setOpeningRelayAlert] = useState(false);
   const [resolvingRelayAlert, setResolvingRelayAlert] = useState(false);
+  const [escalatingCriticalRelayPublicExecution, setEscalatingCriticalRelayPublicExecution] = useState(false);
   const [togglingRelayNodeId, setTogglingRelayNodeId] = useState<string | null>(null);
 
   const registerRelayNode = useCallback(async (draft: {
@@ -304,6 +305,37 @@ export function useGovernanceGuardianRelayActions({
     await loadRelayData();
   }, [canManageGuardianRelays, loadRelayData, proposalId, relayBackendUnavailable]);
 
+  const escalateOpenCriticalRelayAlertsToPublicExecution = useCallback(async (openCriticalAlertCount: number) => {
+    if (relayBackendUnavailable || !canManageGuardianRelays) return;
+
+    if (!Number.isFinite(openCriticalAlertCount) || openCriticalAlertCount <= 0) {
+      toast.error('There are no open critical relay alerts to escalate.');
+      return;
+    }
+
+    setEscalatingCriticalRelayPublicExecution(true);
+
+    const { error } = await callUntypedRpc<unknown>('maybe_escalate_guardian_relay_critical_public_execution_page', {
+      target_proposal_id: proposalId,
+      open_critical_alert_count: openCriticalAlertCount,
+      target_batch_id: null,
+      escalation_context: {
+        source: 'governance_guardian_relay_panel',
+      },
+    });
+
+    if (error) {
+      console.error('Failed to escalate guardian relay critical alerts:', error);
+      toast.error('Could not open the public audit external execution page for these alerts.');
+      setEscalatingCriticalRelayPublicExecution(false);
+      return;
+    }
+
+    toast.success('Public audit external execution page updated for critical relay alerts.');
+    setEscalatingCriticalRelayPublicExecution(false);
+    await loadRelayData();
+  }, [canManageGuardianRelays, loadRelayData, proposalId, relayBackendUnavailable]);
+
   const resolveRelayAlert = useCallback(async (draft: {
     alertId: string;
     resolutionNotes: string;
@@ -350,6 +382,7 @@ export function useGovernanceGuardianRelayActions({
     recordingRelayWorkerRun,
     openingRelayAlert,
     resolvingRelayAlert,
+    escalatingCriticalRelayPublicExecution,
     togglingRelayNodeId,
     registerRelayNode,
     setRelayNodeActive,
@@ -360,6 +393,7 @@ export function useGovernanceGuardianRelayActions({
     recordRelayWorkerRun,
     openRelayAlert,
     resolveRelayAlert,
+    escalateOpenCriticalRelayAlertsToPublicExecution,
     ...distributionActions,
   };
 }

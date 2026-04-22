@@ -381,6 +381,7 @@ export function isMissingGuardianRelayBackend(error: { code?: string | null; mes
     || message.includes('capture_governance_proposal_guardian_relay_client_manifest')
     || message.includes('capture_governance_guardian_relay_audit_report')
     || message.includes('record_governance_guardian_relay_worker_run')
+    || message.includes('maybe_escalate_guardian_relay_critical_public_execution_page')
     || message.includes('open_governance_guardian_relay_alert')
     || message.includes('resolve_governance_guardian_relay_alert')
     || message.includes('set_governance_guardian_relay_ops_requirement')
