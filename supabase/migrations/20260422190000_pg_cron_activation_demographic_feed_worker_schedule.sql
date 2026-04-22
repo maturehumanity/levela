@@ -148,13 +148,16 @@ EXCEPTION
   WHEN duplicate_object THEN
     NULL;
   WHEN OTHERS THEN
-    RAISE NOTICE 'pg_cron could not be created: %', SQLERRM;
+    RAISE NOTICE
+      'pg_cron could not be created: %. On self-managed Postgres, ensure shared_preload_libraries includes ''pg_cron'', restart the server once, then re-run this migration (or CREATE EXTENSION manually).',
+      SQLERRM;
 END $$;
 
 DO $$
 BEGIN
   IF to_regnamespace('cron') IS NULL THEN
-    RAISE NOTICE 'pg_cron schema missing; skipping activation demographic feed worker cron registration';
+    RAISE NOTICE
+      'pg_cron schema missing; skipping activation demographic feed worker cron registration (CREATE EXTENSION pg_cron may have failed—verify SHOW shared_preload_libraries includes pg_cron and that the instance was restarted after adding it).';
     RETURN;
   END IF;
 

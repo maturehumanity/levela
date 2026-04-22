@@ -77,3 +77,24 @@ REMOTE_DB_USER=postgres \
 REMOTE_DB_NAME=postgres \
 scripts/db/apply-remote-migration.sh supabase/migrations/<migration>.sql
 ```
+
+## pg_cron preflight (in-database scheduled jobs)
+
+Migrations that call `CREATE EXTENSION pg_cron` or register `cron.schedule(...)` jobs require a Postgres instance where **`pg_cron` is preloaded** before the extension can load and the background worker can run jobs.
+
+1. **Check preload** (run inside the DB container, as in the migration script):
+
+   ```sql
+   SHOW shared_preload_libraries;
+   ```
+
+   The comma-separated list **must include `pg_cron`**. If it does not, add `pg_cron` to `shared_preload_libraries` in the Postgres configuration used by your stack, **restart Postgres once**, then create the extension.
+
+2. **After migrations**, confirm the extension and any expected job exist:
+
+   ```sql
+   SELECT extname, extversion FROM pg_extension WHERE extname = 'pg_cron';
+   SELECT jobname, schedule, command FROM cron.job WHERE jobname LIKE '%activation_demographic_feed_worker%';
+   ```
+
+The Levela VPS Supabase stack used for remote migrations already lists `pg_cron` in `shared_preload_libraries` (no repo change was required there). Other hosts must satisfy the same precondition or migrations will log a `NOTICE` and skip cron registration.
