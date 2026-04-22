@@ -36,7 +36,7 @@ If content can materially influence someone's legal rights, professional learnin
 
 - Constitutional study materials live under `02-moderated/academic-materials/constitutional-studies/universal-constitution/`.
 - Monetary policy and AI agent specifications live under `02-moderated/policies/monetary/`.
-- Developer and release operations live under `04-operations/dev/`.
+- Developer and release operations live under `04-operations/dev/` (for example verifier federation plans under `04-operations/dev/verifier-federation/`, VPS and headless SSH notes under `04-operations/dev/ssh-and-vps/`).
 
 ## Collaboration Flow
 

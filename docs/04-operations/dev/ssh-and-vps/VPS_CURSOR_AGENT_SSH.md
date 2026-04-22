@@ -2,7 +2,7 @@
 
 Human access continues to use **`soc-yeremyan-net`** with the passphrase-protected key **`~/.ssh/soc-yeremyan-net`**.
 
-For **non-interactive** use (Cursor agents, `scripts/db-apply-remote-migration.sh` without `ssh-agent` identities), this machine uses a **separate, passphrase-less** key pair:
+For **non-interactive** use (Cursor agents, `scripts/db/apply-remote-migration.sh` without `ssh-agent` identities), this machine uses a **separate, passphrase-less** key pair:
 
 | File | Purpose |
 |------|---------|
@@ -20,7 +20,7 @@ From **this** machine, after your **human** key works to the same host (passphra
 **A — helper script (runs `ssh-copy-id`):**
 
 ```bash
-bash scripts/vps-install-levela-agent-ssh-key.sh
+bash scripts/db/vps-install-agent-ssh-key.sh
 ```
 
 **B — `ssh-copy-id` directly:**

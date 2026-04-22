@@ -56,7 +56,7 @@ if ! ssh -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 "${REMOTE_H
   if [[ "${REMOTE_HOST}" == "soc-yeremyan-net-agent" ]] || [[ -f "${LEVELA_AGENT_KEY}" ]]; then
     echo "For host soc-yeremyan-net-agent: install the automation public key on the VPS (one-time):" >&2
     echo "  ssh-copy-id -i \"\$HOME/.ssh/levela_cursor_agent_ed25519.pub\" -o IdentitiesOnly=yes soc-yeremyan-net" >&2
-    echo "Docs: docs/04-operations/dev/VPS_CURSOR_AGENT_SSH.md" >&2
+    echo "Docs: docs/04-operations/dev/ssh-and-vps/VPS_CURSOR_AGENT_SSH.md" >&2
   fi
   if [[ "${REMOTE_HOST}" == "soc-yeremyan-net" ]]; then
     echo "For host soc-yeremyan-net: load ~/.ssh/soc-yeremyan-net into ssh-agent (passphrase key), then retry." >&2

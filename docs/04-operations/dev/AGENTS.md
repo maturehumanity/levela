@@ -62,7 +62,7 @@ This file stores project-specific notes for future AI agent work.
   - Port: `26747`
   - User: `ubuntu`
   - Identity file: `~/.ssh/soc-yeremyan-net`
-- **Headless / Cursor agents / remote DB scripts** use a separate host alias **`soc-yeremyan-net-agent`** with **`~/.ssh/levela_cursor_agent_ed25519`** (passphrase-less; public key must be in `ubuntu`’s `authorized_keys` on the VPS). See `docs/04-operations/dev/VPS_CURSOR_AGENT_SSH.md`. Prefer **`REMOTE_DB_HOST=soc-yeremyan-net-agent`** in `.env.local` for migrations from agents.
+- **Headless / Cursor agents / remote DB scripts** use a separate host alias **`soc-yeremyan-net-agent`** with **`~/.ssh/levela_cursor_agent_ed25519`** (passphrase-less; public key must be in `ubuntu`’s `authorized_keys` on the VPS). See `docs/04-operations/dev/ssh-and-vps/VPS_CURSOR_AGENT_SSH.md`. Prefer **`REMOTE_DB_HOST=soc-yeremyan-net-agent`** in `.env.local` for migrations from agents.
 - The human key (`soc-yeremyan-net`) is passphrase-protected; **non-interactive** SSH to that alias still requires **`ssh-agent`**. Dev machines can use the **stable agent socket** in `docs/04-operations/dev/REMOTE_DB_ACCESS.md` for interactive workflows.
 - Existing history confirms the VPS also hosts a Supabase stack at `~/supabase-stack/supabase/docker`.
 - Live web traffic for `levela.yeremyan.net` is served by the Docker container `caddy-supabase` (`caddy:2.9.1-alpine`).

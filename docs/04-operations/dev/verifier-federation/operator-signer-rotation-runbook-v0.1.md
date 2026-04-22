@@ -9,7 +9,7 @@ updated: 2026-04-22
 
 # 1. Purpose
 
-Operational steps for **Phase D** of `verifier-federation-rollout-plan-v0.1.md`: rotate verifier mirror **directory signers**, **federation operators**, and **distribution cosigners** without breaking client-verifiable continuity or leaving execution gates stuck in a false “not ready” state.
+Operational steps for **Phase D** of `rollout-plan-v0.1.md` (same folder): rotate verifier mirror **directory signers**, **federation operators**, and **distribution cosigners** without breaking client-verifiable continuity or leaving execution gates stuck in a false “not ready” state.
 
 # 2. Preconditions
 

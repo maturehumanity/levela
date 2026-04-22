@@ -50,20 +50,20 @@ Use your real home directory path (the same directory as `~/.ssh/agent.sock`).
 
 `~/.bashrc` only auto-runs `ssh-add` for **`soc-yeremyan-net`** when the workspace sets **`SSH_AUTO_ADD_LEVELA=1`** (this repo’s `.vscode/settings.json`). Careercenter is **not** wired in `~/.bashrc`; use `ssh-add ~/.ssh/careercenter.key` manually when you need that client.
 
-Step-by-step (including “do not paste JSON into the terminal”): **`docs/04-operations/dev/SSH_SHELL_AND_CURSOR.md`**.
+Step-by-step (including “do not paste JSON into the terminal”): **`docs/04-operations/dev/ssh-and-vps/SSH_SHELL_AND_CURSOR.md`**.
 
 ## Apply a migration
 
 Run:
 
 ```bash
-scripts/db-apply-remote-migration.sh supabase/migrations/<migration-file>.sql
+scripts/db/apply-remote-migration.sh supabase/migrations/<migration-file>.sql
 ```
 
 Example:
 
 ```bash
-scripts/db-apply-remote-migration.sh supabase/migrations/20260412204000_add_governance_and_study_tables.sql
+scripts/db/apply-remote-migration.sh supabase/migrations/20260412204000_add_governance_and_study_tables.sql
 ```
 
 ## Optional overrides
@@ -75,5 +75,5 @@ REMOTE_DB_HOST=soc-yeremyan-net-agent \
 REMOTE_DOCKER_DIR=/home/ubuntu/supabase-stack/supabase/docker \
 REMOTE_DB_USER=postgres \
 REMOTE_DB_NAME=postgres \
-scripts/db-apply-remote-migration.sh supabase/migrations/<migration>.sql
+scripts/db/apply-remote-migration.sh supabase/migrations/<migration>.sql
 ```

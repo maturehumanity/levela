@@ -82,7 +82,7 @@ Acceptance gates:
 Deliverables:
 
 1. Domain-role and signer-governance checks for federated package signers.
-2. Runbook for rotating operators/signers without breaking verification continuity (see `docs/04-operations/dev/verifier-federation-operator-signer-rotation-runbook-v0.1.md`).
+2. Runbook for rotating operators/signers without breaking verification continuity (see `docs/04-operations/dev/verifier-federation/operator-signer-rotation-runbook-v0.1.md`).
 3. Constitutional and policy mapping for mirror federation responsibilities (summary table in that runbook §7; full constitutional text remains under `docs/03-governance/`).
 
 Acceptance gates:
@@ -131,4 +131,4 @@ Step 5 is considered started when:
 
 - **D.1 Signer governance (cosignatures)** — `sign_governance_public_audit_verifier_federation_package` requires `signer_key` to match an **active**, **governance-approved** `governance_public_audit_verifier_mirror_directory_signers` row (`20260422103000_…sql`).
 - **D.1b Publisher governance (capture)** — `capture_governance_public_audit_verifier_federation_package` requires the **published directory** `signer_id` publisher to be **active** and **governance-approved** (`20260422104500_…sql`).
-- **D.2 / D.3 Runbook + mapping** — `docs/04-operations/dev/verifier-federation-operator-signer-rotation-runbook-v0.1.md` (rotation procedures and concise policy table).
+- **D.2 / D.3 Runbook + mapping** — `docs/04-operations/dev/verifier-federation/operator-signer-rotation-runbook-v0.1.md` (rotation procedures and concise policy table).
