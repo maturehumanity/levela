@@ -2,10 +2,14 @@ import type {
   GovernanceProposalGuardianRelayAlertBoardRow,
   GovernanceProposalGuardianRelayAttestationAuditRow,
   GovernanceProposalGuardianRelayClientProofManifest,
+  GovernanceProposalGuardianRelayClientVerificationDistributionSummary,
+  GovernanceProposalGuardianRelayClientVerificationPackage,
+  GovernanceProposalGuardianRelayClientVerificationSignatureRow,
   GovernanceProposalGuardianRelayDiversityAudit,
   GovernanceProposalGuardianRelayOperationsSummary,
   GovernanceProposalGuardianRelayRecentAuditRow,
   GovernanceProposalGuardianRelayRecentClientManifestRow,
+  GovernanceProposalGuardianRelayRecentClientVerificationPackageRow,
   GovernanceProposalGuardianRelaySummary,
   GovernanceProposalGuardianRelayTrustMinimizedSummary,
   GovernanceProposalGuardianRelayWorkerRunBoardRow,
@@ -18,10 +22,14 @@ export type {
   GovernanceProposalGuardianRelayAlertBoardRow,
   GovernanceProposalGuardianRelayAttestationAuditRow,
   GovernanceProposalGuardianRelayClientProofManifest,
+  GovernanceProposalGuardianRelayClientVerificationDistributionSummary,
+  GovernanceProposalGuardianRelayClientVerificationPackage,
+  GovernanceProposalGuardianRelayClientVerificationSignatureRow,
   GovernanceProposalGuardianRelayDiversityAudit,
   GovernanceProposalGuardianRelayOperationsSummary,
   GovernanceProposalGuardianRelayRecentAuditRow,
   GovernanceProposalGuardianRelayRecentClientManifestRow,
+  GovernanceProposalGuardianRelayRecentClientVerificationPackageRow,
   GovernanceProposalGuardianRelaySummary,
   GovernanceProposalGuardianRelayTrustMinimizedSummary,
   GovernanceProposalGuardianRelayWorkerRunBoardRow,
@@ -356,12 +364,20 @@ export function isMissingGuardianRelayBackend(error: { code?: string | null; mes
     || message.includes('governance_proposal_guardian_relay_trust_minimized_summary')
     || message.includes('governance_proposal_guardian_relay_client_proof_manifest')
     || message.includes('governance_proposal_guardian_relay_recent_client_manifests')
+    || message.includes('governance_proposal_guardian_relay_client_verification_package')
+    || message.includes('capture_governance_proposal_guardian_relay_client_verification_package')
+    || message.includes('sign_governance_proposal_guardian_relay_client_verification_package')
+    || message.includes('governance_proposal_guardian_relay_recent_client_verification_packages')
+    || message.includes('governance_proposal_guardian_relay_client_verification_distribution_summary')
+    || message.includes('governance_proposal_guardian_relay_client_verification_signature_board')
     || message.includes('governance_guardian_relay_worker_runs')
     || message.includes('governance_guardian_relay_alerts')
     || message.includes('governance_proposal_guardian_relay_operations_summary')
     || message.includes('governance_proposal_guardian_relay_alert_board')
     || message.includes('governance_proposal_guardian_relay_worker_run_board')
     || message.includes('governance_proposal_client_verification_manifests')
+    || message.includes('governance_proposal_client_verification_packages')
+    || message.includes('governance_proposal_client_verification_package_signatures')
     || message.includes('capture_governance_proposal_guardian_relay_client_manifest')
     || message.includes('capture_governance_guardian_relay_audit_report')
     || message.includes('record_governance_guardian_relay_worker_run')

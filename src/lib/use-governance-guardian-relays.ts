@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
+import {
+  readGovernanceProposalGuardianRelayClientVerificationDistributionSummary,
+  readGovernanceProposalGuardianRelayClientVerificationPackage,
+  readGovernanceProposalGuardianRelayClientVerificationSignatureRows,
+  readGovernanceProposalGuardianRelayRecentClientVerificationPackageRows,
+} from '@/lib/governance-guardian-relay-distribution';
 import { callUntypedRpc } from '@/lib/governance-rpc';
 import {
   isMissingGuardianRelayBackend,
@@ -18,9 +24,13 @@ import {
   type GovernanceProposalGuardianRelayAlertBoardRow,
   type GovernanceProposalGuardianRelayAttestationAuditRow,
   type GovernanceProposalGuardianRelayClientProofManifest,
+  type GovernanceProposalGuardianRelayClientVerificationDistributionSummary,
+  type GovernanceProposalGuardianRelayClientVerificationPackage,
+  type GovernanceProposalGuardianRelayClientVerificationSignatureRow,
   type GovernanceProposalGuardianRelayDiversityAudit,
   type GovernanceProposalGuardianRelayOperationsSummary,
   type GovernanceProposalGuardianRelayRecentClientManifestRow,
+  type GovernanceProposalGuardianRelayRecentClientVerificationPackageRow,
   type GovernanceProposalGuardianRelayRecentAuditRow,
   type GovernanceProposalGuardianRelaySummary,
   type GovernanceProposalGuardianRelayTrustMinimizedSummary,
@@ -47,6 +57,10 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
   const [relayAttestationAuditRows, setRelayAttestationAuditRows] = useState<GovernanceProposalGuardianRelayAttestationAuditRow[]>([]);
   const [relayRecentAuditReports, setRelayRecentAuditReports] = useState<GovernanceProposalGuardianRelayRecentAuditRow[]>([]);
   const [relayRecentClientManifests, setRelayRecentClientManifests] = useState<GovernanceProposalGuardianRelayRecentClientManifestRow[]>([]);
+  const [relayClientVerificationPackage, setRelayClientVerificationPackage] = useState<GovernanceProposalGuardianRelayClientVerificationPackage | null>(null);
+  const [relayRecentClientVerificationPackages, setRelayRecentClientVerificationPackages] = useState<GovernanceProposalGuardianRelayRecentClientVerificationPackageRow[]>([]);
+  const [relayClientVerificationDistributionSummary, setRelayClientVerificationDistributionSummary] = useState<GovernanceProposalGuardianRelayClientVerificationDistributionSummary | null>(null);
+  const [relayClientVerificationSignatures, setRelayClientVerificationSignatures] = useState<GovernanceProposalGuardianRelayClientVerificationSignatureRow[]>([]);
   const [relayAlertBoardRows, setRelayAlertBoardRows] = useState<GovernanceProposalGuardianRelayAlertBoardRow[]>([]);
   const [relayWorkerRunBoardRows, setRelayWorkerRunBoardRows] = useState<GovernanceProposalGuardianRelayWorkerRunBoardRow[]>([]);
 
@@ -66,6 +80,10 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
       operationsSummaryResponse,
       clientProofManifestResponse,
       recentClientManifestsResponse,
+      clientVerificationPackageResponse,
+      recentClientVerificationPackagesResponse,
+      clientVerificationDistributionSummaryResponse,
+      clientVerificationSignatureBoardResponse,
       alertBoardResponse,
       workerRunBoardResponse,
     ] = await Promise.all([
@@ -117,6 +135,20 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
         target_proposal_id: args.proposalId,
         max_manifests: 12,
       }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_verification_package', {
+        target_proposal_id: args.proposalId,
+      }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_recent_client_verification_packages', {
+        target_proposal_id: args.proposalId,
+        max_packages: 12,
+      }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_verification_distribution_summary', {
+        target_proposal_id: args.proposalId,
+      }),
+      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_verification_signature_board', {
+        target_proposal_id: args.proposalId,
+        max_entries: 40,
+      }),
       callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_alert_board', {
         target_proposal_id: args.proposalId,
         status_filter: null,
@@ -140,6 +172,10 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
       || operationsSummaryResponse.error
       || clientProofManifestResponse.error
       || recentClientManifestsResponse.error
+      || clientVerificationPackageResponse.error
+      || recentClientVerificationPackagesResponse.error
+      || clientVerificationDistributionSummaryResponse.error
+      || clientVerificationSignatureBoardResponse.error
       || alertBoardResponse.error
       || workerRunBoardResponse.error;
 
@@ -163,6 +199,10 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
         operationsSummaryError: operationsSummaryResponse.error,
         clientProofManifestError: clientProofManifestResponse.error,
         recentClientManifestsError: recentClientManifestsResponse.error,
+        clientVerificationPackageError: clientVerificationPackageResponse.error,
+        recentClientVerificationPackagesError: recentClientVerificationPackagesResponse.error,
+        clientVerificationDistributionSummaryError: clientVerificationDistributionSummaryResponse.error,
+        clientVerificationSignatureBoardError: clientVerificationSignatureBoardResponse.error,
         alertBoardError: alertBoardResponse.error,
         workerRunBoardError: workerRunBoardResponse.error,
       });
@@ -182,6 +222,14 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
     setRelayAttestationAuditRows(readGovernanceProposalGuardianRelayAttestationAuditRows(attestationAuditResponse.data));
     setRelayRecentAuditReports(readGovernanceProposalGuardianRelayRecentAuditRows(recentAuditsResponse.data));
     setRelayRecentClientManifests(readGovernanceProposalGuardianRelayRecentClientManifestRows(recentClientManifestsResponse.data));
+    setRelayClientVerificationPackage(readGovernanceProposalGuardianRelayClientVerificationPackage(clientVerificationPackageResponse.data));
+    setRelayRecentClientVerificationPackages(readGovernanceProposalGuardianRelayRecentClientVerificationPackageRows(recentClientVerificationPackagesResponse.data));
+    setRelayClientVerificationDistributionSummary(
+      readGovernanceProposalGuardianRelayClientVerificationDistributionSummary(clientVerificationDistributionSummaryResponse.data),
+    );
+    setRelayClientVerificationSignatures(
+      readGovernanceProposalGuardianRelayClientVerificationSignatureRows(clientVerificationSignatureBoardResponse.data),
+    );
     setRelayAlertBoardRows(readGovernanceProposalGuardianRelayAlertBoardRows(alertBoardResponse.data));
     setRelayWorkerRunBoardRows(readGovernanceProposalGuardianRelayWorkerRunBoardRows(workerRunBoardResponse.data));
     setCanManageGuardianRelays(Boolean(permissionResponse.data));
@@ -215,6 +263,10 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
     relayAttestationAuditRows,
     relayRecentAuditReports,
     relayRecentClientManifests,
+    relayClientVerificationPackage,
+    relayRecentClientVerificationPackages,
+    relayClientVerificationDistributionSummary,
+    relayClientVerificationSignatures,
     relayAlertBoardRows,
     relayWorkerRunBoardRows,
     loadRelayData,

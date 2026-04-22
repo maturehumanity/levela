@@ -32,10 +32,12 @@ export function GovernanceGuardianRelayPanel({
     recordingRelayAttestation,
     capturingRelayAuditReport,
     capturingRelayClientManifest,
+    capturingRelayClientVerificationPackage,
     savingRelayOpsRequirement,
     recordingRelayWorkerRun,
     openingRelayAlert,
     resolvingRelayAlert,
+    signingRelayClientVerificationPackage,
     togglingRelayNodeId,
     relayPolicy,
     relayNodes,
@@ -48,6 +50,10 @@ export function GovernanceGuardianRelayPanel({
     relayAttestationAuditRows,
     relayRecentAuditReports,
     relayRecentClientManifests,
+    relayClientVerificationPackage,
+    relayRecentClientVerificationPackages,
+    relayClientVerificationDistributionSummary,
+    relayClientVerificationSignatures,
     relayAlertBoardRows,
     relayWorkerRunBoardRows,
     loadRelayData,
@@ -56,10 +62,12 @@ export function GovernanceGuardianRelayPanel({
     recordRelayAttestation,
     captureRelayAuditReport,
     captureRelayClientManifest,
+    captureRelayClientVerificationPackage,
     saveRelayOpsRequirement,
     recordRelayWorkerRun,
     openRelayAlert,
     resolveRelayAlert,
+    signRelayClientVerificationPackage,
   } = useGovernanceGuardianRelays({ proposalId });
 
   if (relayBackendUnavailable) {
@@ -177,8 +185,16 @@ export function GovernanceGuardianRelayPanel({
         relayTrustMinimizedSummary={relayTrustMinimizedSummary}
         relayClientProofManifest={relayClientProofManifest}
         relayRecentClientManifests={relayRecentClientManifests}
+        relayClientVerificationPackage={relayClientVerificationPackage}
+        relayRecentClientVerificationPackages={relayRecentClientVerificationPackages}
+        relayClientVerificationDistributionSummary={relayClientVerificationDistributionSummary}
+        relayClientVerificationSignatures={relayClientVerificationSignatures}
         capturingRelayClientManifest={capturingRelayClientManifest}
+        capturingRelayClientVerificationPackage={capturingRelayClientVerificationPackage}
+        signingRelayClientVerificationPackage={signingRelayClientVerificationPackage}
         onCaptureRelayClientManifest={captureRelayClientManifest}
+        onCaptureRelayClientVerificationPackage={captureRelayClientVerificationPackage}
+        onSignRelayClientVerificationPackage={signRelayClientVerificationPackage}
         formatTimestamp={formatTimestamp}
       />
 

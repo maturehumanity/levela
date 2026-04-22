@@ -164,3 +164,51 @@ export interface GovernanceProposalGuardianRelayRecentClientManifestRow {
   chainProofMatchMet: boolean;
   manifestNotes: string | null;
 }
+
+export interface GovernanceProposalGuardianRelayClientVerificationPackage {
+  packageVersion: string;
+  packageHash: string;
+  packagePayload: Record<string, unknown>;
+  sourceManifestId: string;
+  sourceManifestHash: string;
+  trustMinimizedQuorumMet: boolean;
+  relayOpsReady: boolean;
+}
+
+export interface GovernanceProposalGuardianRelayRecentClientVerificationPackageRow {
+  packageId: string;
+  capturedAt: string;
+  packageVersion: string;
+  packageHash: string;
+  sourceManifestHash: string;
+  signatureCount: number;
+  distributionReady: boolean;
+  packageNotes: string | null;
+}
+
+export interface GovernanceProposalGuardianRelayClientVerificationDistributionSummary {
+  packageId: string;
+  capturedAt: string;
+  packageVersion: string;
+  packageHash: string;
+  sourceManifestHash: string;
+  requiredDistributionSignatures: number;
+  signatureCount: number;
+  distinctSignerCount: number;
+  distinctSignerJurisdictionsCount: number;
+  distinctSignerTrustDomainsCount: number;
+  lastSignedAt: string | null;
+  distributionReady: boolean;
+}
+
+export interface GovernanceProposalGuardianRelayClientVerificationSignatureRow {
+  signatureId: string;
+  packageId: string;
+  packageHash: string;
+  signerKey: string;
+  signatureAlgorithm: string;
+  distributionChannel: string;
+  signerTrustDomain: string;
+  signerJurisdictionCountryCode: string | null;
+  signedAt: string | null;
+}

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { asIntegerOrNull, callUntypedRpc } from '@/lib/governance-rpc';
+import { useGovernanceGuardianRelayDistributionActions } from '@/lib/use-governance-guardian-relay-distribution-actions';
 
 interface UseGovernanceGuardianRelayActionsArgs {
   proposalId: string;
@@ -333,6 +334,13 @@ export function useGovernanceGuardianRelayActions({
     await loadRelayData();
   }, [canManageGuardianRelays, loadRelayData, relayBackendUnavailable]);
 
+  const distributionActions = useGovernanceGuardianRelayDistributionActions({
+    proposalId,
+    canManageGuardianRelays,
+    relayBackendUnavailable,
+    loadRelayData,
+  });
+
   return {
     registeringRelayNode,
     recordingRelayAttestation,
@@ -352,5 +360,6 @@ export function useGovernanceGuardianRelayActions({
     recordRelayWorkerRun,
     openRelayAlert,
     resolveRelayAlert,
+    ...distributionActions,
   };
 }
