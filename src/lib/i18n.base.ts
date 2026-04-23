@@ -406,6 +406,7 @@ export const baseTranslations = {
     "federationOpsGateDistributionAlerts": "Open distribution verification alerts: {count}. Clear stale package, bad signature, or policy mismatch alerts after investigation.",
     "federationDistributionEscalationBannerTitle": "Open on-call pages for verifier federation distribution",
     "federationDistributionEscalationBannerBody": "There are {count} open or acknowledged external execution pages tied to verifier federation distribution verification. Resolve them under Public audit, Verifier mirror production, then Immutable anchoring automation using the on-call page board.",
+    "governanceStewardshipToolsLink": "Open governance stewardship tools",
     "guardianRelayEscalationBannerTitle": "Open on-call pages for guardian relay escalations",
     "guardianRelayEscalationBannerBody": "There are {count} open or acknowledged external execution pages tied to guardian relay (proof distribution or critical escalations). Resolve them under Public audit, Guardian relays, then Immutable anchoring automation using the on-call page board.",
     "bootstrapApprovalNote": "Bootstrap auto-approval because only one eligible citizen exists.",

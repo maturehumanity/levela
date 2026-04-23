@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Clock3, Landmark, Loader2, Vote, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -1576,6 +1577,14 @@ export default function Governance() {
                     )}
                   </div>
                 )}
+                <p className="mt-3 text-sm">
+                  <Link
+                    to="/settings/admin/governance#stewardship-public-audit-tools"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t('governanceHub.governanceStewardshipToolsLink')}
+                  </Link>
+                </p>
               </Card>
             )}
 
@@ -1587,6 +1596,14 @@ export default function Governance() {
                     count: federationDistributionEscalationOpenPageCount,
                   })}
                 </p>
+                <p className="mt-3 text-sm">
+                  <Link
+                    to="/settings/admin/governance#stewardship-public-audit-tools"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t('governanceHub.governanceStewardshipToolsLink')}
+                  </Link>
+                </p>
               </Card>
             )}
 
@@ -1595,6 +1612,14 @@ export default function Governance() {
                 <p className="font-medium text-foreground">{t('governanceHub.guardianRelayEscalationBannerTitle')}</p>
                 <p className="mt-2 text-muted-foreground">
                   {t('governanceHub.guardianRelayEscalationBannerBody', { count: guardianRelayEscalationOpenPageCount })}
+                </p>
+                <p className="mt-3 text-sm">
+                  <Link
+                    to="/settings/admin/governance#stewardship-public-audit-tools"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t('governanceHub.governanceStewardshipToolsLink')}
+                  </Link>
                 </p>
               </Card>
             )}
