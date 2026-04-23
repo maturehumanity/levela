@@ -11,9 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type {
-  GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
-  GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
+import {
+  formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel,
+  type GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
+  type GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorSignerGovernanceControlsProps {
@@ -114,7 +115,7 @@ export function GovernancePublicAuditVerifierMirrorSignerGovernanceControls({
 
       {(typeof requirementEnabled === 'boolean' || typeof requirementMinApprovals === 'number') && (
         <p className="text-muted-foreground">
-          Requirement {requirementEnabled ? 'enabled' : 'disabled'} • Min independent approvals {requirementMinApprovals ?? 1}
+          Requirement {requirementEnabled ? 'Enabled' : 'Disabled'} • Min independent approvals {requirementMinApprovals ?? 1}
         </p>
       )}
 
@@ -131,7 +132,8 @@ export function GovernancePublicAuditVerifierMirrorSignerGovernanceControls({
             <SelectContent>
               {attestationTargets.map((signer) => (
                 <SelectItem key={signer.signerId} value={signer.signerId}>
-                  {signer.signerLabel || signer.signerKey} • {signer.governanceStatus}
+                  {signer.signerLabel || signer.signerKey}
+                  {' '}• {formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel(signer.governanceStatus)}
                 </SelectItem>
               ))}
             </SelectContent>

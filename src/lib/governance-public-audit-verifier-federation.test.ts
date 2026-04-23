@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatGovernancePublicAuditVerifierMirrorFederationAlertHeading,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel,
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
   readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows,
   readGovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
@@ -333,5 +342,84 @@ describe('governance-public-audit-verifier-federation helpers', () => {
       openDistributionVerificationAlertCount: 0,
       federationOpsReady: true,
     });
+  });
+
+  it('parses federation worker run rows', () => {
+    const runs = readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows([
+      {
+        id: 'run-1',
+        run_scope: 'onboarding_sweep',
+        run_status: 'OK',
+        discovered_request_count: 2,
+        approved_request_count: 1,
+        onboarded_request_count: 1,
+        open_alert_count: 0,
+        observed_at: '2026-04-21T06:00:00.000Z',
+      },
+      { id: '', run_scope: 'manual', run_status: 'bogus' },
+    ]);
+
+    expect(runs).toEqual([
+      {
+        runId: 'run-1',
+        runScope: 'onboarding_sweep',
+        runStatus: 'ok',
+        discoveredRequestCount: 2,
+        approvedRequestCount: 1,
+        onboardedRequestCount: 1,
+        openAlertCount: 0,
+        observedAt: '2026-04-21T06:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('formats federation alert headings and severity or status labels for stewards', () => {
+    expect(
+      formatGovernancePublicAuditVerifierMirrorFederationAlertHeading({
+        alertKey: 'verifier_federation_distribution_stale_package',
+        alertScope: 'federation_distribution_stale_package',
+      }),
+    ).toBe('Stale or missing distribution package');
+
+    expect(
+      formatGovernancePublicAuditVerifierMirrorFederationAlertHeading({
+        alertKey: 'verifier_federation_distribution_policy_mismatch',
+        alertScope: 'federation_distribution_policy_mismatch',
+      }),
+    ).toBe('Distribution package does not match policy');
+
+    expect(
+      formatGovernancePublicAuditVerifierMirrorFederationAlertHeading({
+        alertKey: 'custom_operator_channel',
+        alertScope: 'regional_health_watch',
+      }),
+    ).toBe('Regional Health Watch');
+
+    expect(formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel('critical')).toBe('Critical');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel('unknown')).toBe('Unknown severity');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel('acknowledged')).toBe('Acknowledged');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel('unknown')).toBe('Unknown status');
+  });
+
+  it('formats federation worker run scope and status labels for stewards', () => {
+    expect(formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel('package_distribution_verification')).toBe(
+      'Package distribution verification',
+    );
+    expect(formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel('OPERATOR_HEALTH_AUDIT')).toBe('Operator health audit');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel('custom_ops_sweep')).toBe('Custom Ops Sweep');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel('ok')).toBe('OK');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel('failed')).toBe('Failed');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel('unknown')).toBe('Unknown status');
+  });
+
+  it('formats discovery candidate, onboarding request, and signer governance status labels', () => {
+    expect(formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel('promoted')).toBe('Promoted');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel('unknown')).toBe('Unknown status');
+
+    expect(formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel('onboarded')).toBe('Onboarded');
+    expect(formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel('unknown')).toBe('Unknown status');
+
+    expect(formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel('suspended')).toBe('Suspended');
+    expect(formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel('unknown')).toBe('Unknown status');
   });
 });

@@ -30,6 +30,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     schedulingProbeJobs,
     completingProbeJob,
     failoverPolicy,
+    federationDistributionGateSnapshot,
     directorySummaries,
     directoryTrustSummary,
     probeJobSummary,
@@ -73,6 +74,8 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     discoveredCandidates,
     federationOnboardingBoard,
     federationAlertBoard,
+    federationWorkerRuns,
+    federationDistributionEscalationOpenPageCount,
     loadFederationData,
     registerDiscoverySource,
     recordDiscoveryRun,
@@ -220,6 +223,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           canManageMirrorProduction={canManageMirrorProduction}
           savingFailoverPolicy={savingFailoverPolicy}
           failoverPolicy={failoverPolicy}
+          federationDistributionGateSnapshot={federationDistributionGateSnapshot}
           formatTimestamp={formatTimestamp}
           saveFailoverPolicy={saveFailoverPolicy}
         />
@@ -280,6 +284,8 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           discoveredCandidates={discoveredCandidates}
           federationOnboardingBoard={federationOnboardingBoard}
           federationAlertBoard={federationAlertBoard}
+          federationWorkerRuns={federationWorkerRuns}
+          federationDistributionEscalationOpenPageCount={federationDistributionEscalationOpenPageCount}
           signerGovernanceBoard={signerGovernanceBoard}
           formatTimestamp={formatTimestamp}
           registerDiscoverySource={registerDiscoverySource}

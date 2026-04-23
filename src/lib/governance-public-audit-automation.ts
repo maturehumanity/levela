@@ -301,6 +301,19 @@ export function readGovernancePublicAuditExternalExecutionPageBoardRows(rows: un
     .filter((entry) => entry.pageId.length > 0 && entry.pageKey.length > 0 && entry.pageMessage.length > 0);
 }
 
+export function countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(
+  pages: GovernancePublicAuditExternalExecutionPageBoardRow[],
+  pageKeySubstring: string,
+): number {
+  const needle = pageKeySubstring.trim().toLowerCase();
+  if (!needle.length) return 0;
+  return pages.filter(
+    (page) =>
+      page.pageKey.toLowerCase().includes(needle)
+      && (page.pageStatus === 'open' || page.pageStatus === 'acknowledged'),
+  ).length;
+}
+
 export function readGovernancePublicAuditClaimedExecutionJobs(rows: unknown): GovernancePublicAuditClaimedExecutionJobRow[] {
   if (!Array.isArray(rows)) return [];
 
@@ -325,6 +338,19 @@ export function readGovernancePublicAuditClaimedExecutionJobs(rows: unknown): Go
       };
     })
     .filter((entry) => entry.jobId.length > 0 && entry.batchId.length > 0 && entry.scheduledAt.length > 0);
+}
+
+const QUEUE_JOB_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
+};
+
+export function formatGovernancePublicAuditQueueJobStatusLabel(status: string): string {
+  const key = status.trim().toLowerCase();
+  return QUEUE_JOB_STATUS_LABELS[key] ?? 'Unknown status';
 }
 
 export function isMissingPublicAuditAutomationBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {

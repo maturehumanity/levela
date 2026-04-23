@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatGovernancePublicAuditVerifierMirrorHealthStatusLabel } from '@/lib/governance-public-audit-verifiers';
 import { useGovernancePublicAuditVerifierMirrors } from '@/lib/use-governance-public-audit-verifier-mirrors';
 
 interface GovernancePublicAuditVerifierMirrorSectionProps {
@@ -239,7 +240,7 @@ export function GovernancePublicAuditVerifierMirrorSection({
                             ? 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300'
                             : 'border-border bg-muted text-muted-foreground'}
                     >
-                      {mirror.healthStatus}
+                      {formatGovernancePublicAuditVerifierMirrorHealthStatusLabel(mirror.healthStatus)}
                     </Badge>
                     {canManageVerifierMirrors && (
                       <Button

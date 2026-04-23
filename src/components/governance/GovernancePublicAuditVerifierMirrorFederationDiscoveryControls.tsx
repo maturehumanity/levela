@@ -11,9 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type {
-  GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
-  GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
+import {
+  formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel,
+  type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
+  type GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
 } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorFederationDiscoveryControlsProps {
@@ -235,7 +236,8 @@ export function GovernancePublicAuditVerifierMirrorFederationDiscoveryControls({
         <SelectContent>
           {promotableCandidates.map((candidate) => (
             <SelectItem key={candidate.candidateId} value={candidate.candidateId}>
-              {candidate.candidateLabel || candidate.candidateKey} • {candidate.candidateStatus}
+              {candidate.candidateLabel || candidate.candidateKey}
+              {' '}• {formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel(candidate.candidateStatus)}
             </SelectItem>
           ))}
         </SelectContent>

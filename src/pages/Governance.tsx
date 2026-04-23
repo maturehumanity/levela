@@ -63,6 +63,10 @@ import {
   getGovernanceUnitLabelKey,
   type GovernanceExecutionUnitRow,
 } from '@/lib/governance-implementation';
+import {
+  isMissingPublicAuditVerifierBackend,
+  readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
+} from '@/lib/governance-public-audit-verifiers';
 import { createEmptyGovernanceProposalDraft } from '@/lib/governance-proposal-draft';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
 import type { PillarId } from '@/lib/constants';
@@ -144,6 +148,10 @@ export default function Governance() {
   const [submittingAppealForSanctionId, setSubmittingAppealForSanctionId] = useState<string | null>(null);
   const [appealDraftBySanctionId, setAppealDraftBySanctionId] = useState<Record<string, { reason: string; evidence: string }>>({});
   const [lastSnapshot, setLastSnapshot] = useState<GovernanceEligibilitySnapshotPayload | null>(null);
+  const [verifierFederationExecutionGate, setVerifierFederationExecutionGate] = useState<{
+    policyRequiresFederationDistribution: boolean;
+    distributionGateMet: boolean;
+  } | null>(null);
   const isNativeMobileGovernanceDevice = useMemo(() => isNativeGovernanceApp(), []);
 
   const projectedCitizenshipStatus = useMemo(
@@ -537,6 +545,7 @@ export default function Governance() {
 
     if (primaryError && isMissingGovernanceProposalBackend(primaryError)) {
       setBackendUnavailable(true);
+      setVerifierFederationExecutionGate(null);
       setLoadingHub(false);
       return;
     }
@@ -556,6 +565,7 @@ export default function Governance() {
         guardianSigner: guardianSignerResponse.error,
       });
       toast.error(t('governanceHub.loadFailed'));
+      setVerifierFederationExecutionGate(null);
       setLoadingHub(false);
       return;
     }
@@ -617,6 +627,26 @@ export default function Governance() {
     setEligibleCitizenCount(nextEligibleCitizenCount);
     setIsGuardianSigner(Boolean(guardianSignerResponse.data));
     setBackendUnavailable(false);
+
+    const gateProposalId = nextProposals[0]?.id ?? '00000000-0000-0000-0000-000000000000';
+    const [failoverSummaryResponse, federationDistributionGateResponse] = await Promise.all([
+      supabase.rpc('governance_public_audit_verifier_mirror_failover_policy_summary', { requested_policy_key: 'default' }),
+      supabase.rpc('governance_proposal_meets_verifier_federation_distribution_gate', { target_proposal_id: gateProposalId }),
+    ]);
+    const verifierGateError = failoverSummaryResponse.error || federationDistributionGateResponse.error;
+    if (verifierGateError && isMissingPublicAuditVerifierBackend(verifierGateError)) {
+      setVerifierFederationExecutionGate(null);
+    } else if (verifierGateError) {
+      console.warn('Could not load verifier federation execution gate context for governance hub:', verifierGateError);
+      setVerifierFederationExecutionGate(null);
+    } else {
+      const failoverSummary = readGovernancePublicAuditVerifierMirrorFailoverPolicySummary(failoverSummaryResponse.data);
+      setVerifierFederationExecutionGate({
+        policyRequiresFederationDistribution: Boolean(failoverSummary?.requireFederationOpsReadiness),
+        distributionGateMet: Boolean(federationDistributionGateResponse.data),
+      });
+    }
+
     setLoadingHub(false);
   }, [finalizeProposalIfReady, profile?.id, queueImplementationsForProposal, t]);
 
@@ -1002,6 +1032,19 @@ export default function Governance() {
     const executionSpec = readGovernanceProposalExecutionSpec(proposal.metadata);
     if (!executionSpec.autoExecutable) {
       toast.error(t('governanceHub.executeManualOnly'));
+      return;
+    }
+
+    const { data: executionReady, error: executionReadyError } = await supabase.rpc('governance_proposal_is_execution_ready', {
+      target_proposal_id: proposal.id,
+    });
+    if (executionReadyError) {
+      console.error('Failed to evaluate governance execution readiness:', executionReadyError);
+      toast.error(t('governanceHub.executeFailed'));
+      return;
+    }
+    if (!executionReady) {
+      toast.error(t('governanceHub.executeNotReady'));
       return;
     }
 
@@ -1411,6 +1454,14 @@ export default function Governance() {
                 <p className="text-sm text-muted-foreground">{t('governanceHub.proposalsDescription')}</p>
               </div>
             </div>
+
+            {verifierFederationExecutionGate?.policyRequiresFederationDistribution
+              && !verifierFederationExecutionGate.distributionGateMet && (
+              <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 p-4 text-sm shadow-sm">
+                <p className="font-medium text-foreground">{t('governanceHub.federationDistributionGateBannerTitle')}</p>
+                <p className="mt-2 text-muted-foreground">{t('governanceHub.federationDistributionGateBannerBody')}</p>
+              </Card>
+            )}
 
             {loadingHub ? (
               <Card className="flex items-center justify-center gap-2 rounded-3xl border-border/60 px-6 py-16 text-muted-foreground shadow-sm">

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatGovernancePublicAuditBatchVerificationResultLabel,
+  formatGovernancePublicAuditVerifierMirrorHealthStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorTrustTierLabel,
   isMissingPublicAuditVerifierBackend,
   readGovernancePublicAuditVerifierMirrorDirectorySummaryRows,
   readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
@@ -265,6 +269,28 @@ describe('governance-public-audit-verifiers helpers', () => {
       rejectCount: 0,
       trustQuorumMet: true,
     });
+  });
+
+  it('formats mirror trust tier labels for stewards', () => {
+    expect(formatGovernancePublicAuditVerifierMirrorTrustTierLabel('INDEPENDENT')).toBe('Independent');
+    expect(formatGovernancePublicAuditVerifierMirrorTrustTierLabel('custom_tier')).toBe('Custom Tier');
+  });
+
+  it('formats probe job lifecycle status labels for stewards', () => {
+    expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('running')).toBe('Running');
+    expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('cancelled')).toBe('Cancelled');
+  });
+
+  it('formats verifier mirror aggregate health status labels for stewards', () => {
+    expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('healthy')).toBe('Healthy');
+    expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('critical')).toBe('Critical');
+    expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('unknown')).toBe('Unknown');
+  });
+
+  it('formats batch verification result labels for stewards', () => {
+    expect(formatGovernancePublicAuditBatchVerificationResultLabel('verified')).toBe('Verified');
+    expect(formatGovernancePublicAuditBatchVerificationResultLabel('MISMATCH')).toBe('Mismatch');
+    expect(formatGovernancePublicAuditBatchVerificationResultLabel('other')).toBe('Unknown result');
   });
 
   it('detects missing backend errors', () => {

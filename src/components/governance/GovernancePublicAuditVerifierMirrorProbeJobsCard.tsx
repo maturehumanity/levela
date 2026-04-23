@@ -10,9 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type {
-  GovernancePublicAuditVerifierMirrorProbeJobBoardRow,
-  GovernancePublicAuditVerifierMirrorProbeJobSummary,
+import {
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel,
+  type GovernancePublicAuditVerifierMirrorProbeJobBoardRow,
+  type GovernancePublicAuditVerifierMirrorProbeJobSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorProbeJobsCardProps {
@@ -104,7 +106,8 @@ export function GovernancePublicAuditVerifierMirrorProbeJobsCard({
             <SelectContent>
               {selectableProbeJobs.map((job) => (
                 <SelectItem key={job.jobId} value={job.jobId}>
-                  {job.status} • {job.mirrorLabel || job.mirrorKey} • {formatTimestamp(job.scheduledAt)}
+                  {formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel(job.status)}
+                  {' '}• {job.mirrorLabel || job.mirrorKey} • {formatTimestamp(job.scheduledAt)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -169,7 +172,11 @@ export function GovernancePublicAuditVerifierMirrorProbeJobsCard({
       <div className="space-y-1 text-muted-foreground">
         {probeJobs.slice(0, 4).map((job) => (
           <p key={job.jobId}>
-            {job.status} • {job.mirrorLabel || job.mirrorKey} • {formatTimestamp(job.scheduledAt)}
+            {formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel(job.status)}
+            {' '}• {job.mirrorLabel || job.mirrorKey} • {formatTimestamp(job.scheduledAt)}
+            {job.status === 'completed' && job.observedCheckStatus !== 'unknown'
+              ? ` • Mirror check ${formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel(job.observedCheckStatus)}`
+              : ''}
           </p>
         ))}
       </div>

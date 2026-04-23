@@ -1,4 +1,5 @@
 import type {
+  GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   GovernancePublicAuditVerifierFederationPackage,
   GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   GovernancePublicAuditVerifierFederationPackageHistoryRow,
@@ -7,6 +8,7 @@ import type {
 } from '@/lib/governance-public-audit-verifier-federation.types';
 
 export type {
+  GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   GovernancePublicAuditVerifierFederationPackage,
   GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   GovernancePublicAuditVerifierFederationPackageHistoryRow,
@@ -130,22 +132,53 @@ export function readGovernancePublicAuditVerifierFederationRecentPackageRows(
 export function readGovernancePublicAuditVerifierFederationPackageDistributionSummary(
   rows: unknown,
 ): GovernancePublicAuditVerifierFederationPackageDistributionSummary | null {
+  const snapshot = readGovernancePublicAuditVerifierFederationDistributionGateSnapshot(rows);
+  if (!snapshot || !snapshot.hasCapturedPackage) return null;
+
+  return {
+    packageId: snapshot.packageId as string,
+    batchId: snapshot.batchId as string,
+    capturedAt: snapshot.capturedAt as string,
+    packageVersion: snapshot.packageVersion,
+    packageHash: snapshot.packageHash,
+    sourceDirectoryHash: snapshot.sourceDirectoryHash,
+    requiredDistributionSignatures: snapshot.requiredDistributionSignatures,
+    signatureCount: snapshot.signatureCount,
+    distinctSignerCount: snapshot.distinctSignerCount,
+    distinctSignerJurisdictionsCount: snapshot.distinctSignerJurisdictionsCount,
+    distinctSignerTrustDomainsCount: snapshot.distinctSignerTrustDomainsCount,
+    lastSignedAt: snapshot.lastSignedAt,
+    federationOpsReady: snapshot.federationOpsReady,
+    distributionReady: snapshot.distributionReady,
+  };
+}
+
+export function readGovernancePublicAuditVerifierFederationDistributionGateSnapshot(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationDistributionGateSnapshot | null {
   if (!Array.isArray(rows) || rows.length === 0) return null;
   const row = asRecord(rows[0]);
   if (!row) return null;
 
-  const packageId = asString(row.package_id);
-  const batchId = asString(row.batch_id);
-  const capturedAt = asString(row.captured_at);
+  const packageIdRaw = asString(row.package_id);
+  const batchIdRaw = asString(row.batch_id);
+  const capturedAtRaw = asString(row.captured_at);
   const packageVersion = asString(row.package_version);
   const packageHash = asString(row.package_hash);
   const sourceDirectoryHash = asString(row.source_directory_hash);
-  if (!packageId || !batchId || !capturedAt || !packageVersion || !packageHash || !sourceDirectoryHash) return null;
+  const hasCapturedPackage =
+    packageIdRaw.length > 0
+    && batchIdRaw.length > 0
+    && capturedAtRaw.length > 0
+    && packageVersion.length > 0
+    && packageHash.length > 0
+    && sourceDirectoryHash.length > 0;
 
   return {
-    packageId,
-    batchId,
-    capturedAt,
+    hasCapturedPackage,
+    packageId: hasCapturedPackage ? packageIdRaw : null,
+    batchId: hasCapturedPackage ? batchIdRaw : null,
+    capturedAt: hasCapturedPackage ? capturedAtRaw : null,
     packageVersion,
     packageHash,
     sourceDirectoryHash,

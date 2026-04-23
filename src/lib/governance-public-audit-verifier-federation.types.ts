@@ -102,6 +102,17 @@ export interface GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow
   createdAt: string | null;
 }
 
+export interface GovernancePublicAuditVerifierMirrorFederationWorkerRunRow {
+  runId: string;
+  runScope: string;
+  runStatus: 'ok' | 'degraded' | 'failed' | 'unknown';
+  discoveredRequestCount: number;
+  approvedRequestCount: number;
+  onboardedRequestCount: number;
+  openAlertCount: number;
+  observedAt: string | null;
+}
+
 export interface GovernancePublicAuditVerifierMirrorFederationAlertBoardRow {
   alertId: string;
   alertKey: string;
@@ -180,6 +191,25 @@ export interface GovernancePublicAuditVerifierFederationPackageDistributionSumma
   packageId: string;
   batchId: string;
   capturedAt: string;
+  packageVersion: string;
+  packageHash: string;
+  sourceDirectoryHash: string;
+  requiredDistributionSignatures: number;
+  signatureCount: number;
+  distinctSignerCount: number;
+  distinctSignerJurisdictionsCount: number;
+  distinctSignerTrustDomainsCount: number;
+  lastSignedAt: string | null;
+  federationOpsReady: boolean;
+  distributionReady: boolean;
+}
+
+/** First-row snapshot from `governance_public_audit_verifier_federation_distribution_gate` (includes no-package rows). */
+export interface GovernancePublicAuditVerifierFederationDistributionGateSnapshot {
+  hasCapturedPackage: boolean;
+  packageId: string | null;
+  batchId: string | null;
+  capturedAt: string | null;
   packageVersion: string;
   packageHash: string;
   sourceDirectoryHash: string;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   readGovernancePublicAuditVerifierFederationPackage,
   readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
   readGovernancePublicAuditVerifierFederationPackageHistoryRows,
@@ -177,5 +178,62 @@ describe('governance-public-audit-verifier-federation-distribution helpers', () 
       federationOpsReady: true,
       distributionReady: true,
     });
+  });
+
+  it('parses federation distribution gate snapshot when no package is captured', () => {
+    const snapshot = readGovernancePublicAuditVerifierFederationDistributionGateSnapshot([
+      {
+        package_id: null,
+        batch_id: null,
+        captured_at: null,
+        package_version: null,
+        package_hash: null,
+        source_directory_hash: null,
+        required_distribution_signatures: 2,
+        signature_count: 0,
+        distinct_signer_count: 0,
+        distinct_signer_jurisdictions_count: 0,
+        distinct_signer_trust_domains_count: 0,
+        last_signed_at: null,
+        federation_ops_ready: false,
+        distribution_ready: false,
+      },
+    ]);
+
+    expect(snapshot).toEqual({
+      hasCapturedPackage: false,
+      packageId: null,
+      batchId: null,
+      capturedAt: null,
+      packageVersion: '',
+      packageHash: '',
+      sourceDirectoryHash: '',
+      requiredDistributionSignatures: 2,
+      signatureCount: 0,
+      distinctSignerCount: 0,
+      distinctSignerJurisdictionsCount: 0,
+      distinctSignerTrustDomainsCount: 0,
+      lastSignedAt: null,
+      federationOpsReady: false,
+      distributionReady: false,
+    });
+    expect(readGovernancePublicAuditVerifierFederationPackageDistributionSummary([
+      {
+        package_id: null,
+        batch_id: null,
+        captured_at: null,
+        package_version: null,
+        package_hash: null,
+        source_directory_hash: null,
+        required_distribution_signatures: 2,
+        signature_count: 0,
+        distinct_signer_count: 0,
+        distinct_signer_jurisdictions_count: 0,
+        distinct_signer_trust_domains_count: 0,
+        last_signed_at: null,
+        federation_ops_ready: false,
+        distribution_ready: false,
+      },
+    ])).toBeNull();
   });
 });

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { GovernancePublicAuditVerifierMirrorSection } from '@/components/governance/GovernancePublicAuditVerifierMirrorSection';
 import { GovernancePublicAuditVerifierMirrorProductionSection } from '@/components/governance/GovernancePublicAuditVerifierMirrorProductionSection';
+import { formatGovernancePublicAuditBatchVerificationResultLabel } from '@/lib/governance-public-audit-verifiers';
 import { useGovernancePublicAuditVerifiers } from '@/lib/use-governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierPanelProps {
@@ -182,7 +183,7 @@ export function GovernancePublicAuditVerifierPanel({
 
                   {latestVerification && (
                     <p className="mt-1 text-muted-foreground">
-                      Latest: {latestVerification.status} ({formatTimestamp(latestVerification.verified_at)})
+                      Latest: {formatGovernancePublicAuditBatchVerificationResultLabel(latestVerification.status)} ({formatTimestamp(latestVerification.verified_at)})
                     </p>
                   )}
                 </div>

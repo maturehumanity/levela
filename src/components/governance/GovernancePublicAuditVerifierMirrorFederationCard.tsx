@@ -2,20 +2,29 @@ import { Badge } from '@/components/ui/badge';
 import { GovernancePublicAuditVerifierMirrorFederationControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationControls';
 import { GovernancePublicAuditVerifierMirrorFederationDistributionControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationDistributionControls';
 import { GovernancePublicAuditVerifierMirrorSignerGovernanceControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorSignerGovernanceControls';
-import type {
-  GovernancePublicAuditVerifierFederationPackage,
-  GovernancePublicAuditVerifierFederationPackageDistributionSummary,
-  GovernancePublicAuditVerifierFederationPackageHistoryRow,
-  GovernancePublicAuditVerifierFederationPackageSignatureRow,
-  GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
-  GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
-  GovernancePublicAuditVerifierMirrorDiscoverySummary,
-  GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
-  GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
-  GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
-  GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
-  GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
-  GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
+import {
+  formatGovernancePublicAuditVerifierMirrorFederationAlertHeading,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel,
+  type GovernancePublicAuditVerifierFederationPackage,
+  type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  type GovernancePublicAuditVerifierFederationPackageHistoryRow,
+  type GovernancePublicAuditVerifierFederationPackageSignatureRow,
+  type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
+  type GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
+  type GovernancePublicAuditVerifierMirrorDiscoverySummary,
+  type GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
+  type GovernancePublicAuditVerifierMirrorFederationWorkerRunRow,
+  type GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
+  type GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  type GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
+  type GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
+  type GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorFederationCardProps {
@@ -51,6 +60,8 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   discoveredCandidates: GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow[];
   federationOnboardingBoard: GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow[];
   federationAlertBoard: GovernancePublicAuditVerifierMirrorFederationAlertBoardRow[];
+  federationWorkerRuns: GovernancePublicAuditVerifierMirrorFederationWorkerRunRow[];
+  federationDistributionEscalationOpenPageCount: number;
   signerGovernanceBoard: GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow[];
   formatTimestamp: (value: string | null) => string;
   registerDiscoverySource: (draft: {
@@ -201,6 +212,8 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   discoveredCandidates,
   federationOnboardingBoard,
   federationAlertBoard,
+  federationWorkerRuns,
+  federationDistributionEscalationOpenPageCount,
   signerGovernanceBoard,
   formatTimestamp,
   registerDiscoverySource,
@@ -334,7 +347,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
       )}
       {discoverySummary && (
         <p className="text-muted-foreground">
-          New {discoverySummary.newCandidateCount} • Promoted {discoverySummary.promotedCandidateCount} • Last run {formatTimestamp(discoverySummary.lastRunAt)}
+          New {discoverySummary.newCandidateCount} • Promoted {discoverySummary.promotedCandidateCount}
+          {' '}• Last discovery run {formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel(discoverySummary.lastRunStatus)}
+          {' '}· {formatTimestamp(discoverySummary.lastRunAt)}
         </p>
       )}
       {federationOperationsSummary && (
@@ -342,42 +357,81 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
           Onboarded operators {federationOperationsSummary.onboardedOperatorCount}/{federationOperationsSummary.minOnboardedFederationOperators}
           {' '}• Open critical alerts {federationOperationsSummary.openCriticalAlertCount}/{federationOperationsSummary.maxOpenCriticalFederationAlerts}
           {' '}• SLA breaches {federationOperationsSummary.alertSlaBreachedCount}
-          {' '}• Distribution verification {federationOperationsSummary.distributionVerificationStale ? 'stale' : 'fresh'}
-          {' '}• Distribution alerts {federationOperationsSummary.openDistributionVerificationAlertCount}
+          {' '}• Distribution verification {federationOperationsSummary.distributionVerificationStale ? 'Stale' : 'Current'}
+          {' '}• Open distribution alerts {federationOperationsSummary.openDistributionVerificationAlertCount}
+          {' '}• Last verification run {formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel(federationOperationsSummary.lastDistributionVerificationRunStatus)}
+          {federationOperationsSummary.lastDistributionVerificationRunAt
+            ? ` · ${formatTimestamp(federationOperationsSummary.lastDistributionVerificationRunAt)}`
+            : ''}
+          {' '}• Federation operations {federationOperationsSummary.federationOpsReady ? 'Ready' : 'Not ready'}
         </p>
+      )}
+      {federationDistributionEscalationOpenPageCount > 0 && (
+        <p className="text-xs text-amber-800 dark:text-amber-200">
+          Open on-call pages for federation distribution verification: {federationDistributionEscalationOpenPageCount}. Resolve them under Immutable anchoring automation (on-call page board).
+        </p>
+      )}
+      {federationWorkerRuns.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-foreground">Recent federation worker runs</p>
+          <div className="space-y-1 text-muted-foreground">
+            {federationWorkerRuns.map((run) => (
+              <p key={run.runId}>
+                {formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel(run.runScope)}
+                {' '}• {formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel(run.runStatus)}
+                {' '}• Open alerts {run.openAlertCount} • {formatTimestamp(run.observedAt)}
+              </p>
+            ))}
+          </div>
+        </div>
       )}
       <div className="space-y-1 text-muted-foreground">
         {discoverySources.slice(0, 3).map((source) => (
           <p key={source.sourceId}>
-            {source.sourceLabel || source.sourceKey} • {source.lastRunStatus} • candidates {source.candidateCount}
+            {source.sourceLabel || source.sourceKey}
+            {' '}• Last run {formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel(source.lastRunStatus)}
+            {' '}• {source.candidateCount} candidates
           </p>
         ))}
       </div>
       <div className="space-y-1 text-muted-foreground">
         {discoveredCandidates.slice(0, 3).map((candidate) => (
           <p key={candidate.candidateId}>
-            {candidate.candidateLabel || candidate.candidateKey} • {candidate.candidateStatus} • {candidate.discoveryConfidence}
+            {candidate.candidateLabel || candidate.candidateKey}
+            {' '}• {formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel(candidate.candidateStatus)}
+            {' '}• Confidence score {candidate.discoveryConfidence}
           </p>
         ))}
       </div>
       <div className="space-y-1 text-muted-foreground">
         {federationOnboardingBoard.slice(0, 3).map((request) => (
           <p key={request.requestId}>
-            {request.operatorLabel || request.operatorKey} • {request.requestStatus} • {request.requestedMirrorKey}
+            {request.operatorLabel || request.operatorKey}
+            {' '}• Request {formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel(request.requestStatus)}
+            {' '}• Mirror {request.requestedMirrorLabel || request.requestedMirrorKey}
           </p>
         ))}
       </div>
-      <div className="space-y-1 text-muted-foreground">
-        {federationAlertBoard.slice(0, 3).map((alert) => (
-          <p key={alert.alertId}>
-            {alert.alertKey} • {alert.severity} • {alert.alertStatus}
-          </p>
-        ))}
-      </div>
+      {federationAlertBoard.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-foreground">Recent federation alerts</p>
+          <div className="space-y-1 text-muted-foreground">
+            {federationAlertBoard.slice(0, 3).map((alert) => (
+              <p key={alert.alertId}>
+                {formatGovernancePublicAuditVerifierMirrorFederationAlertHeading(alert)}
+                {' '}• {formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel(alert.severity)}
+                {' '}• {formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel(alert.alertStatus)}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="space-y-1 text-muted-foreground">
         {signerGovernanceBoard.slice(0, 3).map((signer) => (
           <p key={signer.signerId}>
-            {signer.signerLabel || signer.signerKey} • {signer.governanceStatus} • independent approvals {signer.independentApprovalCount}/{signer.requiredIndependentApprovals}
+            {signer.signerLabel || signer.signerKey}
+            {' '}• {formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel(signer.governanceStatus)}
+            {' '}• Independent approvals {signer.independentApprovalCount}/{signer.requiredIndependentApprovals}
           </p>
         ))}
       </div>

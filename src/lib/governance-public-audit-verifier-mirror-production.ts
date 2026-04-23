@@ -334,3 +334,32 @@ export function readGovernancePublicAuditClientVerifierBundleProductionData(bund
       : null,
   };
 }
+
+const MIRROR_TRUST_TIER_LABELS: Record<string, string> = {
+  observer: 'Observer',
+  independent: 'Independent',
+  community: 'Community',
+  bootstrap: 'Bootstrap',
+};
+
+function humanizeMirrorTrustTierFallback(raw: string): string {
+  const cleaned = raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned.length) return 'Unknown trust tier';
+  return cleaned.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+export function formatGovernancePublicAuditVerifierMirrorTrustTierLabel(trustTier: string): string {
+  const key = trustTier.trim().toLowerCase();
+  return MIRROR_TRUST_TIER_LABELS[key] ?? humanizeMirrorTrustTierFallback(trustTier);
+}
+
+export function formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel(
+  status: GovernancePublicAuditVerifierMirrorProbeJobStatus,
+): string {
+  if (status === 'pending') return 'Pending';
+  if (status === 'running') return 'Running';
+  if (status === 'completed') return 'Completed';
+  if (status === 'failed') return 'Failed';
+  if (status === 'cancelled') return 'Cancelled';
+  return 'Unknown status';
+}

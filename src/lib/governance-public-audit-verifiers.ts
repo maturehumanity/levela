@@ -11,11 +11,13 @@ import {
   type GovernancePublicAuditVerifierMirrorProbeJobSummary,
 } from '@/lib/governance-public-audit-verifier-mirror-production';
 import {
+  readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   readGovernancePublicAuditVerifierFederationPackage,
   readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
   readGovernancePublicAuditVerifierFederationPackageHistoryRows,
   readGovernancePublicAuditVerifierFederationPackageSignatureRows,
   readGovernancePublicAuditVerifierFederationRecentPackageRows,
+  type GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   type GovernancePublicAuditVerifierFederationPackage,
   type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   type GovernancePublicAuditVerifierFederationPackageHistoryRow,
@@ -26,6 +28,7 @@ import {
   readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows,
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -35,6 +38,7 @@ import {
   type GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
   type GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
   type GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  type GovernancePublicAuditVerifierMirrorFederationWorkerRunRow,
   type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow,
   type GovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -49,9 +53,11 @@ export type { GovernancePublicAuditVerifierMirrorDirectoryTrustSummary };
 export type { GovernancePublicAuditVerifierMirrorDirectorySummaryRow };
 export type { GovernancePublicAuditVerifierMirrorFailoverPolicySummary };
 export type { GovernancePublicAuditVerifierMirrorFederationOperationsSummary };
+export type { GovernancePublicAuditVerifierMirrorFederationWorkerRunRow };
 export type { GovernancePublicAuditVerifierMirrorProbeJobBoardRow };
 export type { GovernancePublicAuditVerifierMirrorProbeJobStatus };
 export type { GovernancePublicAuditVerifierMirrorProbeJobSummary };
+export type { GovernancePublicAuditVerifierFederationDistributionGateSnapshot };
 export type { GovernancePublicAuditVerifierFederationPackage };
 export type { GovernancePublicAuditVerifierFederationPackageDistributionSummary };
 export type { GovernancePublicAuditVerifierFederationPackageHistoryRow };
@@ -67,6 +73,8 @@ export type { GovernancePublicAuditVerifierMirrorSignerGovernanceSummary };
 export type { GovernancePublicAuditVerifierMirrorPolicyRatificationSummary };
 
 export {
+  formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorTrustTierLabel,
   readGovernancePublicAuditVerifierMirrorDirectorySummaryRows,
   readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
@@ -74,6 +82,7 @@ export {
   readGovernancePublicAuditVerifierMirrorProbeJobSummary,
 } from '@/lib/governance-public-audit-verifier-mirror-production';
 export {
+  readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   readGovernancePublicAuditVerifierFederationPackage,
   readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
   readGovernancePublicAuditVerifierFederationPackageHistoryRows,
@@ -81,9 +90,18 @@ export {
   readGovernancePublicAuditVerifierFederationRecentPackageRows,
 } from '@/lib/governance-public-audit-verifier-federation-distribution';
 export {
+  formatGovernancePublicAuditVerifierMirrorFederationAlertHeading,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel,
+  formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel,
+  formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel,
   readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows,
   readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows,
   readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows,
   readGovernancePublicAuditVerifierMirrorDiscoverySummary,
@@ -191,6 +209,24 @@ function asHealthStatus(value: unknown): GovernancePublicAuditVerifierMirrorHeal
   const normalized = asString(value).trim().toLowerCase();
   if (normalized === 'healthy' || normalized === 'degraded' || normalized === 'critical' || normalized === 'inactive') return normalized;
   return 'unknown';
+}
+
+export function formatGovernancePublicAuditVerifierMirrorHealthStatusLabel(
+  status: GovernancePublicAuditVerifierMirrorHealthRow['healthStatus'],
+): string {
+  if (status === 'healthy') return 'Healthy';
+  if (status === 'degraded') return 'Degraded';
+  if (status === 'critical') return 'Critical';
+  if (status === 'inactive') return 'Inactive';
+  return 'Unknown';
+}
+
+export function formatGovernancePublicAuditBatchVerificationResultLabel(status: string): string {
+  const key = status.trim().toLowerCase();
+  if (key === 'verified') return 'Verified';
+  if (key === 'mismatch') return 'Mismatch';
+  if (key === 'unreachable') return 'Unreachable';
+  return 'Unknown result';
 }
 
 export function readGovernancePublicAuditVerifierSummary(
@@ -356,5 +392,6 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('sign_governance_public_audit_verifier_federation_package')
     || message.includes('run_governance_public_audit_verifier_federation_distribution_verification')
     || message.includes('governance_proposal_meets_verifier_federation_distribution_gate')
+    || message.includes('governance_proposal_is_execution_ready')
   );
 }

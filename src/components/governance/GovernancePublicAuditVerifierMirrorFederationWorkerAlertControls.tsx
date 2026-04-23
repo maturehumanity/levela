@@ -11,6 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  formatGovernancePublicAuditVerifierMirrorFederationAlertHeading,
+  formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel,
+} from '@/lib/governance-public-audit-verifiers';
 import type { GovernancePublicAuditVerifierMirrorFederationAlertBoardRow } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorFederationWorkerAlertControlsProps {
@@ -185,7 +189,8 @@ export function GovernancePublicAuditVerifierMirrorFederationWorkerAlertControls
         <SelectContent>
           {openAlerts.map((alert) => (
             <SelectItem key={alert.alertId} value={alert.alertId}>
-              {alert.alertKey} • {alert.severity}
+              {formatGovernancePublicAuditVerifierMirrorFederationAlertHeading(alert)}
+              {' '}• {formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel(alert.severity)}
             </SelectItem>
           ))}
         </SelectContent>

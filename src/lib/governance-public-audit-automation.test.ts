@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
+  formatGovernancePublicAuditQueueJobStatusLabel,
   isMissingPublicAuditAutomationBackend,
   readGovernancePublicAuditAnchorExecutionJobBoardRows,
   readGovernancePublicAuditClaimedExecutionJobs,
@@ -253,6 +255,51 @@ describe('governance-public-audit-automation helpers', () => {
         claimExpiresAt: '2026-04-21T00:11:00.000Z',
       },
     ]);
+  });
+
+  it('counts open external execution pages by page key substring', () => {
+    const pages = [
+      {
+        pageId: 'p1',
+        batchId: 'b1',
+        pageKey: 'verifier_federation_distribution_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Distribution alerts remain open',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T00:00:00.000Z',
+        resolvedAt: null,
+      },
+      {
+        pageId: 'p2',
+        batchId: 'b1',
+        pageKey: 'verifier_federation_distribution_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'resolved' as const,
+        pageMessage: 'Done',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T01:00:00.000Z',
+        resolvedAt: '2026-04-21T02:00:00.000Z',
+      },
+      {
+        pageId: 'p3',
+        batchId: 'b1',
+        pageKey: 'external_execution_sla',
+        severity: 'critical' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Other',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T03:00:00.000Z',
+        resolvedAt: null,
+      },
+    ];
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'verifier_federation_distribution')).toBe(1);
+  });
+
+  it('formats queue job status labels for stewards', () => {
+    expect(formatGovernancePublicAuditQueueJobStatusLabel('pending')).toBe('Pending');
+    expect(formatGovernancePublicAuditQueueJobStatusLabel('COMPLETED')).toBe('Completed');
+    expect(formatGovernancePublicAuditQueueJobStatusLabel('unknown')).toBe('Unknown status');
   });
 
   it('detects missing immutable anchoring automation backend errors', () => {

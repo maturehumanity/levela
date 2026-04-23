@@ -11,7 +11,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Database } from '@/integrations/supabase/types';
-import type { GovernancePublicAuditAnchorExecutionJobBoardRow } from '@/lib/governance-public-audit-automation';
+import {
+  formatGovernancePublicAuditQueueJobStatusLabel,
+  type GovernancePublicAuditAnchorExecutionJobBoardRow,
+} from '@/lib/governance-public-audit-automation';
 
 interface GovernancePublicAuditAnchorExecutionJobCompletionSectionProps {
   anchorExecutionJobs: GovernancePublicAuditAnchorExecutionJobBoardRow[];
@@ -53,7 +56,8 @@ export function GovernancePublicAuditAnchorExecutionJobCompletionSection({
         <SelectContent>
           {anchorExecutionJobs.slice(0, 40).map((job) => (
             <SelectItem key={job.jobId} value={job.jobId}>
-              {job.status} • {job.adapterName || job.adapterKey || 'adapter'} • {formatTimestamp(job.scheduledAt)}
+              {formatGovernancePublicAuditQueueJobStatusLabel(job.status)}
+              {' '}• {job.adapterName || job.adapterKey || 'adapter'} • {formatTimestamp(job.scheduledAt)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -147,7 +151,8 @@ export function GovernancePublicAuditVerifierJobCompletionSection({
         <SelectContent>
           {verifierJobs.slice(0, 40).map((job) => (
             <SelectItem key={job.id} value={job.id}>
-              {job.status} • {job.batch_id.slice(0, 8)} • {formatTimestamp(job.scheduled_at)}
+              {formatGovernancePublicAuditQueueJobStatusLabel(job.status)}
+              {' '}• {job.batch_id.slice(0, 8)} • {formatTimestamp(job.scheduled_at)}
             </SelectItem>
           ))}
         </SelectContent>

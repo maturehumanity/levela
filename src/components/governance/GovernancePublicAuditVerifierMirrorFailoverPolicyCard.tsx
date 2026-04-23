@@ -10,7 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { GovernancePublicAuditVerifierMirrorFailoverPolicySummary } from '@/lib/governance-public-audit-verifiers';
+import type {
+  GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
+  GovernancePublicAuditVerifierMirrorFailoverPolicySummary,
+} from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorFailoverPolicyDraft {
   minHealthyMirrors: string;
@@ -36,6 +39,7 @@ interface GovernancePublicAuditVerifierMirrorFailoverPolicyCardProps {
   canManageMirrorProduction: boolean;
   savingFailoverPolicy: boolean;
   failoverPolicy: GovernancePublicAuditVerifierMirrorFailoverPolicySummary | null;
+  federationDistributionGateSnapshot: GovernancePublicAuditVerifierFederationDistributionGateSnapshot | null;
   formatTimestamp: (value: string | null) => string;
   saveFailoverPolicy: (draft: GovernancePublicAuditVerifierMirrorFailoverPolicyDraft) => Promise<void> | void;
 }
@@ -64,6 +68,7 @@ export function GovernancePublicAuditVerifierMirrorFailoverPolicyCard({
   canManageMirrorProduction,
   savingFailoverPolicy,
   failoverPolicy,
+  federationDistributionGateSnapshot,
   formatTimestamp,
   saveFailoverPolicy,
 }: GovernancePublicAuditVerifierMirrorFailoverPolicyCardProps) {
@@ -95,6 +100,29 @@ export function GovernancePublicAuditVerifierMirrorFailoverPolicyCard({
   return (
     <div className="space-y-2 rounded-md border border-border/60 bg-card p-2 text-xs">
       <p className="font-medium text-foreground">Client failover policy</p>
+      {federationDistributionGateSnapshot && (
+        <div className="space-y-1 rounded-sm border border-border/40 bg-muted/20 p-2">
+          <p className="font-medium text-foreground">Federation distribution gate</p>
+          <p className="text-muted-foreground">
+            {federationDistributionGateSnapshot.hasCapturedPackage
+              ? `Latest package captured ${formatTimestamp(federationDistributionGateSnapshot.capturedAt)}.`
+              : 'No federation distribution package captured for this batch yet.'}
+          </p>
+          <p className="text-muted-foreground">
+            Distribution ready: {federationDistributionGateSnapshot.distributionReady ? 'yes' : 'no'}
+            {' '}• Federation ops ready: {federationDistributionGateSnapshot.federationOpsReady ? 'yes' : 'no'}
+            {' '}• Distinct signers {federationDistributionGateSnapshot.distinctSignerCount}/
+            {federationDistributionGateSnapshot.requiredDistributionSignatures}
+            {' '}• Jurisdictions {federationDistributionGateSnapshot.distinctSignerJurisdictionsCount}
+            {' '}• Trust domains {federationDistributionGateSnapshot.distinctSignerTrustDomainsCount}
+          </p>
+          {federationDistributionGateSnapshot.hasCapturedPackage && (
+            <p className="break-all text-muted-foreground">
+              Package hash: {federationDistributionGateSnapshot.packageHash}
+            </p>
+          )}
+        </div>
+      )}
       <Input
         value={failoverDraft.minHealthyMirrors}
         onChange={(event) => setFailoverDraft((current) => ({ ...current, minHealthyMirrors: event.target.value }))}

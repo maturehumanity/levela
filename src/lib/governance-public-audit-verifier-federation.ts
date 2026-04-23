@@ -5,6 +5,7 @@ import type {
   GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
   GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
   GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  GovernancePublicAuditVerifierMirrorFederationWorkerRunRow,
   GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
   GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
@@ -17,6 +18,7 @@ export type {
   GovernancePublicAuditVerifierMirrorFederationAlertBoardRow,
   GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow,
   GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  GovernancePublicAuditVerifierMirrorFederationWorkerRunRow,
   GovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow,
   GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
@@ -98,6 +100,103 @@ function asAlertStatus(value: unknown): GovernancePublicAuditVerifierMirrorFeder
   const normalized = asString(value).trim().toLowerCase();
   if (normalized === 'open' || normalized === 'acknowledged' || normalized === 'resolved') return normalized;
   return 'unknown';
+}
+
+const MIRROR_FEDERATION_ALERT_HEADINGS: Record<string, string> = {
+  verifier_federation_distribution_stale_package: 'Stale or missing distribution package',
+  federation_distribution_stale_package: 'Stale or missing distribution package',
+  verifier_federation_distribution_bad_signature: 'Invalid distribution package signature',
+  federation_distribution_bad_signature: 'Invalid distribution package signature',
+  verifier_federation_distribution_policy_mismatch: 'Distribution package does not match policy',
+  federation_distribution_policy_mismatch: 'Distribution package does not match policy',
+};
+
+function humanizeSnakeCasePhrase(raw: string, emptyFallback: string): string {
+  const cleaned = raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned.length) return emptyFallback;
+  return cleaned.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+export function formatGovernancePublicAuditVerifierMirrorFederationAlertHeading(alert: {
+  alertKey: string;
+  alertScope: string;
+}): string {
+  const key = alert.alertKey.trim();
+  const scope = alert.alertScope.trim();
+  return MIRROR_FEDERATION_ALERT_HEADINGS[key]
+    ?? MIRROR_FEDERATION_ALERT_HEADINGS[scope]
+    ?? humanizeSnakeCasePhrase(scope || key, 'Federation alert');
+}
+
+const MIRROR_FEDERATION_WORKER_RUN_SCOPE_LABELS: Record<string, string> = {
+  onboarding_sweep: 'Onboarding sweep',
+  operator_health_audit: 'Operator health audit',
+  diversity_audit: 'Diversity audit',
+  package_distribution_verification: 'Package distribution verification',
+  manual: 'Manual',
+};
+
+export function formatGovernancePublicAuditVerifierMirrorFederationWorkerRunScopeLabel(runScope: string): string {
+  const scope = runScope.trim().toLowerCase();
+  return MIRROR_FEDERATION_WORKER_RUN_SCOPE_LABELS[scope] ?? humanizeSnakeCasePhrase(runScope, 'Unknown run type');
+}
+
+export function formatGovernancePublicAuditVerifierMirrorFederationWorkerRunStatusLabel(
+  runStatus: GovernancePublicAuditVerifierMirrorFederationWorkerRunRow['runStatus'],
+): string {
+  if (runStatus === 'ok') return 'OK';
+  if (runStatus === 'degraded') return 'Degraded';
+  if (runStatus === 'failed') return 'Failed';
+  return 'Unknown status';
+}
+
+export function formatGovernancePublicAuditVerifierMirrorFederationCandidateStatusLabel(
+  status: GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow['candidateStatus'],
+): string {
+  if (status === 'new') return 'New';
+  if (status === 'reviewed') return 'Reviewed';
+  if (status === 'promoted') return 'Promoted';
+  if (status === 'rejected') return 'Rejected';
+  if (status === 'inactive') return 'Inactive';
+  return 'Unknown status';
+}
+
+export function formatGovernancePublicAuditVerifierMirrorFederationOnboardingRequestStatusLabel(
+  status: GovernancePublicAuditVerifierMirrorFederationOnboardingBoardRow['requestStatus'],
+): string {
+  if (status === 'pending') return 'Pending';
+  if (status === 'approved') return 'Approved';
+  if (status === 'onboarded') return 'Onboarded';
+  if (status === 'rejected') return 'Rejected';
+  return 'Unknown status';
+}
+
+export function formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel(
+  status: GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow['governanceStatus'],
+): string {
+  if (status === 'pending') return 'Pending';
+  if (status === 'approved') return 'Approved';
+  if (status === 'rejected') return 'Rejected';
+  if (status === 'suspended') return 'Suspended';
+  return 'Unknown status';
+}
+
+export function formatGovernancePublicAuditVerifierMirrorFederationAlertSeverityLabel(
+  severity: GovernancePublicAuditVerifierMirrorFederationAlertBoardRow['severity'],
+): string {
+  if (severity === 'info') return 'Info';
+  if (severity === 'warning') return 'Warning';
+  if (severity === 'critical') return 'Critical';
+  return 'Unknown severity';
+}
+
+export function formatGovernancePublicAuditVerifierMirrorFederationAlertStatusLabel(
+  status: GovernancePublicAuditVerifierMirrorFederationAlertBoardRow['alertStatus'],
+): string {
+  if (status === 'open') return 'Open';
+  if (status === 'acknowledged') return 'Acknowledged';
+  if (status === 'resolved') return 'Resolved';
+  return 'Unknown status';
 }
 
 export function readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary(
@@ -333,4 +432,29 @@ export function readGovernancePublicAuditVerifierMirrorFederationOperationsSumma
     openDistributionVerificationAlertCount: asNonNegativeInteger(row.open_distribution_verification_alert_count),
     federationOpsReady: asBoolean(row.federation_ops_ready, false),
   };
+}
+
+function asFederationWorkerRunStatus(value: unknown): GovernancePublicAuditVerifierMirrorFederationWorkerRunRow['runStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'ok' || normalized === 'degraded' || normalized === 'failed') return normalized;
+  return 'unknown';
+}
+
+export function readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows(rows: unknown): GovernancePublicAuditVerifierMirrorFederationWorkerRunRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      runId: asString(entry.id),
+      runScope: asString(entry.run_scope, 'manual'),
+      runStatus: asFederationWorkerRunStatus(entry.run_status),
+      discoveredRequestCount: asNonNegativeInteger(entry.discovered_request_count),
+      approvedRequestCount: asNonNegativeInteger(entry.approved_request_count),
+      onboardedRequestCount: asNonNegativeInteger(entry.onboarded_request_count),
+      openAlertCount: asNonNegativeInteger(entry.open_alert_count),
+      observedAt: asNullableString(entry.observed_at),
+    }))
+    .filter((entry) => entry.runId.length > 0);
 }

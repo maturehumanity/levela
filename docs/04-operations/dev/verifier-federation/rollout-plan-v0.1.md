@@ -4,7 +4,7 @@ status: draft
 owners:
   - governance engineering
   - public audit operations
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # 1. Purpose
@@ -132,3 +132,22 @@ Step 5 is considered started when:
 - **D.1 Signer governance (cosignatures)** — `sign_governance_public_audit_verifier_federation_package` requires `signer_key` to match an **active**, **governance-approved** `governance_public_audit_verifier_mirror_directory_signers` row (`20260422103000_…sql`).
 - **D.1b Publisher governance (capture)** — `capture_governance_public_audit_verifier_federation_package` requires the **published directory** `signer_id` publisher to be **active** and **governance-approved** (`20260422104500_…sql`).
 - **D.2 / D.3 Runbook + mapping** — `docs/04-operations/dev/verifier-federation/operator-signer-rotation-runbook-v0.1.md` (rotation procedures and concise policy table).
+- **Phase C.1 (worker run observability)** — Steward UI loads recent `governance_public_audit_verifier_mirror_federation_worker_runs` rows and lists them on the federation card.
+- **Phase C.4 (steward-facing copy)** — Human labels for federation alerts, worker runs, discovery/onboarding/signer previews, distribution gate summary on the failover policy card, mirror trust tiers, and probe job lifecycle (ongoing polish).
+- **Phase C.5 (escalation cross-surface observability)** — Federation steward load path counts **open or acknowledged** external execution pages whose `page_key` contains `verifier_federation_distribution` (from `governance_public_audit_external_execution_page_board`), surfacing distribution verification on-call escalations next to federation summaries without opening the automation card first.
+- **Phase C.6 (governance execution cross-surface)** — Governance hub loads mirror failover policy plus `governance_proposal_meets_verifier_federation_distribution_gate` when the default policy requires federation ops readiness; shows an amber banner when distribution is not ready, and blocks **Run implementation** until `governance_proposal_is_execution_ready` is true (aligns client path with SQL execution gate).
+
+## 9. Approximate decentralization progress (indicative)
+
+Percentages are **not precise engineering metrics**. Use two ideas:
+
+1. **Program % (federation rollout, this document §4)** — moves only on **substantive** increments: new schema/RPC/gates, new cross-surface observability or ops workflows, field-hardening sign-off. **Label-only or cosmetic UI polish does not advance this figure.**
+2. **Steward polish** — valuable but tracked separately (checklist bullets in §8); it does not inflate program %.
+
+| Scope | Program % (headline) | Rationale |
+|------|----------------------|-----------|
+| **This rollout plan** (§4 Phases A–D) | **~93%** | Phase C.6 surfaces federation distribution gating on the Governance hub and enforces execution readiness before auto-execute; remaining work is multi-operator rehearsal, alert hygiene, and any SQL follow-ups from production. |
+| **Roadmap §14 slice** (minimized trusted-backend + federation exchange; items 1–5 in §14) | **~66–73%** | Mirror/federation/proof distribution baselines are substantial; items 1–3 still carry partial / productionize language in `governance-implementation-roadmap-v0.1.md`. |
+| **Roadmap §17** (full decentralization success condition) | **~30–38%** | Civic status, permission refactor, citizen governance UI, founder separation remain major pillars. |
+
+**Headline for steward reports:** federation rollout program **93%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.

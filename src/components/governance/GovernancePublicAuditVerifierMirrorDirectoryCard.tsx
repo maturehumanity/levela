@@ -12,9 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type {
-  GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
-  GovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
+import {
+  formatGovernancePublicAuditVerifierMirrorTrustTierLabel,
+  type GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
+  type GovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
 interface GovernancePublicAuditVerifierMirrorDirectoryCardProps {
@@ -227,7 +228,7 @@ export function GovernancePublicAuditVerifierMirrorDirectoryCard({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-medium text-foreground">{directory.signerLabel || directory.signerKey}</p>
               <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-                {directory.trustTier}
+                {formatGovernancePublicAuditVerifierMirrorTrustTierLabel(directory.trustTier)}
               </Badge>
             </div>
             <p className="text-muted-foreground">{previewHash(directory.directoryHash)}</p>

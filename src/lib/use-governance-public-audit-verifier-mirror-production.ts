@@ -4,11 +4,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   isMissingPublicAuditVerifierBackend,
+  readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   readGovernancePublicAuditVerifierMirrorDirectorySummaryRows,
   readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   readGovernancePublicAuditVerifierMirrorProbeJobBoardRows,
   readGovernancePublicAuditVerifierMirrorProbeJobSummary,
+  type GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   type GovernancePublicAuditVerifierMirrorDirectoryTrustSummary,
   type GovernancePublicAuditVerifierMirrorDirectorySummaryRow,
   type GovernancePublicAuditVerifierMirrorFailoverPolicySummary,
@@ -50,6 +52,8 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
   const [directoryTrustSummary, setDirectoryTrustSummary] = useState<GovernancePublicAuditVerifierMirrorDirectoryTrustSummary | null>(null);
   const [probeJobSummary, setProbeJobSummary] = useState<GovernancePublicAuditVerifierMirrorProbeJobSummary | null>(null);
   const [probeJobs, setProbeJobs] = useState<GovernancePublicAuditVerifierMirrorProbeJobBoardRow[]>([]);
+  const [federationDistributionGateSnapshot, setFederationDistributionGateSnapshot] =
+    useState<GovernancePublicAuditVerifierFederationDistributionGateSnapshot | null>(null);
 
   const loadProductionData = useCallback(async () => {
     setLoadingProductionData(true);
@@ -61,6 +65,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       directoryTrustSummaryResponse,
       probeSummaryResponse,
       probeBoardResponse,
+      federationDistributionGateResponse,
     ] = await Promise.all([
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
       callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_failover_policy_summary', {
@@ -82,6 +87,10 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
         requested_batch_id: args.latestBatchId,
         max_jobs: 80,
       }),
+      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_distribution_gate', {
+        target_batch_id: args.latestBatchId,
+        requested_policy_key: 'default',
+      }),
     ]);
 
     const sharedError = permissionResponse.error
@@ -89,7 +98,8 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       || directorySummaryResponse.error
       || directoryTrustSummaryResponse.error
       || probeSummaryResponse.error
-      || probeBoardResponse.error;
+      || probeBoardResponse.error
+      || federationDistributionGateResponse.error;
 
     if (isMissingPublicAuditVerifierBackend(sharedError)) {
       setProductionBackendUnavailable(true);
@@ -105,6 +115,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
         directoryTrustSummaryError: directoryTrustSummaryResponse.error,
         probeSummaryError: probeSummaryResponse.error,
         probeBoardError: probeBoardResponse.error,
+        federationDistributionGateError: federationDistributionGateResponse.error,
       });
       toast.error('Could not load mirror production rollout data.');
       setLoadingProductionData(false);
@@ -117,6 +128,9 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     setDirectoryTrustSummary(readGovernancePublicAuditVerifierMirrorDirectoryTrustSummary(directoryTrustSummaryResponse.data));
     setProbeJobSummary(readGovernancePublicAuditVerifierMirrorProbeJobSummary(probeSummaryResponse.data));
     setProbeJobs(readGovernancePublicAuditVerifierMirrorProbeJobBoardRows(probeBoardResponse.data));
+    setFederationDistributionGateSnapshot(
+      readGovernancePublicAuditVerifierFederationDistributionGateSnapshot(federationDistributionGateResponse.data),
+    );
     setProductionBackendUnavailable(false);
     setLoadingProductionData(false);
   }, [args.latestBatchId]);
@@ -411,6 +425,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     schedulingProbeJobs,
     completingProbeJob,
     failoverPolicy,
+    federationDistributionGateSnapshot,
     directorySummaries,
     directoryTrustSummary,
     probeJobSummary,
