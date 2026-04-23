@@ -1105,8 +1105,13 @@ export function GovernanceActivationFeedAdaptersPanel({
             {feedIngestions.map((ingestion) => {
               const adapterLabel = feedAdapterNameById.get(ingestion.adapter_id) ?? 'Adapter';
               const scopeLabel = ingestion.scope_type === 'world' ? 'World' : ingestion.country_code;
+              const ingestionStatusLabel = ingestion.ingestion_status;
               return (
-                <p key={ingestion.id}>
+                <p
+                  key={ingestion.id}
+                  data-build-key={`governanceActivationFeedIngestionRow:${ingestion.id}`}
+                  data-build-label={`${adapterLabel} ingestion · ${scopeLabel} · ${ingestionStatusLabel}`}
+                >
                   {adapterLabel} • {scopeLabel} • population {ingestion.target_population} • {ingestion.ingestion_status}
                   {' • '}
                   observed {formatTimestamp(ingestion.observed_at)} • recorded {formatTimestamp(ingestion.created_at)}
