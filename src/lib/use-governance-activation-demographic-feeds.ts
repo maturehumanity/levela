@@ -23,6 +23,7 @@ import {
   hashActivationDemographicPayload,
   verifyActivationDemographicPayloadSignature,
 } from '@/lib/governance-activation-demographic-signing';
+import { appendUniqueById } from '@/lib/governance-activation-demographic-feed-pagination';
 
 type RpcErrorLike = {
   code?: string | null;
@@ -44,24 +45,6 @@ function isMissingFeedSchedulerAutomationStatusFunction(error: RpcErrorLike) {
     error.code === 'PGRST202'
     && message.includes('activation_demographic_feed_worker_schedule_automation_status')
   );
-}
-
-function appendUniqueById<T extends { id: string }>(existing: T[], incoming: T[]) {
-  if (incoming.length === 0) {
-    return existing;
-  }
-
-  const seen = new Set(existing.map((row) => row.id));
-  const next = [...existing];
-  for (const row of incoming) {
-    if (seen.has(row.id)) {
-      continue;
-    }
-    seen.add(row.id);
-    next.push(row);
-  }
-
-  return next;
 }
 
 function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
@@ -363,13 +346,13 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     if (scheduleAutomationStatusResponse?.error) {
-      if (isMissingFeedSchedulerAutomationStatusFunction(scheduleAutomationStatusResponse.error)) {
+      const statusError = scheduleAutomationStatusResponse.error;
+      if (isMissingFeedSchedulerAutomationStatusFunction(statusError)) {
         setFeedWorkerScheduleAutomationStatus(null);
-      } else if (isMissingActivationDemographicFeedWorkerBackend(scheduleAutomationStatusResponse.error)) {
+      } else if (isMissingActivationDemographicFeedWorkerBackend(statusError)) {
         setFeedWorkerBackendUnavailable(true);
         setFeedWorkerScheduleAutomationStatus(null);
-      }
-      if (!isMissingFeedSchedulerAutomationStatusFunction(scheduleAutomationStatusResponse.error)) {
+      } else {
         setFeedWorkerScheduleAutomationStatus(null);
       }
     } else {
