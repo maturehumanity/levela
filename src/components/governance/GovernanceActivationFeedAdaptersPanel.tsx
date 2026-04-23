@@ -265,6 +265,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
             onClick={() => setForceRescheduleSweepOpen(true)}
             disabled={schedulingFeedWorkerJobs || !canManageFeeds || feedWorkerBackendUnavailable}
+            data-build-key="governanceActivationFeedOpenForceRescheduleDialog"
+            data-build-label="Open reset sweep queue dialog"
           >
             Reset queue and re-queue…
           </Button>
@@ -283,6 +285,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                   type="button"
                   className={buttonVariants({ variant: 'destructive' })}
                   disabled={schedulingFeedWorkerJobs}
+                  data-build-key="governanceActivationFeedConfirmForceReschedule"
+                  data-build-label="Confirm reset sweep queue and re-queue"
                   onClick={(event) => {
                     event.preventDefault();
                     void scheduleFeedWorkerJobs(true).finally(() => {
@@ -303,6 +307,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void processFeedWorkerOutboxQueue()}
             disabled={processingFeedOutbox || !canManageFeeds || feedWorkerBackendUnavailable}
+            data-build-key="governanceActivationFeedProcessSweepQueue"
+            data-build-label="Process feed worker sweep queue"
           >
             {processingFeedOutbox ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Process sweep queue
@@ -314,6 +320,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void releaseStaleFeedWorkerClaims()}
             disabled={releasingStaleFeedWorkerClaims || !canManageFeeds || feedWorkerBackendUnavailable}
+            data-build-key="governanceActivationFeedReleaseStaleSweepClaims"
+            data-build-label="Release stuck feed worker sweep claims"
           >
             {releasingStaleFeedWorkerClaims ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Release stuck sweep claims
@@ -325,6 +333,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void runFeedWorkerSweep()}
             disabled={runningFeedWorkers || !canManageFeeds || feedWorkerBackendUnavailable}
+            data-build-key="governanceActivationFeedRunWorkerSweep"
+            data-build-label="Run feed worker sweep"
           >
             {runningFeedWorkers ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Run worker sweep
@@ -336,6 +346,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void loadFeedData()}
             disabled={loadingFeedData}
+            data-build-key="governanceActivationFeedRefreshFeeds"
+            data-build-label="Refresh signed demographic feeds"
           >
             {loadingFeedData ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             Refresh feeds
@@ -543,6 +555,8 @@ export function GovernanceActivationFeedAdaptersPanel({
               className="w-full gap-2"
               disabled={loadingMoreFeedWorkerRuns}
               onClick={() => void loadMoreFeedWorkerRuns()}
+              data-build-key="governanceActivationFeedLoadOlderWorkerRuns"
+              data-build-label="Load older feed worker runs"
             >
               {loadingMoreFeedWorkerRuns ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Load older worker runs
@@ -873,6 +887,8 @@ export function GovernanceActivationFeedAdaptersPanel({
               className="w-full gap-2"
               disabled={loadingMoreFeedIngestions || feedBackendUnavailable}
               onClick={() => void loadMoreFeedIngestions()}
+              data-build-key="governanceActivationFeedLoadOlderIngestions"
+              data-build-label="Load older signed feed ingestions"
             >
               {loadingMoreFeedIngestions ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Load older ingestions
