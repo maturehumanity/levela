@@ -18,22 +18,8 @@ export type ActivationDemographicFeedAlertType =
   | 'connectivity'
   | 'payload';
 
-export interface ActivationDemographicFeedWorkerAlertSummaryRow {
-  adapter_id: string;
-  adapter_key: string;
-  adapter_name: string;
-  scope_type: Database['public']['Enums']['activation_scope_type'];
-  country_code: string;
-  last_ingested_at: string | null;
-  freshness_alert: boolean;
-  stale_by_hours: number | null;
-  signature_failure_count: number;
-  connectivity_failure_count: number;
-  payload_failure_count: number;
-  latest_run_status: ActivationDemographicFeedWorkerRunStatus | null;
-  latest_run_message: string | null;
-  latest_run_at: string | null;
-}
+export type ActivationDemographicFeedWorkerAlertSummaryRow =
+  Database['public']['Functions']['activation_demographic_feed_worker_alert_summary']['Returns'][number];
 
 const activationDemographicFeedBackendTokens = [
   'activation_demographic_feed_adapters',

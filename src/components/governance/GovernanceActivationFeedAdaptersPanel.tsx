@@ -241,7 +241,11 @@ export function GovernanceActivationFeedAdaptersPanel({
         data-build-key="governanceActivationFeedAdaptersPanelUnavailable"
         data-build-label="Signed demographic feed adapters unavailable"
       >
-        <p className="text-sm text-muted-foreground">
+        <p
+          className="text-sm text-muted-foreground"
+          data-build-key="governanceActivationFeedAdaptersPanelUnavailableMessage"
+          data-build-label="Signed demographic feed adapters unavailable explanation"
+        >
           Signed demographic feed adapters are not available in this environment yet.
         </p>
       </div>
@@ -753,14 +757,26 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedWorkerRunsCard"
           data-build-label="Recent activation feed worker runs"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            data-build-key="governanceActivationFeedWorkerRunsSectionTitle"
+            data-build-label="Recent worker runs section heading"
+          >
             Recent worker runs
-            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+            <span
+              className="ml-2 font-normal normal-case tracking-normal text-muted-foreground"
+              data-build-key="governanceActivationFeedWorkerRunsPaginationStatus"
+              data-build-label="Recent worker runs pagination status"
+            >
               ({feedWorkerRecentRuns.length} loaded{feedWorkerRunsHasMore ? ', more available' : ''} by observed time)
             </span>
           </p>
           {feedWorkerRecentRuns.length === 0 ? (
-            <p className="text-xs text-muted-foreground">
+            <p
+              className="text-xs text-muted-foreground"
+              data-build-key="governanceActivationFeedWorkerRunsEmpty"
+              data-build-label="No worker runs loaded yet"
+            >
               No worker runs to show yet. Outcomes appear here after sweeps, queue jobs, or steward ingestions.
             </p>
           ) : (
@@ -783,7 +799,13 @@ export function GovernanceActivationFeedAdaptersPanel({
                     data-build-label={`${adapterLabel} worker run · ${runStatusLabel}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium text-foreground">{adapterLabel}</p>
+                      <p
+                        className="font-medium text-foreground"
+                        data-build-key={`governanceActivationFeedWorkerRunAdapterTitle:${run.id}`}
+                        data-build-label={`Worker run adapter name (${adapterLabel})`}
+                      >
+                        {adapterLabel}
+                      </p>
                       <div className="flex flex-wrap items-center gap-1">
                         <Badge
                           variant="outline"
@@ -874,7 +896,10 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedOnCallEscalationCard"
           data-build-label="Feed worker on-call escalation"
         >
-          <p>
+          <p
+            data-build-key="governanceActivationFeedOnCallEscalationGuidance"
+            data-build-label="Feed worker on-call escalation guidance"
+          >
             If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Resolve open pages under Public audit, then Immutable anchoring automation, using the on-call page board. Use copy below if you need the exact page identifier when searching the board.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -936,7 +961,13 @@ export function GovernanceActivationFeedAdaptersPanel({
             data-build-key="governanceActivationFeedRegisterAdapterForm"
             data-build-label="Register signed demographic feed adapter"
           >
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Register adapter</p>
+            <p
+              className="text-xs uppercase tracking-[0.12em] text-muted-foreground"
+              data-build-key="governanceActivationFeedRegisterAdapterSectionTitle"
+              data-build-label="Register adapter section title"
+            >
+              Register adapter
+            </p>
             <Input
               value={adapterDraft.adapterKey}
               onChange={(event) => setAdapterDraft((current) => ({ ...current, adapterKey: event.target.value }))}
@@ -1021,7 +1052,13 @@ export function GovernanceActivationFeedAdaptersPanel({
             data-build-key="governanceActivationFeedIngestSignedSnapshotForm"
             data-build-label="Ingest signed demographic feed snapshot"
           >
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Ingest signed feed snapshot</p>
+            <p
+              className="text-xs uppercase tracking-[0.12em] text-muted-foreground"
+              data-build-key="governanceActivationFeedIngestSnapshotSectionTitle"
+              data-build-label="Ingest signed feed snapshot section title"
+            >
+              Ingest signed feed snapshot
+            </p>
             <Label
               className="text-xs"
               data-build-key="governanceActivationFeedIngestionAdapterLabel"
@@ -1113,7 +1150,11 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedWorkerAlerts"
           data-build-label="Feed worker freshness and signature alerts"
         >
-          <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+          <p
+            className="text-xs uppercase tracking-[0.12em] text-muted-foreground"
+            data-build-key="governanceActivationFeedWorkerAlertsSectionTitle"
+            data-build-label="Feed worker alerts section heading"
+          >
             Worker freshness + signature alerts
             <span
               className="ml-2 font-normal normal-case tracking-normal text-muted-foreground"
@@ -1138,7 +1179,11 @@ export function GovernanceActivationFeedAdaptersPanel({
                 data-build-label={`Feed worker alerts (${alert.adapter_key})`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-foreground">
+                  <p
+                    className="font-medium text-foreground"
+                    data-build-key={`governanceActivationFeedAlertAdapterTitle:${alert.adapter_id}`}
+                    data-build-label={`Feed worker alert adapter title (${alert.adapter_key})`}
+                  >
                     {alert.adapter_name} ({scopeLabel})
                   </p>
                   <div className="flex flex-wrap items-center gap-1">
@@ -1290,7 +1335,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               type="button"
               size="sm"
               variant="outline"
-              className="w-full"
+              className="w-full gap-2"
               onClick={() => setVisibleFeedWorkerAlertsCount((count) => count + FEED_WORKER_ALERTS_APPEND_PAGE)}
               data-build-key="governanceActivationFeedLoadOlderWorkerAlerts"
               data-build-label="Load older feed worker alerts"
@@ -1307,9 +1352,17 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedRecentIngestions"
           data-build-label="Recent signed demographic feed ingestions"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            data-build-key="governanceActivationFeedRecentIngestionsSectionTitle"
+            data-build-label="Recent signed ingestions section heading"
+          >
             Recent signed ingestions
-            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+            <span
+              className="ml-2 font-normal normal-case tracking-normal text-muted-foreground"
+              data-build-key="governanceActivationFeedRecentIngestionsPaginationStatus"
+              data-build-label="Recent signed ingestions pagination status"
+            >
               ({feedIngestions.length} loaded{feedIngestionsHasMore ? ', more available' : ''})
             </span>
           </p>

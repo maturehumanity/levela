@@ -175,7 +175,7 @@ export function useGovernanceActivationDemographicFeeds() {
         .order('created_at', { ascending: false })
         .range(0, FEED_INGESTIONS_FIRST_PAGE - 1),
       supabase.rpc('current_profile_can_manage_activation_demographic_feeds'),
-      callUntypedRpc<ActivationDemographicFeedWorkerAlertSummaryRow[]>('activation_demographic_feed_worker_alert_summary', {
+      supabase.rpc('activation_demographic_feed_worker_alert_summary', {
         requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
       }),
       supabase
@@ -251,9 +251,7 @@ export function useGovernanceActivationDemographicFeeds() {
       }
       setFeedWorkerAlerts(buildFallbackWorkerAlertRows(adapters));
     } else {
-      const workerRows = Array.isArray(workerSummaryResponse?.data)
-        ? workerSummaryResponse.data as ActivationDemographicFeedWorkerAlertSummaryRow[]
-        : [];
+      const workerRows = workerSummaryResponse.data ?? [];
       setFeedWorkerAlerts(workerRows);
       setFeedWorkerBackendUnavailable(false);
     }

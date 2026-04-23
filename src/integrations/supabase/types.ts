@@ -4101,6 +4101,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activation_demographic_feed_worker_alert_summary: {
+        Args: { requested_freshness_hours?: number }
+        Returns: {
+          adapter_id: string
+          adapter_key: string
+          adapter_name: string
+          scope_type: Database["public"]["Enums"]["activation_scope_type"]
+          country_code: string
+          last_ingested_at: string | null
+          freshness_alert: boolean
+          stale_by_hours: number | null
+          signature_failure_count: number
+          connectivity_failure_count: number
+          payload_failure_count: number
+          latest_run_status: Database["public"]["Enums"]["activation_demographic_feed_worker_status"] | null
+          latest_run_message: string | null
+          latest_run_at: string | null
+        }[]
+      }
       activation_demographic_feed_worker_schedule_automation_status: {
         Args: Record<PropertyKey, never>
         Returns: {
