@@ -56,6 +56,23 @@ function formatShortId(value: string | null) {
   return trimmed.length > 14 ? `${trimmed.slice(0, 8)}…${trimmed.slice(-4)}` : trimmed;
 }
 
+function formatCronRunStatusLabel(value: string | null) {
+  if (!value?.trim()) {
+    return 'Unknown';
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'succeeded' || normalized === 'success') {
+    return 'Succeeded';
+  }
+  if (normalized === 'failed' || normalized === 'error') {
+    return 'Failed';
+  }
+  if (normalized === 'running') {
+    return 'Running';
+  }
+  return value.trim();
+}
+
 function countFeedWorkerAlerts(alert: {
   freshness_alert: boolean;
   signature_failure_count: number;
@@ -465,6 +482,22 @@ export function GovernanceActivationFeedAdaptersPanel({
           ) : (
             null
           )}
+          {feedWorkerScheduleAutomationStatus?.latest_cron_run_started_at ? (
+            <p
+              data-build-key="governanceActivationFeedSchedulerLatestCronRun"
+              data-build-label="Latest feed scheduler cron run outcome"
+            >
+              Latest cron run {formatCronRunStatusLabel(feedWorkerScheduleAutomationStatus.latest_cron_run_status)}:
+              {' '}
+              started {formatTimestamp(feedWorkerScheduleAutomationStatus.latest_cron_run_started_at)}
+              {feedWorkerScheduleAutomationStatus.latest_cron_run_finished_at
+                ? ` • finished ${formatTimestamp(feedWorkerScheduleAutomationStatus.latest_cron_run_finished_at)}`
+                : ''}
+              {feedWorkerScheduleAutomationStatus.latest_cron_run_details
+                ? ` • ${formatTruncatedGovernanceNote(feedWorkerScheduleAutomationStatus.latest_cron_run_details, 120)}`
+                : ''}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

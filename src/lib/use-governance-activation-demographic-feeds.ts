@@ -73,6 +73,10 @@ export interface ActivationDemographicFeedWorkerScheduleAutomationStatusRow {
   cron_job_command: string | null;
   latest_scheduled_enqueue_at: string | null;
   latest_scheduled_enqueue_job_id: string | null;
+  latest_cron_run_started_at: string | null;
+  latest_cron_run_finished_at: string | null;
+  latest_cron_run_status: string | null;
+  latest_cron_run_details: string | null;
 }
 
 /** First page size for steward ingestion history (matches prior single-query limit). */
