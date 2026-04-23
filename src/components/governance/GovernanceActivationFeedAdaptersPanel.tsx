@@ -173,6 +173,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     () => feedWorkerOutboxActiveJobs.filter((job) => job.status === 'claimed').length,
     [feedWorkerOutboxActiveJobs],
   );
+  const activeFeedOutboxCount = pendingFeedOutboxCount + claimedFeedOutboxCount;
   const feedWorkerOutboxActiveListTruncated = useMemo(
     () =>
       pendingFeedOutboxCount > outboxActiveVisiblePendingCount ||
@@ -422,7 +423,8 @@ export function GovernanceActivationFeedAdaptersPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Active sweep queue jobs
             <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
-              ({feedWorkerOutboxActiveJobs.length} loaded{feedWorkerOutboxActiveJobsHasMore ? ', more available' : ''})
+              ({feedWorkerOutboxActiveJobs.length} loaded of {activeFeedOutboxCount}
+              {feedWorkerOutboxActiveJobsHasMore ? ', more available' : ''})
             </span>
           </p>
           {feedWorkerOutboxActiveJobs.length === 0 ? (
@@ -478,7 +480,8 @@ export function GovernanceActivationFeedAdaptersPanel({
               data-build-key="governanceActivationFeedOutboxActiveListTruncationNote"
               data-build-label="Note when sweep queue list is capped"
             >
-              Additional pending or claimed jobs may exist beyond this list.
+              Additional pending or claimed jobs may exist beyond this list; use Load older active queue jobs to fetch
+              more rows.
             </p>
           ) : null}
           {feedWorkerOutboxActiveJobsHasMore ? (
