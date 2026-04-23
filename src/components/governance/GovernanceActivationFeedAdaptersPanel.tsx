@@ -63,6 +63,8 @@ function countFeedWorkerAlerts(alert: {
 }
 
 const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
+const FEED_WORKER_ALERTS_FIRST_PAGE = 8;
+const FEED_WORKER_ALERTS_APPEND_PAGE = 8;
 
 async function copyActivationFeedWorkerEscalationPageKey() {
   try {
@@ -142,6 +144,7 @@ export function GovernanceActivationFeedAdaptersPanel({
   });
   const [forceRescheduleSweepOpen, setForceRescheduleSweepOpen] = useState(false);
   const [recentClosedSweepJobsOpen, setRecentClosedSweepJobsOpen] = useState(false);
+  const [visibleFeedWorkerAlertsCount, setVisibleFeedWorkerAlertsCount] = useState(FEED_WORKER_ALERTS_FIRST_PAGE);
 
   const activeAdapters = useMemo(
     () => feedAdapters.filter((adapter) => adapter.is_active),
@@ -186,6 +189,18 @@ export function GovernanceActivationFeedAdaptersPanel({
       setRecentClosedSweepJobsOpen(true);
     }
   }, [recentClosedSweepFailureCount]);
+
+  useEffect(() => {
+    setVisibleFeedWorkerAlertsCount((current) => (
+      Math.max(FEED_WORKER_ALERTS_FIRST_PAGE, Math.min(current, feedWorkerAlerts.length))
+    ));
+  }, [feedWorkerAlerts.length]);
+
+  const visibleFeedWorkerAlerts = useMemo(
+    () => feedWorkerAlerts.slice(0, visibleFeedWorkerAlertsCount),
+    [feedWorkerAlerts, visibleFeedWorkerAlertsCount],
+  );
+  const feedWorkerAlertsHasMore = visibleFeedWorkerAlertsCount < feedWorkerAlerts.length;
 
   if (feedBackendUnavailable) {
     return (
@@ -920,8 +935,13 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedWorkerAlerts"
           data-build-label="Feed worker freshness and signature alerts"
         >
-          <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Worker freshness + signature alerts</p>
-          {feedWorkerAlerts.slice(0, 8).map((alert) => {
+          <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            Worker freshness + signature alerts
+            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+              ({visibleFeedWorkerAlerts.length} loaded{feedWorkerAlertsHasMore ? ', more available' : ''})
+            </span>
+          </p>
+          {visibleFeedWorkerAlerts.map((alert) => {
             const alertCount = countFeedWorkerAlerts(alert);
             const resolveAllKey = `${alert.adapter_id}:all`;
             const scopeLabel = formatActivationDemographicFeedScopeLabel(alert.scope_type, alert.country_code);
@@ -1046,6 +1066,19 @@ export function GovernanceActivationFeedAdaptersPanel({
               </div>
             );
           })}
+          {feedWorkerAlertsHasMore ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => setVisibleFeedWorkerAlertsCount((count) => count + FEED_WORKER_ALERTS_APPEND_PAGE)}
+              data-build-key="governanceActivationFeedLoadOlderWorkerAlerts"
+              data-build-label="Load older feed worker alerts"
+            >
+              Load older worker alerts
+            </Button>
+          ) : null}
         </div>
       )}
 
