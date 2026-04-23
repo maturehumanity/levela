@@ -136,6 +136,7 @@ Step 5 is considered started when:
 - **Phase C.4 (steward-facing copy)** — Human labels for federation alerts, worker runs, discovery/onboarding/signer previews, distribution gate summary on the failover policy card, mirror trust tiers, and probe job lifecycle (ongoing polish).
 - **Phase C.5 (escalation cross-surface observability)** — Federation steward load path counts **open or acknowledged** external execution pages whose `page_key` contains `verifier_federation_distribution` (from `governance_public_audit_external_execution_page_board`), surfacing distribution verification on-call escalations next to federation summaries without opening the automation card first.
 - **Phase C.6 (governance execution cross-surface)** — Governance hub loads mirror failover policy plus `governance_proposal_meets_verifier_federation_distribution_gate` when the default policy requires federation ops readiness; shows an amber banner when distribution is not ready, and blocks **Run implementation** until `governance_proposal_is_execution_ready` is true (aligns client path with SQL execution gate).
+- **Phase C.7 (execution gate diagnostics)** — When **Run implementation** is blocked because `governance_proposal_is_execution_ready` is false, the hub re-checks threshold, guardian sign-off, verifier federation distribution gate, and guardian relay distribution gate so the steward sees **which** condition is still pending instead of a single blended message.
 
 ## 9. Approximate decentralization progress (indicative)
 

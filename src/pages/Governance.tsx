@@ -96,6 +96,28 @@ type ProfileDirectoryRow = Pick<
 
 const FOUNDATION_CERTIFICATION_ID = 'civic_foundations';
 
+async function resolveGovernanceExecutionNotReadyMessage(
+  proposalId: string,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): Promise<string> {
+  const [thresholdRes, guardianRes, federationRes, relayRes] = await Promise.all([
+    supabase.rpc('governance_proposal_meets_execution_threshold', { target_proposal_id: proposalId }),
+    supabase.rpc('governance_proposal_meets_guardian_signoff', { target_proposal_id: proposalId }),
+    supabase.rpc('governance_proposal_meets_verifier_federation_distribution_gate', { target_proposal_id: proposalId }),
+    supabase.rpc('governance_proposal_meets_guardian_relay_distribution_gate', { target_proposal_id: proposalId }),
+  ]);
+  const gateError = thresholdRes.error || guardianRes.error || federationRes.error || relayRes.error;
+  if (gateError) {
+    console.warn('Could not evaluate individual execution readiness gates:', gateError);
+    return t('governanceHub.executeNotReady');
+  }
+  if (!thresholdRes.data) return t('governanceHub.executeNotReadyThreshold');
+  if (!guardianRes.data) return t('governanceHub.executeNotReadyGuardian');
+  if (!federationRes.data) return t('governanceHub.executeNotReadyFederationDistribution');
+  if (!relayRes.data) return t('governanceHub.executeNotReadyGuardianRelay');
+  return t('governanceHub.executeNotReady');
+}
+
 function isMissingGovernanceProposalBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
@@ -1044,7 +1066,8 @@ export default function Governance() {
       return;
     }
     if (!executionReady) {
-      toast.error(t('governanceHub.executeNotReady'));
+      const detail = await resolveGovernanceExecutionNotReadyMessage(proposal.id, t);
+      toast.error(detail);
       return;
     }
 
