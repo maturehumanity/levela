@@ -162,7 +162,11 @@ export function GovernanceActivationFeedAdaptersPanel({
 
   if (feedBackendUnavailable) {
     return (
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+      <div
+        className="rounded-xl border border-border/70 bg-muted/20 p-3"
+        data-build-key="governanceActivationFeedAdaptersPanelUnavailable"
+        data-build-label="Signed demographic feed adapters unavailable"
+      >
         <p className="text-sm text-muted-foreground">
           Signed demographic feed adapters are not available in this environment yet.
         </p>
@@ -177,7 +181,13 @@ export function GovernanceActivationFeedAdaptersPanel({
       data-build-label="Signed demographic feed adapters panel"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Signed demographic feed adapters</p>
+        <p
+          className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+          data-build-key="governanceActivationFeedAdaptersTitle"
+          data-build-label="Signed demographic feed adapters heading"
+        >
+          Signed demographic feed adapters
+        </p>
         <div
           className="flex flex-wrap items-center gap-2"
           data-build-key="governanceActivationFeedToolbar"
