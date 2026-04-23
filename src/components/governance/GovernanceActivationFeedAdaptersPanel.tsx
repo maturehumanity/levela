@@ -482,10 +482,20 @@ export function GovernanceActivationFeedAdaptersPanel({
                         ? 'border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-200'
                         : 'border-border bg-muted text-muted-foreground';
                     return (
-                      <div key={job.id} className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5">
+                      <div
+                        key={job.id}
+                        className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5"
+                        data-build-key={`governanceActivationFeedOutboxClosedJobRow:${job.id}`}
+                        data-build-label={`${adapterLabel} · ${formatActivationDemographicFeedOutboxClosedStatusLabel(job.status)} sweep job`}
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="font-medium text-foreground">{adapterLabel}</p>
-                          <Badge variant="outline" className={statusBadgeClass}>
+                          <Badge
+                            variant="outline"
+                            className={statusBadgeClass}
+                            data-build-key={`governanceActivationFeedOutboxClosedJobStatus:${job.id}`}
+                            data-build-label={`Closed sweep job: ${formatActivationDemographicFeedOutboxClosedStatusLabel(job.status)}`}
+                          >
                             {formatActivationDemographicFeedOutboxClosedStatusLabel(job.status)}
                           </Badge>
                         </div>
