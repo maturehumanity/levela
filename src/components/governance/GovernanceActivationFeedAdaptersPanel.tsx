@@ -331,6 +331,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             const alertCount = countFeedWorkerAlerts(alert);
             const resolveAllKey = `${alert.adapter_id}:all`;
             const scopeLabel = formatActivationDemographicFeedScopeLabel(alert.scope_type, alert.country_code);
+            const adapterRow = feedAdapters.find((adapter) => adapter.id === alert.adapter_id);
+            const customSweepMinutes = adapterRow?.worker_sweep_interval_minutes;
 
             return (
               <div key={alert.adapter_id} className="rounded-md border border-border/60 bg-card p-2 text-xs">
@@ -370,6 +372,11 @@ export function GovernanceActivationFeedAdaptersPanel({
                 <p className="mt-1 text-muted-foreground">
                   Last ingested: {formatTimestamp(alert.last_ingested_at)}
                 </p>
+                {typeof customSweepMinutes === 'number' && customSweepMinutes > 0 ? (
+                  <p className="mt-1 text-muted-foreground">
+                    This adapter requests a queued sweep about every {customSweepMinutes} minutes (overrides the default schedule above).
+                  </p>
+                ) : null}
                 {alert.latest_run_message && (
                   <p className="text-muted-foreground">
                     Latest worker run: {alert.latest_run_message}
