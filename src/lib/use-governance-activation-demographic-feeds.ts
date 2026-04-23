@@ -91,6 +91,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [resolvingFeedAlertKey, setResolvingFeedAlertKey] = useState<string | null>(null);
   const [pendingFeedOutboxCount, setPendingFeedOutboxCount] = useState(0);
   const [claimedFeedOutboxCount, setClaimedFeedOutboxCount] = useState(0);
+  const [closedFeedOutboxCount, setClosedFeedOutboxCount] = useState(0);
   const [feedAdapters, setFeedAdapters] = useState<ActivationDemographicFeedAdapterRow[]>([]);
   const [feedIngestions, setFeedIngestions] = useState<ActivationDemographicFeedIngestionRow[]>([]);
   const [feedIngestionsHasMore, setFeedIngestionsHasMore] = useState(false);
@@ -157,6 +158,7 @@ export function useGovernanceActivationDemographicFeeds() {
       workerSummaryResponse,
       pendingOutboxResponse,
       claimedOutboxResponse,
+      closedOutboxResponse,
       activeOutboxJobsResponse,
       recentClosedOutboxJobsResponse,
       workerRunsResponse,
@@ -184,6 +186,10 @@ export function useGovernanceActivationDemographicFeeds() {
         .from('activation_demographic_feed_worker_outbox')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'claimed'),
+      supabase
+        .from('activation_demographic_feed_worker_outbox')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['completed', 'cancelled', 'failed']),
       supabase
         .from('activation_demographic_feed_worker_outbox')
         .select('*')
@@ -267,6 +273,15 @@ export function useGovernanceActivationDemographicFeeds() {
       setClaimedFeedOutboxCount(0);
     } else {
       setClaimedFeedOutboxCount(claimedOutboxResponse.count ?? 0);
+    }
+
+    if (closedOutboxResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(closedOutboxResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setClosedFeedOutboxCount(0);
+    } else {
+      setClosedFeedOutboxCount(closedOutboxResponse.count ?? 0);
     }
 
     if (activeOutboxJobsResponse.error) {
@@ -886,6 +901,7 @@ export function useGovernanceActivationDemographicFeeds() {
     escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
     claimedFeedOutboxCount,
+    closedFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
     feedAdapters,

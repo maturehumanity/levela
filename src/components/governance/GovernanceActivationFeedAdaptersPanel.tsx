@@ -92,6 +92,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
     claimedFeedOutboxCount,
+    closedFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
     feedAdapters,
@@ -182,6 +183,10 @@ export function GovernanceActivationFeedAdaptersPanel({
       outboxActiveVisiblePendingCount,
       outboxActiveVisibleClaimedCount,
     ],
+  );
+  const feedWorkerOutboxClosedListTruncated = useMemo(
+    () => closedFeedOutboxCount > feedWorkerOutboxRecentClosedJobs.length,
+    [closedFeedOutboxCount, feedWorkerOutboxRecentClosedJobs.length],
   );
 
   useEffect(() => {
@@ -507,7 +512,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                   : <ChevronRight className="h-4 w-4 shrink-0" />}
                 Recently closed sweep jobs
                 {' '}
-                ({feedWorkerOutboxRecentClosedJobs.length} loaded{feedWorkerOutboxRecentClosedJobsHasMore ? ', more available' : ''})
+                ({feedWorkerOutboxRecentClosedJobs.length} loaded of {closedFeedOutboxCount}
+                {feedWorkerOutboxRecentClosedJobsHasMore ? ', more available' : ''})
                 {recentClosedSweepFailureCount > 0
                   ? ` · ${recentClosedSweepFailureCount} failed`
                   : ''}
@@ -580,6 +586,15 @@ export function GovernanceActivationFeedAdaptersPanel({
                   {loadingMoreFeedWorkerOutboxRecentClosedJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Load older closed queue jobs
                 </Button>
+              ) : null}
+              {feedWorkerOutboxClosedListTruncated && !feedWorkerOutboxRecentClosedJobsHasMore ? (
+                <p
+                  className="text-xs text-muted-foreground"
+                  data-build-key="governanceActivationFeedOutboxClosedListTruncationNote"
+                  data-build-label="Note when closed sweep queue list is capped"
+                >
+                  Additional closed jobs may exist beyond this list.
+                </p>
               ) : null}
             </CollapsibleContent>
           </Collapsible>
