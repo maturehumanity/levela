@@ -66,6 +66,8 @@ import {
 import {
   isMissingPublicAuditVerifierBackend,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
+  readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+  type GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
 } from '@/lib/governance-public-audit-verifiers';
 import { createEmptyGovernanceProposalDraft } from '@/lib/governance-proposal-draft';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
@@ -173,6 +175,7 @@ export default function Governance() {
   const [verifierFederationExecutionGate, setVerifierFederationExecutionGate] = useState<{
     policyRequiresFederationDistribution: boolean;
     distributionGateMet: boolean;
+    federationOps: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   } | null>(null);
   const isNativeMobileGovernanceDevice = useMemo(() => isNativeGovernanceApp(), []);
 
@@ -651,9 +654,14 @@ export default function Governance() {
     setBackendUnavailable(false);
 
     const gateProposalId = nextProposals[0]?.id ?? '00000000-0000-0000-0000-000000000000';
-    const [failoverSummaryResponse, federationDistributionGateResponse] = await Promise.all([
+    const [failoverSummaryResponse, federationDistributionGateResponse, federationOpsSummaryResponse] = await Promise.all([
       supabase.rpc('governance_public_audit_verifier_mirror_failover_policy_summary', { requested_policy_key: 'default' }),
       supabase.rpc('governance_proposal_meets_verifier_federation_distribution_gate', { target_proposal_id: gateProposalId }),
+      supabase.rpc('governance_public_audit_verifier_mirror_federation_operations_summary', {
+        requested_policy_key: 'default',
+        requested_lookback_hours: 24,
+        requested_alert_sla_hours: 12,
+      }),
     ]);
     const verifierGateError = failoverSummaryResponse.error || federationDistributionGateResponse.error;
     if (verifierGateError && isMissingPublicAuditVerifierBackend(verifierGateError)) {
@@ -663,9 +671,18 @@ export default function Governance() {
       setVerifierFederationExecutionGate(null);
     } else {
       const failoverSummary = readGovernancePublicAuditVerifierMirrorFailoverPolicySummary(failoverSummaryResponse.data);
+      let federationOps: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null = null;
+      if (federationOpsSummaryResponse.error) {
+        if (!isMissingPublicAuditVerifierBackend(federationOpsSummaryResponse.error)) {
+          console.warn('Could not load federation operations summary for governance hub:', federationOpsSummaryResponse.error);
+        }
+      } else {
+        federationOps = readGovernancePublicAuditVerifierMirrorFederationOperationsSummary(federationOpsSummaryResponse.data);
+      }
       setVerifierFederationExecutionGate({
         policyRequiresFederationDistribution: Boolean(failoverSummary?.requireFederationOpsReadiness),
         distributionGateMet: Boolean(federationDistributionGateResponse.data),
+        federationOps,
       });
     }
 
@@ -1479,10 +1496,55 @@ export default function Governance() {
             </div>
 
             {verifierFederationExecutionGate?.policyRequiresFederationDistribution
-              && !verifierFederationExecutionGate.distributionGateMet && (
+              && (
+                !verifierFederationExecutionGate.distributionGateMet
+                || (
+                  verifierFederationExecutionGate.federationOps !== null
+                  && !verifierFederationExecutionGate.federationOps.federationOpsReady
+                )
+              ) && (
               <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 p-4 text-sm shadow-sm">
-                <p className="font-medium text-foreground">{t('governanceHub.federationDistributionGateBannerTitle')}</p>
-                <p className="mt-2 text-muted-foreground">{t('governanceHub.federationDistributionGateBannerBody')}</p>
+                <p className="font-medium text-foreground">{t('governanceHub.federationExecutionGateBannerTitle')}</p>
+                {!verifierFederationExecutionGate.distributionGateMet && (
+                  <p className="mt-2 text-muted-foreground">{t('governanceHub.federationDistributionGateBannerBody')}</p>
+                )}
+                {verifierFederationExecutionGate.federationOps !== null
+                  && !verifierFederationExecutionGate.federationOps.federationOpsReady && (
+                  <div className="mt-2 space-y-2 text-muted-foreground">
+                    <p>{t('governanceHub.federationOpsGateIntro')}</p>
+                    {verifierFederationExecutionGate.federationOps.onboardedOperatorCount
+                      < verifierFederationExecutionGate.federationOps.minOnboardedFederationOperators && (
+                      <p>
+                        {t('governanceHub.federationOpsGateOperators', {
+                          have: verifierFederationExecutionGate.federationOps.onboardedOperatorCount,
+                          need: verifierFederationExecutionGate.federationOps.minOnboardedFederationOperators,
+                        })}
+                      </p>
+                    )}
+                    {verifierFederationExecutionGate.federationOps.openCriticalAlertCount
+                      > verifierFederationExecutionGate.federationOps.maxOpenCriticalFederationAlerts && (
+                      <p>
+                        {t('governanceHub.federationOpsGateCriticalAlerts', {
+                          open: verifierFederationExecutionGate.federationOps.openCriticalAlertCount,
+                          max: verifierFederationExecutionGate.federationOps.maxOpenCriticalFederationAlerts,
+                        })}
+                      </p>
+                    )}
+                    {verifierFederationExecutionGate.federationOps.alertSlaBreachedCount > 0 && (
+                      <p>{t('governanceHub.federationOpsGateSlaBreaches')}</p>
+                    )}
+                    {verifierFederationExecutionGate.federationOps.distributionVerificationStale && (
+                      <p>{t('governanceHub.federationOpsGateStaleVerification')}</p>
+                    )}
+                    {verifierFederationExecutionGate.federationOps.openDistributionVerificationAlertCount > 0 && (
+                      <p>
+                        {t('governanceHub.federationOpsGateDistributionAlerts', {
+                          count: verifierFederationExecutionGate.federationOps.openDistributionVerificationAlertCount,
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
               </Card>
             )}
 

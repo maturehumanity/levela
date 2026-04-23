@@ -137,6 +137,7 @@ Step 5 is considered started when:
 - **Phase C.5 (escalation cross-surface observability)** — Federation steward load path counts **open or acknowledged** external execution pages whose `page_key` contains `verifier_federation_distribution` (from `governance_public_audit_external_execution_page_board`), surfacing distribution verification on-call escalations next to federation summaries without opening the automation card first.
 - **Phase C.6 (governance execution cross-surface)** — Governance hub loads mirror failover policy plus `governance_proposal_meets_verifier_federation_distribution_gate` when the default policy requires federation ops readiness; shows an amber banner when distribution is not ready, and blocks **Run implementation** until `governance_proposal_is_execution_ready` is true (aligns client path with SQL execution gate).
 - **Phase C.7 (execution gate diagnostics)** — When **Run implementation** is blocked because `governance_proposal_is_execution_ready` is false, the hub re-checks threshold, guardian sign-off, verifier federation distribution gate, and guardian relay distribution gate so the steward sees **which** condition is still pending instead of a single blended message.
+- **Phase C.8 (governance federation operations banner)** — Governance hub also loads `governance_public_audit_verifier_mirror_federation_operations_summary` when evaluating federation execution risk; the amber banner appears if the package distribution gate **or** live federation operations readiness is red, with short human hints for operators, critical alerts, alert ageing, stale distribution verification runs, and open distribution verification alerts.
 
 ## 9. Approximate decentralization progress (indicative)
 
@@ -147,8 +148,8 @@ Percentages are **not precise engineering metrics**. Use two ideas:
 
 | Scope | Program % (headline) | Rationale |
 |------|----------------------|-----------|
-| **This rollout plan** (§4 Phases A–D) | **~93%** | Phase C.6 surfaces federation distribution gating on the Governance hub and enforces execution readiness before auto-execute; remaining work is multi-operator rehearsal, alert hygiene, and any SQL follow-ups from production. |
+| **This rollout plan** (§4 Phases A–D) | **~94%** | Phase C.8 adds live federation operations summary to the Governance hub banner so stewards see operations-level blockers (operators, critical alerts, SLA, distribution verification) alongside the package distribution gate; remaining work is multi-operator rehearsal and production follow-ups. |
 | **Roadmap §14 slice** (minimized trusted-backend + federation exchange; items 1–5 in §14) | **~66–73%** | Mirror/federation/proof distribution baselines are substantial; items 1–3 still carry partial / productionize language in `governance-implementation-roadmap-v0.1.md`. |
 | **Roadmap §17** (full decentralization success condition) | **~30–38%** | Civic status, permission refactor, citizen governance UI, founder separation remain major pillars. |
 
-**Headline for steward reports:** federation rollout program **93%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
+**Headline for steward reports:** federation rollout program **94%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
