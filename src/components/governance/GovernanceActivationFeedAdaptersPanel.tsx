@@ -43,6 +43,47 @@ function countFeedWorkerAlerts(alert: {
     + alert.payload_failure_count
   );
 }
+
+function formatWorkerRunOutcomeStatus(status: string) {
+  switch (status) {
+    case 'ingested':
+      return 'Ingested';
+    case 'signature_failed':
+      return 'Signature check failed';
+    case 'fetch_failed':
+      return 'Fetch failed';
+    case 'invalid_payload':
+      return 'Invalid payload';
+    case 'ingestion_failed':
+      return 'Ingestion failed';
+    default:
+      return status.replace(/_/g, ' ');
+  }
+}
+
+function formatWorkerAlertKind(alertType: string) {
+  switch (alertType) {
+    case 'freshness':
+      return 'Freshness';
+    case 'signature_failure':
+      return 'Signature';
+    case 'connectivity':
+      return 'Connectivity';
+    case 'payload':
+      return 'Payload';
+    default:
+      return alertType.replace(/_/g, ' ');
+  }
+}
+
+function formatShortAlertMessage(message: string, maxChars = 160) {
+  const trimmed = message.trim();
+  if (trimmed.length <= maxChars) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, maxChars)}…`;
+}
+
 export function GovernanceActivationFeedAdaptersPanel({
   formatTimestamp,
 }: GovernanceActivationFeedAdaptersPanelProps) {
@@ -67,6 +108,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     loadingMoreFeedIngestions,
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
+    feedWorkerRecentRuns,
     feedWorkerSchedulePolicy,
     loadFeedData,
     loadMoreFeedIngestions,
@@ -272,6 +314,65 @@ export function GovernanceActivationFeedAdaptersPanel({
               Additional pending jobs may exist beyond this list (showing the 25 most recently updated pending or claimed rows).
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {!feedWorkerBackendUnavailable ? (
+        <div className="mt-3 space-y-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Recent worker runs
+            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+              (latest {feedWorkerRecentRuns.length} by observed time)
+            </span>
+          </p>
+          {feedWorkerRecentRuns.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No worker runs to show yet. Outcomes appear here after sweeps, queue jobs, or steward ingestions.
+            </p>
+          ) : (
+            <div className="max-h-52 space-y-2 overflow-y-auto text-xs text-muted-foreground">
+              {feedWorkerRecentRuns.map((run) => {
+                const adapterLabel = feedAdapterNameById.get(run.adapter_id) ?? 'Adapter';
+                const severityClass = run.alert_severity === 'critical'
+                  ? 'border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-200'
+                  : run.alert_severity === 'warning'
+                    ? 'border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                    : 'border-border bg-muted text-muted-foreground';
+                return (
+                  <div key={run.id} className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{adapterLabel}</p>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge variant="outline" className="border-border bg-muted/80 text-foreground/90">
+                          {formatWorkerRunOutcomeStatus(run.run_status)}
+                        </Badge>
+                        <Badge variant="outline" className="border-border bg-muted/80 text-foreground/90">
+                          {formatWorkerAlertKind(run.alert_type)}
+                        </Badge>
+                        <Badge variant="outline" className={severityClass}>
+                          {run.alert_severity.charAt(0).toUpperCase() + run.alert_severity.slice(1)}
+                        </Badge>
+                        {run.resolved_at ? (
+                          <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200">
+                            Resolved
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-border text-muted-foreground">
+                            Open
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <p className="mt-1">
+                      Observed {formatTimestamp(run.observed_at)}
+                      {run.resolved_at ? ` • resolved ${formatTimestamp(run.resolved_at)}` : ''}
+                    </p>
+                    <p className="mt-1 text-foreground/90">{formatShortAlertMessage(run.alert_message)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : null}
 

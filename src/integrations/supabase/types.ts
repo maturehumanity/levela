@@ -782,6 +782,69 @@ export type Database = {
           },
         ]
       }
+      activation_demographic_feed_worker_runs: {
+        Row: {
+          adapter_id: string
+          alert_message: string
+          alert_severity: string
+          alert_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          observed_at: string
+          payload_hash: string | null
+          resolved_at: string | null
+          run_status: string
+          updated_at: string
+        }
+        Insert: {
+          adapter_id: string
+          alert_message: string
+          alert_severity?: string
+          alert_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          observed_at?: string
+          payload_hash?: string | null
+          resolved_at?: string | null
+          run_status: string
+          updated_at?: string
+        }
+        Update: {
+          adapter_id?: string
+          alert_message?: string
+          alert_severity?: string
+          alert_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          observed_at?: string
+          payload_hash?: string | null
+          resolved_at?: string | null
+          run_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_worker_runs_adapter_id_fkey"
+            columns: ["adapter_id"]
+            isOneToOne: false
+            referencedRelation: "activation_demographic_feed_adapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_demographic_feed_worker_runs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activation_demographic_feed_worker_schedule_policies: {
         Row: {
           claim_ttl_minutes: number

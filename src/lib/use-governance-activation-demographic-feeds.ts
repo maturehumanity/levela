@@ -17,6 +17,7 @@ import {
   type ActivationDemographicFeedIngestionRow,
   type ActivationDemographicFeedWorkerAlertSummaryRow,
   type ActivationDemographicFeedWorkerOutboxRow,
+  type ActivationDemographicFeedWorkerRunRow,
 } from '@/lib/governance-activation-demographic-feeds';
 import {
   hashActivationDemographicPayload,
@@ -50,6 +51,7 @@ export type ActivationDemographicFeedWorkerSchedulePolicyRow =
 const FEED_INGESTIONS_FIRST_PAGE = 120;
 /** Page size when loading older ingestions after the first page. */
 const FEED_INGESTIONS_APPEND_PAGE = 80;
+const FEED_WORKER_RECENT_RUNS_LIMIT = 35;
 
 export function useGovernanceActivationDemographicFeeds() {
   const [loadingFeedData, setLoadingFeedData] = useState(true);
@@ -71,6 +73,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [loadingMoreFeedIngestions, setLoadingMoreFeedIngestions] = useState(false);
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
   const [feedWorkerOutboxActiveJobs, setFeedWorkerOutboxActiveJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
+  const [feedWorkerRecentRuns, setFeedWorkerRecentRuns] = useState<ActivationDemographicFeedWorkerRunRow[]>([]);
   const [feedWorkerSchedulePolicy, setFeedWorkerSchedulePolicy] =
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
 
@@ -123,6 +126,7 @@ export function useGovernanceActivationDemographicFeeds() {
       workerSummaryResponse,
       pendingOutboxResponse,
       activeOutboxJobsResponse,
+      workerRunsResponse,
       schedulePolicyResponse,
     ] = await Promise.all([
       supabase
@@ -149,6 +153,11 @@ export function useGovernanceActivationDemographicFeeds() {
         .in('status', ['pending', 'claimed'])
         .order('updated_at', { ascending: false })
         .limit(25),
+      supabase
+        .from('activation_demographic_feed_worker_runs')
+        .select('*')
+        .order('observed_at', { ascending: false })
+        .limit(FEED_WORKER_RECENT_RUNS_LIMIT),
       supabase
         .from('activation_demographic_feed_worker_schedule_policies')
         .select('*')
@@ -217,6 +226,15 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerOutboxActiveJobs(
         (activeOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [],
       );
+    }
+
+    if (workerRunsResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(workerRunsResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setFeedWorkerRecentRuns([]);
+    } else {
+      setFeedWorkerRecentRuns((workerRunsResponse.data as ActivationDemographicFeedWorkerRunRow[]) || []);
     }
 
     if (schedulePolicyResponse.error) {
@@ -681,6 +699,7 @@ export function useGovernanceActivationDemographicFeeds() {
     loadingMoreFeedIngestions,
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
+    feedWorkerRecentRuns,
     feedWorkerSchedulePolicy,
     loadFeedData,
     loadMoreFeedIngestions,
