@@ -595,7 +595,7 @@ The next implementation sequence should now be:
 
 Step 5 kickoff artifact: [Verifier federation rollout plan v0.1](verifier-federation/rollout-plan-v0.1.md)
 
-Implementation tracking for Step 5 lives in that document (handoff status, steward polish notes, and **§9 headline federation rollout program %** for steward-facing progress reports).
+Implementation tracking for Step 5 lives in that document (handoff status, steward polish notes, **§9 headline federation rollout program %**, and **§10 multi-operator rehearsal checklist** for field sign-off).
 
 ## 15. Suggested Ownership Sequence
 
@@ -615,7 +615,7 @@ This roadmap is now the best repo-native handoff point for continuation. A new c
 - continue Levela decentralization from `docs/04-operations/dev/governance-implementation-roadmap-v0.1.md`
 - use `docs/03-governance/decentralized-transition-architecture.md` as the target architecture
 - start with `Section 14. Immediate Next Steps`
-- for **verifier mirror / federation rollout** status and headline program %, read `docs/04-operations/dev/verifier-federation/rollout-plan-v0.1.md` §8–§9 in the same session
+- for **verifier mirror / federation rollout** status, headline program %, and multi-operator rehearsal gate, read `docs/04-operations/dev/verifier-federation/rollout-plan-v0.1.md` §8–§10 in the same session
 
 The safest short continuation prompt is:
 

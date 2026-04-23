@@ -4,7 +4,7 @@ status: draft
 owners:
   - governance engineering
   - public audit operations
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # 1. Purpose
@@ -166,8 +166,25 @@ Percentages are **not precise engineering metrics**. Use two ideas:
 
 | Scope | Program % (headline) | Rationale |
 |------|----------------------|-----------|
-| **This rollout plan** (§4 Phases A–D) | **~99%** | Phase C.14 adds an hourly pg_cron tick for guardian relay attestation SLA alert sync plus critical external execution escalation refresh; Phase C.13 covers proof-distribution escalation automation; Phase C.12 covers federation distribution verification automation; remaining work is multi-operator rehearsal and production follow-ups. |
+| **This rollout plan** (§4 Phases A–D) | **~99%** | Phases C.12–C.14 add hourly pg_cron automation for federation distribution verification, guardian relay proof-distribution escalation, and guardian relay attestation SLA plus critical escalation; **§10** is the explicit multi-operator rehearsal gate before treating the program as production-closed. |
 | **Roadmap §14 slice** (minimized trusted-backend + federation exchange; items 1–5 in §14) | **~66–73%** | Mirror/federation/proof distribution baselines are substantial; items 1–3 still carry partial / productionize language in `governance-implementation-roadmap-v0.1.md`. |
 | **Roadmap §17** (full decentralization success condition) | **~30–38%** | Civic status, permission refactor, citizen governance UI, founder separation remain major pillars. |
 
 **Headline for steward reports:** federation rollout program **99%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
+
+# 10. Multi-operator rehearsal checklist (field gate)
+
+Use this list when **at least two independent mirror operators** (distinct trust domains or operators, not only two keys in one account) exercise the same public audit batch state. It closes the gap called out in **§2** (inter-operator exchange and accountability) at the **process** layer; schema and UI already exist.
+
+1. **Align on batch scope** — Pick a `governance_public_audit_batches` row (or a short-lived rehearsal batch) and record the batch id in the rehearsal notes.
+2. **Directory hash parity** — Both operators publish `governance_public_audit_verifier_mirror_directories` for that batch; confirm `directory_hash` matches or document intentional divergence and expected client behavior.
+3. **Digest parity (Phase A)** — Both sides run `governance_public_audit_verifier_federation_pkg_digest_text` / client `digest_source_text` SHA-256 checks on the same captured package payload so `package_hash` is reproducible across operators.
+4. **Capture and cosign (Phase B)** — Operator A runs `capture_governance_public_audit_verifier_federation_package`; Operator B (or a second approved signer) runs `sign_governance_public_audit_verifier_federation_package` until `governance_public_audit_verifier_federation_package_distribution_summary` shows **`distribution_ready`** for the rehearsal policy thresholds.
+5. **Distribution verification worker** — Each operator runs `run_governance_public_audit_verifier_federation_distribution_verification` (or relies on **`verifier_federation_distribution_verification_tick`** pg_cron) and agrees on alert taxonomy: stale package, bad signature, policy mismatch, and open alert counts trending to **clear** after remediation drills.
+6. **External execution paging** — Deliberately breach and clear a **non-production** condition so `verifier_federation_distribution_escalation`, `guardian_relay_proof_distribution_escalation`, `guardian_relay_critical_escalation`, and `activation_demographic_feed_worker_escalation` pages open and resolve as designed; confirm Governance hub (`/governance`) counts and deep links match the batch-bound page board.
+7. **Guardian relay automation** — With trust-minimized policy **on** for a rehearsal proposal, exercise capture/sign for `guardian_relay_quorum_client_proof_distribution`, then let **`guardian_relay_proof_distribution_escalation_tick`** and **`guardian_relay_attestation_sla_sync_tick`** run (or invoke `gpav_gr_proof_dist_esc_tick` / `gpav_gr_attestation_sla_sync_tick` manually as `postgres`) and confirm escalations refresh without a steward browser session.
+8. **Execution readiness (Phase C.6–C.8)** — On a **non-binding** rehearsal proposal, confirm `governance_proposal_is_execution_ready` and hub banners align with `governance_proposal_meets_verifier_federation_distribution_gate`, federation operations summary, and guardian relay distribution gate diagnostics.
+9. **Rotation continuity** — Walk `operator-signer-rotation-runbook-v0.1.md` §3–§6 on paper or in a sandbox tenant so signer governance, publisher rules, and client bundle trust quorum survive one simulated rotation.
+10. **Sign-off** — Named operators and a governance steward record date, batch id, package hash, and “rehearsal passed / follow-ups” in your change log or ticket; only then treat **§4 Phase C acceptance** as met in the field.
+
+**Cron cadence reference (when pg_cron is installed):** minute **5** attestation SLA / critical relay tick; minute **25** guardian proof-distribution escalation tick; minute **45** federation distribution verification tick; minute **15** activation demographic feed worker schedule tick (see §8b and Phases C.12–C.14).
