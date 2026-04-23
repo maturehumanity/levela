@@ -519,7 +519,11 @@ export function GovernanceActivationFeedAdaptersPanel({
             </span>
           </p>
           {feedWorkerOutboxActiveJobs.length === 0 ? (
-            <p className="text-xs text-muted-foreground">
+            <p
+              className="text-xs text-muted-foreground"
+              data-build-key="governanceActivationFeedOutboxActiveJobsEmpty"
+              data-build-label="No active sweep queue jobs"
+            >
               No jobs are pending or in progress right now.
             </p>
           ) : (
@@ -535,7 +539,13 @@ export function GovernanceActivationFeedAdaptersPanel({
                     data-build-label={`${adapterLabel} · ${job.status === 'claimed' ? 'Claimed' : 'Pending'} sweep job`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium text-foreground">{adapterLabel}</p>
+                      <p
+                        className="font-medium text-foreground"
+                        data-build-key={`governanceActivationFeedOutboxActiveJobAdapterTitle:${job.id}`}
+                        data-build-label={`Sweep queue adapter name (${adapterLabel})`}
+                      >
+                        {adapterLabel}
+                      </p>
                       <Badge
                         variant="outline"
                         className={job.status === 'claimed'
@@ -547,16 +557,30 @@ export function GovernanceActivationFeedAdaptersPanel({
                         {job.status === 'claimed' ? 'Claimed' : 'Pending'}
                       </Badge>
                     </div>
-                    <p className="mt-1">
+                    <p
+                      className="mt-1"
+                      data-build-key={`governanceActivationFeedOutboxActiveJobTimeline:${job.id}`}
+                      data-build-label="Sweep queue job request and claim times"
+                    >
                       Requested {formatTimestamp(job.requested_at)}
                       {job.claimed_at ? ` • claimed ${formatTimestamp(job.claimed_at)}` : ''}
                       {job.claim_expires_at ? ` • claim expires ${formatTimestamp(job.claim_expires_at)}` : ''}
                     </p>
                     {typeof job.attempt_count === 'number' && job.attempt_count > 0 ? (
-                      <p className="mt-0.5">Attempts {job.attempt_count}</p>
+                      <p
+                        className="mt-0.5"
+                        data-build-key={`governanceActivationFeedOutboxActiveJobAttempts:${job.id}`}
+                        data-build-label="Sweep queue job attempt count"
+                      >
+                        Attempts {job.attempt_count}
+                      </p>
                     ) : null}
                     {workerLabel ? (
-                      <p className="mt-0.5 break-all text-muted-foreground">
+                      <p
+                        className="mt-0.5 break-all text-muted-foreground"
+                        data-build-key={`governanceActivationFeedOutboxActiveJobWorker:${job.id}`}
+                        data-build-label="Sweep queue job worker identity"
+                      >
                         Worker: {workerLabel}
                       </p>
                     ) : null}
@@ -620,7 +644,11 @@ export function GovernanceActivationFeedAdaptersPanel({
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-2 pt-1">
               {feedWorkerOutboxRecentClosedJobs.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
+                <p
+                  className="text-xs text-muted-foreground"
+                  data-build-key="governanceActivationFeedOutboxClosedJobsEmpty"
+                  data-build-label="No closed sweep jobs in loaded window"
+                >
                   No completed, cancelled, or failed sweep jobs in the latest window.
                 </p>
               ) : (
@@ -641,7 +669,13 @@ export function GovernanceActivationFeedAdaptersPanel({
                         data-build-label={`${adapterLabel} · ${formatActivationDemographicFeedOutboxClosedStatusLabel(job.status)} sweep job`}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="font-medium text-foreground">{adapterLabel}</p>
+                          <p
+                            className="font-medium text-foreground"
+                            data-build-key={`governanceActivationFeedOutboxClosedJobAdapterTitle:${job.id}`}
+                            data-build-label={`Closed sweep queue adapter name (${adapterLabel})`}
+                          >
+                            {adapterLabel}
+                          </p>
                           <Badge
                             variant="outline"
                             className={statusBadgeClass}
@@ -651,7 +685,11 @@ export function GovernanceActivationFeedAdaptersPanel({
                             {formatActivationDemographicFeedOutboxClosedStatusLabel(job.status)}
                           </Badge>
                         </div>
-                        <p className="mt-1">
+                        <p
+                          className="mt-1"
+                          data-build-key={`governanceActivationFeedOutboxClosedJobTimeline:${job.id}`}
+                          data-build-label="Closed sweep job close and request times"
+                        >
                           Closed {formatTimestamp(closedAt)}
                           {job.requested_at ? ` • requested ${formatTimestamp(job.requested_at)}` : ''}
                         </p>
@@ -662,6 +700,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                                 ? 'mt-1 text-rose-700 dark:text-rose-300'
                                 : 'mt-1 text-muted-foreground'
                             }
+                            data-build-key={`governanceActivationFeedOutboxClosedJobMessage:${job.id}`}
+                            data-build-label="Closed sweep job resolution message"
                           >
                             {formatTruncatedGovernanceNote(job.error_message, 140)}
                           </p>
