@@ -437,7 +437,13 @@ export function GovernanceActivationFeedAdaptersPanel({
                           {job.requested_at ? ` • requested ${formatTimestamp(job.requested_at)}` : ''}
                         </p>
                         {job.error_message?.trim() ? (
-                          <p className="mt-1 text-rose-700 dark:text-rose-300">
+                          <p
+                            className={
+                              job.status === 'failed'
+                                ? 'mt-1 text-rose-700 dark:text-rose-300'
+                                : 'mt-1 text-muted-foreground'
+                            }
+                          >
                             {formatShortAlertMessage(job.error_message, 140)}
                           </p>
                         ) : null}
