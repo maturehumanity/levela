@@ -48,6 +48,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     runningFeedWorkers,
     schedulingFeedWorkerJobs,
     processingFeedOutbox,
+    releasingStaleFeedWorkerClaims,
     escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
     resolvingFeedAlertKey,
@@ -64,6 +65,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,
     processFeedWorkerOutboxQueue,
+    releaseStaleFeedWorkerClaims,
     runFeedWorkerSweep,
     escalateFeedWorkerAlertsToPublicExecution,
     resolveFeedAlert,
@@ -162,6 +164,17 @@ export function GovernanceActivationFeedAdaptersPanel({
             size="sm"
             variant="outline"
             className="gap-2"
+            onClick={() => void releaseStaleFeedWorkerClaims()}
+            disabled={releasingStaleFeedWorkerClaims || !canManageFeeds || feedWorkerBackendUnavailable}
+          >
+            {releasingStaleFeedWorkerClaims ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Release stuck sweep claims
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2"
             onClick={() => void runFeedWorkerSweep()}
             disabled={runningFeedWorkers || !canManageFeeds || feedWorkerBackendUnavailable}
           >
@@ -190,6 +203,9 @@ export function GovernanceActivationFeedAdaptersPanel({
             {Math.max(1, feedWorkerSchedulePolicy.default_interval_minutes)} minutes between due runs per adapter
             (unless an adapter sets its own interval). Stuck work releases after about{' '}
             {Math.max(1, feedWorkerSchedulePolicy.claim_ttl_minutes)} minutes.
+          </p>
+          <p>
+            If a browser session stops mid-queue, claims past that timeout return to pending automatically, or you can use Release stuck sweep claims to run the same cleanup on demand.
           </p>
           <p>
             When your Postgres instance has the hourly automation extension enabled, due jobs can enqueue on their own without leaving this screen open.

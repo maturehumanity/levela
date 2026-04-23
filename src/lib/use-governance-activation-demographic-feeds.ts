@@ -60,6 +60,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [runningFeedWorkers, setRunningFeedWorkers] = useState(false);
   const [schedulingFeedWorkerJobs, setSchedulingFeedWorkerJobs] = useState(false);
   const [processingFeedOutbox, setProcessingFeedOutbox] = useState(false);
+  const [releasingStaleFeedWorkerClaims, setReleasingStaleFeedWorkerClaims] = useState(false);
   const [escalatingFeedWorkerPublicExecution, setEscalatingFeedWorkerPublicExecution] = useState(false);
   const [resolvingFeedAlertKey, setResolvingFeedAlertKey] = useState<string | null>(null);
   const [pendingFeedOutboxCount, setPendingFeedOutboxCount] = useState(0);
@@ -423,6 +424,35 @@ export function useGovernanceActivationDemographicFeeds() {
     await loadFeedData();
   }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
 
+  const releaseStaleFeedWorkerClaims = useCallback(async () => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) {
+      return;
+    }
+
+    setReleasingStaleFeedWorkerClaims(true);
+    const { data, error } = await callUntypedRpc<number>('release_stale_activation_demographic_feed_worker_claims', {});
+
+    if (error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to release stale activation feed worker claims:', error);
+        toast.error('Could not release stuck sweep queue claims.');
+      }
+      setReleasingStaleFeedWorkerClaims(false);
+      return;
+    }
+
+    const released = typeof data === 'number' && Number.isFinite(data) ? Math.max(0, Math.floor(data)) : 0;
+    toast.success(
+      released > 0
+        ? `Released ${released} stuck sweep queue claim${released === 1 ? '' : 's'}.`
+        : 'No stuck claims were found on the sweep queue.',
+    );
+    setReleasingStaleFeedWorkerClaims(false);
+    await loadFeedData();
+  }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
+
   const processFeedWorkerOutboxQueue = useCallback(async () => {
     if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
 
@@ -620,6 +650,7 @@ export function useGovernanceActivationDemographicFeeds() {
     runningFeedWorkers,
     schedulingFeedWorkerJobs,
     processingFeedOutbox,
+    releasingStaleFeedWorkerClaims,
     escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
     resolvingFeedAlertKey,
@@ -636,6 +667,7 @@ export function useGovernanceActivationDemographicFeeds() {
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,
     processFeedWorkerOutboxQueue,
+    releaseStaleFeedWorkerClaims,
     runFeedWorkerSweep,
     escalateFeedWorkerAlertsToPublicExecution,
     resolveFeedAlert,
