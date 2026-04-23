@@ -422,7 +422,11 @@ export function GovernanceActivationFeedAdaptersPanel({
         >
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Active sweep queue jobs
-            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+            <span
+              className="ml-2 font-normal normal-case tracking-normal text-muted-foreground"
+              data-build-key="governanceActivationFeedOutboxActivePaginationStatus"
+              data-build-label="Active sweep queue pagination status"
+            >
               ({feedWorkerOutboxActiveJobs.length} loaded of {activeFeedOutboxCount}
               {feedWorkerOutboxActiveJobsHasMore ? ', more available' : ''})
             </span>
@@ -515,8 +519,13 @@ export function GovernanceActivationFeedAdaptersPanel({
                   : <ChevronRight className="h-4 w-4 shrink-0" />}
                 Recently closed sweep jobs
                 {' '}
-                ({feedWorkerOutboxRecentClosedJobs.length} loaded of {closedFeedOutboxCount}
-                {feedWorkerOutboxRecentClosedJobsHasMore ? ', more available' : ''})
+                <span
+                  data-build-key="governanceActivationFeedOutboxClosedPaginationStatus"
+                  data-build-label="Closed sweep queue pagination status"
+                >
+                  ({feedWorkerOutboxRecentClosedJobs.length} loaded of {closedFeedOutboxCount}
+                  {feedWorkerOutboxRecentClosedJobsHasMore ? ', more available' : ''})
+                </span>
                 {recentClosedSweepFailureCount > 0
                   ? ` · ${recentClosedSweepFailureCount} failed`
                   : ''}
@@ -972,7 +981,11 @@ export function GovernanceActivationFeedAdaptersPanel({
         >
           <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
             Worker freshness + signature alerts
-            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+            <span
+              className="ml-2 font-normal normal-case tracking-normal text-muted-foreground"
+              data-build-key="governanceActivationFeedWorkerAlertsPaginationStatus"
+              data-build-label="Feed worker alerts pagination status"
+            >
               ({visibleFeedWorkerAlerts.length} loaded{feedWorkerAlertsHasMore ? ', more available' : ''})
             </span>
           </p>
