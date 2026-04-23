@@ -48,6 +48,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     runningFeedWorkers,
     schedulingFeedWorkerJobs,
     processingFeedOutbox,
+    escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
@@ -61,6 +62,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     scheduleFeedWorkerJobs,
     processFeedWorkerOutboxQueue,
     runFeedWorkerSweep,
+    escalateFeedWorkerAlertsToPublicExecution,
     resolveFeedAlert,
   } = useGovernanceActivationDemographicFeeds();
 
@@ -181,6 +183,25 @@ export function GovernanceActivationFeedAdaptersPanel({
           <p>
             When your Postgres instance has the hourly automation extension enabled, due jobs can enqueue on their own without leaving this screen open.
           </p>
+        </div>
+      ) : null}
+
+      {canManageFeeds && !feedWorkerBackendUnavailable ? (
+        <div className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+          <p>
+            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Resolve open pages under Public audit, then Immutable anchoring automation, using the on-call page board.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="mt-2 w-full gap-2 sm:w-auto"
+            disabled={escalatingFeedWorkerPublicExecution}
+            onClick={() => void escalateFeedWorkerAlertsToPublicExecution()}
+          >
+            {escalatingFeedWorkerPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Update on-call page for feed worker alerts
+          </Button>
         </div>
       ) : null}
 

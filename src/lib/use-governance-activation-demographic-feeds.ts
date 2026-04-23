@@ -55,6 +55,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [runningFeedWorkers, setRunningFeedWorkers] = useState(false);
   const [schedulingFeedWorkerJobs, setSchedulingFeedWorkerJobs] = useState(false);
   const [processingFeedOutbox, setProcessingFeedOutbox] = useState(false);
+  const [escalatingFeedWorkerPublicExecution, setEscalatingFeedWorkerPublicExecution] = useState(false);
   const [resolvingFeedAlertKey, setResolvingFeedAlertKey] = useState<string | null>(null);
   const [pendingFeedOutboxCount, setPendingFeedOutboxCount] = useState(0);
   const [feedAdapters, setFeedAdapters] = useState<ActivationDemographicFeedAdapterRow[]>([]);
@@ -511,6 +512,35 @@ export function useGovernanceActivationDemographicFeeds() {
     toast.success(`Feed worker sweep completed: ${stats.ingested} signed snapshots ingested.`);
   }, [canManageFeeds, feedAdapters, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData, recordFeedWorkerRun, runningFeedWorkers]);
 
+  const escalateFeedWorkerAlertsToPublicExecution = useCallback(async () => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
+
+    setEscalatingFeedWorkerPublicExecution(true);
+
+    const { error } = await callUntypedRpc<unknown>('maybe_escalate_activation_feed_worker_exec_page', {
+      target_batch_id: null,
+      requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
+      escalation_context: {
+        source: 'governance_activation_feed_adapters_panel',
+      },
+    });
+
+    if (error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to escalate activation demographic feed worker alerts:', error);
+        toast.error('Could not update the public audit on-call page for feed worker alerts.');
+      }
+      setEscalatingFeedWorkerPublicExecution(false);
+      return;
+    }
+
+    toast.success('Public audit on-call page evaluated for activation feed worker alerts.');
+    setEscalatingFeedWorkerPublicExecution(false);
+    await loadFeedData();
+  }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
+
   const resolveFeedAlert = useCallback(async (adapterId: string, alertType: ActivationDemographicFeedAlertType | null = null) => {
     if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
 
@@ -548,6 +578,7 @@ export function useGovernanceActivationDemographicFeeds() {
     runningFeedWorkers,
     schedulingFeedWorkerJobs,
     processingFeedOutbox,
+    escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
@@ -561,6 +592,7 @@ export function useGovernanceActivationDemographicFeeds() {
     scheduleFeedWorkerJobs,
     processFeedWorkerOutboxQueue,
     runFeedWorkerSweep,
+    escalateFeedWorkerAlertsToPublicExecution,
     resolveFeedAlert,
   };
 }
