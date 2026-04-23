@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
+  GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
   isMissingPublicAuditAutomationBackend,
   readGovernancePublicAuditExternalExecutionPageBoardRows,
 } from '@/lib/governance-public-audit-automation';
@@ -136,7 +137,7 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
         .limit(12),
       callUntypedRpc<unknown[]>('governance_public_audit_external_execution_page_board', {
         requested_batch_id: args.latestBatchId,
-        max_pages: 120,
+        max_pages: GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
       }),
     ]);
 

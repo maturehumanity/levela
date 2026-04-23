@@ -5,6 +5,9 @@ export type GovernancePublicAuditImmutableAnchorRow = Database['public']['Tables
 export type GovernancePublicAuditVerifierJobRow = Database['public']['Tables']['governance_public_audit_verifier_jobs']['Row'];
 export type GovernancePublicAuditAnchorExecutionJobStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
 
+/** Page size for `governance_public_audit_external_execution_page_board` (automation, federation steward load, Governance hub). */
+export const GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES = 120;
+
 export interface GovernancePublicAuditOperationsSlaSummary {
   batchId: string;
   pendingSlaHours: number;
