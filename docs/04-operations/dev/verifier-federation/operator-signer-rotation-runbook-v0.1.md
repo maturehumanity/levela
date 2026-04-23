@@ -27,6 +27,7 @@ Operational steps for **Phase D** of `rollout-plan-v0.1.md` (same folder): rotat
 5. **Capture** a new federation distribution package (`capture_governance_public_audit_verifier_federation_package`). If capture fails with the governance-approved publisher error, the effective directory still points at a signer who is not approved—fix signer governance before retrying.
 6. Have **independent approved directory signers** cosign via `sign_governance_public_audit_verifier_federation_package` until `governance_public_audit_verifier_federation_package_distribution_summary` shows `distribution_ready` for your policy thresholds.
 7. Optional: run `run_governance_public_audit_verifier_federation_distribution_verification` from the steward UI (or rely on the hourly **pg_cron** job `verifier_federation_distribution_verification_tick` when pg_cron is installed) and resolve any `federation_distribution_*` alerts until ops summaries show verification **fresh** and alert counts at zero where policy demands it.
+8. Optional: for trust-minimized guardian relay client proof distribution, rely on the hourly **pg_cron** job `guardian_relay_proof_distribution_escalation_tick` (when installed) to refresh `guardian_relay_proof_distribution_escalation` external execution paging for recent approved proposals, or continue invoking `maybe_escalate_guardian_relay_proof_distribution_exec_page` from steward flows after captures and signatures.
 
 # 4. Rotate a federation operator (onboarding path)
 

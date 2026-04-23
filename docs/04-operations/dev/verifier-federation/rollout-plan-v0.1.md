@@ -131,6 +131,7 @@ Step 5 is considered started when:
 - **Phase B (queryable history)** — RPC `governance_public_audit_verifier_federation_dist_pkg_history` returns recent packages for the batch with per-row `signature_count`; steward UI lists “Recent federation packages”.
 - **Phase C.3 (escalation)** — `run_governance_public_audit_verifier_federation_distribution_verification` calls `maybe_escalate_verifier_federation_distribution_execution_page` when open distribution alerts remain, opening external execution page `verifier_federation_distribution_escalation` at critical severity.
 - **Phase C.12 (pg_cron distribution verification tick)** — Optional **pg_cron** job `verifier_federation_distribution_verification_tick` (hourly at minute **45**) calls **`gpav_federation_dist_verification_cron_tick`** (short Postgres-safe symbol; avoids 63-char name collision with `run_governance_public_audit_verifier_federation_distribution_verification`), which runs the same distribution verification path as stewards under a **superuser-only** entrypoint with narrow authorization for distribution federation alert scopes, `package_distribution_verification` worker runs, and `verifier_federation_distribution_escalation` external execution paging (`20260423120000_…sql`, repair `20260423121000_…sql` if upgrading from the first apply).
+- **Phase C.13 (pg_cron guardian relay proof distribution escalation tick)** — Optional **pg_cron** job `guardian_relay_proof_distribution_escalation_tick` (hourly at minute **25**) calls **`gpav_gr_proof_dist_esc_tick`**, which walks the **40** most recently updated **approved** proposals and invokes **`maybe_escalate_guardian_relay_proof_distribution_exec_page`** (no-op unless trust-minimized quorum policy is on and client proof distribution is still not ready). Superuser sessions may run that escalation path and open or refresh **`guardian_relay_proof_distribution_escalation`** external execution paging only (`20260423130000_…sql`).
 
 ## Phase D (governance handoff)
 
@@ -164,8 +165,8 @@ Percentages are **not precise engineering metrics**. Use two ideas:
 
 | Scope | Program % (headline) | Rationale |
 |------|----------------------|-----------|
-| **This rollout plan** (§4 Phases A–D) | **~98%** | Phase C.12 adds an hourly pg_cron tick for federation package distribution verification (alerts, worker runs, external execution escalation) without a browser session, with superuser-only automation hooks aligned to distribution alert scopes; remaining work is multi-operator rehearsal and production follow-ups. |
+| **This rollout plan** (§4 Phases A–D) | **~99%** | Phase C.13 adds an hourly pg_cron tick that re-evaluates guardian relay client proof distribution escalation for recent approved proposals (aligned with external execution paging and trust-minimized policy gates); Phase C.12 covers federation distribution verification automation; remaining work is multi-operator rehearsal and production follow-ups. |
 | **Roadmap §14 slice** (minimized trusted-backend + federation exchange; items 1–5 in §14) | **~66–73%** | Mirror/federation/proof distribution baselines are substantial; items 1–3 still carry partial / productionize language in `governance-implementation-roadmap-v0.1.md`. |
 | **Roadmap §17** (full decentralization success condition) | **~30–38%** | Civic status, permission refactor, citizen governance UI, founder separation remain major pillars. |
 
-**Headline for steward reports:** federation rollout program **98%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
+**Headline for steward reports:** federation rollout program **99%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
