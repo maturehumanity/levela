@@ -45,6 +45,11 @@ function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
 export type ActivationDemographicFeedWorkerSchedulePolicyRow =
   Database['public']['Tables']['activation_demographic_feed_worker_schedule_policies']['Row'];
 
+/** First page size for steward ingestion history (matches prior single-query limit). */
+const FEED_INGESTIONS_FIRST_PAGE = 120;
+/** Page size when loading older ingestions after the first page. */
+const FEED_INGESTIONS_APPEND_PAGE = 80;
+
 export function useGovernanceActivationDemographicFeeds() {
   const [loadingFeedData, setLoadingFeedData] = useState(true);
   const [feedBackendUnavailable, setFeedBackendUnavailable] = useState(false);
@@ -60,6 +65,8 @@ export function useGovernanceActivationDemographicFeeds() {
   const [pendingFeedOutboxCount, setPendingFeedOutboxCount] = useState(0);
   const [feedAdapters, setFeedAdapters] = useState<ActivationDemographicFeedAdapterRow[]>([]);
   const [feedIngestions, setFeedIngestions] = useState<ActivationDemographicFeedIngestionRow[]>([]);
+  const [feedIngestionsHasMore, setFeedIngestionsHasMore] = useState(false);
+  const [loadingMoreFeedIngestions, setLoadingMoreFeedIngestions] = useState(false);
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
   const [feedWorkerSchedulePolicy, setFeedWorkerSchedulePolicy] =
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
@@ -123,7 +130,7 @@ export function useGovernanceActivationDemographicFeeds() {
         .from('activation_demographic_feed_ingestions')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(120),
+        .range(0, FEED_INGESTIONS_FIRST_PAGE - 1),
       supabase.rpc('current_profile_can_manage_activation_demographic_feeds'),
       callUntypedRpc<ActivationDemographicFeedWorkerAlertSummaryRow[]>('activation_demographic_feed_worker_alert_summary', {
         requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
@@ -142,6 +149,7 @@ export function useGovernanceActivationDemographicFeeds() {
     const sharedError = adapterResponse.error || ingestionResponse.error || permissionResponse.error;
     if (isMissingActivationDemographicFeedBackend(sharedError)) {
       setFeedBackendUnavailable(true);
+      setFeedIngestionsHasMore(false);
       setLoadingFeedData(false);
       return;
     }
@@ -153,13 +161,16 @@ export function useGovernanceActivationDemographicFeeds() {
         permissionError: permissionResponse.error,
       });
       toast.error('Could not load signed demographic feed data.');
+      setFeedIngestionsHasMore(false);
       setLoadingFeedData(false);
       return;
     }
 
     const adapters = (adapterResponse.data as ActivationDemographicFeedAdapterRow[]) || [];
+    const ingestions = (ingestionResponse.data as ActivationDemographicFeedIngestionRow[]) || [];
     setFeedAdapters(adapters);
-    setFeedIngestions((ingestionResponse.data as ActivationDemographicFeedIngestionRow[]) || []);
+    setFeedIngestions(ingestions);
+    setFeedIngestionsHasMore(ingestions.length === FEED_INGESTIONS_FIRST_PAGE);
     setCanManageFeeds(Boolean(permissionResponse.data));
     setFeedBackendUnavailable(false);
 
@@ -204,6 +215,37 @@ export function useGovernanceActivationDemographicFeeds() {
   useEffect(() => {
     void loadFeedData();
   }, [loadFeedData]);
+
+  const loadMoreFeedIngestions = useCallback(async () => {
+    if (feedBackendUnavailable || loadingMoreFeedIngestions || !feedIngestionsHasMore) {
+      return;
+    }
+
+    setLoadingMoreFeedIngestions(true);
+    const offset = feedIngestions.length;
+
+    const { data, error } = await supabase
+      .from('activation_demographic_feed_ingestions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + FEED_INGESTIONS_APPEND_PAGE - 1);
+
+    if (error) {
+      console.error('Failed to load older activation feed ingestions:', error);
+      if (isMissingActivationDemographicFeedBackend(error)) {
+        setFeedBackendUnavailable(true);
+      } else {
+        toast.error('Could not load older signed feed ingestions.');
+      }
+      setLoadingMoreFeedIngestions(false);
+      return;
+    }
+
+    const rows = (data as ActivationDemographicFeedIngestionRow[]) || [];
+    setFeedIngestions((previous) => [...previous, ...rows]);
+    setFeedIngestionsHasMore(rows.length === FEED_INGESTIONS_APPEND_PAGE);
+    setLoadingMoreFeedIngestions(false);
+  }, [feedBackendUnavailable, feedIngestions.length, feedIngestionsHasMore, loadingMoreFeedIngestions]);
 
   const fetchFeedAdapterById = useCallback(async (adapterId: string) => {
     const { data, error } = await supabase
@@ -584,9 +626,12 @@ export function useGovernanceActivationDemographicFeeds() {
     openFeedWorkerAlertsCount,
     feedAdapters,
     feedIngestions,
+    feedIngestionsHasMore,
+    loadingMoreFeedIngestions,
     feedWorkerAlerts,
     feedWorkerSchedulePolicy,
     loadFeedData,
+    loadMoreFeedIngestions,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,

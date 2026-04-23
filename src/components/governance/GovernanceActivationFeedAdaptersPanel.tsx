@@ -54,9 +54,12 @@ export function GovernanceActivationFeedAdaptersPanel({
     openFeedWorkerAlertsCount,
     feedAdapters,
     feedIngestions,
+    feedIngestionsHasMore,
+    loadingMoreFeedIngestions,
     feedWorkerAlerts,
     feedWorkerSchedulePolicy,
     loadFeedData,
+    loadMoreFeedIngestions,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,
@@ -89,6 +92,14 @@ export function GovernanceActivationFeedAdaptersPanel({
     () => feedAdapters.filter((adapter) => adapter.is_active),
     [feedAdapters],
   );
+
+  const feedAdapterNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const adapter of feedAdapters) {
+      map.set(adapter.id, adapter.adapter_name);
+    }
+    return map;
+  }, [feedAdapters]);
 
   if (feedBackendUnavailable) {
     return (
@@ -464,12 +475,39 @@ export function GovernanceActivationFeedAdaptersPanel({
       )}
 
       {feedIngestions.length > 0 && (
-        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-          {feedIngestions.slice(0, 4).map((ingestion) => (
-            <p key={ingestion.id}>
-              {ingestion.scope_type === 'world' ? 'World' : ingestion.country_code} • {ingestion.ingestion_status} • {formatTimestamp(ingestion.created_at)}
-            </p>
-          ))}
+        <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/50 p-2.5">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Recent signed ingestions
+            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+              ({feedIngestions.length} loaded{feedIngestionsHasMore ? ', more available' : ''})
+            </span>
+          </p>
+          <div className="max-h-56 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+            {feedIngestions.map((ingestion) => {
+              const adapterLabel = feedAdapterNameById.get(ingestion.adapter_id) ?? 'Adapter';
+              const scopeLabel = ingestion.scope_type === 'world' ? 'World' : ingestion.country_code;
+              return (
+                <p key={ingestion.id}>
+                  {adapterLabel} • {scopeLabel} • population {ingestion.target_population} • {ingestion.ingestion_status}
+                  {' • '}
+                  observed {formatTimestamp(ingestion.observed_at)} • recorded {formatTimestamp(ingestion.created_at)}
+                </p>
+              );
+            })}
+          </div>
+          {feedIngestionsHasMore ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={loadingMoreFeedIngestions || feedBackendUnavailable}
+              onClick={() => void loadMoreFeedIngestions()}
+            >
+              {loadingMoreFeedIngestions ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Load older ingestions
+            </Button>
+          ) : null}
         </div>
       )}
     </div>
