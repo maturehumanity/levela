@@ -148,6 +148,7 @@ Step 5 is considered started when:
 - **Steward polish (execution page board paging)** — Governance hub, verifier federation steward load, and immutable anchoring automation hooks request **`max_pages: 120`** for `governance_public_audit_external_execution_page_board` so high-churn batches surface more open pages before client-side truncation.
 - **Steward polish (stewardship hash scroll layout)** — Public audit anchoring and Activation stewardship anchor cards use Tailwind **`scroll-mt-24`** so in-app fragment navigation clears typical sticky chrome.
 - **Phase C.11 (activation demographic feed escalation on Governance)** — Same external execution page board counts **open or acknowledged** pages whose `page_key` contains `activation_demographic_feed` (worker escalation); stewardship deep link uses `#stewardship-activation-review` on the Activation stewardship card, and Governance admin scrolls smoothly to the matching hash when present.
+- **Steward polish (governance hub execution board batch binding)** — Before paging external execution pages, the Governance hub resolves the latest `governance_public_audit_batches.id` (same ordering as anchoring UI) and passes **`requested_batch_id`** into `governance_public_audit_external_execution_page_board` when present, so on-call escalation counts stay tied to the visible latest batch row instead of relying only on the RPC default.
 
 ## 9. Approximate decentralization progress (indicative)
 

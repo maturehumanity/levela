@@ -669,7 +669,13 @@ export default function Governance() {
     setBackendUnavailable(false);
 
     const gateProposalId = nextProposals[0]?.id ?? '00000000-0000-0000-0000-000000000000';
-    const [failoverSummaryResponse, federationDistributionGateResponse, federationOpsSummaryResponse, executionPageBoardResponse] = await Promise.all([
+    const [latestBatchRowResponse, failoverSummaryResponse, federationDistributionGateResponse, federationOpsSummaryResponse] = await Promise.all([
+      supabase
+        .from('governance_public_audit_batches')
+        .select('id')
+        .order('batch_index', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
       supabase.rpc('governance_public_audit_verifier_mirror_failover_policy_summary', { requested_policy_key: 'default' }),
       supabase.rpc('governance_proposal_meets_verifier_federation_distribution_gate', { target_proposal_id: gateProposalId }),
       supabase.rpc('governance_public_audit_verifier_mirror_federation_operations_summary', {
@@ -677,10 +683,22 @@ export default function Governance() {
         requested_lookback_hours: 24,
         requested_alert_sla_hours: 12,
       }),
-      supabase.rpc('governance_public_audit_external_execution_page_board', {
-        max_pages: 120,
-      }),
     ]);
+
+    let latestPublicAuditBatchId: string | undefined;
+    if (latestBatchRowResponse.error) {
+      const batchErr = latestBatchRowResponse.error;
+      if (batchErr.code !== '42P01' && batchErr.code !== 'PGRST205') {
+        console.warn('Could not load latest public audit batch id for governance hub:', batchErr);
+      }
+    } else if (latestBatchRowResponse.data?.id) {
+      latestPublicAuditBatchId = latestBatchRowResponse.data.id;
+    }
+
+    const executionPageBoardResponse = await supabase.rpc('governance_public_audit_external_execution_page_board', {
+      ...(latestPublicAuditBatchId ? { requested_batch_id: latestPublicAuditBatchId } : {}),
+      max_pages: 120,
+    });
     const verifierGateError = failoverSummaryResponse.error || federationDistributionGateResponse.error;
     if (verifierGateError && isMissingPublicAuditVerifierBackend(verifierGateError)) {
       setVerifierFederationExecutionGate(null);
