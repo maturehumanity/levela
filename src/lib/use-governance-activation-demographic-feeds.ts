@@ -11,6 +11,7 @@ import {
 } from '@/lib/governance-activation-demographic-feed-workers';
 import {
   isMissingActivationDemographicFeedBackend,
+  isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
   type ActivationDemographicFeedAdapterRow,
   type ActivationDemographicFeedAlertType,
@@ -24,23 +25,6 @@ import {
   verifyActivationDemographicPayloadSignature,
 } from '@/lib/governance-activation-demographic-signing';
 import { appendUniqueById } from '@/lib/governance-activation-demographic-feed-pagination';
-
-type RpcErrorLike = {
-  code?: string | null;
-  message?: string | null;
-  details?: string | null;
-} | null;
-
-function isMissingFeedSchedulerAutomationStatusFunction(error: RpcErrorLike) {
-  if (!error) {
-    return false;
-  }
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === 'PGRST202'
-    && message.includes('activation_demographic_feed_worker_schedule_automation_status')
-  );
-}
 
 export type ActivationDemographicFeedWorkerSchedulePolicyRow =
   Database['public']['Tables']['activation_demographic_feed_worker_schedule_policies']['Row'];
@@ -318,7 +302,7 @@ export function useGovernanceActivationDemographicFeeds() {
 
     if (scheduleAutomationStatusResponse?.error) {
       const statusError = scheduleAutomationStatusResponse.error;
-      if (isMissingFeedSchedulerAutomationStatusFunction(statusError)) {
+      if (isMissingActivationDemographicFeedSchedulerStatusRpc(statusError)) {
         setFeedWorkerScheduleAutomationStatus(null);
       } else if (isMissingActivationDemographicFeedWorkerBackend(statusError)) {
         setFeedWorkerBackendUnavailable(true);

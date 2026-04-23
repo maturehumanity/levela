@@ -42,11 +42,24 @@ const activationDemographicFeedWorkerBackendTokens = [
   'release_stale_activation_demographic_feed_worker_claims',
   'schedule_activation_demographic_feed_worker_jobs_impl',
   'run_activation_demographic_feed_worker_schedule_automation',
-  'activation_demographic_feed_worker_schedule_automation_status',
 ] as const;
 
 function includesMissingBackendToken(message: string, tokens: readonly string[]) {
   return tokens.some((token) => message.includes(token));
+}
+
+/** PostgREST “function not found” for the optional scheduler status RPC alone (older DB migrations). */
+export function isMissingActivationDemographicFeedSchedulerStatusRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) {
+    return false;
+  }
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('activation_demographic_feed_worker_schedule_automation_status')
+  );
 }
 
 export function isMissingActivationDemographicFeedBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
@@ -62,6 +75,9 @@ export function isMissingActivationDemographicFeedBackend(error: { code?: string
 
 export function isMissingActivationDemographicFeedWorkerBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
+  if (isMissingActivationDemographicFeedSchedulerStatusRpc(error)) {
+    return false;
+  }
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
   return (
     error.code === '42P01'
