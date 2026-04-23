@@ -296,6 +296,34 @@ describe('governance-public-audit-automation helpers', () => {
     expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'verifier_federation_distribution')).toBe(1);
   });
 
+  it('counts open guardian relay external execution pages by page key substring', () => {
+    const pages = [
+      {
+        pageId: 'g1',
+        batchId: 'b1',
+        pageKey: 'guardian_relay_proof_distribution_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'acknowledged' as const,
+        pageMessage: 'Relay proof distribution needs attention',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T00:00:00.000Z',
+        resolvedAt: null,
+      },
+      {
+        pageId: 'g2',
+        batchId: 'b1',
+        pageKey: 'guardian_relay_critical_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'resolved' as const,
+        pageMessage: 'Cleared',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T01:00:00.000Z',
+        resolvedAt: '2026-04-21T02:00:00.000Z',
+      },
+    ];
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'guardian_relay')).toBe(1);
+  });
+
   it('formats queue job status labels for stewards', () => {
     expect(formatGovernancePublicAuditQueueJobStatusLabel('pending')).toBe('Pending');
     expect(formatGovernancePublicAuditQueueJobStatusLabel('COMPLETED')).toBe('Completed');

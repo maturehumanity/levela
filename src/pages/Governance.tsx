@@ -64,6 +64,11 @@ import {
   type GovernanceExecutionUnitRow,
 } from '@/lib/governance-implementation';
 import {
+  countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
+  isMissingPublicAuditAutomationBackend,
+  readGovernancePublicAuditExternalExecutionPageBoardRows,
+} from '@/lib/governance-public-audit-automation';
+import {
   isMissingPublicAuditVerifierBackend,
   readGovernancePublicAuditVerifierMirrorFailoverPolicySummary,
   readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
@@ -177,6 +182,7 @@ export default function Governance() {
     distributionGateMet: boolean;
     federationOps: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   } | null>(null);
+  const [guardianRelayEscalationOpenPageCount, setGuardianRelayEscalationOpenPageCount] = useState(0);
   const isNativeMobileGovernanceDevice = useMemo(() => isNativeGovernanceApp(), []);
 
   const projectedCitizenshipStatus = useMemo(
@@ -571,6 +577,7 @@ export default function Governance() {
     if (primaryError && isMissingGovernanceProposalBackend(primaryError)) {
       setBackendUnavailable(true);
       setVerifierFederationExecutionGate(null);
+      setGuardianRelayEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
     }
@@ -591,6 +598,7 @@ export default function Governance() {
       });
       toast.error(t('governanceHub.loadFailed'));
       setVerifierFederationExecutionGate(null);
+      setGuardianRelayEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
     }
@@ -654,13 +662,16 @@ export default function Governance() {
     setBackendUnavailable(false);
 
     const gateProposalId = nextProposals[0]?.id ?? '00000000-0000-0000-0000-000000000000';
-    const [failoverSummaryResponse, federationDistributionGateResponse, federationOpsSummaryResponse] = await Promise.all([
+    const [failoverSummaryResponse, federationDistributionGateResponse, federationOpsSummaryResponse, executionPageBoardResponse] = await Promise.all([
       supabase.rpc('governance_public_audit_verifier_mirror_failover_policy_summary', { requested_policy_key: 'default' }),
       supabase.rpc('governance_proposal_meets_verifier_federation_distribution_gate', { target_proposal_id: gateProposalId }),
       supabase.rpc('governance_public_audit_verifier_mirror_federation_operations_summary', {
         requested_policy_key: 'default',
         requested_lookback_hours: 24,
         requested_alert_sla_hours: 12,
+      }),
+      supabase.rpc('governance_public_audit_external_execution_page_board', {
+        max_pages: 80,
       }),
     ]);
     const verifierGateError = failoverSummaryResponse.error || federationDistributionGateResponse.error;
@@ -684,6 +695,18 @@ export default function Governance() {
         distributionGateMet: Boolean(federationDistributionGateResponse.data),
         federationOps,
       });
+    }
+
+    if (!executionPageBoardResponse.error) {
+      const executionPages = readGovernancePublicAuditExternalExecutionPageBoardRows(executionPageBoardResponse.data);
+      setGuardianRelayEscalationOpenPageCount(
+        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'guardian_relay'),
+      );
+    } else if (isMissingPublicAuditAutomationBackend(executionPageBoardResponse.error)) {
+      setGuardianRelayEscalationOpenPageCount(0);
+    } else {
+      console.warn('Could not load external execution page board for governance hub:', executionPageBoardResponse.error);
+      setGuardianRelayEscalationOpenPageCount(0);
     }
 
     setLoadingHub(false);
@@ -1545,6 +1568,15 @@ export default function Governance() {
                     )}
                   </div>
                 )}
+              </Card>
+            )}
+
+            {guardianRelayEscalationOpenPageCount > 0 && (
+              <Card className="rounded-2xl border-sky-500/30 bg-sky-500/5 p-4 text-sm shadow-sm">
+                <p className="font-medium text-foreground">{t('governanceHub.guardianRelayEscalationBannerTitle')}</p>
+                <p className="mt-2 text-muted-foreground">
+                  {t('governanceHub.guardianRelayEscalationBannerBody', { count: guardianRelayEscalationOpenPageCount })}
+                </p>
               </Card>
             )}
 
