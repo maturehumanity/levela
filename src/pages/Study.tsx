@@ -42,7 +42,6 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 import { permissionListHasAny } from '@/lib/access-control';
 import { CONSTITUTION_ARTICLE_BOOKMARK_PREFIX, CONSTITUTION_STUDY_SECTIONS } from '@/lib/constitution-study';
 import {
@@ -51,6 +50,7 @@ import {
   FOUNDATION_STUDY_DOCUMENT_KEYS,
   filterStudyDocumentsByQuery,
   getFoundationCompletionMetrics,
+  isMissingStudyBackend,
   STUDY_PROPOSALS,
   STUDY_DOCUMENTS,
   type StudyCertificationStatus,
@@ -161,24 +161,10 @@ const materialTypeIcons: Record<StudyMaterialType, ComponentType<{ className?: s
   guide: FileText,
 };
 
-type ProgressRow = Database['public']['Tables']['study_progress']['Row'];
-type BookmarkRow = Database['public']['Tables']['study_bookmarks']['Row'];
-type CertificationRow = Database['public']['Tables']['study_certifications']['Row'];
 type BookmarkTarget = {
   key: string;
   title: string;
 };
-
-function isMissingStudyBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
-  if (!error) return false;
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === '42P01'
-    || error.code === 'PGRST205'
-    || message.includes('study_')
-    || message.includes('monetary_policy_')
-  );
-}
 
 function constitutionArticleHeading(markdown: string) {
   const line = markdown
@@ -325,15 +311,15 @@ export default function Study() {
         return;
       }
 
-      const nextProgress = (progressResponse.data as ProgressRow[]).reduce<Record<string, number>>(
+      const nextProgress = (progressResponse.data ?? []).reduce<Record<string, number>>(
         (accumulator, row) => {
           accumulator[row.document_key] = row.progress_percent;
           return accumulator;
         },
         {},
       );
-      const nextBookmarks = new Set((bookmarksResponse.data as BookmarkRow[]).map((row) => row.document_key));
-      const nextCertification = ((certificationResponse.data as CertificationRow | null)?.status || 'pending') as StudyCertificationStatus;
+      const nextBookmarks = new Set((bookmarksResponse.data ?? []).map((row) => row.document_key));
+      const nextCertification = (certificationResponse.data?.status ?? 'pending') as StudyCertificationStatus;
 
       setProgressByKey(nextProgress);
       setBookmarks(nextBookmarks);

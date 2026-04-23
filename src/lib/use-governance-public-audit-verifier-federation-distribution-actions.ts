@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { asIntegerOrNull, callUntypedRpc } from '@/lib/governance-rpc';
+import { supabase } from '@/integrations/supabase/client';
+import { asIntegerOrNull } from '@/lib/governance-rpc';
 
 interface UseGovernancePublicAuditVerifierFederationDistributionActionsArgs {
   latestBatchId: string | null;
@@ -24,7 +25,7 @@ export function useGovernancePublicAuditVerifierFederationDistributionActions({
     if (federationBackendUnavailable || !canManageMirrorFederation) return;
 
     setCapturingFederationPackage(true);
-    const { error } = await callUntypedRpc<string>('capture_governance_public_audit_verifier_federation_package', {
+    const { error } = await supabase.rpc('capture_governance_public_audit_verifier_federation_package', {
       target_batch_id: latestBatchId,
       requested_policy_key: 'default',
       package_notes: packageNotes.trim() || null,
@@ -67,7 +68,7 @@ export function useGovernancePublicAuditVerifierFederationDistributionActions({
     }
 
     setSigningFederationPackage(true);
-    const { error } = await callUntypedRpc<string>('sign_governance_public_audit_verifier_federation_package', {
+    const { error } = await supabase.rpc('sign_governance_public_audit_verifier_federation_package', {
       target_package_id: packageId,
       signer_key: signerKey,
       signature,
@@ -98,17 +99,15 @@ export function useGovernancePublicAuditVerifierFederationDistributionActions({
     if (federationBackendUnavailable || !canManageMirrorFederation) return;
 
     setVerifyingFederationDistribution(true);
-    const { data, error } = await callUntypedRpc<Array<{ run_status?: unknown }>>(
-      'run_governance_public_audit_verifier_federation_distribution_verification',
-      {
-        target_batch_id: latestBatchId,
-        requested_policy_key: 'default',
-        stale_after_hours: asIntegerOrNull(staleAfterHours),
-        run_metadata: {
-          source: 'governance_public_audit_verifier_panel',
-        },
+    const staleHours = asIntegerOrNull(staleAfterHours);
+    const { data, error } = await supabase.rpc('run_governance_public_audit_verifier_federation_distribution_verification', {
+      target_batch_id: latestBatchId,
+      requested_policy_key: 'default',
+      stale_after_hours: staleHours ?? undefined,
+      run_metadata: {
+        source: 'governance_public_audit_verifier_panel',
       },
-    );
+    });
 
     if (error) {
       console.error('Failed to run verifier federation distribution verification:', error);

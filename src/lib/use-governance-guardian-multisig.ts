@@ -55,8 +55,8 @@ export function useGovernanceGuardianMultisig(args: { profileId: string | null |
       return;
     }
 
-    setGuardianPolicy((policyResponse.data as GuardianMultisigPolicyRow | null) || null);
-    setGuardianSigners((signersResponse.data as GuardianExternalSignerRow[]) || []);
+    setGuardianPolicy(policyResponse.data ?? null);
+    setGuardianSigners(signersResponse.data ?? []);
     setGuardianMultisigBackendUnavailable(false);
     setLoadingGuardianMultisig(false);
   }, []);

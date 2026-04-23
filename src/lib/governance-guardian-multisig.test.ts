@@ -16,6 +16,32 @@ describe('governance guardian multisig helpers', () => {
 
     expect(
       isMissingGuardianMultisigBackend({
+        code: 'PGRST202',
+        message: 'Could not find the function public.current_profile_can_manage_guardian_multisig',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingGuardianMultisigBackend({
+        code: '42P01',
+        message: 'relation "governance_guardian_external_signers" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingGuardianMultisigBackend({
+        code: '42P01',
+        message: 'relation "governance_guardian_multisig_policies" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(isMissingGuardianMultisigBackend(null)).toBe(false);
+
+    expect(
+      isMissingGuardianMultisigBackend({
         code: '22023',
         message: 'random error',
       }),

@@ -92,10 +92,10 @@ export function useGovernanceActivationReview(args: { profileId: string | null |
       return;
     }
 
-    const reviews = (reviewResponse.data as ActivationThresholdReviewRow[]) || [];
-    const evidenceRows = (evidenceResponse.data as ActivationEvidenceRow[]) || [];
-    const decisionRows = (decisionsResponse.data as ActivationDecisionRow[]) || [];
-    const demographicRows = (demographicResponse.data as ActivationDemographicSnapshotRow[]) || [];
+    const reviews = reviewResponse.data ?? [];
+    const evidenceRows = evidenceResponse.data ?? [];
+    const decisionRows = decisionsResponse.data ?? [];
+    const demographicRows = demographicResponse.data ?? [];
 
     setActivationReviews(reviews);
     setActivationDemographicSnapshots(demographicRows);

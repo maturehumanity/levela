@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { asIntegerOrNull, callUntypedRpc } from '@/lib/governance-rpc';
+import { asIntegerOrNull } from '@/lib/governance-rpc';
 import { useGovernanceGuardianRelayDistributionActions } from '@/lib/use-governance-guardian-relay-distribution-actions';
 
 interface UseGovernanceGuardianRelayActionsArgs {
@@ -154,7 +154,7 @@ export function useGovernanceGuardianRelayActions({
 
     setCapturingRelayAuditReport(true);
 
-    const { error } = await callUntypedRpc<unknown>('capture_governance_guardian_relay_audit_report', {
+    const { error } = await supabase.rpc('capture_governance_guardian_relay_audit_report', {
       target_proposal_id: proposalId,
       audit_notes: auditNotes.trim() || null,
       audit_metadata: {
@@ -179,7 +179,7 @@ export function useGovernanceGuardianRelayActions({
 
     setCapturingRelayClientManifest(true);
 
-    const { error } = await callUntypedRpc<string>('capture_governance_proposal_guardian_relay_client_manifest', {
+    const { error } = await supabase.rpc('capture_governance_proposal_guardian_relay_client_manifest', {
       target_proposal_id: proposalId,
       manifest_notes: manifestNotes.trim() || null,
       manifest_metadata: {
@@ -209,12 +209,12 @@ export function useGovernanceGuardianRelayActions({
 
     setSavingRelayOpsRequirement(true);
 
-    const { error } = await callUntypedRpc<string>('set_governance_guardian_relay_ops_requirement', {
+    const { error } = await supabase.rpc('set_governance_guardian_relay_ops_requirement', {
       requested_policy_key: 'guardian_relay_default',
       requested_require_trust_minimized_quorum: draft.requireTrustMinimizedQuorum,
       requested_require_relay_ops_readiness: draft.requireRelayOpsReadiness,
-      requested_max_open_critical_relay_alerts: asIntegerOrNull(draft.maxOpenCriticalRelayAlerts),
-      requested_relay_attestation_sla_minutes: asIntegerOrNull(draft.relayAttestationSlaMinutes),
+      requested_max_open_critical_relay_alerts: asIntegerOrNull(draft.maxOpenCriticalRelayAlerts) ?? undefined,
+      requested_relay_attestation_sla_minutes: asIntegerOrNull(draft.relayAttestationSlaMinutes) ?? undefined,
     });
 
     if (error) {
@@ -241,13 +241,13 @@ export function useGovernanceGuardianRelayActions({
 
     setRecordingRelayWorkerRun(true);
 
-    const { error } = await callUntypedRpc<string>('record_governance_guardian_relay_worker_run', {
+    const { error } = await supabase.rpc('record_governance_guardian_relay_worker_run', {
       target_proposal_id: proposalId,
       run_scope: draft.runScope,
       run_status: draft.runStatus,
-      processed_signer_count: asIntegerOrNull(draft.processedSignerCount),
-      stale_signer_count: asIntegerOrNull(draft.staleSignerCount),
-      open_alert_count: asIntegerOrNull(draft.openAlertCount),
+      processed_signer_count: asIntegerOrNull(draft.processedSignerCount) ?? undefined,
+      stale_signer_count: asIntegerOrNull(draft.staleSignerCount) ?? undefined,
+      open_alert_count: asIntegerOrNull(draft.openAlertCount) ?? undefined,
       error_message: draft.errorMessage.trim() || null,
       run_payload: {
         source: 'governance_guardian_relay_panel',
@@ -283,7 +283,7 @@ export function useGovernanceGuardianRelayActions({
 
     setOpeningRelayAlert(true);
 
-    const { error } = await callUntypedRpc<string>('open_governance_guardian_relay_alert', {
+    const { error } = await supabase.rpc('open_governance_guardian_relay_alert', {
       target_proposal_id: proposalId,
       alert_key: alertKey,
       severity: draft.severity,
@@ -311,7 +311,7 @@ export function useGovernanceGuardianRelayActions({
 
     setSyncingRelaySlaAlerts(true);
 
-    const { error } = await callUntypedRpc<unknown>('sync_guardian_relay_attestation_sla_alerts', {
+    const { error } = await supabase.rpc('sync_guardian_relay_attestation_sla_alerts', {
       target_proposal_id: proposalId,
       requested_policy_key: 'guardian_relay_default',
       requested_attestation_sla_minutes: null,
@@ -339,7 +339,7 @@ export function useGovernanceGuardianRelayActions({
 
     setEscalatingCriticalRelayPublicExecution(true);
 
-    const { error } = await callUntypedRpc<unknown>('maybe_escalate_guardian_relay_critical_public_execution_page', {
+    const { error } = await supabase.rpc('maybe_escalate_guardian_relay_critical_public_execution_page', {
       target_proposal_id: proposalId,
       open_critical_alert_count: openCriticalAlertCount,
       target_batch_id: null,
@@ -373,7 +373,7 @@ export function useGovernanceGuardianRelayActions({
 
     setResolvingRelayAlert(true);
 
-    const { error } = await callUntypedRpc<string>('resolve_governance_guardian_relay_alert', {
+    const { error } = await supabase.rpc('resolve_governance_guardian_relay_alert', {
       target_alert_id: draft.alertId,
       resolution_notes: draft.resolutionNotes.trim() || null,
     });

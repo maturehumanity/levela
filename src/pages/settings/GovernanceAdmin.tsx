@@ -30,6 +30,7 @@ import {
   sameGovernanceEligibilitySnapshot,
   type GovernanceEligibilitySnapshotPayload,
 } from '@/lib/governance-eligibility-snapshots';
+import { isMissingGovernanceBackend, isMissingMaturityBackend } from '@/lib/governance-admin-backend';
 import { coerceCitizenshipStatus, deriveProjectedCitizenshipStatus } from '@/lib/civic-status';
 import {
   calculateQuarterlyIssuanceCeiling,
@@ -79,28 +80,6 @@ type GovernanceIntentRow = Database['public']['Tables']['governance_action_inten
 
 type ApprovalClass = 'ordinary' | 'elevated' | 'emergency';
 type ApprovalDecision = 'approved' | 'rejected';
-
-function isMissingGovernanceBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
-  if (!error) return false;
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === '42P01'
-    || error.code === 'PGRST205'
-    || message.includes('monetary_policy_')
-  );
-}
-
-function isMissingMaturityBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
-  if (!error) return false;
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === '42P01'
-    || error.code === 'PGRST205'
-    || error.code === 'PGRST202'
-    || message.includes('governance_domain_maturity_')
-    || message.includes('capture_scheduled_governance_domain_maturity_snapshots')
-  );
-}
 
 function readPolicyState(defaults: GovernancePolicyState): GovernancePolicyState {
   if (typeof window === 'undefined') return defaults;
@@ -427,7 +406,7 @@ export default function GovernanceAdmin() {
         return;
       }
 
-      const activePolicy = policyResponse.data as PolicyProfileRow | null;
+      const activePolicy = policyResponse.data ?? null;
 
       if (activePolicy) {
         const remotePolicy = activePolicy.policy_json as Partial<GovernancePolicyState>;
@@ -461,8 +440,8 @@ export default function GovernanceAdmin() {
             auditError: auditResponse.error,
           });
         } else {
-          setApprovalRows((approvalsResponse.data as PolicyApprovalRow[]) || []);
-          setAuditRows((auditResponse.data as PolicyAuditEventRow[]) || []);
+          setApprovalRows(approvalsResponse.data ?? []);
+          setAuditRows(auditResponse.data ?? []);
         }
       }
 
@@ -585,9 +564,9 @@ export default function GovernanceAdmin() {
       return;
     }
 
-    const domains = (domainsResponse.data as GovernanceDomainRow[]) || [];
-    const snapshots = (snapshotsResponse.data as GovernanceDomainMaturitySnapshotRow[]) || [];
-    const transitions = (transitionsResponse.data as GovernanceDomainMaturityTransitionRow[]) || [];
+    const domains = domainsResponse.data ?? [];
+    const snapshots = snapshotsResponse.data ?? [];
+    const transitions = transitionsResponse.data ?? [];
 
     const latestSnapshots = snapshots.reduce<Record<string, GovernanceDomainMaturitySnapshotRow>>((accumulator, snapshot) => {
       if (!accumulator[snapshot.domain_key]) {
@@ -913,7 +892,14 @@ export default function GovernanceAdmin() {
       return;
     }
 
-    const savedPolicy = saveResponse.data as PolicyProfileRow;
+    if (!saveResponse.data) {
+      console.error('Failed to save policy profile: missing row');
+      toast.error(t('governance.errors.saveFailed'));
+      setSavingPolicy(false);
+      return;
+    }
+
+    const savedPolicy = saveResponse.data;
     setActivePolicyId(savedPolicy.id);
     setApprovalRows([]);
 
@@ -964,7 +950,7 @@ export default function GovernanceAdmin() {
       .limit(12);
 
     if (!auditResponse.error) {
-      setAuditRows((auditResponse.data as PolicyAuditEventRow[]) || []);
+      setAuditRows(auditResponse.data ?? []);
     }
 
     toast.success(signingOutcome.signed ? t('governance.saved') : t('governance.unsignedFallbackSaved'));
@@ -1055,10 +1041,10 @@ export default function GovernanceAdmin() {
     ]);
 
     if (!approvalsReload.error) {
-      setApprovalRows((approvalsReload.data as PolicyApprovalRow[]) || []);
+      setApprovalRows(approvalsReload.data ?? []);
     }
     if (!auditReload.error) {
-      setAuditRows((auditReload.data as PolicyAuditEventRow[]) || []);
+      setAuditRows(auditReload.data ?? []);
     }
 
     setApprovalNotes('');

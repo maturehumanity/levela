@@ -9,6 +9,11 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getAccessiblePageLinks } from '@/lib/app-pages';
+import {
+  isDuplicateLinkError,
+  isMissingBusinessAccessRequestsTableError,
+  isMissingLinkedAccountsTableError,
+} from '@/lib/linked-accounts-errors';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -90,26 +95,9 @@ function createEphemeralSupabaseClient() {
   });
 }
 
-function isDuplicateLinkError(error: { code?: string | null; message?: string | null } | null) {
-  if (!error) return false;
-  return error.code === '23505' || Boolean(error.message?.toLowerCase().includes('duplicate'));
-}
-
 function isNetworkFetchError(error: { message?: string | null; details?: string | null } | null | undefined) {
   const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
   return message.includes('failed to fetch') || message.includes('network');
-}
-
-function isMissingLinkedAccountsTableError(error: { code?: string | null; message?: string | null } | null | undefined) {
-  if (!error) return false;
-  if (error.code === 'PGRST205' || error.code === '42P01') return true;
-  return Boolean(error.message?.toLowerCase().includes('linked_accounts'));
-}
-
-function isMissingBusinessAccessRequestsTableError(error: { code?: string | null; message?: string | null } | null | undefined) {
-  if (!error) return false;
-  if (error.code === 'PGRST205' || error.code === '42P01') return true;
-  return Boolean(error.message?.toLowerCase().includes('business_account_access_requests'));
 }
 
 export function UserPageMenu() {

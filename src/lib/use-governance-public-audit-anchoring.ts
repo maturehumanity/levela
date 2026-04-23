@@ -3,23 +3,11 @@ import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
 import {
+  isMissingPublicAuditAnchoringBackend,
   readGovernancePublicAuditChainStatus,
   type GovernancePublicAuditBatchRow,
   type GovernancePublicAuditChainStatus,
 } from '@/lib/governance-public-audit';
-
-function isMissingPublicAuditBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
-  if (!error) return false;
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === '42P01'
-    || error.code === 'PGRST205'
-    || error.code === 'PGRST202'
-    || message.includes('governance_public_audit_')
-    || message.includes('capture_governance_public_audit_batch')
-    || message.includes('verify_governance_public_audit_chain')
-  );
-}
 
 export function useGovernancePublicAuditAnchoring(args: { profileId: string | null | undefined }) {
   const [loadingPublicAudit, setLoadingPublicAudit] = useState(true);
@@ -44,7 +32,7 @@ export function useGovernancePublicAuditAnchoring(args: { profileId: string | nu
     ]);
 
     const sharedError = batchResponse.error || chainStatusResponse.error;
-    if (isMissingPublicAuditBackend(sharedError)) {
+    if (isMissingPublicAuditAnchoringBackend(sharedError)) {
       setPublicAuditBackendUnavailable(true);
       setLoadingPublicAudit(false);
       return;
@@ -60,7 +48,7 @@ export function useGovernancePublicAuditAnchoring(args: { profileId: string | nu
       return;
     }
 
-    setPublicAuditBatches((batchResponse.data as GovernancePublicAuditBatchRow[]) || []);
+    setPublicAuditBatches(batchResponse.data ?? []);
     setPublicAuditChainStatus(readGovernancePublicAuditChainStatus(chainStatusResponse.data));
     setPublicAuditBackendUnavailable(false);
     setLoadingPublicAudit(false);

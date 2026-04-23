@@ -18,25 +18,6 @@ import {
   type GovernancePublicAuditVerifierMirrorProbeJobSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
-type RpcErrorLike = {
-  code?: string | null;
-  message?: string | null;
-  details?: string | null;
-} | null;
-
-type RpcResponseLike<T> = {
-  data: T | null;
-  error: RpcErrorLike;
-};
-function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args?: Record<string, unknown>,
-  ) => Promise<RpcResponseLike<T>>;
-
-  return rpc(fnName, params);
-}
-
 export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestBatchId: string | null }) {
   const [loadingProductionData, setLoadingProductionData] = useState(true);
   const [productionBackendUnavailable, setProductionBackendUnavailable] = useState(false);
@@ -68,26 +49,26 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       federationDistributionGateResponse,
     ] = await Promise.all([
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_failover_policy_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_failover_policy_summary', {
         requested_policy_key: 'default',
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_directory_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_directory_summary', {
         requested_batch_id: args.latestBatchId,
         max_entries: 12,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_directory_trust_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_directory_trust_summary', {
         requested_batch_id: args.latestBatchId,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_probe_job_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_probe_job_summary', {
         requested_batch_id: args.latestBatchId,
         requested_pending_sla_minutes: 30,
         requested_lookback_hours: 24,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_probe_job_board', {
+      supabase.rpc('governance_public_audit_verifier_mirror_probe_job_board', {
         requested_batch_id: args.latestBatchId,
         max_jobs: 80,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_distribution_gate', {
+      supabase.rpc('governance_public_audit_verifier_federation_distribution_gate', {
         target_batch_id: args.latestBatchId,
         requested_policy_key: 'default',
       }),
@@ -167,7 +148,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       return Number.isFinite(parsed) ? parsed : null;
     };
 
-    const { error: upsertError } = await callUntypedRpc<string>('upsert_governance_public_audit_verifier_mirror_failover_policy', {
+    const { error: upsertError } = await supabase.rpc('upsert_governance_public_audit_verifier_mirror_failover_policy', {
       policy_key: 'default',
       policy_name: 'Default mirror failover policy',
       is_active: true,
@@ -185,39 +166,39 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
       },
     });
 
-    const { error: trustThresholdError } = await callUntypedRpc<string>(
+    const { error: trustThresholdError } = await supabase.rpc(
       'set_governance_public_audit_verifier_mirror_min_independent_signers',
       {
         requested_policy_key: 'default',
-        required_signer_count: toIntegerOrNull(draft.minIndependentDirectorySigners),
+        required_signer_count: toIntegerOrNull(draft.minIndependentDirectorySigners) ?? undefined,
       },
     );
 
-    const { error: policyRatificationRequirementError } = await callUntypedRpc<string>(
+    const { error: policyRatificationRequirementError } = await supabase.rpc(
       'set_governance_public_audit_verifier_mirror_policy_ratification_requirement',
       {
         requested_policy_key: 'default',
         require_ratification: draft.requirePolicyRatification,
-        min_approval_count: toIntegerOrNull(draft.minPolicyRatificationApprovals),
+        min_approval_count: toIntegerOrNull(draft.minPolicyRatificationApprovals) ?? undefined,
       },
     );
 
-    const { error: signerGovernanceRequirementError } = await callUntypedRpc<string>(
+    const { error: signerGovernanceRequirementError } = await supabase.rpc(
       'set_governance_public_audit_verifier_mirror_signer_governance_requirement',
       {
         requested_policy_key: 'default',
         require_governance_approval: draft.requireSignerGovernanceApproval,
-        required_independent_approvals: toIntegerOrNull(draft.minSignerGovernanceIndependentApprovals),
+        required_independent_approvals: toIntegerOrNull(draft.minSignerGovernanceIndependentApprovals) ?? undefined,
       },
     );
 
-    const { error: federationOpsRequirementError } = await callUntypedRpc<string>(
+    const { error: federationOpsRequirementError } = await supabase.rpc(
       'set_governance_public_audit_verifier_mirror_federation_ops_requirement',
       {
         requested_policy_key: 'default',
         requested_require_federation_ops_readiness: draft.requireFederationOpsReadiness,
-        max_open_critical_alerts: toIntegerOrNull(draft.maxOpenCriticalFederationAlerts),
-        min_onboarded_operators: toIntegerOrNull(draft.minOnboardedFederationOperators),
+        max_open_critical_alerts: toIntegerOrNull(draft.maxOpenCriticalFederationAlerts) ?? undefined,
+        min_onboarded_operators: toIntegerOrNull(draft.minOnboardedFederationOperators) ?? undefined,
       },
     );
 
@@ -257,7 +238,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     if (!draft.signerKey.trim() || !draft.publicKey.trim()) return void toast.error('Signer key and public key are required.');
     setRegisteringDirectorySigner(true);
 
-    const { error } = await callUntypedRpc<string>('register_governance_public_audit_verifier_mirror_directory_signer', {
+    const { error } = await supabase.rpc('register_governance_public_audit_verifier_mirror_directory_signer', {
       signer_key: draft.signerKey.trim(),
       signer_label: draft.signerLabel.trim() || null,
       public_key: draft.publicKey.trim(),
@@ -290,7 +271,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     if (!draft.signerKey.trim() || !draft.signature.trim()) return void toast.error('Signer key and signature are required.');
     setPublishingSignedDirectory(true);
 
-    const { error } = await callUntypedRpc<string>('publish_governance_public_audit_verifier_mirror_directory', {
+    const { error } = await supabase.rpc('publish_governance_public_audit_verifier_mirror_directory', {
       signer_key: draft.signerKey.trim(),
       signature: draft.signature.trim(),
       target_batch_id: args.latestBatchId,
@@ -323,7 +304,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     if (!draft.directoryId || !draft.signerKey.trim() || !draft.attestationSignature.trim()) return void toast.error('Directory, signer key, and signature are required.');
     setSavingDirectoryAttestation(true);
 
-    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_directory_attestation', {
+    const { error } = await supabase.rpc('record_governance_public_audit_verifier_mirror_directory_attestation', {
       target_directory_id: draft.directoryId,
       signer_key: draft.signerKey.trim(),
       attestation_decision: draft.attestationDecision,
@@ -350,7 +331,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
 
     setSchedulingProbeJobs(true);
 
-    const { data, error } = await callUntypedRpc<number>('schedule_governance_public_audit_verifier_mirror_probe_jobs', {
+    const { data, error } = await supabase.rpc('schedule_governance_public_audit_verifier_mirror_probe_jobs', {
       target_batch_id: args.latestBatchId,
       force_reschedule: forceReschedule,
       requested_timeout_ms: failoverPolicy?.maxMirrorLatencyMs
@@ -390,7 +371,7 @@ export function useGovernancePublicAuditVerifierMirrorProduction(args: { latestB
     setCompletingProbeJob(true);
     const parsedLatency = Number.parseInt(draft.observedLatencyMs, 10);
 
-    const { error } = await callUntypedRpc<string>('complete_governance_public_audit_verifier_mirror_probe_job', {
+    const { error } = await supabase.rpc('complete_governance_public_audit_verifier_mirror_probe_job', {
       target_job_id: draft.jobId,
       completion_status: draft.completionStatus,
       mirror_check_status: draft.completionStatus === 'completed' ? draft.checkStatus : null,

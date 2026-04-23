@@ -100,10 +100,10 @@ export function useGovernancePublicAuditVerifiers(args: { latestBatchId: string 
       return;
     }
 
-    setReplicationPolicy((policyResponse.data as GovernancePublicAuditReplicationPolicyRow | null) || null);
-    setVerifierNodes((nodesResponse.data as GovernancePublicAuditVerifierNodeRow[]) || []);
-    setBatchVerifications((verificationsResponse.data as GovernancePublicAuditBatchVerificationRow[]) || []);
-    setNetworkProofs((proofsResponse.data as GovernancePublicAuditNetworkProofRow[]) || []);
+    setReplicationPolicy(policyResponse.data ?? null);
+    setVerifierNodes(nodesResponse.data ?? []);
+    setBatchVerifications(verificationsResponse.data ?? []);
+    setNetworkProofs(proofsResponse.data ?? []);
     setVerifierSummary(readGovernancePublicAuditVerifierSummary(summaryResponse.data));
     setVerifierBackendUnavailable(false);
     setLoadingVerifierData(false);

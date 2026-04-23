@@ -397,6 +397,32 @@ describe('governance-public-audit-automation helpers', () => {
 
     expect(
       isMissingPublicAuditAutomationBackend({
+        code: 'PGRST202',
+        message: 'Could not find the function public.governance_public_audit_external_execution_page_board',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingPublicAuditAutomationBackend({
+        code: 'PGRST202',
+        message: 'Could not find the function public.claim_governance_public_audit_external_execution_jobs',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingPublicAuditAutomationBackend({
+        code: '42P01',
+        message: 'relation "governance_public_audit_external_execution_pages" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(isMissingPublicAuditAutomationBackend(null)).toBe(false);
+
+    expect(
+      isMissingPublicAuditAutomationBackend({
         code: '22023',
         message: 'random failure without public audit keywords',
       }),

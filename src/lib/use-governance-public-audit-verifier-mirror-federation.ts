@@ -8,7 +8,6 @@ import {
   isMissingPublicAuditAutomationBackend,
   readGovernancePublicAuditExternalExecutionPageBoardRows,
 } from '@/lib/governance-public-audit-automation';
-import { callUntypedRpc } from '@/lib/governance-rpc';
 import {
   isMissingPublicAuditVerifierBackend,
   readGovernancePublicAuditVerifierFederationPackage,
@@ -85,46 +84,46 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
       executionPageBoardResponse,
     ] = await Promise.all([
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_policy_ratification_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_policy_ratification_summary', {
         requested_policy_key: 'default',
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_discovery_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_discovery_summary', {
         requested_batch_id: args.latestBatchId,
         requested_lookback_hours: 24,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_discovery_source_board', {
+      supabase.rpc('governance_public_audit_verifier_mirror_discovery_source_board', {
         max_entries: 20,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_discovered_candidate_board', {
+      supabase.rpc('governance_public_audit_verifier_mirror_discovered_candidate_board', {
         status_filter: null,
         max_candidates: 80,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_federation_operations_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_federation_operations_summary', {
         requested_policy_key: 'default',
         requested_lookback_hours: 24,
         requested_alert_sla_hours: 12,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_federation_onboarding_board', {
+      supabase.rpc('governance_public_audit_verifier_mirror_federation_onboarding_board', {
         status_filter: null,
         max_entries: 80,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_federation_alert_board', {
+      supabase.rpc('governance_public_audit_verifier_mirror_federation_alert_board', {
         status_filter: null,
         max_entries: 80,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_pkg_digest_text', {
+      supabase.rpc('governance_public_audit_verifier_federation_pkg_digest_text', {
         target_batch_id: args.latestBatchId,
         requested_policy_key: 'default',
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_package_distribution_summary', {
+      supabase.rpc('governance_public_audit_verifier_federation_package_distribution_summary', {
         target_batch_id: args.latestBatchId,
         requested_policy_key: 'default',
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_package_signature_board', {
+      supabase.rpc('governance_public_audit_verifier_federation_package_signature_board', {
         target_batch_id: args.latestBatchId,
         max_entries: 80,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_federation_dist_pkg_history', {
+      supabase.rpc('governance_public_audit_verifier_federation_dist_pkg_history', {
         target_batch_id: args.latestBatchId,
         max_entries: 40,
       }),
@@ -135,7 +134,7 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
         )
         .order('observed_at', { ascending: false })
         .limit(12),
-      callUntypedRpc<unknown[]>('governance_public_audit_external_execution_page_board', {
+      supabase.rpc('governance_public_audit_external_execution_page_board', {
         requested_batch_id: args.latestBatchId,
         max_pages: GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
       }),

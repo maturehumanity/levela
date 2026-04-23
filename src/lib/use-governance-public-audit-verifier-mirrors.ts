@@ -10,26 +10,6 @@ import {
   type GovernancePublicAuditVerifierMirrorHealthRow,
 } from '@/lib/governance-public-audit-verifiers';
 
-type RpcErrorLike = {
-  code?: string | null;
-  message?: string | null;
-  details?: string | null;
-} | null;
-
-type RpcResponseLike<T> = {
-  data: T | null;
-  error: RpcErrorLike;
-};
-
-function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args?: Record<string, unknown>,
-  ) => Promise<RpcResponseLike<T>>;
-
-  return rpc(fnName, params);
-}
-
 export function useGovernancePublicAuditVerifierMirrors(args: { latestBatchId: string | null }) {
   const [loadingMirrorData, setLoadingMirrorData] = useState(true);
   const [mirrorBackendUnavailable, setMirrorBackendUnavailable] = useState(false);
@@ -46,11 +26,11 @@ export function useGovernancePublicAuditVerifierMirrors(args: { latestBatchId: s
 
     const [permissionResponse, mirrorHealthResponse, clientBundleResponse] = await Promise.all([
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_health_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_health_summary', {
         requested_batch_id: args.latestBatchId,
         stale_after_minutes: 90,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_client_verifier_bundle', {
+      supabase.rpc('governance_public_audit_client_verifier_bundle', {
         target_batch_id: args.latestBatchId,
         max_mirrors: 8,
       }),
@@ -105,7 +85,7 @@ export function useGovernancePublicAuditVerifierMirrors(args: { latestBatchId: s
 
     setRegisteringVerifierMirror(true);
 
-    const { error } = await callUntypedRpc<string>('register_governance_public_audit_verifier_mirror', {
+    const { error } = await supabase.rpc('register_governance_public_audit_verifier_mirror', {
       mirror_key: mirrorKey,
       mirror_label: draft.mirrorLabel.trim() || null,
       endpoint_url: endpointUrl,
@@ -148,7 +128,7 @@ export function useGovernancePublicAuditVerifierMirrors(args: { latestBatchId: s
 
     const parsedLatency = Number.parseInt(draft.latencyMs, 10);
 
-    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_check', {
+    const { error } = await supabase.rpc('record_governance_public_audit_verifier_mirror_check', {
       target_mirror_id: draft.mirrorId,
       check_status: draft.checkStatus,
       target_batch_id: args.latestBatchId,
@@ -177,15 +157,8 @@ export function useGovernancePublicAuditVerifierMirrors(args: { latestBatchId: s
 
     setTogglingMirrorId(mirrorId);
 
-    const from = supabase.from as unknown as (
-      relation: string,
-    ) => {
-      update: (values: Record<string, unknown>) => {
-        eq: (column: string, value: string) => Promise<RpcResponseLike<unknown>>;
-      };
-    };
-
-    const { error } = await from('governance_public_audit_verifier_mirrors')
+    const { error } = await supabase
+      .from('governance_public_audit_verifier_mirrors')
       .update({ is_active: isActive })
       .eq('id', mirrorId);
 

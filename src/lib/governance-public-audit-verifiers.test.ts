@@ -310,6 +310,27 @@ describe('governance-public-audit-verifiers helpers', () => {
 
     expect(
       isMissingPublicAuditVerifierBackend({
+        code: 'PGRST202',
+        message: 'Function governance_public_audit_verifier_federation_pkg_digest_text does not exist',
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingPublicAuditVerifierBackend({
+        code: 'PGRST202',
+        message: 'Function governance_public_audit_verifier_federation_dist_pkg_history does not exist',
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingPublicAuditVerifierBackend({
+        code: '42P01',
+        message: 'relation "governance_public_audit_verifier_mirror_federation_worker_runs" does not exist',
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingPublicAuditVerifierBackend({
         code: '22023',
         message: 'random failure',
       }),

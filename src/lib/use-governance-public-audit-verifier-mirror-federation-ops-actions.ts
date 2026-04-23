@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { asIntegerOrNull, callUntypedRpc } from '@/lib/governance-rpc';
+import { supabase } from '@/integrations/supabase/client';
+import { asIntegerOrNull } from '@/lib/governance-rpc';
 
 interface UseGovernancePublicAuditVerifierMirrorFederationOpsActionsArgs {
   canManageMirrorFederation: boolean;
@@ -31,11 +32,13 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     if (federationBackendUnavailable || !canManageMirrorFederation) return;
 
     setSavingFederationOpsRequirement(true);
-    const { error } = await callUntypedRpc<string>('set_governance_public_audit_verifier_mirror_federation_ops_requirement', {
+    const maxOpen = asIntegerOrNull(draft.maxOpenCriticalAlerts);
+    const minOnboarded = asIntegerOrNull(draft.minOnboardedOperators);
+    const { error } = await supabase.rpc('set_governance_public_audit_verifier_mirror_federation_ops_requirement', {
       requested_policy_key: 'default',
       requested_require_federation_ops_readiness: draft.requireFederationOpsReadiness,
-      max_open_critical_alerts: asIntegerOrNull(draft.maxOpenCriticalAlerts),
-      min_onboarded_operators: asIntegerOrNull(draft.minOnboardedOperators),
+      max_open_critical_alerts: maxOpen ?? undefined,
+      min_onboarded_operators: minOnboarded ?? undefined,
     });
 
     if (error) {
@@ -66,7 +69,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     }
 
     setRegisteringFederationOperator(true);
-    const { error } = await callUntypedRpc<string>('register_governance_public_audit_verifier_mirror_federation_operator', {
+    const { error } = await supabase.rpc('register_governance_public_audit_verifier_mirror_federation_operator', {
       operator_key: operatorKey,
       operator_label: draft.operatorLabel.trim() || null,
       contact_endpoint: draft.contactEndpoint.trim() || null,
@@ -108,7 +111,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     }
 
     setSubmittingOnboardingRequest(true);
-    const { error } = await callUntypedRpc<string>('submit_governance_public_audit_verifier_mirror_federation_onboarding_request', {
+    const { error } = await supabase.rpc('submit_governance_public_audit_verifier_mirror_federation_onboarding_request', {
       operator_key: operatorKey,
       requested_mirror_key: requestedMirrorKey,
       requested_mirror_label: draft.requestedMirrorLabel.trim() || null,
@@ -144,7 +147,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     }
 
     setReviewingOnboardingRequest(true);
-    const { error } = await callUntypedRpc<string>('review_governance_public_audit_verifier_mirror_federation_onboarding_request', {
+    const { error } = await supabase.rpc('review_governance_public_audit_verifier_mirror_federation_onboarding_request', {
       target_request_id: draft.requestId,
       review_decision: draft.reviewDecision,
       requested_review_notes: draft.reviewNotes.trim() || null,
@@ -173,7 +176,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     }
 
     setOnboardingFederationRequest(true);
-    const { error } = await callUntypedRpc<string>('onboard_governance_public_audit_verifier_mirror_federation_request', {
+    const { error } = await supabase.rpc('onboard_governance_public_audit_verifier_mirror_federation_request', {
       target_request_id: draft.requestId,
       activate_mirror: draft.activateMirror,
       requested_metadata: { source: 'governance_public_audit_verifier_panel' },
@@ -203,13 +206,13 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     if (federationBackendUnavailable || !canManageMirrorFederation) return;
 
     setRecordingFederationWorkerRun(true);
-    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_federation_worker_run', {
+    const { error } = await supabase.rpc('record_governance_public_audit_verifier_mirror_federation_worker_run', {
       run_scope: draft.runScope,
       run_status: draft.runStatus,
-      discovered_request_count: asIntegerOrNull(draft.discoveredRequestCount),
-      approved_request_count: asIntegerOrNull(draft.approvedRequestCount),
-      onboarded_request_count: asIntegerOrNull(draft.onboardedRequestCount),
-      open_alert_count: asIntegerOrNull(draft.openAlertCount),
+      discovered_request_count: asIntegerOrNull(draft.discoveredRequestCount) ?? undefined,
+      approved_request_count: asIntegerOrNull(draft.approvedRequestCount) ?? undefined,
+      onboarded_request_count: asIntegerOrNull(draft.onboardedRequestCount) ?? undefined,
+      open_alert_count: asIntegerOrNull(draft.openAlertCount) ?? undefined,
       error_message: draft.errorMessage.trim() || null,
       run_payload: { source: 'governance_public_audit_verifier_panel' },
     });
@@ -242,7 +245,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     }
 
     setOpeningFederationAlert(true);
-    const { error } = await callUntypedRpc<string>('open_governance_public_audit_verifier_mirror_federation_alert', {
+    const { error } = await supabase.rpc('open_governance_public_audit_verifier_mirror_federation_alert', {
       alert_key: alertKey,
       severity: draft.severity,
       alert_scope: draft.alertScope.trim() || 'manual',
@@ -273,7 +276,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     }
 
     setResolvingFederationAlert(true);
-    const { error } = await callUntypedRpc<string>('resolve_governance_public_audit_verifier_mirror_federation_alert', {
+    const { error } = await supabase.rpc('resolve_governance_public_audit_verifier_mirror_federation_alert', {
       target_alert_id: draft.alertId,
       resolution_notes: draft.resolutionNotes.trim() || null,
     });

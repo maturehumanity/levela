@@ -62,3 +62,16 @@ export function summarizeGovernancePublicAuditBatch(batch: GovernancePublicAudit
     hashPreview: `${batch.batch_hash.slice(0, 12)}...${batch.batch_hash.slice(-8)}`,
   };
 }
+
+export function isMissingPublicAuditAnchoringBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === '42P01'
+    || error.code === 'PGRST205'
+    || error.code === 'PGRST202'
+    || message.includes('governance_public_audit_')
+    || message.includes('capture_governance_public_audit_batch')
+    || message.includes('verify_governance_public_audit_chain')
+  );
+}

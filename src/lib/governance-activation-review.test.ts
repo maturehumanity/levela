@@ -20,6 +20,48 @@ describe('governance activation review helpers', () => {
 
     expect(
       isMissingActivationReviewBackend({
+        code: 'PGRST202',
+        message: 'Could not find the function public.capture_scheduled_activation_demographic_snapshots',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingActivationReviewBackend({
+        code: '42P01',
+        message: 'relation "activation_demographic_snapshots" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingActivationReviewBackend({
+        code: '42P01',
+        message: 'relation "activation_threshold_reviews" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingActivationReviewBackend({
+        code: '42P01',
+        message: 'relation "activation_evidence" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingActivationReviewBackend({
+        code: '42P01',
+        message: 'relation "activation_decisions" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(isMissingActivationReviewBackend(null)).toBe(false);
+
+    expect(
+      isMissingActivationReviewBackend({
         code: '22023',
         message: 'Some unrelated error',
       }),

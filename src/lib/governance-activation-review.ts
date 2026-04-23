@@ -21,6 +21,8 @@ export function isMissingActivationReviewBackend(error: { code?: string | null; 
     || error.code === 'PGRST205'
     || error.code === 'PGRST202'
     || message.includes('activation_threshold_reviews')
+    || message.includes('activation_evidence')
+    || message.includes('activation_decisions')
     || message.includes('activation_demographic_snapshots')
     || message.includes('capture_activation_demographic_snapshot')
     || message.includes('capture_scheduled_activation_demographic_snapshots')

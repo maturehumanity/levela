@@ -322,3 +322,14 @@ export function buildStudyAiExplanation(args: {
 export function getFoundationMaterialsForDomain(domainId: StudyDomainId) {
   return FOUNDATION_STUDY_MATERIALS.filter((material) => material.domainId === domainId);
 }
+
+export function isMissingStudyBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === '42P01'
+    || error.code === 'PGRST205'
+    || message.includes('study_')
+    || message.includes('monetary_policy_')
+  );
+}

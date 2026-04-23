@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,8 @@ import {
   type RecordFeedWorkerRunDraft,
 } from '@/lib/governance-activation-demographic-feed-workers';
 import {
+  ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS,
+  isFeedDataAutoReloadThrottled,
   isMissingActivationDemographicFeedBackend,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
@@ -77,6 +79,8 @@ export function useGovernanceActivationDemographicFeeds() {
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
   const [feedWorkerScheduleAutomationStatus, setFeedWorkerScheduleAutomationStatus] =
     useState<ActivationDemographicFeedWorkerScheduleAutomationStatusRow | null>(null);
+  const lastFeedDataAutoReloadAtRef = useRef(Date.now());
+  const loadFeedDataInFlightRef = useRef(false);
 
   const openFeedWorkerAlertsCount = useMemo(
     () => feedWorkerAlerts.reduce((count, alert) => count
@@ -118,8 +122,14 @@ export function useGovernanceActivationDemographicFeeds() {
   }, [feedBackendUnavailable, feedWorkerBackendUnavailable]);
 
   const loadFeedData = useCallback(async () => {
+    if (loadFeedDataInFlightRef.current) {
+      return;
+    }
+    loadFeedDataInFlightRef.current = true;
+    lastFeedDataAutoReloadAtRef.current = Date.now();
     setLoadingFeedData(true);
 
+    try {
     const [
       adapterResponse,
       ingestionResponse,
@@ -205,8 +215,8 @@ export function useGovernanceActivationDemographicFeeds() {
       return;
     }
 
-    const adapters = (adapterResponse.data as ActivationDemographicFeedAdapterRow[]) || [];
-    const ingestions = (ingestionResponse.data as ActivationDemographicFeedIngestionRow[]) || [];
+    const adapters = adapterResponse.data ?? [];
+    const ingestions = ingestionResponse.data ?? [];
     setFeedAdapters(adapters);
     setFeedIngestions(ingestions);
     setFeedIngestionsHasMore(ingestions.length === FEED_INGESTIONS_FIRST_PAGE);
@@ -260,7 +270,7 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerOutboxActiveJobs([]);
       setFeedWorkerOutboxActiveJobsHasMore(false);
     } else {
-      const activeRows = (activeOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
+      const activeRows = activeOutboxJobsResponse.data ?? [];
       setFeedWorkerOutboxActiveJobs(activeRows);
       setFeedWorkerOutboxActiveJobsHasMore(activeRows.length === FEED_WORKER_OUTBOX_ACTIVE_FIRST_PAGE);
     }
@@ -272,7 +282,7 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerOutboxRecentClosedJobs([]);
       setFeedWorkerOutboxRecentClosedJobsHasMore(false);
     } else {
-      const closedRows = (recentClosedOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
+      const closedRows = recentClosedOutboxJobsResponse.data ?? [];
       setFeedWorkerOutboxRecentClosedJobs(closedRows);
       setFeedWorkerOutboxRecentClosedJobsHasMore(closedRows.length === FEED_WORKER_OUTBOX_CLOSED_FIRST_PAGE);
     }
@@ -284,7 +294,7 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerRecentRuns([]);
       setFeedWorkerRunsHasMore(false);
     } else {
-      const runs = (workerRunsResponse.data as ActivationDemographicFeedWorkerRunRow[]) || [];
+      const runs = workerRunsResponse.data ?? [];
       setFeedWorkerRecentRuns(runs);
       setFeedWorkerRunsHasMore(runs.length === FEED_WORKER_RUNS_FIRST_PAGE);
     }
@@ -296,7 +306,7 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerSchedulePolicy(null);
     } else {
       setFeedWorkerSchedulePolicy(
-        (schedulePolicyResponse.data as ActivationDemographicFeedWorkerSchedulePolicyRow | null) ?? null,
+        schedulePolicyResponse.data ?? null,
       );
     }
 
@@ -316,11 +326,60 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     setLoadingFeedData(false);
+    } catch (caught: unknown) {
+      console.error('Unexpected error loading activation demographic feed data:', caught);
+      toast.error('Could not refresh signed demographic feed data.');
+      setLoadingFeedData(false);
+    } finally {
+      loadFeedDataInFlightRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
     void loadFeedData();
   }, [loadFeedData]);
+
+  useEffect(() => {
+    if (feedBackendUnavailable) {
+      return;
+    }
+    const autoReloadIsThrottled = (now: number) =>
+      isFeedDataAutoReloadThrottled(now, lastFeedDataAutoReloadAtRef.current, ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS);
+
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'visible') {
+        return;
+      }
+      if (autoReloadIsThrottled(Date.now())) {
+        return;
+      }
+      void loadFeedData();
+    };
+    const onOnline = () => {
+      if (autoReloadIsThrottled(Date.now())) {
+        return;
+      }
+      void loadFeedData();
+    };
+    const onPageShow = (event: Event) => {
+      const pageEvent = event as PageTransitionEvent;
+      if (!pageEvent.persisted) {
+        return;
+      }
+      if (autoReloadIsThrottled(Date.now())) {
+        return;
+      }
+      void loadFeedData();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [feedBackendUnavailable, loadFeedData]);
 
   const loadMoreFeedIngestions = useCallback(async () => {
     if (feedBackendUnavailable || loadingMoreFeedIngestions || !feedIngestionsHasMore) {

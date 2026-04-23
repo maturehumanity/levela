@@ -86,7 +86,7 @@ export function GovernanceGuardianSignoffCard({
     }
 
     const summary = readGovernanceProposalExternalMultisigSummary(summaryResponse.data);
-    const signers = (signerResponse.data as GuardianExternalSignerRow[]) || [];
+    const signers = signerResponse.data ?? [];
 
     setExternalSummary(summary);
     setExternalSigners(signers);

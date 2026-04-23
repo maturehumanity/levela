@@ -36,6 +36,7 @@ import {
   sameGovernanceEligibilitySnapshot,
   type GovernanceEligibilitySnapshotPayload,
 } from '@/lib/governance-eligibility-snapshots';
+import { isMissingGovernanceProposalBackend, isMissingGovernanceSanctionsBackend } from '@/lib/governance-hub-backend';
 import {
   computeGovernanceTimingWindow,
   getGovernanceDecisionClassLabelKey,
@@ -125,29 +126,6 @@ async function resolveGovernanceExecutionNotReadyMessage(
   if (!federationRes.data) return t('governanceHub.executeNotReadyFederationDistribution');
   if (!relayRes.data) return t('governanceHub.executeNotReadyGuardianRelay');
   return t('governanceHub.executeNotReady');
-}
-
-function isMissingGovernanceProposalBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
-  if (!error) return false;
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === '42P01'
-    || error.code === 'PGRST205'
-    || message.includes('governance_proposal')
-    || message.includes('governance_execution')
-    || message.includes('guardian_signoff')
-    || message.includes('governance_proposal_guardian_approvals')
-  );
-}
-
-function isMissingGovernanceSanctionsBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
-  if (!error) return false;
-  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
-  return (
-    error.code === '42P01'
-    || error.code === 'PGRST205'
-    || message.includes('governance_sanction')
-  );
 }
 
 export default function Governance() {

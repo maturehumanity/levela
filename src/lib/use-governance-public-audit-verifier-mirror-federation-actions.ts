@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { asIntegerOrNull, asNumericOrNull, callUntypedRpc } from '@/lib/governance-rpc';
+import { supabase } from '@/integrations/supabase/client';
+import { asIntegerOrNull, asNumericOrNull } from '@/lib/governance-rpc';
 import { useGovernancePublicAuditVerifierFederationDistributionActions } from '@/lib/use-governance-public-audit-verifier-federation-distribution-actions';
 import { useGovernancePublicAuditVerifierMirrorFederationOpsActions } from '@/lib/use-governance-public-audit-verifier-mirror-federation-ops-actions';
 
@@ -53,7 +54,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     }
 
     setRegisteringDiscoverySource(true);
-    const { error } = await callUntypedRpc<string>('register_governance_public_audit_verifier_mirror_discovery_source', {
+    const { error } = await supabase.rpc('register_governance_public_audit_verifier_mirror_discovery_source', {
       source_key: sourceKey,
       source_label: draft.sourceLabel.trim() || null,
       endpoint_url: endpointUrl,
@@ -89,13 +90,16 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     }
 
     setRecordingDiscoveryRun(true);
-    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_discovery_run', {
+    const discovered = asIntegerOrNull(draft.discoveredCount);
+    const accepted = asIntegerOrNull(draft.acceptedCandidateCount);
+    const stale = asIntegerOrNull(draft.staleCandidateCount);
+    const { error } = await supabase.rpc('record_governance_public_audit_verifier_mirror_discovery_run', {
       target_source_id: draft.sourceId,
-      target_batch_id: latestBatchId,
+      target_batch_id: latestBatchId ?? undefined,
       run_status: draft.runStatus,
-      discovered_count: asIntegerOrNull(draft.discoveredCount),
-      accepted_candidate_count: asIntegerOrNull(draft.acceptedCandidateCount),
-      stale_candidate_count: asIntegerOrNull(draft.staleCandidateCount),
+      discovered_count: discovered ?? undefined,
+      accepted_candidate_count: accepted ?? undefined,
+      stale_candidate_count: stale ?? undefined,
       error_message: draft.errorMessage.trim() || null,
       run_payload: { source: 'governance_public_audit_verifier_panel' },
     });
@@ -135,7 +139,8 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     }
 
     setUpsertingDiscoveredCandidate(true);
-    const { error } = await callUntypedRpc<string>('upsert_governance_public_audit_verifier_mirror_discovered_candidate', {
+    const confidence = asNumericOrNull(draft.discoveryConfidence);
+    const { error } = await supabase.rpc('upsert_governance_public_audit_verifier_mirror_discovered_candidate', {
       target_source_id: draft.sourceId,
       candidate_key: candidateKey,
       candidate_label: draft.candidateLabel.trim() || null,
@@ -145,7 +150,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
       jurisdiction_country_code: draft.jurisdictionCountryCode.trim().toUpperCase() || '',
       operator_label: draft.operatorLabel.trim() || 'unspecified',
       trust_domain: draft.trustDomain.trim().toLowerCase() || 'public',
-      discovery_confidence: asNumericOrNull(draft.discoveryConfidence),
+      discovery_confidence: confidence ?? undefined,
       candidate_status: draft.candidateStatus,
       run_id: null,
       metadata: { source: 'governance_public_audit_verifier_panel' },
@@ -171,7 +176,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     }
 
     setPromotingDiscoveredCandidate(true);
-    const { error } = await callUntypedRpc<string>('promote_governance_public_audit_verifier_mirror_discovered_candidate', {
+    const { error } = await supabase.rpc('promote_governance_public_audit_verifier_mirror_discovered_candidate', {
       target_candidate_id: candidateId,
       metadata: { source: 'governance_public_audit_verifier_panel' },
     });
@@ -204,7 +209,7 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     }
 
     setSavingPolicyRatification(true);
-    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_policy_ratification', {
+    const { error } = await supabase.rpc('record_governance_public_audit_verifier_mirror_policy_ratification', {
       requested_policy_key: draft.policyKey.trim() || 'default',
       signer_key: signerKey,
       ratification_decision: draft.ratificationDecision,

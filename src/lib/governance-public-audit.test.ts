@@ -1,4 +1,5 @@
 import {
+  isMissingPublicAuditAnchoringBackend,
   readGovernancePublicAuditChainStatus,
   summarizeGovernancePublicAuditBatch,
 } from '@/lib/governance-public-audit';
@@ -48,5 +49,40 @@ describe('governance-public-audit helpers', () => {
       eventCount: 4,
       hashPreview: 'abcdef012345...23456789',
     });
+  });
+
+  it('detects missing anchoring backend from PostgREST codes', () => {
+    expect(isMissingPublicAuditAnchoringBackend({ code: '42P01', message: null, details: null })).toBe(true);
+    expect(isMissingPublicAuditAnchoringBackend({ code: 'PGRST205', message: null, details: null })).toBe(true);
+    expect(isMissingPublicAuditAnchoringBackend({ code: 'PGRST202', message: null, details: null })).toBe(true);
+  });
+
+  it('detects missing anchoring backend from RPC/table hints in messages', () => {
+    expect(
+      isMissingPublicAuditAnchoringBackend({
+        code: null,
+        message: 'function capture_governance_public_audit_batch not found',
+        details: null,
+      }),
+    ).toBe(true);
+    expect(
+      isMissingPublicAuditAnchoringBackend({
+        code: null,
+        message: 'verify_governance_public_audit_chain',
+        details: null,
+      }),
+    ).toBe(true);
+    expect(
+      isMissingPublicAuditAnchoringBackend({
+        code: null,
+        message: 'relation "governance_public_audit_batches" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false for unrelated errors', () => {
+    expect(isMissingPublicAuditAnchoringBackend(null)).toBe(false);
+    expect(isMissingPublicAuditAnchoringBackend({ code: '23505', message: 'duplicate', details: null })).toBe(false);
   });
 });

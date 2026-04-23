@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { callUntypedRpc } from '@/lib/governance-rpc';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseGovernanceGuardianRelayDistributionActionsArgs {
   proposalId: string;
@@ -25,16 +25,13 @@ export function useGovernanceGuardianRelayDistributionActions({
 
     setCapturingRelayClientVerificationPackage(true);
 
-    const { error } = await callUntypedRpc<string>(
-      'capture_governance_proposal_guardian_relay_client_verification_package',
-      {
-        target_proposal_id: proposalId,
-        package_notes: packageNotes.trim() || null,
-        package_metadata: {
-          source: 'governance_guardian_relay_panel',
-        },
+    const { error } = await supabase.rpc('capture_governance_proposal_guardian_relay_client_verification_package', {
+      target_proposal_id: proposalId,
+      package_notes: packageNotes.trim() || null,
+      package_metadata: {
+        source: 'governance_guardian_relay_panel',
       },
-    );
+    });
 
     if (error) {
       console.error('Failed to capture guardian relay client verification package:', error);
@@ -70,22 +67,19 @@ export function useGovernanceGuardianRelayDistributionActions({
 
     setSigningRelayClientVerificationPackage(true);
 
-    const { error } = await callUntypedRpc<string>(
-      'sign_governance_proposal_guardian_relay_client_verification_package',
-      {
-        target_package_id: packageId,
-        signer_key: signerKey,
-        signature,
-        signature_algorithm: draft.signatureAlgorithm.trim() || 'ed25519',
-        signer_trust_domain: draft.signerTrustDomain.trim().toLowerCase() || 'public',
-        signer_jurisdiction_country_code: draft.signerJurisdictionCountryCode.trim().toUpperCase() || null,
-        signer_identity_uri: draft.signerIdentityUri.trim() || null,
-        distribution_channel: draft.distributionChannel.trim().toLowerCase() || 'primary',
-        signature_metadata: {
-          source: 'governance_guardian_relay_panel',
-        },
+    const { error } = await supabase.rpc('sign_governance_proposal_guardian_relay_client_verification_package', {
+      target_package_id: packageId,
+      signer_key: signerKey,
+      signature,
+      signature_algorithm: draft.signatureAlgorithm.trim() || 'ed25519',
+      signer_trust_domain: draft.signerTrustDomain.trim().toLowerCase() || 'public',
+      signer_jurisdiction_country_code: draft.signerJurisdictionCountryCode.trim().toUpperCase() || null,
+      signer_identity_uri: draft.signerIdentityUri.trim() || null,
+      distribution_channel: draft.distributionChannel.trim().toLowerCase() || 'primary',
+      signature_metadata: {
+        source: 'governance_guardian_relay_panel',
       },
-    );
+    });
 
     if (error) {
       console.error('Failed to sign guardian relay client verification package:', error);
@@ -104,7 +98,7 @@ export function useGovernanceGuardianRelayDistributionActions({
 
     setEscalatingProofDistributionPublicExecution(true);
 
-    const { error } = await callUntypedRpc<unknown>('maybe_escalate_guardian_relay_proof_distribution_exec_page', {
+    const { error } = await supabase.rpc('maybe_escalate_guardian_relay_proof_distribution_exec_page', {
       target_proposal_id: proposalId,
       target_batch_id: null,
       escalation_context: {

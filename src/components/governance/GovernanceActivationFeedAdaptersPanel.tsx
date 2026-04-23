@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS } from '@/lib/governance-activation-demographic-feeds';
 import {
   formatActivationDemographicFeedOutboxClosedStatusLabel,
   formatActivationDemographicFeedScopeLabel,
@@ -31,6 +32,13 @@ import {
   formatActivationDemographicFeedWorkerRunOutcomeLabel,
   formatTruncatedGovernanceNote,
 } from '@/lib/governance-activation-demographic-worker';
+import {
+  activationFeedSchedulerHealthExplainTitlesFromCadence,
+  activationFeedSchedulerStaleThresholdsFromCadence,
+  computeActivationFeedSchedulerCronRunHealthBadge,
+  computeActivationFeedSchedulerEnqueueHealthBadge,
+  type ActivationFeedSchedulerHealthBadge,
+} from '@/lib/governance-activation-demographic-feed-scheduler-health';
 import { useGovernanceActivationDemographicFeeds } from '@/lib/use-governance-activation-demographic-feeds';
 interface GovernanceActivationFeedAdaptersPanelProps {
   formatTimestamp: (value: string | null) => string;
@@ -73,11 +81,6 @@ function formatCronRunStatusLabel(value: string | null) {
   return value.trim();
 }
 
-type FeedSchedulerRunHealth = {
-  label: string;
-  className: string;
-};
-
 function countFeedWorkerAlerts(alert: {
   freshness_alert: boolean;
   signature_failure_count: number;
@@ -95,8 +98,6 @@ function countFeedWorkerAlerts(alert: {
 const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
 const FEED_WORKER_ALERTS_FIRST_PAGE = 8;
 const FEED_WORKER_ALERTS_APPEND_PAGE = 8;
-const FEED_SCHEDULER_RUN_STALE_HOURS = 2;
-const FEED_SCHEDULER_ENQUEUE_STALE_HOURS = 12;
 
 async function copyActivationFeedWorkerEscalationPageKey() {
   try {
@@ -235,81 +236,79 @@ export function GovernanceActivationFeedAdaptersPanel({
     ));
   }, [feedWorkerAlerts.length]);
 
+  const [schedulerHealthClockMs, setSchedulerHealthClockMs] = useState(() => Date.now());
+  useEffect(() => {
+    const tickClock = () => setSchedulerHealthClockMs(Date.now());
+    const id = window.setInterval(tickClock, ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS);
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'visible') {
+        return;
+      }
+      tickClock();
+    };
+    const onPageShow = (event: Event) => {
+      const pageEvent = event as PageTransitionEvent;
+      if (pageEvent.persisted) {
+        tickClock();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('online', tickClock);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('online', tickClock);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, []);
+
   const visibleFeedWorkerAlerts = useMemo(
     () => feedWorkerAlerts.slice(0, visibleFeedWorkerAlertsCount),
     [feedWorkerAlerts, visibleFeedWorkerAlertsCount],
   );
   const feedWorkerAlertsHasMore = visibleFeedWorkerAlertsCount < feedWorkerAlerts.length;
-  const feedSchedulerRunHealth = useMemo<FeedSchedulerRunHealth | null>(() => {
+  const feedSchedulerRunHealth = useMemo<ActivationFeedSchedulerHealthBadge | null>(() => {
     const status = feedWorkerScheduleAutomationStatus;
     if (!status) {
       return null;
     }
-    if (!status.latest_cron_run_started_at) {
-      return {
-        label: 'No cron run recorded',
-        className: 'border-border bg-muted text-muted-foreground',
-      };
-    }
-
-    const normalizedStatus = (status.latest_cron_run_status || '').trim().toLowerCase();
-    if (normalizedStatus === 'failed' || normalizedStatus === 'error') {
-      return {
-        label: 'Latest cron run failed',
-        className: 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300',
-      };
-    }
-    if (normalizedStatus === 'running') {
-      return {
-        label: 'Cron run in progress',
-        className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-      };
-    }
-
-    const startedAtMs = Date.parse(status.latest_cron_run_started_at);
-    if (Number.isFinite(startedAtMs)) {
-      const elapsedMs = Date.now() - startedAtMs;
-      if (elapsedMs > FEED_SCHEDULER_RUN_STALE_HOURS * 60 * 60 * 1000) {
-        return {
-          label: 'Latest cron run is stale',
-          className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-        };
-      }
-    }
-
-    return {
-      label: 'Latest cron run healthy',
-      className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    };
-  }, [feedWorkerScheduleAutomationStatus]);
-  const feedSchedulerEnqueueHealth = useMemo<FeedSchedulerRunHealth | null>(() => {
+    const cadenceMinutes = feedWorkerSchedulePolicy?.default_interval_minutes ?? 360;
+    const { cronRunStaleMs } = activationFeedSchedulerStaleThresholdsFromCadence(cadenceMinutes);
+    return computeActivationFeedSchedulerCronRunHealthBadge({
+      status,
+      nowMs: schedulerHealthClockMs,
+      staleAfterMs: cronRunStaleMs,
+    });
+  }, [
+    feedWorkerScheduleAutomationStatus,
+    feedWorkerSchedulePolicy?.default_interval_minutes,
+    schedulerHealthClockMs,
+  ]);
+  const feedSchedulerEnqueueHealth = useMemo<ActivationFeedSchedulerHealthBadge | null>(() => {
     const status = feedWorkerScheduleAutomationStatus;
     if (!status) {
       return null;
     }
-    if (!status.latest_scheduled_enqueue_at) {
-      return {
-        label: 'No schedule enqueue observed',
-        className: 'border-border bg-muted text-muted-foreground',
-      };
-    }
-
-    const enqueueAtMs = Date.parse(status.latest_scheduled_enqueue_at);
-    if (Number.isFinite(enqueueAtMs)) {
-      const elapsedMs = Date.now() - enqueueAtMs;
-      if (elapsedMs > FEED_SCHEDULER_ENQUEUE_STALE_HOURS * 60 * 60 * 1000) {
-        return {
-          label: 'Schedule enqueue is stale',
-          className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-        };
-      }
-    }
-
-    return {
-      label: 'Schedule enqueue is fresh',
-      className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    };
-  }, [feedWorkerScheduleAutomationStatus]);
+    const cadenceMinutes = feedWorkerSchedulePolicy?.default_interval_minutes ?? 360;
+    const { enqueueStaleMs } = activationFeedSchedulerStaleThresholdsFromCadence(cadenceMinutes);
+    return computeActivationFeedSchedulerEnqueueHealthBadge({
+      latestScheduledEnqueueAt: status.latest_scheduled_enqueue_at,
+      nowMs: schedulerHealthClockMs,
+      staleAfterMs: enqueueStaleMs,
+    });
+  }, [
+    feedWorkerScheduleAutomationStatus,
+    feedWorkerSchedulePolicy?.default_interval_minutes,
+    schedulerHealthClockMs,
+  ]);
+  const feedSchedulerHealthBadgeTitles = useMemo(
+    () =>
+      activationFeedSchedulerHealthExplainTitlesFromCadence(
+        feedWorkerSchedulePolicy?.default_interval_minutes ?? 360,
+      ),
+    [feedWorkerSchedulePolicy?.default_interval_minutes],
+  );
 
   if (feedBackendUnavailable) {
     return (
@@ -390,6 +389,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void scheduleFeedWorkerJobs(false)}
             disabled={schedulingFeedWorkerJobs || !canManageFeeds || feedWorkerBackendUnavailable}
+            aria-busy={schedulingFeedWorkerJobs}
             data-build-key="governanceActivationFeedQueueDueSweeps"
             data-build-label="Queue due feed worker sweeps"
           >
@@ -429,6 +429,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                   type="button"
                   className={buttonVariants({ variant: 'destructive' })}
                   disabled={schedulingFeedWorkerJobs}
+                  aria-busy={schedulingFeedWorkerJobs}
                   data-build-key="governanceActivationFeedConfirmForceReschedule"
                   data-build-label="Confirm reset sweep queue and re-queue"
                   onClick={(event) => {
@@ -451,6 +452,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void processFeedWorkerOutboxQueue()}
             disabled={processingFeedOutbox || !canManageFeeds || feedWorkerBackendUnavailable}
+            aria-busy={processingFeedOutbox}
             data-build-key="governanceActivationFeedProcessSweepQueue"
             data-build-label="Process feed worker sweep queue"
           >
@@ -464,6 +466,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void releaseStaleFeedWorkerClaims()}
             disabled={releasingStaleFeedWorkerClaims || !canManageFeeds || feedWorkerBackendUnavailable}
+            aria-busy={releasingStaleFeedWorkerClaims}
             data-build-key="governanceActivationFeedReleaseStaleSweepClaims"
             data-build-label="Release stuck feed worker sweep claims"
           >
@@ -477,6 +480,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void runFeedWorkerSweep()}
             disabled={runningFeedWorkers || !canManageFeeds || feedWorkerBackendUnavailable}
+            aria-busy={runningFeedWorkers}
             data-build-key="governanceActivationFeedRunWorkerSweep"
             data-build-label="Run feed worker sweep"
           >
@@ -490,6 +494,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void loadFeedData()}
             disabled={loadingFeedData}
+            aria-busy={loadingFeedData}
             data-build-key="governanceActivationFeedRefreshFeeds"
             data-build-label="Refresh signed demographic feeds"
           >
@@ -590,6 +595,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             <Badge
               variant="outline"
               className={feedSchedulerRunHealth.className}
+              title={feedSchedulerHealthBadgeTitles.cronRunTitle}
               data-build-key="governanceActivationFeedSchedulerRunHealthBadge"
               data-build-label="Feed scheduler latest run health badge"
             >
@@ -600,6 +606,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             <Badge
               variant="outline"
               className={feedSchedulerEnqueueHealth.className}
+              title={feedSchedulerHealthBadgeTitles.enqueueTitle}
               data-build-key="governanceActivationFeedSchedulerEnqueueHealthBadge"
               data-build-label="Feed scheduler enqueue freshness badge"
             >
@@ -714,6 +721,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="outline"
               className="w-full gap-2"
               disabled={loadingMoreFeedWorkerOutboxActiveJobs}
+              aria-busy={loadingMoreFeedWorkerOutboxActiveJobs}
               onClick={() => void loadMoreFeedWorkerOutboxActiveJobs()}
               data-build-key="governanceActivationFeedLoadOlderOutboxActiveJobs"
               data-build-label="Load older active sweep queue jobs"
@@ -826,6 +834,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                   variant="outline"
                   className="w-full gap-2"
                   disabled={loadingMoreFeedWorkerOutboxRecentClosedJobs}
+                  aria-busy={loadingMoreFeedWorkerOutboxRecentClosedJobs}
                   onClick={() => void loadMoreFeedWorkerOutboxRecentClosedJobs()}
                   data-build-key="governanceActivationFeedLoadOlderOutboxClosedJobs"
                   data-build-label="Load older closed sweep queue jobs"
@@ -976,6 +985,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="outline"
               className="w-full gap-2"
               disabled={loadingMoreFeedWorkerRuns}
+              aria-busy={loadingMoreFeedWorkerRuns}
               onClick={() => void loadMoreFeedWorkerRuns()}
               data-build-key="governanceActivationFeedLoadOlderWorkerRuns"
               data-build-label="Load older feed worker runs"
@@ -1006,6 +1016,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="secondary"
               className="gap-2"
               disabled={escalatingFeedWorkerPublicExecution}
+              aria-busy={escalatingFeedWorkerPublicExecution}
               onClick={() => void escalateFeedWorkerAlertsToPublicExecution()}
               data-build-key="governanceActivationFeedEscalateWorkerAlerts"
               data-build-label="Update on-call page for feed worker alerts"
@@ -1135,6 +1146,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="outline"
               className="w-full gap-2"
               disabled={registeringFeedAdapter}
+              aria-busy={registeringFeedAdapter}
               onClick={() => void registerFeedAdapter(adapterDraft)}
               data-build-key="governanceActivationFeedSaveAdapter"
               data-build-label="Save signed demographic feed adapter"
@@ -1230,6 +1242,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="outline"
               className="w-full gap-2"
               disabled={ingestingSignedFeedSnapshot}
+              aria-busy={ingestingSignedFeedSnapshot}
               onClick={() => void ingestSignedFeedSnapshot(ingestionDraft)}
               data-build-key="governanceActivationFeedIngestSignedSnapshot"
               data-build-label="Verify and ingest signed demographic snapshot"
@@ -1371,6 +1384,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                       size="sm"
                       variant="outline"
                       disabled={resolvingFeedAlertKey === resolveAllKey}
+                      aria-busy={resolvingFeedAlertKey === resolveAllKey}
                       onClick={() => void resolveFeedAlert(alert.adapter_id, null)}
                       data-build-key={`governanceActivationFeedResolveAllAlerts__${alert.adapter_id}`}
                       data-build-label={`Resolve all feed worker alerts (${alert.adapter_key})`}
@@ -1383,6 +1397,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                         size="sm"
                         variant="outline"
                         disabled={resolvingFeedAlertKey === `${alert.adapter_id}:signature_failure`}
+                        aria-busy={resolvingFeedAlertKey === `${alert.adapter_id}:signature_failure`}
                         onClick={() => void resolveFeedAlert(alert.adapter_id, 'signature_failure')}
                         data-build-key={`governanceActivationFeedResolveSignatureAlerts__${alert.adapter_id}`}
                         data-build-label={`Resolve signature feed worker alerts (${alert.adapter_key})`}
@@ -1398,6 +1413,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                         size="sm"
                         variant="outline"
                         disabled={resolvingFeedAlertKey === `${alert.adapter_id}:connectivity`}
+                        aria-busy={resolvingFeedAlertKey === `${alert.adapter_id}:connectivity`}
                         onClick={() => void resolveFeedAlert(alert.adapter_id, 'connectivity')}
                         data-build-key={`governanceActivationFeedResolveConnectivityAlerts__${alert.adapter_id}`}
                         data-build-label={`Resolve connectivity feed worker alerts (${alert.adapter_key})`}
@@ -1413,6 +1429,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                         size="sm"
                         variant="outline"
                         disabled={resolvingFeedAlertKey === `${alert.adapter_id}:payload`}
+                        aria-busy={resolvingFeedAlertKey === `${alert.adapter_id}:payload`}
                         onClick={() => void resolveFeedAlert(alert.adapter_id, 'payload')}
                         data-build-key={`governanceActivationFeedResolvePayloadAlerts__${alert.adapter_id}`}
                         data-build-label={`Resolve payload feed worker alerts (${alert.adapter_key})`}
@@ -1488,6 +1505,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="outline"
               className="w-full gap-2"
               disabled={loadingMoreFeedIngestions || feedBackendUnavailable}
+              aria-busy={loadingMoreFeedIngestions}
               onClick={() => void loadMoreFeedIngestions()}
               data-build-key="governanceActivationFeedLoadOlderIngestions"
               data-build-label="Load older signed feed ingestions"

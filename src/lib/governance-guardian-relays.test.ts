@@ -356,6 +356,32 @@ describe('governance-guardian-relays helpers', () => {
 
     expect(
       isMissingGuardianRelayBackend({
+        code: 'PGRST202',
+        message: 'Could not find the function public.governance_proposal_guardian_relay_client_verification_signature_board',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingGuardianRelayBackend({
+        code: 'PGRST202',
+        message: 'Could not find the function public.maybe_escalate_guardian_relay_proof_distribution_exec_page',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingGuardianRelayBackend({
+        code: '42P01',
+        message: 'relation "governance_guardian_relay_policies" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(isMissingGuardianRelayBackend(null)).toBe(false);
+
+    expect(
+      isMissingGuardianRelayBackend({
         code: '22023',
         message: 'random failure',
       }),

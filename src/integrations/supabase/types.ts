@@ -4267,6 +4267,15 @@ export type Database = {
         }
         Returns: string | null
       }
+      capture_governance_public_audit_verifier_federation_package: {
+        Args: {
+          target_batch_id?: string | null
+          requested_policy_key?: string
+          package_notes?: string | null
+          package_metadata?: Json
+        }
+        Returns: string
+      }
       can_contribute_to_content_category: {
         Args: { target_category_id: string; target_profile_id?: string }
         Returns: boolean
@@ -4367,6 +4376,330 @@ export type Database = {
           signers_with_relay_quorum_count: number
         }[]
       }
+      capture_governance_guardian_relay_audit_report: {
+        Args: {
+          target_proposal_id: string
+          audit_notes?: string | null
+          audit_metadata?: Json
+        }
+        Returns: string
+      }
+      capture_governance_proposal_guardian_relay_client_manifest: {
+        Args: {
+          target_proposal_id: string
+          manifest_notes?: string | null
+          manifest_metadata?: Json
+        }
+        Returns: string
+      }
+      capture_governance_proposal_guardian_relay_client_verification_package: {
+        Args: {
+          target_proposal_id: string
+          package_notes?: string | null
+          package_metadata?: Json
+        }
+        Returns: string
+      }
+      governance_proposal_guardian_relay_alert_board: {
+        Args: { target_proposal_id: string; status_filter?: string | null; max_entries?: number }
+        Returns: {
+          alert_id: string
+          alert_key: string
+          severity: string
+          alert_scope: string
+          alert_status: string
+          alert_message: string
+          opened_at: string
+          resolved_at: string | null
+        }[]
+      }
+      governance_proposal_guardian_relay_attestation_audit_report: {
+        Args: { target_proposal_id: string; requested_lookback_hours?: number }
+        Returns: {
+          relay_id: string
+          relay_key: string
+          relay_label: string | null
+          relay_region_code: string
+          relay_infrastructure_provider: string
+          relay_operator_label: string
+          relay_trust_domain: string
+          total_attestation_count: number
+          verified_count: number
+          mismatch_count: number
+          unreachable_count: number
+          last_attested_at: string | null
+          recent_attestation_count: number
+          recent_failure_count: number
+          recent_health_score: number | null
+          recent_health_status: string
+        }[]
+      }
+      governance_proposal_guardian_relay_client_proof_manifest: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          manifest_version: string
+          manifest_hash: string
+          manifest_payload: Json
+          trust_minimized_quorum_met: boolean
+        }[]
+      }
+      governance_proposal_guardian_relay_client_verification_distribution_summary: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          package_id: string | null
+          captured_at: string | null
+          package_version: string | null
+          package_hash: string | null
+          source_manifest_hash: string | null
+          required_distribution_signatures: number
+          signature_count: number
+          distinct_signer_count: number
+          distinct_signer_jurisdictions_count: number
+          distinct_signer_trust_domains_count: number
+          last_signed_at: string | null
+          distribution_ready: boolean
+        }[]
+      }
+      governance_proposal_guardian_relay_client_verification_package: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          package_version: string
+          package_hash: string
+          package_payload: Json
+          source_manifest_id: string
+          source_manifest_hash: string
+          trust_minimized_quorum_met: boolean
+          relay_ops_ready: boolean
+        }[]
+      }
+      governance_proposal_guardian_relay_client_verification_signature_board: {
+        Args: { target_proposal_id: string; max_entries?: number }
+        Returns: {
+          signature_id: string
+          package_id: string
+          package_hash: string
+          signer_key: string
+          signature_algorithm: string
+          distribution_channel: string
+          signer_trust_domain: string | null
+          signer_jurisdiction_country_code: string | null
+          signed_at: string
+        }[]
+      }
+      governance_proposal_guardian_relay_diversity_audit: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          policy_enabled: boolean
+          required_relay_attestations: number
+          min_distinct_relay_regions: number
+          min_distinct_relay_providers: number
+          min_distinct_relay_operators: number
+          verified_relay_count: number
+          distinct_regions_count: number
+          distinct_providers_count: number
+          distinct_operators_count: number
+          dominant_region_share_percent: number | null
+          dominant_provider_share_percent: number | null
+          dominant_operator_share_percent: number | null
+          region_diversity_met: boolean
+          provider_diversity_met: boolean
+          operator_diversity_met: boolean
+          overall_diversity_met: boolean
+        }[]
+      }
+      governance_proposal_guardian_relay_operations_summary: {
+        Args: {
+          target_proposal_id: string
+          requested_policy_key?: string
+          requested_attestation_sla_minutes?: number | null
+        }
+        Returns: {
+          policy_key: string
+          require_trust_minimized_quorum: boolean
+          require_relay_ops_readiness: boolean
+          max_open_critical_relay_alerts: number
+          relay_attestation_sla_minutes: number
+          external_approval_count: number
+          stale_signer_count: number
+          open_warning_alert_count: number
+          open_critical_alert_count: number
+          last_worker_run_at: string | null
+          last_worker_run_status: string
+          trust_minimized_quorum_met: boolean
+          relay_ops_ready: boolean
+        }[]
+      }
+      governance_proposal_guardian_relay_recent_audits: {
+        Args: { target_proposal_id: string; max_reports?: number }
+        Returns: {
+          report_id: string
+          captured_at: string
+          overall_diversity_met: boolean
+          relay_quorum_met: boolean
+          chain_proof_match_met: boolean
+          verified_relay_count: number
+          distinct_regions_count: number
+          distinct_providers_count: number
+          distinct_operators_count: number
+          audit_notes: string | null
+        }[]
+      }
+      governance_proposal_guardian_relay_recent_client_manifests: {
+        Args: { target_proposal_id: string; max_manifests?: number }
+        Returns: {
+          manifest_id: string
+          captured_at: string
+          manifest_version: string
+          manifest_hash: string
+          trust_minimized_quorum_met: boolean
+          relay_quorum_met: boolean
+          chain_proof_match_met: boolean
+          manifest_notes: string | null
+        }[]
+      }
+      governance_proposal_guardian_relay_recent_client_verification_packages: {
+        Args: { target_proposal_id: string; max_packages?: number }
+        Returns: {
+          package_id: string
+          captured_at: string
+          package_version: string
+          package_hash: string
+          source_manifest_hash: string
+          signature_count: number
+          distribution_ready: boolean
+          package_notes: string | null
+        }[]
+      }
+      governance_proposal_guardian_relay_trust_minimized_summary: {
+        Args: { target_proposal_id: string }
+        Returns: {
+          policy_enabled: boolean
+          required_relay_attestations: number
+          min_distinct_relay_regions: number
+          min_distinct_relay_providers: number
+          min_distinct_relay_operators: number
+          min_distinct_relay_jurisdictions: number
+          min_distinct_relay_trust_domains: number
+          max_dominant_relay_region_share_percent: number
+          max_dominant_relay_provider_share_percent: number
+          max_dominant_relay_operator_share_percent: number
+          max_dominant_relay_jurisdiction_share_percent: number
+          max_dominant_relay_trust_domain_share_percent: number
+          external_approval_count: number
+          signers_with_relay_quorum_count: number
+          signers_with_chain_proof_count: number
+          verified_relay_count: number
+          distinct_regions_count: number
+          distinct_providers_count: number
+          distinct_operators_count: number
+          distinct_jurisdictions_count: number
+          distinct_trust_domains_count: number
+          dominant_region_share_percent: number | null
+          dominant_provider_share_percent: number | null
+          dominant_operator_share_percent: number | null
+          dominant_jurisdiction_share_percent: number | null
+          dominant_trust_domain_share_percent: number | null
+          relay_quorum_met: boolean
+          chain_proof_match_met: boolean
+          region_diversity_met: boolean
+          provider_diversity_met: boolean
+          operator_diversity_met: boolean
+          jurisdiction_diversity_met: boolean
+          trust_domain_diversity_met: boolean
+          concentration_limits_met: boolean
+          trust_minimized_quorum_met: boolean
+        }[]
+      }
+      governance_proposal_guardian_relay_worker_run_board: {
+        Args: { target_proposal_id: string; max_entries?: number }
+        Returns: {
+          run_id: string
+          run_scope: string
+          run_status: string
+          processed_signer_count: number
+          stale_signer_count: number
+          open_alert_count: number
+          error_message: string | null
+          observed_at: string
+        }[]
+      }
+      maybe_escalate_guardian_relay_critical_public_execution_page: {
+        Args: {
+          target_proposal_id: string
+          open_critical_alert_count: number
+          target_batch_id?: string | null
+          escalation_context?: Json
+        }
+        Returns: null
+      }
+      maybe_escalate_guardian_relay_proof_distribution_exec_page: {
+        Args: {
+          target_proposal_id: string
+          target_batch_id?: string | null
+          escalation_context?: Json
+        }
+        Returns: null
+      }
+      open_governance_guardian_relay_alert: {
+        Args: {
+          target_proposal_id: string
+          alert_key: string
+          severity: string
+          alert_scope: string
+          alert_message: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      record_governance_guardian_relay_worker_run: {
+        Args: {
+          target_proposal_id: string
+          run_scope: string
+          run_status: string
+          processed_signer_count?: number
+          stale_signer_count?: number
+          open_alert_count?: number
+          error_message?: string | null
+          run_payload?: Json
+        }
+        Returns: string
+      }
+      resolve_governance_guardian_relay_alert: {
+        Args: { target_alert_id: string; resolution_notes?: string | null }
+        Returns: string
+      }
+      set_governance_guardian_relay_ops_requirement: {
+        Args: {
+          requested_policy_key?: string
+          requested_require_trust_minimized_quorum?: boolean
+          requested_require_relay_ops_readiness?: boolean
+          requested_max_open_critical_relay_alerts?: number
+          requested_relay_attestation_sla_minutes?: number
+        }
+        Returns: string
+      }
+      sign_governance_proposal_guardian_relay_client_verification_package: {
+        Args: {
+          target_package_id: string
+          signer_key: string
+          signature: string
+          signature_algorithm?: string
+          signer_trust_domain?: string
+          signer_jurisdiction_country_code?: string | null
+          signer_identity_uri?: string | null
+          distribution_channel?: string
+          signature_metadata?: Json
+        }
+        Returns: string
+      }
+      sync_guardian_relay_attestation_sla_alerts: {
+        Args: {
+          target_proposal_id: string
+          requested_policy_key?: string
+          requested_attestation_sla_minutes?: number | null
+        }
+        Returns: null
+      }
       governance_public_audit_batch_verifier_summary: {
         Args: { target_batch_id: string }
         Returns: {
@@ -4380,6 +4713,598 @@ export type Database = {
           unreachable_count: number
           verified_count: number
         }[]
+      }
+      governance_public_audit_anchor_execution_job_board: {
+        Args: { requested_batch_id?: string | null; max_jobs?: number }
+        Returns: {
+          job_id: string
+          batch_id: string
+          adapter_id: string
+          adapter_key: string
+          adapter_name: string
+          network: string
+          status: string
+          scheduled_at: string
+          completed_at: string | null
+          immutable_reference: string | null
+          error_message: string | null
+        }[]
+      }
+      governance_public_audit_client_verifier_bundle: {
+        Args: { target_batch_id?: string | null; max_mirrors?: number }
+        Returns: {
+          bundle_version: string
+          bundle_hash: string
+          bundle_payload: Json
+          healthy_mirror_count: number
+          quorum_met: boolean
+        }[]
+      }
+      governance_public_audit_external_execution_page_board: {
+        Args: { requested_batch_id?: string | null; max_pages?: number }
+        Returns: {
+          page_id: string
+          batch_id: string
+          page_key: string
+          severity: string
+          page_status: string
+          page_message: string
+          oncall_channel: string
+          opened_at: string
+          resolved_at: string | null
+        }[]
+      }
+      governance_public_audit_external_execution_paging_summary: {
+        Args: {
+          requested_batch_id?: string | null
+          auto_open_pages?: boolean
+          requested_lookback_hours?: number
+        }
+        Returns: {
+          batch_id: string | null
+          paging_enabled: boolean
+          oncall_channel: string
+          paging_stale_pending_minutes: number
+          paging_failure_share_percent: number
+          anchor_stale_pending_count: number
+          verifier_stale_pending_count: number
+          anchor_failure_share_percent: number | null
+          verifier_failure_share_percent: number | null
+          should_page: boolean
+          open_page_count: number
+          latest_open_page_at: string | null
+        }[]
+      }
+      governance_public_audit_external_execution_policy_summary: {
+        Args: { requested_policy_key?: string }
+        Returns: {
+          policy_key: string
+          policy_name: string
+          is_active: boolean
+          claim_ttl_minutes: number
+          anchor_max_attempts: number
+          verifier_max_attempts: number
+          retry_base_delay_minutes: number
+          retry_max_delay_minutes: number
+          paging_enabled: boolean
+          paging_stale_pending_minutes: number
+          paging_failure_share_percent: number
+          oncall_channel: string
+          updated_at: string
+        }[]
+      }
+      governance_public_audit_operations_sla_summary: {
+        Args: {
+          requested_batch_id?: string | null
+          requested_pending_sla_hours?: number
+          requested_lookback_hours?: number
+        }
+        Returns: {
+          batch_id: string
+          pending_sla_hours: number
+          lookback_hours: number
+          active_anchor_adapter_count: number
+          active_verifier_count: number
+          anchor_pending_count: number
+          anchor_stale_pending_count: number
+          anchor_failed_lookback_count: number
+          anchor_completed_lookback_count: number
+          anchor_failure_share_percent: number | null
+          verifier_pending_count: number
+          verifier_stale_pending_count: number
+          verifier_failed_lookback_count: number
+          verifier_completed_lookback_count: number
+          verifier_failure_share_percent: number | null
+          oldest_anchor_pending_at: string | null
+          oldest_verifier_pending_at: string | null
+          anchor_sla_met: boolean
+          verifier_sla_met: boolean
+          overall_sla_met: boolean
+        }[]
+      }
+      governance_public_audit_verifier_federation_dist_pkg_history: {
+        Args: { target_batch_id?: string | null; max_entries?: number }
+        Returns: {
+          package_id: string
+          batch_id: string
+          captured_at: string
+          package_version: string
+          package_hash: string
+          source_directory_id: string
+          signature_count: number
+        }[]
+      }
+      governance_public_audit_verifier_federation_package_distribution_summary: {
+        Args: { target_batch_id?: string | null; requested_policy_key?: string }
+        Returns: {
+          package_id: string
+          batch_id: string
+          captured_at: string
+          package_version: string
+          package_hash: string
+          source_directory_hash: string
+          required_distribution_signatures: number
+          signature_count: number
+          distinct_signer_count: number
+          distinct_signer_jurisdictions_count: number
+          distinct_signer_trust_domains_count: number
+          last_signed_at: string | null
+          federation_ops_ready: boolean
+          distribution_ready: boolean
+        }[]
+      }
+      governance_public_audit_verifier_federation_package_signature_board: {
+        Args: { target_batch_id?: string | null; max_entries?: number }
+        Returns: {
+          signature_id: string
+          package_id: string
+          package_hash: string
+          signer_key: string
+          signature_algorithm: string
+          distribution_channel: string
+          signer_trust_domain: string | null
+          signer_jurisdiction_country_code: string | null
+          signed_at: string
+        }[]
+      }
+      governance_public_audit_verifier_federation_pkg_digest_text: {
+        Args: { target_batch_id?: string | null; requested_policy_key?: string }
+        Returns: {
+          package_version: string
+          package_hash: string
+          package_payload: Json
+          batch_id: string
+          source_directory_id: string
+          source_directory_hash: string
+          federation_ops_ready: boolean
+          digest_source_text: string
+        }[]
+      }
+      governance_public_audit_verifier_mirror_discovered_candidate_board: {
+        Args: { status_filter?: string | null; max_candidates?: number }
+        Returns: {
+          candidate_id: string
+          source_id: string
+          source_key: string
+          source_label: string
+          trust_tier: string
+          candidate_key: string
+          candidate_label: string
+          endpoint_url: string
+          region_code: string | null
+          operator_label: string | null
+          trust_domain: string | null
+          candidate_status: string
+          discovery_confidence: number
+          last_seen_at: string
+        }[]
+      }
+      governance_public_audit_verifier_mirror_discovery_source_board: {
+        Args: { max_entries?: number }
+        Returns: {
+          source_id: string
+          source_key: string
+          source_label: string
+          endpoint_url: string
+          discovery_scope: string
+          trust_tier: string
+          is_active: boolean
+          last_run_at: string | null
+          last_run_status: string | null
+          candidate_count: number
+          new_candidate_count: number
+          promoted_candidate_count: number
+        }[]
+      }
+      governance_public_audit_verifier_mirror_discovery_summary: {
+        Args: { requested_batch_id?: string | null; requested_lookback_hours?: number }
+        Returns: {
+          batch_id: string
+          lookback_hours: number
+          active_source_count: number
+          candidate_count: number
+          new_candidate_count: number
+          promoted_candidate_count: number
+          last_run_at: string | null
+          last_run_status: string | null
+        }[]
+      }
+      governance_public_audit_verifier_mirror_federation_alert_board: {
+        Args: { status_filter?: string | null; max_entries?: number }
+        Returns: {
+          alert_id: string
+          alert_key: string
+          severity: string
+          alert_scope: string
+          alert_status: string
+          alert_message: string
+          opened_at: string
+          resolved_at: string | null
+        }[]
+      }
+      governance_public_audit_verifier_mirror_federation_onboarding_board: {
+        Args: { status_filter?: string | null; max_entries?: number }
+        Returns: {
+          request_id: string
+          operator_id: string
+          operator_key: string
+          operator_label: string
+          operator_onboarding_status: string
+          request_status: string
+          requested_mirror_key: string
+          requested_mirror_label: string
+          requested_endpoint_url: string
+          requested_region_code: string | null
+          requested_trust_domain: string | null
+          onboarded_mirror_id: string | null
+          reviewed_at: string | null
+          created_at: string
+        }[]
+      }
+      governance_public_audit_verifier_mirror_federation_operations_summary: {
+        Args: {
+          requested_policy_key?: string
+          requested_lookback_hours?: number
+          requested_alert_sla_hours?: number
+        }
+        Returns: {
+          policy_key: string
+          require_federation_ops_readiness: boolean
+          max_open_critical_federation_alerts: number
+          min_onboarded_federation_operators: number
+          registered_operator_count: number
+          approved_operator_count: number
+          onboarded_operator_count: number
+          pending_request_count: number
+          approved_request_count: number
+          onboarded_request_count: number
+          open_warning_alert_count: number
+          open_critical_alert_count: number
+          alert_sla_hours: number
+          alert_sla_breached_count: number
+          last_worker_run_at: string | null
+          last_worker_run_status: string
+          distribution_verification_lookback_hours: number
+          last_distribution_verification_run_at: string | null
+          last_distribution_verification_run_status: string
+          distribution_verification_stale: boolean
+          open_distribution_stale_package_alert_count: number
+          open_distribution_bad_signature_alert_count: number
+          open_distribution_policy_mismatch_alert_count: number
+          open_distribution_verification_alert_count: number
+          federation_ops_ready: boolean
+        }[]
+      }
+      governance_public_audit_verifier_mirror_health_summary: {
+        Args: { requested_batch_id?: string | null; stale_after_minutes?: number }
+        Returns: {
+          mirror_id: string
+          mirror_key: string
+          mirror_label: string | null
+          endpoint_url: string
+          mirror_type: string
+          region_code: string
+          jurisdiction_country_code: string
+          operator_label: string
+          is_active: boolean
+          last_check_at: string | null
+          last_check_status: string | null
+          last_check_latency_ms: number | null
+          last_observed_batch_id: string | null
+          last_observed_batch_hash: string | null
+          last_error_message: string | null
+          is_stale: boolean
+          health_status: string
+        }[]
+      }
+      governance_public_audit_verifier_mirror_policy_ratification_summary: {
+        Args: { requested_policy_key?: string }
+        Returns: {
+          policy_key: string
+          policy_hash: string
+          require_policy_ratification: boolean
+          min_policy_ratification_approvals: number
+          required_independent_signers: number
+          approval_count: number
+          independent_approval_count: number
+          community_approval_count: number
+          reject_count: number
+          ratification_met: boolean
+          latest_ratified_at: string | null
+        }[]
+      }
+      governance_public_audit_verifier_mirror_signer_governance_board: {
+        Args: { max_entries?: number }
+        Returns: {
+          signer_id: string
+          signer_key: string
+          signer_label: string | null
+          trust_tier: string
+          is_active: boolean
+          governance_status: string
+          required_independent_approvals: number
+          approval_count: number
+          independent_approval_count: number
+          community_approval_count: number
+          reject_count: number
+          governance_met: boolean
+          latest_attested_at: string | null
+          governance_last_reviewed_at: string | null
+        }[]
+      }
+      governance_public_audit_verifier_mirror_signer_governance_summary: {
+        Args: { requested_policy_key?: string }
+        Returns: {
+          policy_key: string
+          require_signer_governance_approval: boolean
+          min_signer_governance_independent_approvals: number
+          approved_signer_count: number
+          approved_independent_signer_count: number
+          pending_signer_count: number
+          rejected_signer_count: number
+          suspended_signer_count: number
+          governance_ready: boolean
+          latest_attested_at: string | null
+        }[]
+      }
+      complete_governance_public_audit_verifier_mirror_probe_job: {
+        Args: {
+          target_job_id: string
+          completion_status: string
+          mirror_check_status?: string | null
+          observed_latency_ms?: number | null
+          observed_batch_hash?: string | null
+          error_message?: string | null
+          metadata?: Json
+        }
+        Returns: string
+      }
+      governance_public_audit_verifier_federation_distribution_gate: {
+        Args: { target_batch_id?: string | null; requested_policy_key?: string }
+        Returns: {
+          package_id: string | null
+          batch_id: string | null
+          captured_at: string | null
+          package_version: string | null
+          package_hash: string | null
+          source_directory_hash: string | null
+          required_distribution_signatures: number
+          signature_count: number
+          distinct_signer_count: number
+          distinct_signer_jurisdictions_count: number
+          distinct_signer_trust_domains_count: number
+          last_signed_at: string | null
+          federation_ops_ready: boolean
+          distribution_ready: boolean
+        }[]
+      }
+      governance_public_audit_verifier_mirror_directory_summary: {
+        Args: { requested_batch_id?: string | null; max_entries?: number }
+        Returns: {
+          directory_id: string
+          batch_id: string
+          directory_version: string
+          directory_hash: string
+          signer_id: string
+          signer_key: string
+          signer_label: string | null
+          trust_tier: string
+          signature: string
+          signature_algorithm: string
+          published_at: string
+          is_latest_for_batch: boolean
+        }[]
+      }
+      governance_public_audit_verifier_mirror_directory_trust_summary: {
+        Args: { requested_batch_id?: string | null }
+        Returns: {
+          directory_id: string
+          batch_id: string
+          directory_hash: string
+          published_at: string
+          required_independent_signers: number
+          approval_count: number
+          independent_approval_count: number
+          community_approval_count: number
+          reject_count: number
+          trust_quorum_met: boolean
+        }[]
+      }
+      governance_public_audit_verifier_mirror_failover_policy_summary: {
+        Args: { requested_policy_key?: string }
+        Returns: {
+          policy_id: string
+          policy_key: string
+          policy_name: string
+          is_active: boolean
+          min_healthy_mirrors: number
+          max_mirror_latency_ms: number
+          max_failures_before_cooldown: number
+          cooldown_minutes: number
+          prefer_same_region: boolean
+          required_distinct_regions: number
+          required_distinct_operators: number
+          mirror_selection_strategy: string
+          max_mirror_candidates: number
+          min_independent_directory_signers: number
+          require_policy_ratification: boolean
+          min_policy_ratification_approvals: number
+          require_signer_governance_approval: boolean
+          min_signer_governance_independent_approvals: number
+          require_federation_ops_readiness: boolean
+          max_open_critical_federation_alerts: number
+          min_onboarded_federation_operators: number
+          updated_at: string
+        }[]
+      }
+      governance_public_audit_verifier_mirror_probe_job_board: {
+        Args: { requested_batch_id?: string | null; max_jobs?: number }
+        Returns: {
+          job_id: string
+          batch_id: string
+          mirror_id: string
+          mirror_key: string
+          mirror_label: string
+          endpoint_url: string
+          status: string
+          scheduled_at: string
+          completed_at: string | null
+          observed_check_status: string | null
+          observed_latency_ms: number | null
+          observed_batch_hash: string | null
+          error_message: string | null
+        }[]
+      }
+      governance_public_audit_verifier_mirror_probe_job_summary: {
+        Args: {
+          requested_batch_id?: string | null
+          requested_pending_sla_minutes?: number
+          requested_lookback_hours?: number
+        }
+        Returns: {
+          batch_id: string | null
+          pending_sla_minutes: number
+          lookback_hours: number
+          pending_count: number
+          running_count: number
+          stale_pending_count: number
+          failed_lookback_count: number
+          completed_lookback_count: number
+          oldest_pending_at: string | null
+          pending_sla_met: boolean
+        }[]
+      }
+      publish_governance_public_audit_verifier_mirror_directory: {
+        Args: {
+          signer_key: string
+          signature: string
+          target_batch_id?: string | null
+          signature_algorithm?: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      record_governance_public_audit_verifier_mirror_check: {
+        Args: {
+          target_mirror_id: string
+          check_status: string
+          target_batch_id?: string | null
+          latency_ms?: number | null
+          observed_batch_hash?: string | null
+          error_message?: string | null
+          check_payload?: Json
+        }
+        Returns: string
+      }
+      record_governance_public_audit_verifier_mirror_directory_attestation: {
+        Args: {
+          target_directory_id: string
+          signer_key: string
+          attestation_decision: string
+          attestation_signature: string
+          attestation_payload?: Json
+        }
+        Returns: string
+      }
+      record_governance_public_audit_verifier_mirror_signer_governance_attestation: {
+        Args: {
+          target_signer_id: string
+          attestor_signer_key: string
+          attestation_decision: string
+          attestation_signature: string
+          attestation_payload?: Json
+        }
+        Returns: string
+      }
+      register_governance_public_audit_verifier_mirror: {
+        Args: {
+          mirror_key: string
+          mirror_label?: string | null
+          endpoint_url?: string | null
+          mirror_type?: string
+          region_code?: string
+          jurisdiction_country_code?: string
+          operator_label?: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      register_governance_public_audit_verifier_mirror_directory_signer: {
+        Args: {
+          signer_key: string
+          signer_label?: string | null
+          public_key?: string | null
+          signing_algorithm?: string
+          trust_tier?: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      schedule_governance_public_audit_verifier_mirror_probe_jobs: {
+        Args: {
+          target_batch_id?: string | null
+          force_reschedule?: boolean
+          requested_timeout_ms?: number
+        }
+        Returns: number
+      }
+      set_governance_public_audit_verifier_mirror_min_independent_signers: {
+        Args: { requested_policy_key?: string; required_signer_count?: number }
+        Returns: string
+      }
+      set_governance_public_audit_verifier_mirror_policy_ratification_requirement: {
+        Args: {
+          requested_policy_key?: string
+          require_ratification?: boolean
+          min_approval_count?: number
+        }
+        Returns: string
+      }
+      set_governance_public_audit_verifier_mirror_signer_governance_requirement: {
+        Args: {
+          requested_policy_key?: string
+          require_governance_approval?: boolean
+          required_independent_approvals?: number
+        }
+        Returns: string
+      }
+      upsert_governance_public_audit_verifier_mirror_failover_policy: {
+        Args: {
+          policy_key?: string
+          policy_name?: string
+          is_active?: boolean
+          min_healthy_mirrors?: number | null
+          max_mirror_latency_ms?: number | null
+          max_failures_before_cooldown?: number | null
+          cooldown_minutes?: number | null
+          prefer_same_region?: boolean
+          required_distinct_regions?: number | null
+          required_distinct_operators?: number | null
+          mirror_selection_strategy?: string
+          max_mirror_candidates?: number | null
+          metadata?: Json
+        }
+        Returns: string
       }
       governance_proposal_meets_guardian_signoff: {
         Args: { target_proposal_id: string }
@@ -4488,6 +5413,42 @@ export type Database = {
         }
         Returns: string
       }
+      claim_governance_public_audit_external_execution_jobs: {
+        Args: {
+          requested_batch_id?: string | null
+          requested_anchor_limit?: number
+          requested_verifier_limit?: number
+          worker_identity?: string | null
+        }
+        Returns: {
+          job_type: string
+          job_id: string
+          batch_id: string
+          adapter_id: string | null
+          verifier_id: string | null
+          network: string | null
+          scheduled_at: string
+          attempt_count: number
+          max_attempts: number
+          next_attempt_at: string
+          claimed_at: string
+          claim_expires_at: string
+        }[]
+      }
+      complete_governance_public_audit_anchor_execution_job: {
+        Args: {
+          target_job_id: string
+          completion_status: string
+          immutable_reference?: string | null
+          proof_block_height?: number | null
+          error_message?: string | null
+          proof_payload?: Json
+          retry_on_failure?: boolean
+          requested_retry_base_delay_minutes?: number | null
+          requested_retry_max_delay_minutes?: number | null
+        }
+        Returns: string
+      }
       complete_governance_public_audit_verifier_job: {
         Args: {
           completion_status: Database["public"]["Enums"]["governance_public_audit_verifier_job_status"]
@@ -4496,7 +5457,10 @@ export type Database = {
           proof_reference?: string
           target_job_id: string
           verification_hash?: string
-          verification_status?: Database["public"]["Enums"]["governance_public_audit_verification_status"]
+          verification_status?: Database["public"]["Enums"]["governance_public_audit_verification_status"] | null
+          retry_on_failure?: boolean
+          requested_retry_base_delay_minutes?: number | null
+          requested_retry_max_delay_minutes?: number | null
         }
         Returns: string
       }
@@ -4510,6 +5474,65 @@ export type Database = {
         }
         Returns: string
       }
+      promote_governance_public_audit_verifier_mirror_discovered_candidate: {
+        Args: {
+          target_candidate_id: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      record_governance_public_audit_verifier_mirror_discovery_run: {
+        Args: {
+          target_source_id: string
+          target_batch_id?: string | null
+          run_status?: string
+          discovered_count?: number
+          accepted_candidate_count?: number
+          stale_candidate_count?: number
+          error_message?: string | null
+          run_payload?: Json
+        }
+        Returns: string
+      }
+      record_governance_public_audit_verifier_mirror_policy_ratification: {
+        Args: {
+          requested_policy_key: string
+          signer_key: string
+          ratification_decision: string
+          ratification_signature: string
+          ratification_payload?: Json
+        }
+        Returns: string
+      }
+      register_governance_public_audit_verifier_mirror_discovery_source: {
+        Args: {
+          source_key: string
+          source_label?: string | null
+          endpoint_url?: string | null
+          discovery_scope?: string
+          trust_tier?: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      upsert_governance_public_audit_verifier_mirror_discovered_candidate: {
+        Args: {
+          target_source_id: string
+          candidate_key: string
+          candidate_label?: string | null
+          endpoint_url?: string | null
+          mirror_type?: string
+          region_code?: string
+          jurisdiction_country_code?: string
+          operator_label?: string
+          trust_domain?: string
+          discovery_confidence?: number
+          candidate_status?: string
+          run_id?: string | null
+          metadata?: Json
+        }
+        Returns: string
+      }
       register_governance_public_audit_verifier_node: {
         Args: {
           endpoint_url?: string
@@ -4517,6 +5540,108 @@ export type Database = {
           metadata?: Json
           verifier_key: string
           verifier_label?: string
+        }
+        Returns: string
+      }
+      onboard_governance_public_audit_verifier_mirror_federation_request: {
+        Args: {
+          target_request_id: string
+          activate_mirror?: boolean
+          requested_metadata?: Json
+        }
+        Returns: string
+      }
+      open_governance_public_audit_verifier_mirror_federation_alert: {
+        Args: {
+          alert_key: string
+          severity: string
+          alert_scope: string
+          alert_message: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      record_governance_public_audit_verifier_mirror_federation_worker_run: {
+        Args: {
+          run_scope: string
+          run_status: string
+          discovered_request_count?: number
+          approved_request_count?: number
+          onboarded_request_count?: number
+          open_alert_count?: number
+          error_message?: string | null
+          run_payload?: Json
+        }
+        Returns: string
+      }
+      register_governance_public_audit_verifier_mirror_federation_operator: {
+        Args: {
+          operator_key: string
+          operator_label?: string | null
+          contact_endpoint?: string | null
+          jurisdiction_country_code?: string
+          trust_domain?: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      resolve_governance_public_audit_external_execution_page: {
+        Args: { target_page_id: string; resolution_notes?: string | null }
+        Returns: string
+      }
+      resolve_governance_public_audit_verifier_mirror_federation_alert: {
+        Args: {
+          target_alert_id: string
+          resolution_notes?: string | null
+        }
+        Returns: string
+      }
+      review_governance_public_audit_verifier_mirror_federation_onboarding_request: {
+        Args: {
+          target_request_id: string
+          review_decision: string
+          requested_review_notes?: string | null
+        }
+        Returns: string
+      }
+      set_governance_public_audit_external_execution_policy: {
+        Args: {
+          requested_policy_key?: string
+          requested_policy_name?: string
+          requested_is_active?: boolean
+          requested_claim_ttl_minutes?: number
+          requested_anchor_max_attempts?: number
+          requested_verifier_max_attempts?: number
+          requested_retry_base_delay_minutes?: number
+          requested_retry_max_delay_minutes?: number
+          requested_paging_enabled?: boolean
+          requested_paging_stale_pending_minutes?: number
+          requested_paging_failure_share_percent?: number
+          requested_oncall_channel?: string
+          metadata?: Json
+        }
+        Returns: string
+      }
+      set_governance_public_audit_verifier_mirror_federation_ops_requirement: {
+        Args: {
+          requested_policy_key?: string
+          requested_require_federation_ops_readiness?: boolean
+          max_open_critical_alerts?: number
+          min_onboarded_operators?: number
+        }
+        Returns: string
+      }
+      submit_governance_public_audit_verifier_mirror_federation_onboarding_request: {
+        Args: {
+          operator_key: string
+          requested_mirror_key: string
+          requested_mirror_label?: string | null
+          requested_endpoint_url?: string | null
+          requested_mirror_type?: string
+          requested_region_code?: string
+          requested_jurisdiction_country_code?: string
+          requested_trust_domain?: string
+          metadata?: Json
         }
         Returns: string
       }
@@ -4571,18 +5696,65 @@ export type Database = {
         }
         Returns: string
       }
+      run_governance_public_audit_external_execution_cycle: {
+        Args: { target_batch_id?: string | null; force_reschedule?: boolean }
+        Returns: {
+          batch_id: string | null
+          anchor_jobs_scheduled: number
+          verifier_jobs_scheduled: number
+        }[]
+      }
       run_governance_public_audit_verifier_cycle: {
         Args: {
           target_batch_id?: string
         }
         Returns: number
       }
+      run_governance_public_audit_verifier_federation_distribution_verification: {
+        Args: {
+          target_batch_id?: string | null
+          requested_policy_key?: string
+          stale_after_hours?: number
+          run_metadata?: Json
+        }
+        Returns: {
+          run_id: string
+          run_status: string
+          package_id: string | null
+          package_hash: string | null
+          distribution_ready: boolean
+          stale_package: boolean
+          bad_signature_count: number
+          policy_mismatch: boolean
+          open_alert_count: number
+          captured_at: string | null
+          last_signed_at: string | null
+        }[]
+      }
+      schedule_governance_public_audit_anchor_execution_jobs: {
+        Args: { target_batch_id?: string | null; force_reschedule?: boolean }
+        Returns: number
+      }
       schedule_governance_public_audit_verifier_jobs: {
         Args: {
           force_reschedule?: boolean
-          target_batch_id?: string
+          target_batch_id?: string | null
         }
         Returns: number
+      }
+      sign_governance_public_audit_verifier_federation_package: {
+        Args: {
+          target_package_id: string
+          signer_key: string
+          signature: string
+          signature_algorithm?: string
+          signer_trust_domain?: string
+          signer_jurisdiction_country_code?: string | null
+          signer_identity_uri?: string | null
+          distribution_channel?: string
+          signature_metadata?: Json
+        }
+        Returns: string
       }
       verify_governance_public_audit_chain: {
         Args: { max_batches?: number }

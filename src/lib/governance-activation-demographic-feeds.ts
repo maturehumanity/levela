@@ -36,6 +36,7 @@ const activationDemographicFeedWorkerBackendTokens = [
   'maybe_escalate_activation_feed_worker_exec_page',
   'activation_demographic_feed_worker_outbox',
   'activation_demographic_feed_worker_schedule_policies',
+  'current_profile_can_manage_activation_demographic_feed_workers',
   'schedule_activation_demographic_feed_worker_jobs',
   'claim_activation_demographic_feed_worker_jobs',
   'complete_activation_demographic_feed_worker_outbox',
@@ -46,6 +47,13 @@ const activationDemographicFeedWorkerBackendTokens = [
 
 function includesMissingBackendToken(message: string, tokens: readonly string[]) {
   return tokens.some((token) => message.includes(token));
+}
+
+export const ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS = 60_000;
+
+/** True when a tab/network/bfcache-driven steward reload should wait (last load start is still inside the window). */
+export function isFeedDataAutoReloadThrottled(nowMs: number, lastLoadStartedAtMs: number, minIntervalMs: number) {
+  return nowMs - lastLoadStartedAtMs < minIntervalMs;
 }
 
 /** PostgREST “function not found” for the optional scheduler status RPC alone (older DB migrations). */

@@ -19,7 +19,6 @@ import {
   type GovernancePublicAuditOperationsSlaSummary,
   type GovernancePublicAuditVerifierJobRow,
 } from '@/lib/governance-public-audit-automation';
-import { callUntypedRpc } from '@/lib/governance-rpc';
 import { useGovernancePublicAuditAutomationActions } from '@/lib/use-governance-public-audit-automation-actions';
 
 export function useGovernancePublicAuditAutomation(args: { latestBatchId: string | null }) {
@@ -82,24 +81,24 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
             .order('created_at', { ascending: false })
             .limit(100),
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
-      callUntypedRpc<unknown[]>('governance_public_audit_operations_sla_summary', {
+      supabase.rpc('governance_public_audit_operations_sla_summary', {
         requested_batch_id: args.latestBatchId,
         requested_pending_sla_hours: 4,
         requested_lookback_hours: 24,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_anchor_execution_job_board', {
+      supabase.rpc('governance_public_audit_anchor_execution_job_board', {
         requested_batch_id: args.latestBatchId,
         max_jobs: 120,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_external_execution_policy_summary', {
+      supabase.rpc('governance_public_audit_external_execution_policy_summary', {
         requested_policy_key: 'default',
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_external_execution_paging_summary', {
+      supabase.rpc('governance_public_audit_external_execution_paging_summary', {
         requested_batch_id: args.latestBatchId,
         auto_open_pages: false,
         requested_lookback_hours: 24,
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_external_execution_page_board', {
+      supabase.rpc('governance_public_audit_external_execution_page_board', {
         requested_batch_id: args.latestBatchId,
         max_pages: GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
       }),
@@ -138,9 +137,9 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
       return;
     }
 
-    setAnchorAdapters((adapterResponse.data as GovernancePublicAuditAnchorAdapterRow[]) || []);
-    setImmutableAnchors((anchorResponse.data as GovernancePublicAuditImmutableAnchorRow[]) || []);
-    setVerifierJobs((verifierJobsResponse.data as GovernancePublicAuditVerifierJobRow[]) || []);
+    setAnchorAdapters(adapterResponse.data ?? []);
+    setImmutableAnchors(anchorResponse.data ?? []);
+    setVerifierJobs(verifierJobsResponse.data ?? []);
     setOperationsSlaSummary(readGovernancePublicAuditOperationsSlaSummary(slaSummaryResponse.data));
     setAnchorExecutionJobs(readGovernancePublicAuditAnchorExecutionJobBoardRows(anchorExecutionBoardResponse.data));
     setExternalExecutionPolicy(readGovernancePublicAuditExternalExecutionPolicySummary(policySummaryResponse.data));

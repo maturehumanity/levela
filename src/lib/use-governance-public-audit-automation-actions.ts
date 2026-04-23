@@ -7,7 +7,6 @@ import {
   readGovernancePublicAuditExternalExecutionCycleResult,
   readGovernancePublicAuditExternalExecutionPagingSummary,
 } from '@/lib/governance-public-audit-automation';
-import { callUntypedRpc } from '@/lib/governance-rpc';
 import { useGovernancePublicAuditAutomationCompletionActions } from '@/lib/use-governance-public-audit-automation-completion-actions';
 
 function parsePositiveInteger(value: string, fallback: number) {
@@ -120,7 +119,7 @@ export function useGovernancePublicAuditAutomationActions({
     if (!canManageAutomation || automationBackendUnavailable) return;
 
     setSchedulingAnchorExecutionJobs(true);
-    const { data, error } = await callUntypedRpc<number>('schedule_governance_public_audit_anchor_execution_jobs', {
+    const { data, error } = await supabase.rpc('schedule_governance_public_audit_anchor_execution_jobs', {
       target_batch_id: latestBatchId,
       force_reschedule: forceReschedule,
     });
@@ -144,7 +143,7 @@ export function useGovernancePublicAuditAutomationActions({
     if (!canManageAutomation || automationBackendUnavailable) return;
 
     setSchedulingVerifierJobs(true);
-    const { data, error } = await callUntypedRpc<number>('schedule_governance_public_audit_verifier_jobs', {
+    const { data, error } = await supabase.rpc('schedule_governance_public_audit_verifier_jobs', {
       target_batch_id: latestBatchId,
       force_reschedule: forceReschedule,
     });
@@ -166,7 +165,7 @@ export function useGovernancePublicAuditAutomationActions({
     if (!canManageAutomation || automationBackendUnavailable) return;
 
     setRunningExternalExecutionCycle(true);
-    const { data, error } = await callUntypedRpc<unknown[]>('run_governance_public_audit_external_execution_cycle', {
+    const { data, error } = await supabase.rpc('run_governance_public_audit_external_execution_cycle', {
       target_batch_id: latestBatchId,
       force_reschedule: forceReschedule,
     });
@@ -205,7 +204,7 @@ export function useGovernancePublicAuditAutomationActions({
 
     setSavingExternalExecutionPolicy(true);
     const parsedFailureShare = Number.parseFloat(draft.pagingFailureSharePercent);
-    const { error } = await callUntypedRpc<string>('set_governance_public_audit_external_execution_policy', {
+    const { error } = await supabase.rpc('set_governance_public_audit_external_execution_policy', {
       requested_policy_key: 'default',
       requested_policy_name: 'Default external execution policy',
       requested_is_active: true,
@@ -241,7 +240,7 @@ export function useGovernancePublicAuditAutomationActions({
     if (!canManageAutomation || automationBackendUnavailable) return;
 
     setDrainingExternalExecutionQueue(true);
-    const { data, error } = await callUntypedRpc<unknown[]>('claim_governance_public_audit_external_execution_jobs', {
+    const { data, error } = await supabase.rpc('claim_governance_public_audit_external_execution_jobs', {
       requested_batch_id: latestBatchId,
       requested_anchor_limit: parsePositiveInteger(draft.anchorLimit, 6),
       requested_verifier_limit: parsePositiveInteger(draft.verifierLimit, 10),
@@ -271,7 +270,7 @@ export function useGovernancePublicAuditAutomationActions({
     if (!canManageAutomation || automationBackendUnavailable) return;
 
     setEvaluatingExternalExecutionPaging(true);
-    const { data, error } = await callUntypedRpc<unknown[]>('governance_public_audit_external_execution_paging_summary', {
+    const { data, error } = await supabase.rpc('governance_public_audit_external_execution_paging_summary', {
       requested_batch_id: latestBatchId,
       auto_open_pages: autoOpenPages,
       requested_lookback_hours: 24,
@@ -305,7 +304,7 @@ export function useGovernancePublicAuditAutomationActions({
     if (!targetPageId) return;
 
     setResolvingExternalExecutionPage(true);
-    const { error } = await callUntypedRpc<string>('resolve_governance_public_audit_external_execution_page', {
+    const { error } = await supabase.rpc('resolve_governance_public_audit_external_execution_page', {
       target_page_id: targetPageId,
       resolution_notes: resolutionNotes.trim() || null,
     });

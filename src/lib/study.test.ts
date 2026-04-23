@@ -7,11 +7,48 @@ import {
   getFoundationMaterialsForDomain,
   FOUNDATION_STUDY_DOCUMENT_KEYS,
   getFoundationCompletionMetrics,
+  isMissingStudyBackend,
   STUDY_PROPOSALS,
   STUDY_DOCUMENTS,
 } from '@/lib/study';
 
 describe('study module', () => {
+  it('detects missing study-related backend errors', () => {
+    expect(
+      isMissingStudyBackend({
+        code: '42P01',
+        message: 'relation "study_progress" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingStudyBackend({
+        code: 'PGRST205',
+        message: 'Could not find the table public.study_bookmarks in the schema cache',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingStudyBackend({
+        code: null,
+        message: 'function monetary_policy_profiles() does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(isMissingStudyBackend(null)).toBe(false);
+
+    expect(
+      isMissingStudyBackend({
+        code: '23505',
+        message: 'duplicate key value violates unique constraint',
+        details: null,
+      }),
+    ).toBe(false);
+  });
+
   it('calculates foundational completion metrics from progress values', () => {
     const metrics = getFoundationCompletionMetrics({
       constitution: 100,

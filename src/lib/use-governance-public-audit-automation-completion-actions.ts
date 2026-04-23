@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { GovernancePublicAuditAnchorExecutionJobStatus } from '@/lib/governance-public-audit-automation';
-import { callUntypedRpc } from '@/lib/governance-rpc';
 
 interface UseGovernancePublicAuditAutomationCompletionActionsArgs {
   canManageAutomation: boolean;
@@ -41,7 +41,7 @@ export function useGovernancePublicAuditAutomationCompletionActions({
 
     setCompletingAnchorExecutionJob(true);
     const parsedBlockHeight = Number.parseInt(draft.blockHeight, 10);
-    const { error } = await callUntypedRpc<string>('complete_governance_public_audit_anchor_execution_job', {
+    const { error } = await supabase.rpc('complete_governance_public_audit_anchor_execution_job', {
       target_job_id: draft.jobId,
       completion_status: completionStatus,
       immutable_reference: completionStatus === 'completed' ? immutableReference : null,
@@ -78,7 +78,7 @@ export function useGovernancePublicAuditAutomationCompletionActions({
     }
 
     setCompletingVerifierJob(true);
-    const { error } = await callUntypedRpc<string>('complete_governance_public_audit_verifier_job', {
+    const { error } = await supabase.rpc('complete_governance_public_audit_verifier_job', {
       target_job_id: draft.jobId,
       completion_status: draft.completionStatus,
       verification_status: draft.completionStatus === 'completed' ? draft.verificationStatus : null,

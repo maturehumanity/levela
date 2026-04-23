@@ -8,7 +8,6 @@ import {
   readGovernanceProposalGuardianRelayClientVerificationSignatureRows,
   readGovernanceProposalGuardianRelayRecentClientVerificationPackageRows,
 } from '@/lib/governance-guardian-relay-distribution';
-import { callUntypedRpc } from '@/lib/governance-rpc';
 import {
   isMissingGuardianRelayBackend,
   readGovernanceProposalGuardianRelayAlertBoardRows,
@@ -109,52 +108,52 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
         .order('verified_at', { ascending: false })
         .order('created_at', { ascending: false }),
       supabase.rpc('current_profile_can_manage_guardian_relays'),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_diversity_audit', {
+      supabase.rpc('governance_proposal_guardian_relay_diversity_audit', {
         target_proposal_id: args.proposalId,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_attestation_audit_report', {
+      supabase.rpc('governance_proposal_guardian_relay_attestation_audit_report', {
         target_proposal_id: args.proposalId,
         requested_lookback_hours: 168,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_recent_audits', {
+      supabase.rpc('governance_proposal_guardian_relay_recent_audits', {
         target_proposal_id: args.proposalId,
         max_reports: 12,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_trust_minimized_summary', {
+      supabase.rpc('governance_proposal_guardian_relay_trust_minimized_summary', {
         target_proposal_id: args.proposalId,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_operations_summary', {
+      supabase.rpc('governance_proposal_guardian_relay_operations_summary', {
         target_proposal_id: args.proposalId,
         requested_policy_key: 'guardian_relay_default',
         requested_attestation_sla_minutes: null,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_proof_manifest', {
+      supabase.rpc('governance_proposal_guardian_relay_client_proof_manifest', {
         target_proposal_id: args.proposalId,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_recent_client_manifests', {
+      supabase.rpc('governance_proposal_guardian_relay_recent_client_manifests', {
         target_proposal_id: args.proposalId,
         max_manifests: 12,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_verification_package', {
+      supabase.rpc('governance_proposal_guardian_relay_client_verification_package', {
         target_proposal_id: args.proposalId,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_recent_client_verification_packages', {
+      supabase.rpc('governance_proposal_guardian_relay_recent_client_verification_packages', {
         target_proposal_id: args.proposalId,
         max_packages: 12,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_verification_distribution_summary', {
+      supabase.rpc('governance_proposal_guardian_relay_client_verification_distribution_summary', {
         target_proposal_id: args.proposalId,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_client_verification_signature_board', {
+      supabase.rpc('governance_proposal_guardian_relay_client_verification_signature_board', {
         target_proposal_id: args.proposalId,
         max_entries: 40,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_alert_board', {
+      supabase.rpc('governance_proposal_guardian_relay_alert_board', {
         target_proposal_id: args.proposalId,
         status_filter: null,
         max_entries: 80,
       }),
-      callUntypedRpc<unknown[]>('governance_proposal_guardian_relay_worker_run_board', {
+      supabase.rpc('governance_proposal_guardian_relay_worker_run_board', {
         target_proposal_id: args.proposalId,
         max_entries: 80,
       }),
@@ -211,9 +210,9 @@ export function useGovernanceGuardianRelays(args: { proposalId: string }) {
       return;
     }
 
-    setRelayPolicy((policyResponse.data as GuardianRelayPolicyRow | null) || null);
-    setRelayNodes((nodesResponse.data as GuardianRelayNodeRow[]) || []);
-    setRelayAttestations((attestationResponse.data as GuardianRelayAttestationRow[]) || []);
+    setRelayPolicy(policyResponse.data ?? null);
+    setRelayNodes(nodesResponse.data ?? []);
+    setRelayAttestations(attestationResponse.data ?? []);
     setRelaySummary(readGovernanceProposalGuardianRelaySummary(summaryResponse.data));
     setRelayTrustMinimizedSummary(readGovernanceProposalGuardianRelayTrustMinimizedSummary(trustMinimizedSummaryResponse.data));
     setRelayOperationsSummary(readGovernanceProposalGuardianRelayOperationsSummary(operationsSummaryResponse.data));

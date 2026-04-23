@@ -10,26 +10,6 @@ import {
   type GovernancePublicAuditVerifierMirrorSignerGovernanceSummary,
 } from '@/lib/governance-public-audit-verifiers';
 
-type RpcErrorLike = {
-  code?: string | null;
-  message?: string | null;
-  details?: string | null;
-} | null;
-
-type RpcResponseLike<T> = {
-  data: T | null;
-  error: RpcErrorLike;
-};
-
-function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args?: Record<string, unknown>,
-  ) => Promise<RpcResponseLike<T>>;
-
-  return rpc(fnName, params);
-}
-
 function asIntegerOrNull(value: string) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
@@ -53,10 +33,10 @@ export function useGovernancePublicAuditVerifierMirrorSignerGovernance() {
 
     const [permissionResponse, summaryResponse, boardResponse] = await Promise.all([
       supabase.rpc('current_profile_can_manage_public_audit_verifiers'),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_signer_governance_summary', {
+      supabase.rpc('governance_public_audit_verifier_mirror_signer_governance_summary', {
         requested_policy_key: 'default',
       }),
-      callUntypedRpc<unknown[]>('governance_public_audit_verifier_mirror_signer_governance_board', {
+      supabase.rpc('governance_public_audit_verifier_mirror_signer_governance_board', {
         max_entries: 80,
       }),
     ]);
@@ -98,10 +78,10 @@ export function useGovernancePublicAuditVerifierMirrorSignerGovernance() {
 
     setSavingSignerGovernanceRequirement(true);
 
-    const { error } = await callUntypedRpc<string>('set_governance_public_audit_verifier_mirror_signer_governance_requirement', {
+    const { error } = await supabase.rpc('set_governance_public_audit_verifier_mirror_signer_governance_requirement', {
       requested_policy_key: 'default',
       require_governance_approval: draft.requireSignerGovernanceApproval,
-      required_independent_approvals: asIntegerOrNull(draft.minSignerGovernanceIndependentApprovals),
+      required_independent_approvals: asIntegerOrNull(draft.minSignerGovernanceIndependentApprovals) ?? undefined,
     });
 
     if (error) {
@@ -131,7 +111,7 @@ export function useGovernancePublicAuditVerifierMirrorSignerGovernance() {
 
     setSavingSignerGovernanceAttestation(true);
 
-    const { error } = await callUntypedRpc<string>('record_governance_public_audit_verifier_mirror_signer_governance_attestation', {
+    const { error } = await supabase.rpc('record_governance_public_audit_verifier_mirror_signer_governance_attestation', {
       target_signer_id: draft.targetSignerId,
       attestor_signer_key: draft.attestorSignerKey.trim(),
       attestation_decision: draft.attestationDecision,
