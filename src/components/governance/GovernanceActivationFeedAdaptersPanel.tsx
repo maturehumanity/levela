@@ -48,6 +48,14 @@ function formatShortWorkerIdentity(value: string | null) {
   return trimmed.length > 52 ? `${trimmed.slice(0, 52)}…` : trimmed;
 }
 
+function formatShortId(value: string | null) {
+  if (!value?.trim()) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 14 ? `${trimmed.slice(0, 8)}…${trimmed.slice(-4)}` : trimmed;
+}
+
 function countFeedWorkerAlerts(alert: {
   freshness_alert: boolean;
   signature_failure_count: number;
@@ -436,6 +444,26 @@ export function GovernanceActivationFeedAdaptersPanel({
             >
               Scheduler automation status is unavailable in this environment.
             </p>
+          )}
+          {feedWorkerScheduleAutomationStatus?.cron_job_registered ? (
+            <p
+              data-build-key="governanceActivationFeedSchedulerCronDetails"
+              data-build-label="Feed worker scheduler cron registration details"
+            >
+              Cron schedule: {feedWorkerScheduleAutomationStatus.cron_job_schedule || 'Unknown'}.
+              Entrypoint: {feedWorkerScheduleAutomationStatus.cron_job_command || 'Unknown'}.
+            </p>
+          ) : null}
+          {feedWorkerScheduleAutomationStatus?.latest_scheduled_enqueue_job_id ? (
+            <p
+              data-build-key="governanceActivationFeedSchedulerLatestQueuedJob"
+              data-build-label="Latest schedule-enqueued sweep job identifier"
+            >
+              Latest schedule-enqueued job ID:{' '}
+              {formatShortId(feedWorkerScheduleAutomationStatus.latest_scheduled_enqueue_job_id)}
+            </p>
+          ) : (
+            null
           )}
         </div>
       ) : null}
