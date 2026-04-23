@@ -22,6 +22,14 @@ function getLocalDateTimeInputValue() {
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);
 }
+function formatShortWorkerIdentity(value: string | null) {
+  if (!value?.trim()) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 52 ? `${trimmed.slice(0, 52)}…` : trimmed;
+}
+
 function countFeedWorkerAlerts(alert: {
   freshness_alert: boolean;
   signature_failure_count: number;
@@ -58,6 +66,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedIngestionsHasMore,
     loadingMoreFeedIngestions,
     feedWorkerAlerts,
+    feedWorkerOutboxActiveJobs,
     feedWorkerSchedulePolicy,
     loadFeedData,
     loadMoreFeedIngestions,
@@ -210,6 +219,59 @@ export function GovernanceActivationFeedAdaptersPanel({
           <p>
             When your Postgres instance has the hourly automation extension enabled, due jobs can enqueue on their own without leaving this screen open.
           </p>
+        </div>
+      ) : null}
+
+      {!feedWorkerBackendUnavailable ? (
+        <div className="mt-3 space-y-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Active sweep queue jobs
+          </p>
+          {feedWorkerOutboxActiveJobs.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No jobs are pending or in progress right now.
+            </p>
+          ) : (
+            <div className="max-h-44 space-y-2 overflow-y-auto text-xs text-muted-foreground">
+              {feedWorkerOutboxActiveJobs.map((job) => {
+                const adapterLabel = feedAdapterNameById.get(job.adapter_id) ?? 'Adapter';
+                const workerLabel = formatShortWorkerIdentity(job.worker_identity);
+                return (
+                  <div key={job.id} className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{adapterLabel}</p>
+                      <Badge
+                        variant="outline"
+                        className={job.status === 'claimed'
+                          ? 'border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                          : 'border-sky-500/20 bg-sky-500/10 text-sky-900 dark:text-sky-100'}
+                      >
+                        {job.status === 'claimed' ? 'Claimed' : 'Pending'}
+                      </Badge>
+                    </div>
+                    <p className="mt-1">
+                      Requested {formatTimestamp(job.requested_at)}
+                      {job.claimed_at ? ` • claimed ${formatTimestamp(job.claimed_at)}` : ''}
+                      {job.claim_expires_at ? ` • claim expires ${formatTimestamp(job.claim_expires_at)}` : ''}
+                    </p>
+                    {typeof job.attempt_count === 'number' && job.attempt_count > 0 ? (
+                      <p className="mt-0.5">Attempts {job.attempt_count}</p>
+                    ) : null}
+                    {workerLabel ? (
+                      <p className="mt-0.5 break-all text-muted-foreground">
+                        Worker: {workerLabel}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {pendingFeedOutboxCount > feedWorkerOutboxActiveJobs.filter((job) => job.status === 'pending').length ? (
+            <p className="text-xs text-muted-foreground">
+              Additional pending jobs may exist beyond this list (showing the 25 most recently updated pending or claimed rows).
+            </p>
+          ) : null}
         </div>
       ) : null}
 

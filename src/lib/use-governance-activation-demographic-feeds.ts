@@ -16,6 +16,7 @@ import {
   type ActivationDemographicFeedAlertType,
   type ActivationDemographicFeedIngestionRow,
   type ActivationDemographicFeedWorkerAlertSummaryRow,
+  type ActivationDemographicFeedWorkerOutboxRow,
 } from '@/lib/governance-activation-demographic-feeds';
 import {
   hashActivationDemographicPayload,
@@ -69,6 +70,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [feedIngestionsHasMore, setFeedIngestionsHasMore] = useState(false);
   const [loadingMoreFeedIngestions, setLoadingMoreFeedIngestions] = useState(false);
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
+  const [feedWorkerOutboxActiveJobs, setFeedWorkerOutboxActiveJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
   const [feedWorkerSchedulePolicy, setFeedWorkerSchedulePolicy] =
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
 
@@ -120,6 +122,7 @@ export function useGovernanceActivationDemographicFeeds() {
       permissionResponse,
       workerSummaryResponse,
       pendingOutboxResponse,
+      activeOutboxJobsResponse,
       schedulePolicyResponse,
     ] = await Promise.all([
       supabase
@@ -140,6 +143,12 @@ export function useGovernanceActivationDemographicFeeds() {
         .from('activation_demographic_feed_worker_outbox')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending'),
+      supabase
+        .from('activation_demographic_feed_worker_outbox')
+        .select('*')
+        .in('status', ['pending', 'claimed'])
+        .order('updated_at', { ascending: false })
+        .limit(25),
       supabase
         .from('activation_demographic_feed_worker_schedule_policies')
         .select('*')
@@ -197,6 +206,17 @@ export function useGovernanceActivationDemographicFeeds() {
       setPendingFeedOutboxCount(0);
     } else {
       setPendingFeedOutboxCount(pendingOutboxResponse.count ?? 0);
+    }
+
+    if (activeOutboxJobsResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(activeOutboxJobsResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setFeedWorkerOutboxActiveJobs([]);
+    } else {
+      setFeedWorkerOutboxActiveJobs(
+        (activeOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [],
+      );
     }
 
     if (schedulePolicyResponse.error) {
@@ -660,6 +680,7 @@ export function useGovernanceActivationDemographicFeeds() {
     feedIngestionsHasMore,
     loadingMoreFeedIngestions,
     feedWorkerAlerts,
+    feedWorkerOutboxActiveJobs,
     feedWorkerSchedulePolicy,
     loadFeedData,
     loadMoreFeedIngestions,

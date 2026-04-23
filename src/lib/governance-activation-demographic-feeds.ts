@@ -2,6 +2,7 @@ import type { Database } from '@/integrations/supabase/types';
 
 export type ActivationDemographicFeedAdapterRow = Database['public']['Tables']['activation_demographic_feed_adapters']['Row'];
 export type ActivationDemographicFeedIngestionRow = Database['public']['Tables']['activation_demographic_feed_ingestions']['Row'];
+export type ActivationDemographicFeedWorkerOutboxRow = Database['public']['Tables']['activation_demographic_feed_worker_outbox']['Row'];
 
 export type ActivationDemographicFeedWorkerRunStatus =
   | 'ingested'
