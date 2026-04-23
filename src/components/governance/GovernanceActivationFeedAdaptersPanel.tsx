@@ -99,6 +99,10 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
     feedWorkerOutboxRecentClosedJobs,
+    feedWorkerOutboxActiveJobsHasMore,
+    feedWorkerOutboxRecentClosedJobsHasMore,
+    loadingMoreFeedWorkerOutboxActiveJobs,
+    loadingMoreFeedWorkerOutboxRecentClosedJobs,
     feedWorkerRecentRuns,
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,
@@ -106,6 +110,8 @@ export function GovernanceActivationFeedAdaptersPanel({
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
+    loadMoreFeedWorkerOutboxActiveJobs,
+    loadMoreFeedWorkerOutboxRecentClosedJobs,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,
@@ -388,6 +394,9 @@ export function GovernanceActivationFeedAdaptersPanel({
         >
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Active sweep queue jobs
+            <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
+              ({feedWorkerOutboxActiveJobs.length} loaded{feedWorkerOutboxActiveJobsHasMore ? ', more available' : ''})
+            </span>
           </p>
           {feedWorkerOutboxActiveJobs.length === 0 ? (
             <p className="text-xs text-muted-foreground">
@@ -442,9 +451,23 @@ export function GovernanceActivationFeedAdaptersPanel({
               data-build-key="governanceActivationFeedOutboxActiveListTruncationNote"
               data-build-label="Note when sweep queue list is capped"
             >
-              Additional pending or claimed jobs may exist beyond this list (showing the 25 most recently updated
-              pending or claimed rows).
+              Additional pending or claimed jobs may exist beyond this list.
             </p>
+          ) : null}
+          {feedWorkerOutboxActiveJobsHasMore ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={loadingMoreFeedWorkerOutboxActiveJobs}
+              onClick={() => void loadMoreFeedWorkerOutboxActiveJobs()}
+              data-build-key="governanceActivationFeedLoadOlderOutboxActiveJobs"
+              data-build-label="Load older active sweep queue jobs"
+            >
+              {loadingMoreFeedWorkerOutboxActiveJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Load older active queue jobs
+            </Button>
           ) : null}
 
           <Collapsible open={recentClosedSweepJobsOpen} onOpenChange={setRecentClosedSweepJobsOpen}>
@@ -460,7 +483,9 @@ export function GovernanceActivationFeedAdaptersPanel({
                 {recentClosedSweepJobsOpen
                   ? <ChevronDown className="h-4 w-4 shrink-0" />
                   : <ChevronRight className="h-4 w-4 shrink-0" />}
-                Recently closed sweep jobs (up to 15)
+                Recently closed sweep jobs
+                {' '}
+                ({feedWorkerOutboxRecentClosedJobs.length} loaded{feedWorkerOutboxRecentClosedJobsHasMore ? ', more available' : ''})
                 {recentClosedSweepFailureCount > 0
                   ? ` · ${recentClosedSweepFailureCount} failed`
                   : ''}
@@ -519,6 +544,21 @@ export function GovernanceActivationFeedAdaptersPanel({
                   })}
                 </div>
               )}
+              {feedWorkerOutboxRecentClosedJobsHasMore ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled={loadingMoreFeedWorkerOutboxRecentClosedJobs}
+                  onClick={() => void loadMoreFeedWorkerOutboxRecentClosedJobs()}
+                  data-build-key="governanceActivationFeedLoadOlderOutboxClosedJobs"
+                  data-build-label="Load older closed sweep queue jobs"
+                >
+                  {loadingMoreFeedWorkerOutboxRecentClosedJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Load older closed queue jobs
+                </Button>
+              ) : null}
             </CollapsibleContent>
           </Collapsible>
         </div>

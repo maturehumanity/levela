@@ -53,6 +53,10 @@ const FEED_INGESTIONS_FIRST_PAGE = 120;
 const FEED_INGESTIONS_APPEND_PAGE = 80;
 const FEED_WORKER_RUNS_FIRST_PAGE = 35;
 const FEED_WORKER_RUNS_APPEND_PAGE = 30;
+const FEED_WORKER_OUTBOX_ACTIVE_FIRST_PAGE = 25;
+const FEED_WORKER_OUTBOX_ACTIVE_APPEND_PAGE = 20;
+const FEED_WORKER_OUTBOX_CLOSED_FIRST_PAGE = 15;
+const FEED_WORKER_OUTBOX_CLOSED_APPEND_PAGE = 15;
 
 export function useGovernanceActivationDemographicFeeds() {
   const [loadingFeedData, setLoadingFeedData] = useState(true);
@@ -76,6 +80,10 @@ export function useGovernanceActivationDemographicFeeds() {
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
   const [feedWorkerOutboxActiveJobs, setFeedWorkerOutboxActiveJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
   const [feedWorkerOutboxRecentClosedJobs, setFeedWorkerOutboxRecentClosedJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
+  const [feedWorkerOutboxActiveJobsHasMore, setFeedWorkerOutboxActiveJobsHasMore] = useState(false);
+  const [feedWorkerOutboxRecentClosedJobsHasMore, setFeedWorkerOutboxRecentClosedJobsHasMore] = useState(false);
+  const [loadingMoreFeedWorkerOutboxActiveJobs, setLoadingMoreFeedWorkerOutboxActiveJobs] = useState(false);
+  const [loadingMoreFeedWorkerOutboxRecentClosedJobs, setLoadingMoreFeedWorkerOutboxRecentClosedJobs] = useState(false);
   const [feedWorkerRecentRuns, setFeedWorkerRecentRuns] = useState<ActivationDemographicFeedWorkerRunRow[]>([]);
   const [feedWorkerRunsHasMore, setFeedWorkerRunsHasMore] = useState(false);
   const [loadingMoreFeedWorkerRuns, setLoadingMoreFeedWorkerRuns] = useState(false);
@@ -163,13 +171,13 @@ export function useGovernanceActivationDemographicFeeds() {
         .select('*')
         .in('status', ['pending', 'claimed'])
         .order('updated_at', { ascending: false })
-        .limit(25),
+        .range(0, FEED_WORKER_OUTBOX_ACTIVE_FIRST_PAGE - 1),
       supabase
         .from('activation_demographic_feed_worker_outbox')
         .select('*')
         .in('status', ['completed', 'cancelled', 'failed'])
         .order('updated_at', { ascending: false })
-        .limit(15),
+        .range(0, FEED_WORKER_OUTBOX_CLOSED_FIRST_PAGE - 1),
       supabase
         .from('activation_demographic_feed_worker_runs')
         .select('*')
@@ -248,10 +256,11 @@ export function useGovernanceActivationDemographicFeeds() {
         setFeedWorkerBackendUnavailable(true);
       }
       setFeedWorkerOutboxActiveJobs([]);
+      setFeedWorkerOutboxActiveJobsHasMore(false);
     } else {
-      setFeedWorkerOutboxActiveJobs(
-        (activeOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [],
-      );
+      const activeRows = (activeOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
+      setFeedWorkerOutboxActiveJobs(activeRows);
+      setFeedWorkerOutboxActiveJobsHasMore(activeRows.length === FEED_WORKER_OUTBOX_ACTIVE_FIRST_PAGE);
     }
 
     if (recentClosedOutboxJobsResponse.error) {
@@ -259,10 +268,11 @@ export function useGovernanceActivationDemographicFeeds() {
         setFeedWorkerBackendUnavailable(true);
       }
       setFeedWorkerOutboxRecentClosedJobs([]);
+      setFeedWorkerOutboxRecentClosedJobsHasMore(false);
     } else {
-      setFeedWorkerOutboxRecentClosedJobs(
-        (recentClosedOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [],
-      );
+      const closedRows = (recentClosedOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
+      setFeedWorkerOutboxRecentClosedJobs(closedRows);
+      setFeedWorkerOutboxRecentClosedJobsHasMore(closedRows.length === FEED_WORKER_OUTBOX_CLOSED_FIRST_PAGE);
     }
 
     if (workerRunsResponse.error) {
@@ -360,6 +370,88 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerRecentRuns.length,
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,
+  ]);
+
+  const loadMoreFeedWorkerOutboxActiveJobs = useCallback(async () => {
+    if (
+      feedWorkerBackendUnavailable
+      || loadingMoreFeedWorkerOutboxActiveJobs
+      || !feedWorkerOutboxActiveJobsHasMore
+    ) {
+      return;
+    }
+
+    setLoadingMoreFeedWorkerOutboxActiveJobs(true);
+    const offset = feedWorkerOutboxActiveJobs.length;
+
+    const { data, error } = await supabase
+      .from('activation_demographic_feed_worker_outbox')
+      .select('*')
+      .in('status', ['pending', 'claimed'])
+      .order('updated_at', { ascending: false })
+      .range(offset, offset + FEED_WORKER_OUTBOX_ACTIVE_APPEND_PAGE - 1);
+
+    if (error) {
+      console.error('Failed to load older activation feed worker outbox active jobs:', error);
+      if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        toast.error('Could not load older queued sweep jobs.');
+      }
+      setLoadingMoreFeedWorkerOutboxActiveJobs(false);
+      return;
+    }
+
+    const rows = (data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
+    setFeedWorkerOutboxActiveJobs((previous) => [...previous, ...rows]);
+    setFeedWorkerOutboxActiveJobsHasMore(rows.length === FEED_WORKER_OUTBOX_ACTIVE_APPEND_PAGE);
+    setLoadingMoreFeedWorkerOutboxActiveJobs(false);
+  }, [
+    feedWorkerBackendUnavailable,
+    feedWorkerOutboxActiveJobs.length,
+    feedWorkerOutboxActiveJobsHasMore,
+    loadingMoreFeedWorkerOutboxActiveJobs,
+  ]);
+
+  const loadMoreFeedWorkerOutboxRecentClosedJobs = useCallback(async () => {
+    if (
+      feedWorkerBackendUnavailable
+      || loadingMoreFeedWorkerOutboxRecentClosedJobs
+      || !feedWorkerOutboxRecentClosedJobsHasMore
+    ) {
+      return;
+    }
+
+    setLoadingMoreFeedWorkerOutboxRecentClosedJobs(true);
+    const offset = feedWorkerOutboxRecentClosedJobs.length;
+
+    const { data, error } = await supabase
+      .from('activation_demographic_feed_worker_outbox')
+      .select('*')
+      .in('status', ['completed', 'cancelled', 'failed'])
+      .order('updated_at', { ascending: false })
+      .range(offset, offset + FEED_WORKER_OUTBOX_CLOSED_APPEND_PAGE - 1);
+
+    if (error) {
+      console.error('Failed to load older activation feed worker outbox closed jobs:', error);
+      if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        toast.error('Could not load older closed sweep jobs.');
+      }
+      setLoadingMoreFeedWorkerOutboxRecentClosedJobs(false);
+      return;
+    }
+
+    const rows = (data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
+    setFeedWorkerOutboxRecentClosedJobs((previous) => [...previous, ...rows]);
+    setFeedWorkerOutboxRecentClosedJobsHasMore(rows.length === FEED_WORKER_OUTBOX_CLOSED_APPEND_PAGE);
+    setLoadingMoreFeedWorkerOutboxRecentClosedJobs(false);
+  }, [
+    feedWorkerBackendUnavailable,
+    feedWorkerOutboxRecentClosedJobs.length,
+    feedWorkerOutboxRecentClosedJobsHasMore,
+    loadingMoreFeedWorkerOutboxRecentClosedJobs,
   ]);
 
   const fetchFeedAdapterById = useCallback(async (adapterId: string) => {
@@ -785,6 +877,10 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
     feedWorkerOutboxRecentClosedJobs,
+    feedWorkerOutboxActiveJobsHasMore,
+    feedWorkerOutboxRecentClosedJobsHasMore,
+    loadingMoreFeedWorkerOutboxActiveJobs,
+    loadingMoreFeedWorkerOutboxRecentClosedJobs,
     feedWorkerRecentRuns,
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,
@@ -792,6 +888,8 @@ export function useGovernanceActivationDemographicFeeds() {
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
+    loadMoreFeedWorkerOutboxActiveJobs,
+    loadMoreFeedWorkerOutboxRecentClosedJobs,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,
