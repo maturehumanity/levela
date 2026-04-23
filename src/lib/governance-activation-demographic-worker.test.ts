@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   formatActivationDemographicFeedOutboxClosedStatusLabel,
   formatActivationDemographicFeedScopeLabel,
+  formatActivationDemographicFeedWorkerAlertKindLabel,
+  formatActivationDemographicFeedWorkerRunOutcomeLabel,
+  formatTruncatedGovernanceNote,
   isActivationDemographicFeedStale,
   parseActivationDemographicWorkerPayload,
 } from '@/lib/governance-activation-demographic-worker';
@@ -85,5 +88,37 @@ describe('formatActivationDemographicFeedOutboxClosedStatusLabel', () => {
 
   it('falls back for unknown statuses', () => {
     expect(formatActivationDemographicFeedOutboxClosedStatusLabel('custom_status')).toBe('custom status');
+  });
+});
+
+describe('formatActivationDemographicFeedWorkerRunOutcomeLabel', () => {
+  it('maps known worker run outcomes', () => {
+    expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('ingested')).toBe('Ingested');
+    expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('signature_failed')).toBe('Signature check failed');
+  });
+
+  it('falls back for unknown outcomes', () => {
+    expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('custom_failed')).toBe('custom failed');
+  });
+});
+
+describe('formatActivationDemographicFeedWorkerAlertKindLabel', () => {
+  it('maps known alert kinds', () => {
+    expect(formatActivationDemographicFeedWorkerAlertKindLabel('signature_failure')).toBe('Signature');
+    expect(formatActivationDemographicFeedWorkerAlertKindLabel('freshness')).toBe('Freshness');
+  });
+
+  it('falls back for unknown kinds', () => {
+    expect(formatActivationDemographicFeedWorkerAlertKindLabel('custom_alert')).toBe('custom alert');
+  });
+});
+
+describe('formatTruncatedGovernanceNote', () => {
+  it('returns short text unchanged', () => {
+    expect(formatTruncatedGovernanceNote('hello', 10)).toBe('hello');
+  });
+
+  it('truncates long text', () => {
+    expect(formatTruncatedGovernanceNote('0123456789abcdef', 10)).toBe('0123456789…');
   });
 });

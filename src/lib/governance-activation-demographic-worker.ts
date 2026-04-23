@@ -102,3 +102,44 @@ export function formatActivationDemographicFeedOutboxClosedStatusLabel(status: s
       return status.replace(/_/g, ' ');
   }
 }
+
+export function formatActivationDemographicFeedWorkerRunOutcomeLabel(status: string) {
+  switch (status) {
+    case 'ingested':
+      return 'Ingested';
+    case 'signature_failed':
+      return 'Signature check failed';
+    case 'fetch_failed':
+      return 'Fetch failed';
+    case 'invalid_payload':
+      return 'Invalid payload';
+    case 'ingestion_failed':
+      return 'Ingestion failed';
+    default:
+      return status.replace(/_/g, ' ');
+  }
+}
+
+export function formatActivationDemographicFeedWorkerAlertKindLabel(alertType: string) {
+  switch (alertType) {
+    case 'freshness':
+      return 'Freshness';
+    case 'signature_failure':
+      return 'Signature';
+    case 'connectivity':
+      return 'Connectivity';
+    case 'payload':
+      return 'Payload';
+    default:
+      return alertType.replace(/_/g, ' ');
+  }
+}
+
+/** Shortens long steward-facing notes for dense panels (worker runs, outbox errors). */
+export function formatTruncatedGovernanceNote(message: string, maxChars = 160) {
+  const trimmed = message.trim();
+  if (trimmed.length <= maxChars) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, maxChars)}…`;
+}

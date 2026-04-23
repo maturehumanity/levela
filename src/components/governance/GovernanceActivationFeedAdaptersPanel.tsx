@@ -27,6 +27,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   formatActivationDemographicFeedOutboxClosedStatusLabel,
   formatActivationDemographicFeedScopeLabel,
+  formatActivationDemographicFeedWorkerAlertKindLabel,
+  formatActivationDemographicFeedWorkerRunOutcomeLabel,
+  formatTruncatedGovernanceNote,
 } from '@/lib/governance-activation-demographic-worker';
 import { useGovernanceActivationDemographicFeeds } from '@/lib/use-governance-activation-demographic-feeds';
 interface GovernanceActivationFeedAdaptersPanelProps {
@@ -57,46 +60,6 @@ function countFeedWorkerAlerts(alert: {
     + alert.connectivity_failure_count
     + alert.payload_failure_count
   );
-}
-
-function formatWorkerRunOutcomeStatus(status: string) {
-  switch (status) {
-    case 'ingested':
-      return 'Ingested';
-    case 'signature_failed':
-      return 'Signature check failed';
-    case 'fetch_failed':
-      return 'Fetch failed';
-    case 'invalid_payload':
-      return 'Invalid payload';
-    case 'ingestion_failed':
-      return 'Ingestion failed';
-    default:
-      return status.replace(/_/g, ' ');
-  }
-}
-
-function formatWorkerAlertKind(alertType: string) {
-  switch (alertType) {
-    case 'freshness':
-      return 'Freshness';
-    case 'signature_failure':
-      return 'Signature';
-    case 'connectivity':
-      return 'Connectivity';
-    case 'payload':
-      return 'Payload';
-    default:
-      return alertType.replace(/_/g, ' ');
-  }
-}
-
-function formatShortAlertMessage(message: string, maxChars = 160) {
-  const trimmed = message.trim();
-  if (trimmed.length <= maxChars) {
-    return trimmed;
-  }
-  return `${trimmed.slice(0, maxChars)}…`;
 }
 
 const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
@@ -215,7 +178,11 @@ export function GovernanceActivationFeedAdaptersPanel({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Signed demographic feed adapters</p>
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-build-key="governanceActivationFeedToolbar"
+          data-build-label="Signed feed adapters toolbar"
+        >
           <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
             {activeAdapters.length} active adapters
           </Badge>
@@ -482,7 +449,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                                 : 'mt-1 text-muted-foreground'
                             }
                           >
-                            {formatShortAlertMessage(job.error_message, 140)}
+                            {formatTruncatedGovernanceNote(job.error_message, 140)}
                           </p>
                         ) : null}
                       </div>
@@ -526,10 +493,10 @@ export function GovernanceActivationFeedAdaptersPanel({
                       <p className="font-medium text-foreground">{adapterLabel}</p>
                       <div className="flex flex-wrap items-center gap-1">
                         <Badge variant="outline" className="border-border bg-muted/80 text-foreground/90">
-                          {formatWorkerRunOutcomeStatus(run.run_status)}
+                          {formatActivationDemographicFeedWorkerRunOutcomeLabel(run.run_status)}
                         </Badge>
                         <Badge variant="outline" className="border-border bg-muted/80 text-foreground/90">
-                          {formatWorkerAlertKind(run.alert_type)}
+                          {formatActivationDemographicFeedWorkerAlertKindLabel(run.alert_type)}
                         </Badge>
                         <Badge variant="outline" className={severityClass}>
                           {run.alert_severity.charAt(0).toUpperCase() + run.alert_severity.slice(1)}
@@ -549,7 +516,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                       Observed {formatTimestamp(run.observed_at)}
                       {run.resolved_at ? ` • resolved ${formatTimestamp(run.resolved_at)}` : ''}
                     </p>
-                    <p className="mt-1 text-foreground/90">{formatShortAlertMessage(run.alert_message)}</p>
+                    <p className="mt-1 text-foreground/90">{formatTruncatedGovernanceNote(run.alert_message)}</p>
                   </div>
                 );
               })}
@@ -613,17 +580,29 @@ export function GovernanceActivationFeedAdaptersPanel({
       ) : null}
 
       {feedWorkerBackendUnavailable && (
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p
+          className="mt-2 text-xs text-muted-foreground"
+          data-build-key="governanceActivationFeedWorkerBackendUnavailable"
+          data-build-label="Feed worker backend unavailable notice"
+        >
           Worker alert persistence backend is not available here yet. Freshness fallback is still shown.
         </p>
       )}
 
       {!canManageFeeds ? (
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p
+          className="mt-2 text-sm text-muted-foreground"
+          data-build-key="governanceActivationFeedStewardOnlyNotice"
+          data-build-label="Feed management limited to stewards"
+        >
           Feed management is limited to activation and technical stewards.
         </p>
       ) : (
-        <div className="mt-3 grid gap-3 xl:grid-cols-2">
+        <div
+          className="mt-3 grid gap-3 xl:grid-cols-2"
+          data-build-key="governanceActivationFeedStewardFormsRow"
+          data-build-label="Feed adapter stewardship forms"
+        >
           <div
             className="space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5"
             data-build-key="governanceActivationFeedRegisterAdapterForm"
@@ -648,7 +627,10 @@ export function GovernanceActivationFeedAdaptersPanel({
                 countryCode: value === 'world' ? '' : current.countryCode,
               }))}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                data-build-key="governanceActivationFeedAdapterScopeSelect"
+                data-build-label="Adapter scope"
+              >
                 <SelectValue placeholder="Adapter scope" />
               </SelectTrigger>
               <SelectContent>
@@ -705,7 +687,10 @@ export function GovernanceActivationFeedAdaptersPanel({
               value={ingestionDraft.adapterId}
               onValueChange={(value) => setIngestionDraft((current) => ({ ...current, adapterId: value }))}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                data-build-key="governanceActivationFeedIngestionAdapterSelect"
+                data-build-label="Ingestion target adapter"
+              >
                 <SelectValue placeholder="Select adapter" />
               </SelectTrigger>
               <SelectContent>
