@@ -968,43 +968,80 @@ export function GovernanceActivationFeedAdaptersPanel({
                   </p>
                   <div className="flex flex-wrap items-center gap-1">
                     {alert.freshness_alert && (
-                      <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                        data-build-key={`governanceActivationFeedAlertFreshnessBadge:${alert.adapter_id}`}
+                        data-build-label={`Freshness alert (${alert.adapter_key})`}
+                      >
                         Freshness stale{typeof alert.stale_by_hours === 'number' ? ` ${alert.stale_by_hours}h` : ''}
                       </Badge>
                     )}
                     {alert.signature_failure_count > 0 && (
-                      <Badge variant="outline" className="border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300">
+                      <Badge
+                        variant="outline"
+                        className="border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                        data-build-key={`governanceActivationFeedAlertSignatureBadge:${alert.adapter_id}`}
+                        data-build-label={`Signature alert count (${alert.adapter_key})`}
+                      >
                         Signature {alert.signature_failure_count}
                       </Badge>
                     )}
                     {alert.connectivity_failure_count > 0 && (
-                      <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                        data-build-key={`governanceActivationFeedAlertConnectivityBadge:${alert.adapter_id}`}
+                        data-build-label={`Connectivity alert count (${alert.adapter_key})`}
+                      >
                         Connectivity {alert.connectivity_failure_count}
                       </Badge>
                     )}
                     {alert.payload_failure_count > 0 && (
-                      <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                        data-build-key={`governanceActivationFeedAlertPayloadBadge:${alert.adapter_id}`}
+                        data-build-label={`Payload alert count (${alert.adapter_key})`}
+                      >
                         Payload {alert.payload_failure_count}
                       </Badge>
                     )}
                     {alertCount === 0 && (
-                      <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        data-build-key={`governanceActivationFeedAlertHealthyBadge:${alert.adapter_id}`}
+                        data-build-label={`Feed worker healthy status (${alert.adapter_key})`}
+                      >
                         Healthy
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                <p className="mt-1 text-muted-foreground">
+                <p
+                  className="mt-1 text-muted-foreground"
+                  data-build-key={`governanceActivationFeedAlertLastIngested:${alert.adapter_id}`}
+                  data-build-label={`Last ingested timestamp (${alert.adapter_key})`}
+                >
                   Last ingested: {formatTimestamp(alert.last_ingested_at)}
                 </p>
                 {typeof customSweepMinutes === 'number' && customSweepMinutes > 0 ? (
-                  <p className="mt-1 text-muted-foreground">
+                  <p
+                    className="mt-1 text-muted-foreground"
+                    data-build-key={`governanceActivationFeedAlertCustomCadence:${alert.adapter_id}`}
+                    data-build-label={`Custom sweep cadence note (${alert.adapter_key})`}
+                  >
                     This adapter requests a queued sweep about every {customSweepMinutes} minutes (overrides the default schedule above).
                   </p>
                 ) : null}
                 {alert.latest_run_message && (
-                  <p className="text-muted-foreground">
+                  <p
+                    className="text-muted-foreground"
+                    data-build-key={`governanceActivationFeedAlertLatestRunMessage:${alert.adapter_id}`}
+                    data-build-label={`Latest worker run note (${alert.adapter_key})`}
+                  >
                     Latest worker run: {alert.latest_run_message}
                     {alert.latest_run_at ? ` (${formatTimestamp(alert.latest_run_at)})` : ''}
                   </p>
