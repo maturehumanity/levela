@@ -4101,6 +4101,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activation_demographic_feed_worker_schedule_automation_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cron_schema_available: boolean
+          cron_job_registered: boolean
+          cron_job_active: boolean
+          cron_job_schedule: string | null
+          cron_job_command: string | null
+          latest_scheduled_enqueue_at: string | null
+          latest_scheduled_enqueue_job_id: string | null
+          latest_cron_run_started_at: string | null
+          latest_cron_run_finished_at: string | null
+          latest_cron_run_status: string | null
+          latest_cron_run_details: string | null
+        }[]
+      }
       activation_scope_is_declared: {
         Args: {
           requested_country_code?: string

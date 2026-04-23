@@ -424,17 +424,26 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedSweepSchedulePolicy"
           data-build-label="Feed worker sweep schedule policy"
         >
-          <p>
+          <p
+            data-build-key="governanceActivationFeedSweepSchedulePolicyCadence"
+            data-build-label="Feed worker default sweep cadence and claim timeout"
+          >
             <span className="font-medium text-foreground/80">Scheduled sweeps:</span>{' '}
             new queue entries aim for roughly{' '}
             {Math.max(1, feedWorkerSchedulePolicy.default_interval_minutes)} minutes between due runs per adapter
             (unless an adapter sets its own interval). Stuck work releases after about{' '}
             {Math.max(1, feedWorkerSchedulePolicy.claim_ttl_minutes)} minutes.
           </p>
-          <p>
+          <p
+            data-build-key="governanceActivationFeedSweepSchedulePolicyStuckClaims"
+            data-build-label="Feed worker stuck claim release guidance"
+          >
             If a browser session stops mid-queue, claims past that timeout return to pending automatically, or you can use Release stuck sweep claims to run the same cleanup on demand.
           </p>
-          <p>
+          <p
+            data-build-key="governanceActivationFeedSweepSchedulePolicyPgCron"
+            data-build-label="Feed worker optional database automation note"
+          >
             When your Postgres instance has the hourly automation extension enabled, due jobs can enqueue on their own without leaving this screen open.
           </p>
           {feedWorkerScheduleAutomationStatus ? (
