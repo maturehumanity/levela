@@ -488,9 +488,7 @@ export function GovernanceActivationFeedAdaptersPanel({
               Latest schedule-enqueued job ID:{' '}
               {formatShortId(feedWorkerScheduleAutomationStatus.latest_scheduled_enqueue_job_id)}
             </p>
-          ) : (
-            null
-          )}
+          ) : null}
           {feedWorkerScheduleAutomationStatus?.latest_cron_run_started_at ? (
             <p
               data-build-key="governanceActivationFeedSchedulerLatestCronRun"
