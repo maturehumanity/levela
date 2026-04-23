@@ -89,6 +89,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     releasingStaleFeedWorkerClaims,
     escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
+    claimedFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
     feedAdapters,
@@ -154,6 +155,26 @@ export function GovernanceActivationFeedAdaptersPanel({
     [feedWorkerOutboxRecentClosedJobs],
   );
 
+  const outboxActiveVisiblePendingCount = useMemo(
+    () => feedWorkerOutboxActiveJobs.filter((job) => job.status === 'pending').length,
+    [feedWorkerOutboxActiveJobs],
+  );
+  const outboxActiveVisibleClaimedCount = useMemo(
+    () => feedWorkerOutboxActiveJobs.filter((job) => job.status === 'claimed').length,
+    [feedWorkerOutboxActiveJobs],
+  );
+  const feedWorkerOutboxActiveListTruncated = useMemo(
+    () =>
+      pendingFeedOutboxCount > outboxActiveVisiblePendingCount ||
+      claimedFeedOutboxCount > outboxActiveVisibleClaimedCount,
+    [
+      pendingFeedOutboxCount,
+      claimedFeedOutboxCount,
+      outboxActiveVisiblePendingCount,
+      outboxActiveVisibleClaimedCount,
+    ],
+  );
+
   useEffect(() => {
     if (recentClosedSweepFailureCount > 0) {
       setRecentClosedSweepJobsOpen(true);
@@ -206,11 +227,20 @@ export function GovernanceActivationFeedAdaptersPanel({
           </Badge>
           <Badge
             variant="outline"
-            className={pendingFeedOutboxCount > 0
+            className={pendingFeedOutboxCount > 0 || claimedFeedOutboxCount > 0
               ? 'border-sky-500/20 bg-sky-500/10 text-sky-800 dark:text-sky-200'
               : 'border-border bg-muted text-muted-foreground'}
+            data-build-key="governanceActivationFeedQueueStatusBadge"
+            data-build-label="Sweep queue status summary"
           >
-            {pendingFeedOutboxCount > 0 ? `${pendingFeedOutboxCount} queued sweeps` : 'Sweep queue empty'}
+            {pendingFeedOutboxCount === 0 && claimedFeedOutboxCount === 0
+              ? 'Sweep queue empty'
+              : [
+                  pendingFeedOutboxCount > 0 ? `${pendingFeedOutboxCount} pending` : null,
+                  claimedFeedOutboxCount > 0 ? `${claimedFeedOutboxCount} claimed` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
           </Badge>
           <Button
             type="button"
@@ -369,7 +399,12 @@ export function GovernanceActivationFeedAdaptersPanel({
                 const adapterLabel = feedAdapterNameById.get(job.adapter_id) ?? 'Adapter';
                 const workerLabel = formatShortWorkerIdentity(job.worker_identity);
                 return (
-                  <div key={job.id} className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5">
+                  <div
+                    key={job.id}
+                    className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5"
+                    data-build-key={`governanceActivationFeedOutboxActiveJobRow:${job.id}`}
+                    data-build-label={`${adapterLabel} · ${job.status === 'claimed' ? 'Claimed' : 'Pending'} sweep job`}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-foreground">{adapterLabel}</p>
                       <Badge
@@ -377,6 +412,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                         className={job.status === 'claimed'
                           ? 'border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-200'
                           : 'border-sky-500/20 bg-sky-500/10 text-sky-900 dark:text-sky-100'}
+                        data-build-key={`governanceActivationFeedOutboxActiveJobStatus:${job.id}`}
+                        data-build-label={job.status === 'claimed' ? 'Sweep job claimed' : 'Sweep job pending'}
                       >
                         {job.status === 'claimed' ? 'Claimed' : 'Pending'}
                       </Badge>
@@ -399,9 +436,14 @@ export function GovernanceActivationFeedAdaptersPanel({
               })}
             </div>
           )}
-          {pendingFeedOutboxCount > feedWorkerOutboxActiveJobs.filter((job) => job.status === 'pending').length ? (
-            <p className="text-xs text-muted-foreground">
-              Additional pending jobs may exist beyond this list (showing the 25 most recently updated pending or claimed rows).
+          {feedWorkerOutboxActiveListTruncated ? (
+            <p
+              className="text-xs text-muted-foreground"
+              data-build-key="governanceActivationFeedOutboxActiveListTruncationNote"
+              data-build-label="Note when sweep queue list is capped"
+            >
+              Additional pending or claimed jobs may exist beyond this list (showing the 25 most recently updated
+              pending or claimed rows).
             </p>
           ) : null}
 
@@ -623,11 +665,15 @@ export function GovernanceActivationFeedAdaptersPanel({
               value={adapterDraft.adapterKey}
               onChange={(event) => setAdapterDraft((current) => ({ ...current, adapterKey: event.target.value }))}
               placeholder="Adapter key"
+              data-build-key="governanceActivationFeedAdapterKeyInput"
+              data-build-label="Adapter key"
             />
             <Input
               value={adapterDraft.adapterName}
               onChange={(event) => setAdapterDraft((current) => ({ ...current, adapterName: event.target.value }))}
               placeholder="Adapter name"
+              data-build-key="governanceActivationFeedAdapterNameInput"
+              data-build-label="Adapter name"
             />
             <Select
               value={adapterDraft.scopeType}
@@ -654,22 +700,30 @@ export function GovernanceActivationFeedAdaptersPanel({
                 onChange={(event) => setAdapterDraft((current) => ({ ...current, countryCode: event.target.value.toUpperCase() }))}
                 placeholder="Country code"
                 maxLength={2}
+                data-build-key="governanceActivationFeedAdapterCountryCodeInput"
+                data-build-label="Adapter country code"
               />
             )}
             <Input
               value={adapterDraft.endpointUrl}
               onChange={(event) => setAdapterDraft((current) => ({ ...current, endpointUrl: event.target.value }))}
               placeholder="Endpoint URL"
+              data-build-key="governanceActivationFeedAdapterEndpointUrlInput"
+              data-build-label="Adapter endpoint URL"
             />
             <Input
               value={adapterDraft.publicSignerKey}
               onChange={(event) => setAdapterDraft((current) => ({ ...current, publicSignerKey: event.target.value }))}
               placeholder="Public signer key (base64url spki)"
+              data-build-key="governanceActivationFeedAdapterPublicSignerKeyInput"
+              data-build-label="Adapter public signer key"
             />
             <Input
               value={adapterDraft.keyAlgorithm}
               onChange={(event) => setAdapterDraft((current) => ({ ...current, keyAlgorithm: event.target.value }))}
               placeholder="Key algorithm"
+              data-build-key="governanceActivationFeedAdapterKeyAlgorithmInput"
+              data-build-label="Adapter key algorithm"
             />
             <Button
               type="button"
@@ -692,7 +746,13 @@ export function GovernanceActivationFeedAdaptersPanel({
             data-build-label="Ingest signed demographic feed snapshot"
           >
             <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Ingest signed feed snapshot</p>
-            <Label className="text-xs">Adapter</Label>
+            <Label
+              className="text-xs"
+              data-build-key="governanceActivationFeedIngestionAdapterLabel"
+              data-build-label="Ingestion adapter label"
+            >
+              Adapter
+            </Label>
             <Select
               value={ingestionDraft.adapterId}
               onValueChange={(value) => setIngestionDraft((current) => ({ ...current, adapterId: value }))}
@@ -714,33 +774,45 @@ export function GovernanceActivationFeedAdaptersPanel({
               value={ingestionDraft.targetPopulation}
               onChange={(event) => setIngestionDraft((current) => ({ ...current, targetPopulation: event.target.value }))}
               placeholder="Target population"
+              data-build-key="governanceActivationFeedIngestionTargetPopulationInput"
+              data-build-label="Ingestion target population"
             />
             <Input
               type="datetime-local"
               value={ingestionDraft.observedAt}
               onChange={(event) => setIngestionDraft((current) => ({ ...current, observedAt: event.target.value }))}
+              data-build-key="governanceActivationFeedIngestionObservedAtInput"
+              data-build-label="Ingestion observed time"
             />
             <Input
               value={ingestionDraft.sourceUrl}
               onChange={(event) => setIngestionDraft((current) => ({ ...current, sourceUrl: event.target.value }))}
               placeholder="Source URL (optional)"
+              data-build-key="governanceActivationFeedIngestionSourceUrlInput"
+              data-build-label="Ingestion source URL"
             />
             <Textarea
               value={ingestionDraft.signedPayload}
               onChange={(event) => setIngestionDraft((current) => ({ ...current, signedPayload: event.target.value }))}
               rows={3}
               placeholder="Signed payload"
+              data-build-key="governanceActivationFeedIngestionSignedPayload"
+              data-build-label="Ingestion signed payload"
             />
             <Input
               value={ingestionDraft.payloadSignature}
               onChange={(event) => setIngestionDraft((current) => ({ ...current, payloadSignature: event.target.value }))}
               placeholder="Payload signature (base64url)"
+              data-build-key="governanceActivationFeedIngestionPayloadSignatureInput"
+              data-build-label="Ingestion payload signature"
             />
             <Textarea
               value={ingestionDraft.ingestionNotes}
               onChange={(event) => setIngestionDraft((current) => ({ ...current, ingestionNotes: event.target.value }))}
               rows={2}
               placeholder="Ingestion notes"
+              data-build-key="governanceActivationFeedIngestionNotes"
+              data-build-label="Ingestion notes"
             />
             <Button
               type="button"

@@ -68,6 +68,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [escalatingFeedWorkerPublicExecution, setEscalatingFeedWorkerPublicExecution] = useState(false);
   const [resolvingFeedAlertKey, setResolvingFeedAlertKey] = useState<string | null>(null);
   const [pendingFeedOutboxCount, setPendingFeedOutboxCount] = useState(0);
+  const [claimedFeedOutboxCount, setClaimedFeedOutboxCount] = useState(0);
   const [feedAdapters, setFeedAdapters] = useState<ActivationDemographicFeedAdapterRow[]>([]);
   const [feedIngestions, setFeedIngestions] = useState<ActivationDemographicFeedIngestionRow[]>([]);
   const [feedIngestionsHasMore, setFeedIngestionsHasMore] = useState(false);
@@ -129,6 +130,7 @@ export function useGovernanceActivationDemographicFeeds() {
       permissionResponse,
       workerSummaryResponse,
       pendingOutboxResponse,
+      claimedOutboxResponse,
       activeOutboxJobsResponse,
       recentClosedOutboxJobsResponse,
       workerRunsResponse,
@@ -152,6 +154,10 @@ export function useGovernanceActivationDemographicFeeds() {
         .from('activation_demographic_feed_worker_outbox')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending'),
+      supabase
+        .from('activation_demographic_feed_worker_outbox')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'claimed'),
       supabase
         .from('activation_demographic_feed_worker_outbox')
         .select('*')
@@ -226,6 +232,15 @@ export function useGovernanceActivationDemographicFeeds() {
       setPendingFeedOutboxCount(0);
     } else {
       setPendingFeedOutboxCount(pendingOutboxResponse.count ?? 0);
+    }
+
+    if (claimedOutboxResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(claimedOutboxResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setClaimedFeedOutboxCount(0);
+    } else {
+      setClaimedFeedOutboxCount(claimedOutboxResponse.count ?? 0);
     }
 
     if (activeOutboxJobsResponse.error) {
@@ -760,6 +775,7 @@ export function useGovernanceActivationDemographicFeeds() {
     releasingStaleFeedWorkerClaims,
     escalatingFeedWorkerPublicExecution,
     pendingFeedOutboxCount,
+    claimedFeedOutboxCount,
     resolvingFeedAlertKey,
     openFeedWorkerAlertsCount,
     feedAdapters,
