@@ -593,7 +593,9 @@ The next implementation sequence should now be:
 4. productionize minimized trusted-backend rollout with signed verifier mirror directories, autonomous health probing, and client-side mirror failover policy
 5. begin distributed mirror-governance and verifier-federation rollout planning
 
-Step 5 kickoff artifact: `docs/04-operations/dev/verifier-federation/rollout-plan-v0.1.md`
+Step 5 kickoff artifact: [Verifier federation rollout plan v0.1](verifier-federation/rollout-plan-v0.1.md)
+
+Implementation tracking for Step 5 lives in that document (handoff status, steward polish notes, and **§9 headline federation rollout program %** for steward-facing progress reports).
 
 ## 15. Suggested Ownership Sequence
 
@@ -613,6 +615,7 @@ This roadmap is now the best repo-native handoff point for continuation. A new c
 - continue Levela decentralization from `docs/04-operations/dev/governance-implementation-roadmap-v0.1.md`
 - use `docs/03-governance/decentralized-transition-architecture.md` as the target architecture
 - start with `Section 14. Immediate Next Steps`
+- for **verifier mirror / federation rollout** status and headline program %, read `docs/04-operations/dev/verifier-federation/rollout-plan-v0.1.md` §8–§9 in the same session
 
 The safest short continuation prompt is:
 

@@ -4,7 +4,7 @@ status: draft
 owners:
   - governance engineering
   - public audit operations
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # 1. Purpose
@@ -46,6 +46,7 @@ Operational steps for **Phase D** of `rollout-plan-v0.1.md` (same folder): rotat
 - [ ] Latest federation package row exists for `package_scope = 'verifier_federation_distribution'` with expected `package_hash`.
 - [ ] Enough **distinct approved** signer keys recorded in `governance_public_audit_verifier_federation_package_signatures` for policy (`distribution_ready`).
 - [ ] `governance_public_audit_verifier_federation_distribution_gate` / client bundle path reflects readiness for execution if your deployment wires those gates.
+- [ ] **Governance hub (`/governance`)** shows no unexpected federation readiness banner, federation distribution on-call count, activation demographic feed on-call count, or guardian relay on-call count; clear related **Immutable anchoring automation** external execution pages before calling the rotation complete.
 
 # 7. Constitutional and policy mapping (concise)
 
