@@ -589,26 +589,59 @@ export function GovernanceActivationFeedAdaptersPanel({
                   : run.alert_severity === 'warning'
                     ? 'border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-200'
                     : 'border-border bg-muted text-muted-foreground';
+                const runStatusLabel = formatActivationDemographicFeedWorkerRunOutcomeLabel(run.run_status);
+                const alertKindLabel = formatActivationDemographicFeedWorkerAlertKindLabel(run.alert_type);
+                const severityLabel = run.alert_severity.charAt(0).toUpperCase() + run.alert_severity.slice(1);
                 return (
-                  <div key={run.id} className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5">
+                  <div
+                    key={run.id}
+                    className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5"
+                    data-build-key={`governanceActivationFeedWorkerRunRow:${run.id}`}
+                    data-build-label={`${adapterLabel} worker run · ${runStatusLabel}`}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-foreground">{adapterLabel}</p>
                       <div className="flex flex-wrap items-center gap-1">
-                        <Badge variant="outline" className="border-border bg-muted/80 text-foreground/90">
-                          {formatActivationDemographicFeedWorkerRunOutcomeLabel(run.run_status)}
+                        <Badge
+                          variant="outline"
+                          className="border-border bg-muted/80 text-foreground/90"
+                          data-build-key={`governanceActivationFeedWorkerRunStatus:${run.id}`}
+                          data-build-label={`Worker run status: ${runStatusLabel}`}
+                        >
+                          {runStatusLabel}
                         </Badge>
-                        <Badge variant="outline" className="border-border bg-muted/80 text-foreground/90">
-                          {formatActivationDemographicFeedWorkerAlertKindLabel(run.alert_type)}
+                        <Badge
+                          variant="outline"
+                          className="border-border bg-muted/80 text-foreground/90"
+                          data-build-key={`governanceActivationFeedWorkerRunAlertKind:${run.id}`}
+                          data-build-label={`Worker run alert kind: ${alertKindLabel}`}
+                        >
+                          {alertKindLabel}
                         </Badge>
-                        <Badge variant="outline" className={severityClass}>
-                          {run.alert_severity.charAt(0).toUpperCase() + run.alert_severity.slice(1)}
+                        <Badge
+                          variant="outline"
+                          className={severityClass}
+                          data-build-key={`governanceActivationFeedWorkerRunSeverity:${run.id}`}
+                          data-build-label={`Worker run severity: ${severityLabel}`}
+                        >
+                          {severityLabel}
                         </Badge>
                         {run.resolved_at ? (
-                          <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200">
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                            data-build-key={`governanceActivationFeedWorkerRunResolution:${run.id}`}
+                            data-build-label="Worker run resolved status"
+                          >
                             Resolved
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="border-border text-muted-foreground">
+                          <Badge
+                            variant="outline"
+                            className="border-border text-muted-foreground"
+                            data-build-key={`governanceActivationFeedWorkerRunResolution:${run.id}`}
+                            data-build-label="Worker run open status"
+                          >
                             Open
                           </Badge>
                         )}
