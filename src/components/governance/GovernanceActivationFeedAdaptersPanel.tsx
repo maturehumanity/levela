@@ -235,7 +235,12 @@ export function GovernanceActivationFeedAdaptersPanel({
           data-build-key="governanceActivationFeedToolbar"
           data-build-label="Signed feed adapters toolbar"
         >
-          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+          <Badge
+            variant="outline"
+            className="border-border bg-muted text-muted-foreground"
+            data-build-key="governanceActivationFeedActiveAdaptersBadge"
+            data-build-label="Active feed adapters count"
+          >
             {activeAdapters.length} active adapters
           </Badge>
           <Badge
@@ -243,6 +248,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className={openFeedWorkerAlertsCount > 0
               ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
               : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}
+            data-build-key="governanceActivationFeedWorkerAlertsBadge"
+            data-build-label="Feed worker alerts count"
           >
             {openFeedWorkerAlertsCount > 0 ? `${openFeedWorkerAlertsCount} worker alerts` : 'Worker alerts clear'}
           </Badge>
