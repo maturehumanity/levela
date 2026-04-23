@@ -35,6 +35,17 @@ type RpcResponseLike<T> = {
   error: RpcErrorLike;
 };
 
+function isMissingFeedSchedulerAutomationStatusFunction(error: RpcErrorLike) {
+  if (!error) {
+    return false;
+  }
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('activation_demographic_feed_worker_schedule_automation_status')
+  );
+}
+
 function appendUniqueById<T extends { id: string }>(existing: T[], incoming: T[]) {
   if (incoming.length === 0) {
     return existing;
@@ -352,10 +363,15 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     if (scheduleAutomationStatusResponse?.error) {
-      if (isMissingActivationDemographicFeedWorkerBackend(scheduleAutomationStatusResponse.error)) {
+      if (isMissingFeedSchedulerAutomationStatusFunction(scheduleAutomationStatusResponse.error)) {
+        setFeedWorkerScheduleAutomationStatus(null);
+      } else if (isMissingActivationDemographicFeedWorkerBackend(scheduleAutomationStatusResponse.error)) {
         setFeedWorkerBackendUnavailable(true);
+        setFeedWorkerScheduleAutomationStatus(null);
       }
-      setFeedWorkerScheduleAutomationStatus(null);
+      if (!isMissingFeedSchedulerAutomationStatusFunction(scheduleAutomationStatusResponse.error)) {
+        setFeedWorkerScheduleAutomationStatus(null);
+      }
     } else {
       const statusRows = Array.isArray(scheduleAutomationStatusResponse?.data)
         ? scheduleAutomationStatusResponse.data as ActivationDemographicFeedWorkerScheduleAutomationStatusRow[]
