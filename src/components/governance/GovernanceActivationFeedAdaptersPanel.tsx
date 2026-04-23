@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Loader2, RefreshCcw } from 'lucide-react';
+import { Copy, Loader2, RefreshCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +94,17 @@ function formatShortAlertMessage(message: string, maxChars = 160) {
     return trimmed;
   }
   return `${trimmed.slice(0, maxChars)}…`;
+}
+
+const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
+
+async function copyActivationFeedWorkerEscalationPageKey() {
+  try {
+    await navigator.clipboard.writeText(ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY);
+    toast.success('On-call page key copied to the clipboard.');
+  } catch {
+    toast.error('Could not copy to the clipboard.');
+  }
 }
 
 export function GovernanceActivationFeedAdaptersPanel({
@@ -445,19 +457,31 @@ export function GovernanceActivationFeedAdaptersPanel({
       {canManageFeeds && !feedWorkerBackendUnavailable ? (
         <div className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
           <p>
-            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Resolve open pages under Public audit, then Immutable anchoring automation, using the on-call page board.
+            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Resolve open pages under Public audit, then Immutable anchoring automation, using the on-call page board. Use copy below if you need the exact page identifier when searching the board.
           </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="mt-2 w-full gap-2 sm:w-auto"
-            disabled={escalatingFeedWorkerPublicExecution}
-            onClick={() => void escalateFeedWorkerAlertsToPublicExecution()}
-          >
-            {escalatingFeedWorkerPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Update on-call page for feed worker alerts
-          </Button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="gap-2"
+              disabled={escalatingFeedWorkerPublicExecution}
+              onClick={() => void escalateFeedWorkerAlertsToPublicExecution()}
+            >
+              {escalatingFeedWorkerPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Update on-call page for feed worker alerts
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => void copyActivationFeedWorkerEscalationPageKey()}
+            >
+              <Copy className="h-4 w-4" />
+              Copy on-call page key
+            </Button>
+          </div>
         </div>
       ) : null}
 
