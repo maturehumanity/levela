@@ -74,6 +74,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const [loadingMoreFeedIngestions, setLoadingMoreFeedIngestions] = useState(false);
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
   const [feedWorkerOutboxActiveJobs, setFeedWorkerOutboxActiveJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
+  const [feedWorkerOutboxRecentClosedJobs, setFeedWorkerOutboxRecentClosedJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
   const [feedWorkerRecentRuns, setFeedWorkerRecentRuns] = useState<ActivationDemographicFeedWorkerRunRow[]>([]);
   const [feedWorkerRunsHasMore, setFeedWorkerRunsHasMore] = useState(false);
   const [loadingMoreFeedWorkerRuns, setLoadingMoreFeedWorkerRuns] = useState(false);
@@ -129,6 +130,7 @@ export function useGovernanceActivationDemographicFeeds() {
       workerSummaryResponse,
       pendingOutboxResponse,
       activeOutboxJobsResponse,
+      recentClosedOutboxJobsResponse,
       workerRunsResponse,
       schedulePolicyResponse,
     ] = await Promise.all([
@@ -156,6 +158,12 @@ export function useGovernanceActivationDemographicFeeds() {
         .in('status', ['pending', 'claimed'])
         .order('updated_at', { ascending: false })
         .limit(25),
+      supabase
+        .from('activation_demographic_feed_worker_outbox')
+        .select('*')
+        .in('status', ['completed', 'cancelled', 'failed'])
+        .order('updated_at', { ascending: false })
+        .limit(15),
       supabase
         .from('activation_demographic_feed_worker_runs')
         .select('*')
@@ -228,6 +236,17 @@ export function useGovernanceActivationDemographicFeeds() {
     } else {
       setFeedWorkerOutboxActiveJobs(
         (activeOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [],
+      );
+    }
+
+    if (recentClosedOutboxJobsResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(recentClosedOutboxJobsResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setFeedWorkerOutboxRecentClosedJobs([]);
+    } else {
+      setFeedWorkerOutboxRecentClosedJobs(
+        (recentClosedOutboxJobsResponse.data as ActivationDemographicFeedWorkerOutboxRow[]) || [],
       );
     }
 
@@ -749,6 +768,7 @@ export function useGovernanceActivationDemographicFeeds() {
     loadingMoreFeedIngestions,
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
+    feedWorkerOutboxRecentClosedJobs,
     feedWorkerRecentRuns,
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,

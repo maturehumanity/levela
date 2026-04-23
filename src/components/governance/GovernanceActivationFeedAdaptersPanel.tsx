@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Copy, Loader2, RefreshCcw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Loader2, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { buttonVariants } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatActivationDemographicFeedScopeLabel } from '@/lib/governance-activation-demographic-worker';
 import { useGovernanceActivationDemographicFeeds } from '@/lib/use-governance-activation-demographic-feeds';
 interface GovernanceActivationFeedAdaptersPanelProps {
@@ -96,6 +96,19 @@ function formatShortAlertMessage(message: string, maxChars = 160) {
   return `${trimmed.slice(0, maxChars)}…`;
 }
 
+function formatOutboxClosedStatusLabel(status: string) {
+  switch (status) {
+    case 'completed':
+      return 'Completed';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'failed':
+      return 'Failed';
+    default:
+      return status.replace(/_/g, ' ');
+  }
+}
+
 const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
 
 async function copyActivationFeedWorkerEscalationPageKey() {
@@ -131,6 +144,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     loadingMoreFeedIngestions,
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
+    feedWorkerOutboxRecentClosedJobs,
     feedWorkerRecentRuns,
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,
@@ -167,6 +181,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     ingestionNotes: '',
   });
   const [forceRescheduleSweepOpen, setForceRescheduleSweepOpen] = useState(false);
+  const [recentClosedSweepJobsOpen, setRecentClosedSweepJobsOpen] = useState(false);
 
   const activeAdapters = useMemo(
     () => feedAdapters.filter((adapter) => adapter.is_active),
@@ -379,6 +394,60 @@ export function GovernanceActivationFeedAdaptersPanel({
               Additional pending jobs may exist beyond this list (showing the 25 most recently updated pending or claimed rows).
             </p>
           ) : null}
+
+          <Collapsible open={recentClosedSweepJobsOpen} onOpenChange={setRecentClosedSweepJobsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto w-full justify-start gap-2 px-0 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                {recentClosedSweepJobsOpen
+                  ? <ChevronDown className="h-4 w-4 shrink-0" />
+                  : <ChevronRight className="h-4 w-4 shrink-0" />}
+                Recently closed sweep jobs (up to 15)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 pt-1">
+              {feedWorkerOutboxRecentClosedJobs.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No completed, cancelled, or failed sweep jobs in the latest window.
+                </p>
+              ) : (
+                <div className="max-h-40 space-y-2 overflow-y-auto text-xs text-muted-foreground">
+                  {feedWorkerOutboxRecentClosedJobs.map((job) => {
+                    const adapterLabel = feedAdapterNameById.get(job.adapter_id) ?? 'Adapter';
+                    const closedAt = job.completed_at ?? job.updated_at;
+                    const statusBadgeClass = job.status === 'completed'
+                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+                      : job.status === 'failed'
+                        ? 'border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-200'
+                        : 'border-border bg-muted text-muted-foreground';
+                    return (
+                      <div key={job.id} className="rounded-md border border-border/50 bg-card/60 px-2 py-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-medium text-foreground">{adapterLabel}</p>
+                          <Badge variant="outline" className={statusBadgeClass}>
+                            {formatOutboxClosedStatusLabel(job.status)}
+                          </Badge>
+                        </div>
+                        <p className="mt-1">
+                          Closed {formatTimestamp(closedAt)}
+                          {job.requested_at ? ` • requested ${formatTimestamp(job.requested_at)}` : ''}
+                        </p>
+                        {job.error_message?.trim() ? (
+                          <p className="mt-1 text-rose-700 dark:text-rose-300">
+                            {formatShortAlertMessage(job.error_message, 140)}
+                          </p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       ) : null}
 
