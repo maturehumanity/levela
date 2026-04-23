@@ -54,6 +54,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedAdapters,
     feedIngestions,
     feedWorkerAlerts,
+    feedWorkerSchedulePolicy,
     loadFeedData,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
@@ -167,6 +168,21 @@ export function GovernanceActivationFeedAdaptersPanel({
           </Button>
         </div>
       </div>
+
+      {feedWorkerSchedulePolicy && !feedWorkerBackendUnavailable ? (
+        <div className="mt-3 space-y-1 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+          <p>
+            <span className="font-medium text-foreground/80">Scheduled sweeps:</span>{' '}
+            new queue entries aim for roughly{' '}
+            {Math.max(1, feedWorkerSchedulePolicy.default_interval_minutes)} minutes between due runs per adapter
+            (unless an adapter sets its own interval). Stuck work releases after about{' '}
+            {Math.max(1, feedWorkerSchedulePolicy.claim_ttl_minutes)} minutes.
+          </p>
+          <p>
+            When your Postgres instance has the hourly automation extension enabled, due jobs can enqueue on their own without leaving this screen open.
+          </p>
+        </div>
+      ) : null}
 
       {feedWorkerBackendUnavailable && (
         <p className="mt-2 text-xs text-muted-foreground">

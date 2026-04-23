@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import {
   buildFallbackWorkerAlertRows,
   FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
@@ -41,6 +42,9 @@ function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
   return rpc(fnName, params);
 }
 
+export type ActivationDemographicFeedWorkerSchedulePolicyRow =
+  Database['public']['Tables']['activation_demographic_feed_worker_schedule_policies']['Row'];
+
 export function useGovernanceActivationDemographicFeeds() {
   const [loadingFeedData, setLoadingFeedData] = useState(true);
   const [feedBackendUnavailable, setFeedBackendUnavailable] = useState(false);
@@ -56,6 +60,8 @@ export function useGovernanceActivationDemographicFeeds() {
   const [feedAdapters, setFeedAdapters] = useState<ActivationDemographicFeedAdapterRow[]>([]);
   const [feedIngestions, setFeedIngestions] = useState<ActivationDemographicFeedIngestionRow[]>([]);
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
+  const [feedWorkerSchedulePolicy, setFeedWorkerSchedulePolicy] =
+    useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
 
   const openFeedWorkerAlertsCount = useMemo(
     () => feedWorkerAlerts.reduce((count, alert) => count
@@ -99,7 +105,14 @@ export function useGovernanceActivationDemographicFeeds() {
   const loadFeedData = useCallback(async () => {
     setLoadingFeedData(true);
 
-    const [adapterResponse, ingestionResponse, permissionResponse, workerSummaryResponse, pendingOutboxResponse] = await Promise.all([
+    const [
+      adapterResponse,
+      ingestionResponse,
+      permissionResponse,
+      workerSummaryResponse,
+      pendingOutboxResponse,
+      schedulePolicyResponse,
+    ] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
         .select('*')
@@ -118,6 +131,11 @@ export function useGovernanceActivationDemographicFeeds() {
         .from('activation_demographic_feed_worker_outbox')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending'),
+      supabase
+        .from('activation_demographic_feed_worker_schedule_policies')
+        .select('*')
+        .eq('policy_key', 'default')
+        .maybeSingle(),
     ]);
 
     const sharedError = adapterResponse.error || ingestionResponse.error || permissionResponse.error;
@@ -166,6 +184,17 @@ export function useGovernanceActivationDemographicFeeds() {
       setPendingFeedOutboxCount(0);
     } else {
       setPendingFeedOutboxCount(pendingOutboxResponse.count ?? 0);
+    }
+
+    if (schedulePolicyResponse.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(schedulePolicyResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setFeedWorkerSchedulePolicy(null);
+    } else {
+      setFeedWorkerSchedulePolicy(
+        (schedulePolicyResponse.data as ActivationDemographicFeedWorkerSchedulePolicyRow | null) ?? null,
+      );
     }
 
     setLoadingFeedData(false);
@@ -525,6 +554,7 @@ export function useGovernanceActivationDemographicFeeds() {
     feedAdapters,
     feedIngestions,
     feedWorkerAlerts,
+    feedWorkerSchedulePolicy,
     loadFeedData,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
