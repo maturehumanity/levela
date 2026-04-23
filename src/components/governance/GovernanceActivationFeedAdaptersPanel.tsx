@@ -73,6 +73,11 @@ function formatCronRunStatusLabel(value: string | null) {
   return value.trim();
 }
 
+type FeedSchedulerRunHealth = {
+  label: string;
+  className: string;
+};
+
 function countFeedWorkerAlerts(alert: {
   freshness_alert: boolean;
   signature_failure_count: number;
@@ -90,6 +95,7 @@ function countFeedWorkerAlerts(alert: {
 const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
 const FEED_WORKER_ALERTS_FIRST_PAGE = 8;
 const FEED_WORKER_ALERTS_APPEND_PAGE = 8;
+const FEED_SCHEDULER_RUN_STALE_HOURS = 2;
 
 async function copyActivationFeedWorkerEscalationPageKey() {
   try {
@@ -233,6 +239,48 @@ export function GovernanceActivationFeedAdaptersPanel({
     [feedWorkerAlerts, visibleFeedWorkerAlertsCount],
   );
   const feedWorkerAlertsHasMore = visibleFeedWorkerAlertsCount < feedWorkerAlerts.length;
+  const feedSchedulerRunHealth = useMemo<FeedSchedulerRunHealth | null>(() => {
+    const status = feedWorkerScheduleAutomationStatus;
+    if (!status) {
+      return null;
+    }
+    if (!status.latest_cron_run_started_at) {
+      return {
+        label: 'No cron run recorded',
+        className: 'border-border bg-muted text-muted-foreground',
+      };
+    }
+
+    const normalizedStatus = (status.latest_cron_run_status || '').trim().toLowerCase();
+    if (normalizedStatus === 'failed' || normalizedStatus === 'error') {
+      return {
+        label: 'Latest cron run failed',
+        className: 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+      };
+    }
+    if (normalizedStatus === 'running') {
+      return {
+        label: 'Cron run in progress',
+        className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+      };
+    }
+
+    const startedAtMs = Date.parse(status.latest_cron_run_started_at);
+    if (Number.isFinite(startedAtMs)) {
+      const elapsedMs = Date.now() - startedAtMs;
+      if (elapsedMs > FEED_SCHEDULER_RUN_STALE_HOURS * 60 * 60 * 1000) {
+        return {
+          label: 'Latest cron run is stale',
+          className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        };
+      }
+    }
+
+    return {
+      label: 'Latest cron run healthy',
+      className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    };
+  }, [feedWorkerScheduleAutomationStatus]);
 
   if (feedBackendUnavailable) {
     return (
@@ -508,6 +556,16 @@ export function GovernanceActivationFeedAdaptersPanel({
                 ? ` • ${formatTruncatedGovernanceNote(feedWorkerScheduleAutomationStatus.latest_cron_run_details, 120)}`
                 : ''}
             </p>
+          ) : null}
+          {feedSchedulerRunHealth ? (
+            <Badge
+              variant="outline"
+              className={feedSchedulerRunHealth.className}
+              data-build-key="governanceActivationFeedSchedulerRunHealthBadge"
+              data-build-label="Feed scheduler latest run health badge"
+            >
+              {feedSchedulerRunHealth.label}
+            </Badge>
           ) : null}
         </div>
       ) : null}
