@@ -41,4 +41,14 @@ describe('isMissingActivationDemographicFeedWorkerBackend + scheduler RPC', () =
     expect(isMissingActivationDemographicFeedSchedulerStatusRpc(error)).toBe(true);
     expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
   });
+
+  it('still treats other worker-backend PGRST202 failures as missing the worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message: 'Could not find the function public.claim_activation_demographic_feed_worker_jobs',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedSchedulerStatusRpc(error)).toBe(false);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(true);
+  });
 });
