@@ -96,6 +96,7 @@ const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_
 const FEED_WORKER_ALERTS_FIRST_PAGE = 8;
 const FEED_WORKER_ALERTS_APPEND_PAGE = 8;
 const FEED_SCHEDULER_RUN_STALE_HOURS = 2;
+const FEED_SCHEDULER_ENQUEUE_STALE_HOURS = 12;
 
 async function copyActivationFeedWorkerEscalationPageKey() {
   try {
@@ -278,6 +279,34 @@ export function GovernanceActivationFeedAdaptersPanel({
 
     return {
       label: 'Latest cron run healthy',
+      className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    };
+  }, [feedWorkerScheduleAutomationStatus]);
+  const feedSchedulerEnqueueHealth = useMemo<FeedSchedulerRunHealth | null>(() => {
+    const status = feedWorkerScheduleAutomationStatus;
+    if (!status) {
+      return null;
+    }
+    if (!status.latest_scheduled_enqueue_at) {
+      return {
+        label: 'No schedule enqueue observed',
+        className: 'border-border bg-muted text-muted-foreground',
+      };
+    }
+
+    const enqueueAtMs = Date.parse(status.latest_scheduled_enqueue_at);
+    if (Number.isFinite(enqueueAtMs)) {
+      const elapsedMs = Date.now() - enqueueAtMs;
+      if (elapsedMs > FEED_SCHEDULER_ENQUEUE_STALE_HOURS * 60 * 60 * 1000) {
+        return {
+          label: 'Schedule enqueue is stale',
+          className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        };
+      }
+    }
+
+    return {
+      label: 'Schedule enqueue is fresh',
       className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
     };
   }, [feedWorkerScheduleAutomationStatus]);
@@ -565,6 +594,16 @@ export function GovernanceActivationFeedAdaptersPanel({
               data-build-label="Feed scheduler latest run health badge"
             >
               {feedSchedulerRunHealth.label}
+            </Badge>
+          ) : null}
+          {feedSchedulerEnqueueHealth ? (
+            <Badge
+              variant="outline"
+              className={feedSchedulerEnqueueHealth.className}
+              data-build-key="governanceActivationFeedSchedulerEnqueueHealthBadge"
+              data-build-label="Feed scheduler enqueue freshness badge"
+            >
+              {feedSchedulerEnqueueHealth.label}
             </Badge>
           ) : null}
         </div>
