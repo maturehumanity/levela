@@ -353,6 +353,34 @@ describe('governance-public-audit-automation helpers', () => {
     expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'guardian_relay')).toBe(1);
   });
 
+  it('counts open activation demographic feed worker external execution pages by substring', () => {
+    const pages = [
+      {
+        pageId: 'a1',
+        batchId: 'b1',
+        pageKey: 'activation_demographic_feed_worker_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Feed worker stalled',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T00:00:00.000Z',
+        resolvedAt: null,
+      },
+      {
+        pageId: 'a2',
+        batchId: 'b1',
+        pageKey: 'activation_demographic_feed_worker_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'resolved' as const,
+        pageMessage: 'Done',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T01:00:00.000Z',
+        resolvedAt: '2026-04-21T02:00:00.000Z',
+      },
+    ];
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'activation_demographic_feed')).toBe(1);
+  });
+
   it('formats queue job status labels for stewards', () => {
     expect(formatGovernancePublicAuditQueueJobStatusLabel('pending')).toBe('Pending');
     expect(formatGovernancePublicAuditQueueJobStatusLabel('COMPLETED')).toBe('Completed');

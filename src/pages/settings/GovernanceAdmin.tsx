@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Landmark } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -132,6 +132,7 @@ function parseNumeric(value: string, fallback: number) {
 
 export default function GovernanceAdmin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const { profile, refreshProfile } = useAuth();
 
@@ -317,6 +318,31 @@ export default function GovernanceAdmin() {
   useEffect(() => {
     refreshCitizenKeyStatus();
   }, [refreshCitizenKeyStatus]);
+
+  useEffect(() => {
+    const hash = location.hash;
+    if (hash !== '#stewardship-public-audit-tools' && hash !== '#stewardship-activation-review') {
+      return;
+    }
+
+    const targetId = hash === '#stewardship-activation-review'
+      ? 'stewardship-activation-review'
+      : 'stewardship-public-audit-tools';
+
+    const scrollToTarget = () => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    scrollToTarget();
+    const retryId = window.setTimeout(scrollToTarget, 320);
+    return () => window.clearTimeout(retryId);
+  }, [
+    location.hash,
+    location.pathname,
+    loadingActivationReview,
+    loadingPublicAudit,
+    loadingRemoteState,
+  ]);
 
   useEffect(() => {
     let cancelled = false;

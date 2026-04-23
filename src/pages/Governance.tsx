@@ -184,6 +184,7 @@ export default function Governance() {
     federationOps: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   } | null>(null);
   const [federationDistributionEscalationOpenPageCount, setFederationDistributionEscalationOpenPageCount] = useState(0);
+  const [activationDemographicFeedEscalationOpenPageCount, setActivationDemographicFeedEscalationOpenPageCount] = useState(0);
   const [guardianRelayEscalationOpenPageCount, setGuardianRelayEscalationOpenPageCount] = useState(0);
   const isNativeMobileGovernanceDevice = useMemo(() => isNativeGovernanceApp(), []);
 
@@ -580,6 +581,7 @@ export default function Governance() {
       setBackendUnavailable(true);
       setVerifierFederationExecutionGate(null);
       setFederationDistributionEscalationOpenPageCount(0);
+      setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
@@ -602,6 +604,7 @@ export default function Governance() {
       toast.error(t('governanceHub.loadFailed'));
       setVerifierFederationExecutionGate(null);
       setFederationDistributionEscalationOpenPageCount(0);
+      setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
@@ -706,15 +709,20 @@ export default function Governance() {
       setFederationDistributionEscalationOpenPageCount(
         countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'verifier_federation_distribution'),
       );
+      setActivationDemographicFeedEscalationOpenPageCount(
+        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'activation_demographic_feed'),
+      );
       setGuardianRelayEscalationOpenPageCount(
         countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'guardian_relay'),
       );
     } else if (isMissingPublicAuditAutomationBackend(executionPageBoardResponse.error)) {
       setFederationDistributionEscalationOpenPageCount(0);
+      setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
     } else {
       console.warn('Could not load external execution page board for governance hub:', executionPageBoardResponse.error);
       setFederationDistributionEscalationOpenPageCount(0);
+      setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
     }
 
@@ -1602,6 +1610,25 @@ export default function Governance() {
                     className="font-medium text-primary underline-offset-4 hover:underline"
                   >
                     {t('governanceHub.governanceStewardshipToolsLink')}
+                  </Link>
+                </p>
+              </Card>
+            )}
+
+            {activationDemographicFeedEscalationOpenPageCount > 0 && (
+              <Card className="rounded-2xl border-teal-500/30 bg-teal-500/5 p-4 text-sm shadow-sm">
+                <p className="font-medium text-foreground">{t('governanceHub.activationDemographicFeedEscalationBannerTitle')}</p>
+                <p className="mt-2 text-muted-foreground">
+                  {t('governanceHub.activationDemographicFeedEscalationBannerBody', {
+                    count: activationDemographicFeedEscalationOpenPageCount,
+                  })}
+                </p>
+                <p className="mt-3 text-sm">
+                  <Link
+                    to="/settings/admin/governance#stewardship-activation-review"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t('governanceHub.governanceActivationStewardshipLink')}
                   </Link>
                 </p>
               </Card>

@@ -140,7 +140,8 @@ Step 5 is considered started when:
 - **Phase C.8 (governance federation operations banner)** — Governance hub also loads `governance_public_audit_verifier_mirror_federation_operations_summary` when evaluating federation execution risk; the amber banner appears if the package distribution gate **or** live federation operations readiness is red, with short human hints for operators, critical alerts, alert ageing, stale distribution verification runs, and open distribution verification alerts.
 - **Phase C.9 (guardian relay escalation cross-surface on Governance)** — Governance hub load path reuses `governance_public_audit_external_execution_page_board` (latest batch) and counts **open or acknowledged** pages whose `page_key` contains `guardian_relay`, surfacing proof-distribution and critical relay escalations next to proposals without opening Guardian relays or automation first.
 - **Phase C.10 (federation distribution escalation cross-surface on Governance)** — Same external execution page board response also counts pages whose `page_key` contains `verifier_federation_distribution`, so federation distribution on-call escalations appear on the Governance hub with **no extra RPC** beyond Phase C.9.
-- **Steward polish (governance hub alerts)** — Federation readiness, federation distribution escalation, and guardian relay escalation cards on `/governance` include a link to `/settings/admin/governance#stewardship-public-audit-tools`; the stewardship screen’s public audit anchoring card exposes that fragment id so the browser can jump straight to verifier and automation tooling.
+- **Steward polish (governance hub alerts)** — Federation readiness, federation distribution escalation, guardian relay escalation, and activation demographic feed escalation cards on `/governance` link into governance admin with fragment ids; the stewardship screen exposes matching anchors (`stewardship-public-audit-tools`, `stewardship-activation-review`) and scrolls into view when the hash is present.
+- **Phase C.11 (activation demographic feed escalation on Governance)** — Same external execution page board counts **open or acknowledged** pages whose `page_key` contains `activation_demographic_feed` (worker escalation); stewardship deep link uses `#stewardship-activation-review` on the Activation stewardship card, and Governance admin scrolls smoothly to the matching hash when present.
 
 ## 9. Approximate decentralization progress (indicative)
 
@@ -151,8 +152,8 @@ Percentages are **not precise engineering metrics**. Use two ideas:
 
 | Scope | Program % (headline) | Rationale |
 |------|----------------------|-----------|
-| **This rollout plan** (§4 Phases A–D) | **~96%** | Phase C.10 completes symmetric on-call escalation visibility on the Governance hub for verifier federation distribution (same page-board fetch as Phase C.9); remaining work is multi-operator rehearsal and production follow-ups. |
+| **This rollout plan** (§4 Phases A–D) | **~97%** | Phase C.11 extends Governance hub on-call visibility to activation demographic feed worker escalations and wires stewardship hash scroll for both public audit and activation anchors; remaining work is multi-operator rehearsal and production follow-ups. |
 | **Roadmap §14 slice** (minimized trusted-backend + federation exchange; items 1–5 in §14) | **~66–73%** | Mirror/federation/proof distribution baselines are substantial; items 1–3 still carry partial / productionize language in `governance-implementation-roadmap-v0.1.md`. |
 | **Roadmap §17** (full decentralization success condition) | **~30–38%** | Civic status, permission refactor, citizen governance UI, founder separation remain major pillars. |
 
-**Headline for steward reports:** federation rollout program **96%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
+**Headline for steward reports:** federation rollout program **97%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
