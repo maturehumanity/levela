@@ -684,11 +684,21 @@ export function GovernanceActivationFeedAdaptersPanel({
                         )}
                       </div>
                     </div>
-                    <p className="mt-1">
+                    <p
+                      className="mt-1"
+                      data-build-key={`governanceActivationFeedWorkerRunTimeline:${run.id}`}
+                      data-build-label="Worker run observed and resolved times"
+                    >
                       Observed {formatTimestamp(run.observed_at)}
                       {run.resolved_at ? ` • resolved ${formatTimestamp(run.resolved_at)}` : ''}
                     </p>
-                    <p className="mt-1 text-foreground/90">{formatTruncatedGovernanceNote(run.alert_message)}</p>
+                    <p
+                      className="mt-1 text-foreground/90"
+                      data-build-key={`governanceActivationFeedWorkerRunMessage:${run.id}`}
+                      data-build-label="Worker run alert message"
+                    >
+                      {formatTruncatedGovernanceNote(run.alert_message)}
+                    </p>
                   </div>
                 );
               })}
