@@ -51,7 +51,8 @@ export type ActivationDemographicFeedWorkerSchedulePolicyRow =
 const FEED_INGESTIONS_FIRST_PAGE = 120;
 /** Page size when loading older ingestions after the first page. */
 const FEED_INGESTIONS_APPEND_PAGE = 80;
-const FEED_WORKER_RECENT_RUNS_LIMIT = 35;
+const FEED_WORKER_RUNS_FIRST_PAGE = 35;
+const FEED_WORKER_RUNS_APPEND_PAGE = 30;
 
 export function useGovernanceActivationDemographicFeeds() {
   const [loadingFeedData, setLoadingFeedData] = useState(true);
@@ -74,6 +75,8 @@ export function useGovernanceActivationDemographicFeeds() {
   const [feedWorkerAlerts, setFeedWorkerAlerts] = useState<ActivationDemographicFeedWorkerAlertSummaryRow[]>([]);
   const [feedWorkerOutboxActiveJobs, setFeedWorkerOutboxActiveJobs] = useState<ActivationDemographicFeedWorkerOutboxRow[]>([]);
   const [feedWorkerRecentRuns, setFeedWorkerRecentRuns] = useState<ActivationDemographicFeedWorkerRunRow[]>([]);
+  const [feedWorkerRunsHasMore, setFeedWorkerRunsHasMore] = useState(false);
+  const [loadingMoreFeedWorkerRuns, setLoadingMoreFeedWorkerRuns] = useState(false);
   const [feedWorkerSchedulePolicy, setFeedWorkerSchedulePolicy] =
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
 
@@ -157,7 +160,7 @@ export function useGovernanceActivationDemographicFeeds() {
         .from('activation_demographic_feed_worker_runs')
         .select('*')
         .order('observed_at', { ascending: false })
-        .limit(FEED_WORKER_RECENT_RUNS_LIMIT),
+        .range(0, FEED_WORKER_RUNS_FIRST_PAGE - 1),
       supabase
         .from('activation_demographic_feed_worker_schedule_policies')
         .select('*')
@@ -233,8 +236,11 @@ export function useGovernanceActivationDemographicFeeds() {
         setFeedWorkerBackendUnavailable(true);
       }
       setFeedWorkerRecentRuns([]);
+      setFeedWorkerRunsHasMore(false);
     } else {
-      setFeedWorkerRecentRuns((workerRunsResponse.data as ActivationDemographicFeedWorkerRunRow[]) || []);
+      const runs = (workerRunsResponse.data as ActivationDemographicFeedWorkerRunRow[]) || [];
+      setFeedWorkerRecentRuns(runs);
+      setFeedWorkerRunsHasMore(runs.length === FEED_WORKER_RUNS_FIRST_PAGE);
     }
 
     if (schedulePolicyResponse.error) {
@@ -285,6 +291,42 @@ export function useGovernanceActivationDemographicFeeds() {
     setFeedIngestionsHasMore(rows.length === FEED_INGESTIONS_APPEND_PAGE);
     setLoadingMoreFeedIngestions(false);
   }, [feedBackendUnavailable, feedIngestions.length, feedIngestionsHasMore, loadingMoreFeedIngestions]);
+
+  const loadMoreFeedWorkerRuns = useCallback(async () => {
+    if (feedWorkerBackendUnavailable || loadingMoreFeedWorkerRuns || !feedWorkerRunsHasMore) {
+      return;
+    }
+
+    setLoadingMoreFeedWorkerRuns(true);
+    const offset = feedWorkerRecentRuns.length;
+
+    const { data, error } = await supabase
+      .from('activation_demographic_feed_worker_runs')
+      .select('*')
+      .order('observed_at', { ascending: false })
+      .range(offset, offset + FEED_WORKER_RUNS_APPEND_PAGE - 1);
+
+    if (error) {
+      console.error('Failed to load older activation feed worker runs:', error);
+      if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        toast.error('Could not load older worker runs.');
+      }
+      setLoadingMoreFeedWorkerRuns(false);
+      return;
+    }
+
+    const rows = (data as ActivationDemographicFeedWorkerRunRow[]) || [];
+    setFeedWorkerRecentRuns((previous) => [...previous, ...rows]);
+    setFeedWorkerRunsHasMore(rows.length === FEED_WORKER_RUNS_APPEND_PAGE);
+    setLoadingMoreFeedWorkerRuns(false);
+  }, [
+    feedWorkerBackendUnavailable,
+    feedWorkerRecentRuns.length,
+    feedWorkerRunsHasMore,
+    loadingMoreFeedWorkerRuns,
+  ]);
 
   const fetchFeedAdapterById = useCallback(async (adapterId: string) => {
     const { data, error } = await supabase
@@ -453,11 +495,19 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     const count = typeof data === 'number' && Number.isFinite(data) ? Math.max(0, Math.floor(data)) : 0;
-    toast.success(
-      count > 0
-        ? `Queued ${count} feed worker sweep job${count === 1 ? '' : 's'}.`
-        : 'No additional feed worker sweeps are due for the configured cadence.',
-    );
+    if (forceReschedule) {
+      toast.success(
+        count > 0
+          ? `Cleared the sweep queue and queued ${count} new job${count === 1 ? '' : 's'}.`
+          : 'Cleared pending or in-progress sweep jobs. Nothing new was due for the cadence, so the queue may stay empty until the next interval.',
+      );
+    } else {
+      toast.success(
+        count > 0
+          ? `Queued ${count} feed worker sweep job${count === 1 ? '' : 's'}.`
+          : 'No additional feed worker sweeps are due for the configured cadence.',
+      );
+    }
     setSchedulingFeedWorkerJobs(false);
     await loadFeedData();
   }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
@@ -700,9 +750,12 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
     feedWorkerRecentRuns,
+    feedWorkerRunsHasMore,
+    loadingMoreFeedWorkerRuns,
     feedWorkerSchedulePolicy,
     loadFeedData,
     loadMoreFeedIngestions,
+    loadMoreFeedWorkerRuns,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,

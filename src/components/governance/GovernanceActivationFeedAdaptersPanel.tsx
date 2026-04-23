@@ -12,6 +12,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button';
 import { formatActivationDemographicFeedScopeLabel } from '@/lib/governance-activation-demographic-worker';
 import { useGovernanceActivationDemographicFeeds } from '@/lib/use-governance-activation-demographic-feeds';
 interface GovernanceActivationFeedAdaptersPanelProps {
@@ -109,9 +120,12 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedWorkerAlerts,
     feedWorkerOutboxActiveJobs,
     feedWorkerRecentRuns,
+    feedWorkerRunsHasMore,
+    loadingMoreFeedWorkerRuns,
     feedWorkerSchedulePolicy,
     loadFeedData,
     loadMoreFeedIngestions,
+    loadMoreFeedWorkerRuns,
     registerFeedAdapter,
     ingestSignedFeedSnapshot,
     scheduleFeedWorkerJobs,
@@ -140,6 +154,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     payloadSignature: '',
     ingestionNotes: '',
   });
+  const [forceRescheduleSweepOpen, setForceRescheduleSweepOpen] = useState(false);
 
   const activeAdapters = useMemo(
     () => feedAdapters.filter((adapter) => adapter.is_active),
@@ -199,6 +214,44 @@ export function GovernanceActivationFeedAdaptersPanel({
             {schedulingFeedWorkerJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Queue due sweeps
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+            onClick={() => setForceRescheduleSweepOpen(true)}
+            disabled={schedulingFeedWorkerJobs || !canManageFeeds || feedWorkerBackendUnavailable}
+          >
+            Reset queue and re-queue…
+          </Button>
+          <AlertDialog open={forceRescheduleSweepOpen} onOpenChange={setForceRescheduleSweepOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset sweep queue and re-queue?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This cancels every pending or in-progress sweep job for all adapters, then evaluates the schedule again.
+                  Use when the queue looks wrong or stuck. Worker run history is not deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  type="button"
+                  className={buttonVariants({ variant: 'destructive' })}
+                  disabled={schedulingFeedWorkerJobs}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void scheduleFeedWorkerJobs(true).finally(() => {
+                      setForceRescheduleSweepOpen(false);
+                    });
+                  }}
+                >
+                  {schedulingFeedWorkerJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Reset and re-queue
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button
             type="button"
             size="sm"
@@ -322,7 +375,7 @@ export function GovernanceActivationFeedAdaptersPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Recent worker runs
             <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
-              (latest {feedWorkerRecentRuns.length} by observed time)
+              ({feedWorkerRecentRuns.length} loaded{feedWorkerRunsHasMore ? ', more available' : ''} by observed time)
             </span>
           </p>
           {feedWorkerRecentRuns.length === 0 ? (
@@ -373,6 +426,19 @@ export function GovernanceActivationFeedAdaptersPanel({
               })}
             </div>
           )}
+          {feedWorkerRunsHasMore ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={loadingMoreFeedWorkerRuns}
+              onClick={() => void loadMoreFeedWorkerRuns()}
+            >
+              {loadingMoreFeedWorkerRuns ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Load older worker runs
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
