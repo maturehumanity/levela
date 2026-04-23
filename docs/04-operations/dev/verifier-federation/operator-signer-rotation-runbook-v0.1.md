@@ -28,6 +28,7 @@ Operational steps for **Phase D** of `rollout-plan-v0.1.md` (same folder): rotat
 6. Have **independent approved directory signers** cosign via `sign_governance_public_audit_verifier_federation_package` until `governance_public_audit_verifier_federation_package_distribution_summary` shows `distribution_ready` for your policy thresholds.
 7. Optional: run `run_governance_public_audit_verifier_federation_distribution_verification` from the steward UI (or rely on the hourly **pg_cron** job `verifier_federation_distribution_verification_tick` when pg_cron is installed) and resolve any `federation_distribution_*` alerts until ops summaries show verification **fresh** and alert counts at zero where policy demands it.
 8. Optional: for trust-minimized guardian relay client proof distribution, rely on the hourly **pg_cron** job `guardian_relay_proof_distribution_escalation_tick` (when installed) to refresh `guardian_relay_proof_distribution_escalation` external execution paging for recent approved proposals, or continue invoking `maybe_escalate_guardian_relay_proof_distribution_exec_page` from steward flows after captures and signatures.
+9. Optional: rely on **`guardian_relay_attestation_sla_sync_tick`** (minute **5** each hour, when pg_cron is installed) to keep **`relay_attestation_sla`** guardian alerts and **`guardian_relay_critical_escalation`** external execution paging aligned with live relay operations for recent approved proposals, or continue running **`sync_guardian_relay_attestation_sla_alerts`** from steward tooling.
 
 # 4. Rotate a federation operator (onboarding path)
 
@@ -47,7 +48,7 @@ Operational steps for **Phase D** of `rollout-plan-v0.1.md` (same folder): rotat
 - [ ] Latest federation package row exists for `package_scope = 'verifier_federation_distribution'` with expected `package_hash`.
 - [ ] Enough **distinct approved** signer keys recorded in `governance_public_audit_verifier_federation_package_signatures` for policy (`distribution_ready`).
 - [ ] `governance_public_audit_verifier_federation_distribution_gate` / client bundle path reflects readiness for execution if your deployment wires those gates.
-- [ ] **Governance hub (`/governance`)** shows no unexpected federation readiness banner, federation distribution on-call count, activation demographic feed on-call count, or guardian relay on-call count; clear related **Immutable anchoring automation** external execution pages before calling the rotation complete.
+- [ ] **Governance hub (`/governance`)** shows no unexpected federation readiness banner, federation distribution on-call count, activation demographic feed on-call count, or guardian relay on-call count; clear related **Immutable anchoring automation** external execution pages before calling the rotation complete (optional **pg_cron** jobs also refresh guardian relay SLA and escalation paging for recent approved proposals—see rollout plan Phases C.13–C.14).
 
 # 7. Constitutional and policy mapping (concise)
 
