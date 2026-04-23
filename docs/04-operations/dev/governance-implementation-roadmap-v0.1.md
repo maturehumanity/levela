@@ -595,7 +595,7 @@ The next implementation sequence should now be:
 
 Step 5 kickoff artifact: [Verifier federation rollout plan v0.1](verifier-federation/rollout-plan-v0.1.md)
 
-Implementation tracking for Step 5 lives in that document (handoff status, steward polish notes, **§9 headline federation rollout program %**, and **§10 multi-operator rehearsal checklist** for field sign-off).
+Implementation tracking for Step 5 lives in that document (handoff status, steward polish notes, **§9 headline federation rollout implementation %** (~100% for §4 scope; not a formula), and **§10 multi-operator rehearsal checklist** for the non-percentage field gate).
 
 ## 15. Suggested Ownership Sequence
 

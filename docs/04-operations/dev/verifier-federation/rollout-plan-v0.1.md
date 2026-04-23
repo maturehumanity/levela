@@ -159,18 +159,21 @@ Step 5 is considered started when:
 
 ## 9. Approximate decentralization progress (indicative)
 
-Percentages are **not precise engineering metrics**. Use two ideas:
+**There is no formula.** The numbers in the table below are **narrative judgments** recorded in this document when milestones land—they are not computed from lines of code, test counts, or migration volume. That is why the figure can sit unchanged while work continues: the authors only move it when they agree a **substantive** program increment (or a deliberate headline clarification like this section) warrants it.
+
+Use two ideas:
 
 1. **Program % (federation rollout, this document §4)** — moves only on **substantive** increments: new schema/RPC/gates, new cross-surface observability or ops workflows, field-hardening sign-off. **Label-only or cosmetic UI polish does not advance this figure.**
 2. **Steward polish** — valuable but tracked separately (checklist bullets in §8); it does not inflate program %.
 
 | Scope | Program % (headline) | Rationale |
 |------|----------------------|-----------|
-| **This rollout plan** (§4 Phases A–D) | **~99%** | Phases C.12–C.14 add hourly pg_cron automation for federation distribution verification, guardian relay proof-distribution escalation, and guardian relay attestation SLA plus critical escalation; **§10** is the explicit multi-operator rehearsal gate before treating the program as production-closed. |
+| **This rollout plan** (§4 Phases A–D — product, SQL, steward UI, pg_cron ticks **C.12–C.14**) | **~100%** | Implementation and in-database automation for Phases A–D described in this plan are in place, including hourly ticks for federation distribution verification, guardian relay proof-distribution escalation, and guardian relay attestation SLA plus critical escalation. |
+| **§2 + §10 — Cross-operator field rehearsal** | **(not scored)** | **§2** still names the organizational gap: *routine* independent-operator exchange and accountability. Closing that is **§10** (named checklist + sign-off), not a missing “1%” on a calculator. |
 | **Roadmap §14 slice** (minimized trusted-backend + federation exchange; items 1–5 in §14) | **~66–73%** | Mirror/federation/proof distribution baselines are substantial; items 1–3 still carry partial / productionize language in `governance-implementation-roadmap-v0.1.md`. |
 | **Roadmap §17** (full decentralization success condition) | **~30–38%** | Civic status, permission refactor, citizen governance UI, founder separation remain major pillars. |
 
-**Headline for steward reports:** federation rollout program **99%** (this table). Overall product decentralization remains **early-to-mid** until §17 criteria advance.
+**Headline for steward reports:** federation rollout **implementation ~100%** for this document’s §4 scope (table above). **§10 multi-operator rehearsal** is the remaining **named ops gate** until §2 is satisfied in the field—it is **not** the trailing point of the same percentage.
 
 # 10. Multi-operator rehearsal checklist (field gate)
 
