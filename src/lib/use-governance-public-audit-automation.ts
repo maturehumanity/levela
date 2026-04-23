@@ -100,7 +100,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
       }),
       callUntypedRpc<unknown[]>('governance_public_audit_external_execution_page_board', {
         requested_batch_id: args.latestBatchId,
-        max_pages: 80,
+        max_pages: 120,
       }),
     ]);
 

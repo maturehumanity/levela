@@ -9,7 +9,11 @@ updated: 2026-04-23
 
 # 1. Purpose
 
-This document starts Section 14 Step 5 from the governance implementation roadmap:
+This document starts **Section 14, Step 5** from the parent roadmap:
+
+- [Governance implementation roadmap v0.1](../governance-implementation-roadmap-v0.1.md) (see **Immediate Next Steps** and the Step 5 kickoff line in that file)
+
+Concrete scope for this artifact:
 
 - begin distributed mirror-governance and verifier-federation rollout planning
 
@@ -141,6 +145,8 @@ Step 5 is considered started when:
 - **Phase C.9 (guardian relay escalation cross-surface on Governance)** — Governance hub load path reuses `governance_public_audit_external_execution_page_board` (latest batch) and counts **open or acknowledged** pages whose `page_key` contains `guardian_relay`, surfacing proof-distribution and critical relay escalations next to proposals without opening Guardian relays or automation first.
 - **Phase C.10 (federation distribution escalation cross-surface on Governance)** — Same external execution page board response also counts pages whose `page_key` contains `verifier_federation_distribution`, so federation distribution on-call escalations appear on the Governance hub with **no extra RPC** beyond Phase C.9.
 - **Steward polish (governance hub alerts)** — Federation readiness, federation distribution escalation, guardian relay escalation, and activation demographic feed escalation cards on `/governance` link into governance admin with fragment ids; the stewardship screen exposes matching anchors (`stewardship-public-audit-tools`, `stewardship-activation-review`) and scrolls into view when the hash is present.
+- **Steward polish (execution page board paging)** — Governance hub, verifier federation steward load, and immutable anchoring automation hooks request **`max_pages: 120`** for `governance_public_audit_external_execution_page_board` so high-churn batches surface more open pages before client-side truncation.
+- **Steward polish (stewardship hash scroll layout)** — Public audit anchoring and Activation stewardship anchor cards use Tailwind **`scroll-mt-24`** so in-app fragment navigation clears typical sticky chrome.
 - **Phase C.11 (activation demographic feed escalation on Governance)** — Same external execution page board counts **open or acknowledged** pages whose `page_key` contains `activation_demographic_feed` (worker escalation); stewardship deep link uses `#stewardship-activation-review` on the Activation stewardship card, and Governance admin scrolls smoothly to the matching hash when present.
 
 ## 9. Approximate decentralization progress (indicative)

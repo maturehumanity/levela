@@ -104,7 +104,7 @@ export function GovernanceActivationReviewCard({
   };
 
   return (
-    <Card id="stewardship-activation-review" className="p-4">
+    <Card id="stewardship-activation-review" className="scroll-mt-24 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Activation Stewardship</h2>

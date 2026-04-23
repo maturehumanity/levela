@@ -45,7 +45,7 @@ export function GovernancePublicAuditAnchoringCard({
   const latestBatch = batches[0] || null;
 
   return (
-    <Card id="stewardship-public-audit-tools" className="p-4">
+    <Card id="stewardship-public-audit-tools" className="scroll-mt-24 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Public Audit Anchoring</h2>

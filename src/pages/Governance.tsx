@@ -678,7 +678,7 @@ export default function Governance() {
         requested_alert_sla_hours: 12,
       }),
       supabase.rpc('governance_public_audit_external_execution_page_board', {
-        max_pages: 80,
+        max_pages: 120,
       }),
     ]);
     const verifierGateError = failoverSummaryResponse.error || federationDistributionGateResponse.error;
