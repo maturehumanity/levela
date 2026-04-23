@@ -4143,6 +4143,59 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_activation_demographic_feed_worker_jobs: {
+        Args: { worker_identity: string; job_limit?: number }
+        Returns: {
+          outbox_job_id: string
+          adapter_id: string
+        }[]
+      }
+      complete_activation_demographic_feed_worker_outbox: {
+        Args: {
+          target_outbox_id: string
+          completed_ok: boolean
+          resolution_message?: string | null
+        }
+        Returns: string
+      }
+      maybe_escalate_activation_feed_worker_exec_page: {
+        Args: {
+          target_batch_id?: string | null
+          requested_freshness_hours?: number
+          escalation_context?: Json
+        }
+        Returns: null
+      }
+      record_activation_demographic_feed_worker_run: {
+        Args: {
+          target_adapter_id: string
+          worker_status: Database["public"]["Enums"]["activation_demographic_feed_worker_status"]
+          worker_alert_type: Database["public"]["Enums"]["activation_demographic_feed_alert_type"]
+          worker_alert_severity?: string
+          worker_message?: string | null
+          worker_observed_at?: string
+          worker_payload_hash?: string | null
+          worker_metadata?: Json
+          worker_resolved_at?: string | null
+          actor_profile_id?: string | null
+        }
+        Returns: string
+      }
+      release_stale_activation_demographic_feed_worker_claims: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      resolve_activation_demographic_feed_worker_alerts: {
+        Args: {
+          target_adapter_id: string
+          target_alert_type?: Database["public"]["Enums"]["activation_demographic_feed_alert_type"] | null
+        }
+        Returns: number
+      }
+      schedule_activation_demographic_feed_worker_jobs: {
+        Args: { force_reschedule?: boolean }
+        Returns: number
+      }
       capture_all_governance_domain_maturity_snapshots: {
         Args: {
           measured_by_profile_id?: string

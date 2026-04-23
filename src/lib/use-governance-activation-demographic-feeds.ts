@@ -31,11 +31,6 @@ type RpcErrorLike = {
   details?: string | null;
 } | null;
 
-type RpcResponseLike<T> = {
-  data: T | null;
-  error: RpcErrorLike;
-};
-
 function isMissingFeedSchedulerAutomationStatusFunction(error: RpcErrorLike) {
   if (!error) {
     return false;
@@ -45,15 +40,6 @@ function isMissingFeedSchedulerAutomationStatusFunction(error: RpcErrorLike) {
     error.code === 'PGRST202'
     && message.includes('activation_demographic_feed_worker_schedule_automation_status')
   );
-}
-
-function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args?: Record<string, unknown>,
-  ) => Promise<RpcResponseLike<T>>;
-
-  return rpc(fnName, params);
 }
 
 export type ActivationDemographicFeedWorkerSchedulePolicyRow =
@@ -122,7 +108,7 @@ export function useGovernanceActivationDemographicFeeds() {
       return;
     }
 
-    const { error } = await callUntypedRpc<unknown>('record_activation_demographic_feed_worker_run', {
+    const { error } = await supabase.rpc('record_activation_demographic_feed_worker_run', {
       target_adapter_id: draft.adapterId,
       worker_status: draft.status,
       worker_alert_type: draft.alertType,
@@ -652,7 +638,7 @@ export function useGovernanceActivationDemographicFeeds() {
     if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
 
     setSchedulingFeedWorkerJobs(true);
-    const { data, error } = await callUntypedRpc<number>('schedule_activation_demographic_feed_worker_jobs', {
+    const { data, error } = await supabase.rpc('schedule_activation_demographic_feed_worker_jobs', {
       force_reschedule: forceReschedule,
     });
 
@@ -691,7 +677,7 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     setReleasingStaleFeedWorkerClaims(true);
-    const { data, error } = await callUntypedRpc<number>('release_stale_activation_demographic_feed_worker_claims', {});
+    const { data, error } = await supabase.rpc('release_stale_activation_demographic_feed_worker_claims');
 
     if (error) {
       if (isMissingActivationDemographicFeedWorkerBackend(error)) {
@@ -727,9 +713,7 @@ export function useGovernanceActivationDemographicFeeds() {
         ? globalThis.crypto.randomUUID()
         : String(Date.now())}`;
 
-    const { data: claimedRows, error: claimError } = await callUntypedRpc<
-      { outbox_job_id: string; adapter_id: string }[]
-    >('claim_activation_demographic_feed_worker_jobs', {
+    const { data: claimedRows, error: claimError } = await supabase.rpc('claim_activation_demographic_feed_worker_jobs', {
       worker_identity: workerIdentity,
       job_limit: 8,
     });
@@ -760,7 +744,7 @@ export function useGovernanceActivationDemographicFeeds() {
       }
 
       if (!adapterRow) {
-        await callUntypedRpc<unknown>('complete_activation_demographic_feed_worker_outbox', {
+        await supabase.rpc('complete_activation_demographic_feed_worker_outbox', {
           target_outbox_id: row.outbox_job_id,
           completed_ok: false,
           resolution_message: 'Adapter row not found while processing outbox job.',
@@ -791,7 +775,7 @@ export function useGovernanceActivationDemographicFeeds() {
         resolutionMessage = caught instanceof Error ? caught.message : String(caught);
       }
 
-      const { error: completeError } = await callUntypedRpc<unknown>('complete_activation_demographic_feed_worker_outbox', {
+      const { error: completeError } = await supabase.rpc('complete_activation_demographic_feed_worker_outbox', {
         target_outbox_id: row.outbox_job_id,
         completed_ok: completedOk,
         resolution_message: resolutionMessage,
@@ -850,7 +834,7 @@ export function useGovernanceActivationDemographicFeeds() {
 
     setEscalatingFeedWorkerPublicExecution(true);
 
-    const { error } = await callUntypedRpc<unknown>('maybe_escalate_activation_feed_worker_exec_page', {
+    const { error } = await supabase.rpc('maybe_escalate_activation_feed_worker_exec_page', {
       target_batch_id: null,
       requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
       escalation_context: {
@@ -880,7 +864,7 @@ export function useGovernanceActivationDemographicFeeds() {
     const resolveKey = `${adapterId}:${alertType ?? 'all'}`;
     setResolvingFeedAlertKey(resolveKey);
 
-    const { error } = await callUntypedRpc<unknown>('resolve_activation_demographic_feed_worker_alerts', {
+    const { error } = await supabase.rpc('resolve_activation_demographic_feed_worker_alerts', {
       target_adapter_id: adapterId,
       target_alert_type: alertType,
     });
