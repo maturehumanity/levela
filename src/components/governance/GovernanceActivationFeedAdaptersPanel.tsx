@@ -352,7 +352,11 @@ export function GovernanceActivationFeedAdaptersPanel({
       </div>
 
       {feedWorkerSchedulePolicy && !feedWorkerBackendUnavailable ? (
-        <div className="mt-3 space-y-1 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+        <div
+          className="mt-3 space-y-1 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground"
+          data-build-key="governanceActivationFeedSweepSchedulePolicy"
+          data-build-label="Feed worker sweep schedule policy"
+        >
           <p>
             <span className="font-medium text-foreground/80">Scheduled sweeps:</span>{' '}
             new queue entries aim for roughly{' '}
@@ -370,7 +374,11 @@ export function GovernanceActivationFeedAdaptersPanel({
       ) : null}
 
       {!feedWorkerBackendUnavailable ? (
-        <div className="mt-3 space-y-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2">
+        <div
+          className="mt-3 space-y-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2"
+          data-build-key="governanceActivationFeedSweepQueueCard"
+          data-build-label="Activation feed worker sweep queue"
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Active sweep queue jobs
           </p>
@@ -488,7 +496,11 @@ export function GovernanceActivationFeedAdaptersPanel({
       ) : null}
 
       {!feedWorkerBackendUnavailable ? (
-        <div className="mt-3 space-y-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2">
+        <div
+          className="mt-3 space-y-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2"
+          data-build-key="governanceActivationFeedWorkerRunsCard"
+          data-build-label="Recent activation feed worker runs"
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Recent worker runs
             <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
@@ -562,7 +574,11 @@ export function GovernanceActivationFeedAdaptersPanel({
       ) : null}
 
       {canManageFeeds && !feedWorkerBackendUnavailable ? (
-        <div className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+        <div
+          className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground"
+          data-build-key="governanceActivationFeedOnCallEscalationCard"
+          data-build-label="Feed worker on-call escalation"
+        >
           <p>
             If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Resolve open pages under Public audit, then Immutable anchoring automation, using the on-call page board. Use copy below if you need the exact page identifier when searching the board.
           </p>
@@ -884,7 +900,11 @@ export function GovernanceActivationFeedAdaptersPanel({
       )}
 
       {feedIngestions.length > 0 && (
-        <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/50 p-2.5">
+        <div
+          className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/50 p-2.5"
+          data-build-key="governanceActivationFeedRecentIngestions"
+          data-build-label="Recent signed demographic feed ingestions"
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Recent signed ingestions
             <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground">
