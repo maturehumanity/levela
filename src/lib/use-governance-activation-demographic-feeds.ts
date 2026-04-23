@@ -65,6 +65,16 @@ function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
 export type ActivationDemographicFeedWorkerSchedulePolicyRow =
   Database['public']['Tables']['activation_demographic_feed_worker_schedule_policies']['Row'];
 
+export interface ActivationDemographicFeedWorkerScheduleAutomationStatusRow {
+  cron_schema_available: boolean;
+  cron_job_registered: boolean;
+  cron_job_active: boolean;
+  cron_job_schedule: string | null;
+  cron_job_command: string | null;
+  latest_scheduled_enqueue_at: string | null;
+  latest_scheduled_enqueue_job_id: string | null;
+}
+
 /** First page size for steward ingestion history (matches prior single-query limit). */
 const FEED_INGESTIONS_FIRST_PAGE = 120;
 /** Page size when loading older ingestions after the first page. */
@@ -108,6 +118,8 @@ export function useGovernanceActivationDemographicFeeds() {
   const [loadingMoreFeedWorkerRuns, setLoadingMoreFeedWorkerRuns] = useState(false);
   const [feedWorkerSchedulePolicy, setFeedWorkerSchedulePolicy] =
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
+  const [feedWorkerScheduleAutomationStatus, setFeedWorkerScheduleAutomationStatus] =
+    useState<ActivationDemographicFeedWorkerScheduleAutomationStatusRow | null>(null);
 
   const openFeedWorkerAlertsCount = useMemo(
     () => feedWorkerAlerts.reduce((count, alert) => count
@@ -163,6 +175,7 @@ export function useGovernanceActivationDemographicFeeds() {
       recentClosedOutboxJobsResponse,
       workerRunsResponse,
       schedulePolicyResponse,
+      scheduleAutomationStatusResponse,
     ] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
@@ -212,6 +225,9 @@ export function useGovernanceActivationDemographicFeeds() {
         .select('*')
         .eq('policy_key', 'default')
         .maybeSingle(),
+      callUntypedRpc<ActivationDemographicFeedWorkerScheduleAutomationStatusRow[]>(
+        'activation_demographic_feed_worker_schedule_automation_status',
+      ),
     ]);
 
     const sharedError = adapterResponse.error || ingestionResponse.error || permissionResponse.error;
@@ -329,6 +345,18 @@ export function useGovernanceActivationDemographicFeeds() {
       setFeedWorkerSchedulePolicy(
         (schedulePolicyResponse.data as ActivationDemographicFeedWorkerSchedulePolicyRow | null) ?? null,
       );
+    }
+
+    if (scheduleAutomationStatusResponse?.error) {
+      if (isMissingActivationDemographicFeedWorkerBackend(scheduleAutomationStatusResponse.error)) {
+        setFeedWorkerBackendUnavailable(true);
+      }
+      setFeedWorkerScheduleAutomationStatus(null);
+    } else {
+      const statusRows = Array.isArray(scheduleAutomationStatusResponse?.data)
+        ? scheduleAutomationStatusResponse.data as ActivationDemographicFeedWorkerScheduleAutomationStatusRow[]
+        : [];
+      setFeedWorkerScheduleAutomationStatus(statusRows[0] ?? null);
     }
 
     setLoadingFeedData(false);
@@ -919,6 +947,7 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,
     feedWorkerSchedulePolicy,
+    feedWorkerScheduleAutomationStatus,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,

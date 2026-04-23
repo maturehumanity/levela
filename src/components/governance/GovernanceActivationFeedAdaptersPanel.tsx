@@ -110,6 +110,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedWorkerRunsHasMore,
     loadingMoreFeedWorkerRuns,
     feedWorkerSchedulePolicy,
+    feedWorkerScheduleAutomationStatus,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
@@ -411,6 +412,31 @@ export function GovernanceActivationFeedAdaptersPanel({
           <p>
             When your Postgres instance has the hourly automation extension enabled, due jobs can enqueue on their own without leaving this screen open.
           </p>
+          {feedWorkerScheduleAutomationStatus ? (
+            <p
+              data-build-key="governanceActivationFeedSchedulerAutomationStatus"
+              data-build-label="Feed worker scheduler automation status"
+            >
+              <span className="font-medium text-foreground/80">Scheduler automation:</span>{' '}
+              {feedWorkerScheduleAutomationStatus.cron_schema_available
+                ? (feedWorkerScheduleAutomationStatus.cron_job_registered
+                    ? (feedWorkerScheduleAutomationStatus.cron_job_active
+                        ? 'pg_cron job is registered and active.'
+                        : 'pg_cron job is registered but currently paused.')
+                    : 'pg_cron is available, but this scheduler job is not registered yet.')
+                : 'pg_cron is not available on this database host.'}
+              {feedWorkerScheduleAutomationStatus.latest_scheduled_enqueue_at
+                ? ` Last schedule enqueue observed ${formatTimestamp(feedWorkerScheduleAutomationStatus.latest_scheduled_enqueue_at)}.`
+                : ' No schedule-based enqueue has been observed yet.'}
+            </p>
+          ) : (
+            <p
+              data-build-key="governanceActivationFeedSchedulerAutomationStatusUnavailable"
+              data-build-label="Feed worker scheduler automation status unavailable"
+            >
+              Scheduler automation status is unavailable in this environment.
+            </p>
+          )}
         </div>
       ) : null}
 
