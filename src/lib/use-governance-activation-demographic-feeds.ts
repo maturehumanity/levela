@@ -35,6 +35,24 @@ type RpcResponseLike<T> = {
   error: RpcErrorLike;
 };
 
+function appendUniqueById<T extends { id: string }>(existing: T[], incoming: T[]) {
+  if (incoming.length === 0) {
+    return existing;
+  }
+
+  const seen = new Set(existing.map((row) => row.id));
+  const next = [...existing];
+  for (const row of incoming) {
+    if (seen.has(row.id)) {
+      continue;
+    }
+    seen.add(row.id);
+    next.push(row);
+  }
+
+  return next;
+}
+
 function callUntypedRpc<T>(fnName: string, params?: Record<string, unknown>) {
   const rpc = supabase.rpc as unknown as (
     fn: string,
@@ -331,7 +349,7 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     const rows = (data as ActivationDemographicFeedIngestionRow[]) || [];
-    setFeedIngestions((previous) => [...previous, ...rows]);
+    setFeedIngestions((previous) => appendUniqueById(previous, rows));
     setFeedIngestionsHasMore(rows.length === FEED_INGESTIONS_APPEND_PAGE);
     setLoadingMoreFeedIngestions(false);
   }, [feedBackendUnavailable, feedIngestions.length, feedIngestionsHasMore, loadingMoreFeedIngestions]);
@@ -362,7 +380,7 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     const rows = (data as ActivationDemographicFeedWorkerRunRow[]) || [];
-    setFeedWorkerRecentRuns((previous) => [...previous, ...rows]);
+    setFeedWorkerRecentRuns((previous) => appendUniqueById(previous, rows));
     setFeedWorkerRunsHasMore(rows.length === FEED_WORKER_RUNS_APPEND_PAGE);
     setLoadingMoreFeedWorkerRuns(false);
   }, [
@@ -403,7 +421,7 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     const rows = (data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
-    setFeedWorkerOutboxActiveJobs((previous) => [...previous, ...rows]);
+    setFeedWorkerOutboxActiveJobs((previous) => appendUniqueById(previous, rows));
     setFeedWorkerOutboxActiveJobsHasMore(rows.length === FEED_WORKER_OUTBOX_ACTIVE_APPEND_PAGE);
     setLoadingMoreFeedWorkerOutboxActiveJobs(false);
   }, [
@@ -444,7 +462,7 @@ export function useGovernanceActivationDemographicFeeds() {
     }
 
     const rows = (data as ActivationDemographicFeedWorkerOutboxRow[]) || [];
-    setFeedWorkerOutboxRecentClosedJobs((previous) => [...previous, ...rows]);
+    setFeedWorkerOutboxRecentClosedJobs((previous) => appendUniqueById(previous, rows));
     setFeedWorkerOutboxRecentClosedJobsHasMore(rows.length === FEED_WORKER_OUTBOX_CLOSED_APPEND_PAGE);
     setLoadingMoreFeedWorkerOutboxRecentClosedJobs(false);
   }, [
