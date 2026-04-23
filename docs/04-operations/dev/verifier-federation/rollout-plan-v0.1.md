@@ -150,6 +150,10 @@ Step 5 is considered started when:
 - **Phase C.11 (activation demographic feed escalation on Governance)** — Same external execution page board counts **open or acknowledged** pages whose `page_key` contains `activation_demographic_feed` (worker escalation); stewardship deep link uses `#stewardship-activation-review` on the Activation stewardship card, and Governance admin scrolls smoothly to the matching hash when present.
 - **Steward polish (governance hub execution board batch binding)** — Before paging external execution pages, the Governance hub resolves the latest `governance_public_audit_batches.id` (same ordering as anchoring UI) and passes **`requested_batch_id`** into `governance_public_audit_external_execution_page_board` when present, so on-call escalation counts stay tied to the visible latest batch row instead of relying only on the RPC default.
 
+## 8b. Related roadmap §14.1 (signed demographic feeds)
+
+- **Activation feed worker schedule tick escalation** — `schedule_activation_demographic_feed_worker_jobs_impl` ends each enqueue pass with `maybe_escalate_activation_feed_worker_exec_page` (payload `source: schedule_activation_demographic_feed_worker_jobs_impl`, default 24h freshness window) so **pg_cron** and steward-driven scheduling refresh `activation_demographic_feed_worker_escalation` external execution paging when alert summaries remain red. Superuser database sessions may run that escalation path and open that page key only (narrow automation carve-out; `20260423100000_…sql`).
+
 ## 9. Approximate decentralization progress (indicative)
 
 Percentages are **not precise engineering metrics**. Use two ideas:
