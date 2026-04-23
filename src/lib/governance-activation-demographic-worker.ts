@@ -88,3 +88,17 @@ export function formatActivationDemographicFeedScopeLabel(
   if (scopeType === 'world') return 'World';
   return countryCode?.trim() || 'Country';
 }
+
+/** Human label for sweep outbox rows in completed / cancelled / failed terminal states. */
+export function formatActivationDemographicFeedOutboxClosedStatusLabel(status: string) {
+  switch (status) {
+    case 'completed':
+      return 'Completed';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'failed':
+      return 'Failed';
+    default:
+      return status.replace(/_/g, ' ');
+  }
+}

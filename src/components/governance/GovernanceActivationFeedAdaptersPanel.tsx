@@ -24,7 +24,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { formatActivationDemographicFeedScopeLabel } from '@/lib/governance-activation-demographic-worker';
+import {
+  formatActivationDemographicFeedOutboxClosedStatusLabel,
+  formatActivationDemographicFeedScopeLabel,
+} from '@/lib/governance-activation-demographic-worker';
 import { useGovernanceActivationDemographicFeeds } from '@/lib/use-governance-activation-demographic-feeds';
 interface GovernanceActivationFeedAdaptersPanelProps {
   formatTimestamp: (value: string | null) => string;
@@ -94,19 +97,6 @@ function formatShortAlertMessage(message: string, maxChars = 160) {
     return trimmed;
   }
   return `${trimmed.slice(0, maxChars)}…`;
-}
-
-function formatOutboxClosedStatusLabel(status: string) {
-  switch (status) {
-    case 'completed':
-      return 'Completed';
-    case 'cancelled':
-      return 'Cancelled';
-    case 'failed':
-      return 'Failed';
-    default:
-      return status.replace(/_/g, ' ');
-  }
 }
 
 const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
@@ -280,7 +270,13 @@ export function GovernanceActivationFeedAdaptersPanel({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                <AlertDialogCancel
+                  type="button"
+                  data-build-key="governanceActivationFeedCancelForceReschedule"
+                  data-build-label="Cancel reset sweep queue"
+                >
+                  Cancel
+                </AlertDialogCancel>
                 <AlertDialogAction
                   type="button"
                   className={buttonVariants({ variant: 'destructive' })}
@@ -463,7 +459,7 @@ export function GovernanceActivationFeedAdaptersPanel({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="font-medium text-foreground">{adapterLabel}</p>
                           <Badge variant="outline" className={statusBadgeClass}>
-                            {formatOutboxClosedStatusLabel(job.status)}
+                            {formatActivationDemographicFeedOutboxClosedStatusLabel(job.status)}
                           </Badge>
                         </div>
                         <p className="mt-1">
@@ -612,7 +608,11 @@ export function GovernanceActivationFeedAdaptersPanel({
         </p>
       ) : (
         <div className="mt-3 grid gap-3 xl:grid-cols-2">
-          <div className="space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5">
+          <div
+            className="space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5"
+            data-build-key="governanceActivationFeedRegisterAdapterForm"
+            data-build-label="Register signed demographic feed adapter"
+          >
             <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Register adapter</p>
             <Input
               value={adapterDraft.adapterKey}
@@ -670,13 +670,19 @@ export function GovernanceActivationFeedAdaptersPanel({
               className="w-full gap-2"
               disabled={registeringFeedAdapter}
               onClick={() => void registerFeedAdapter(adapterDraft)}
+              data-build-key="governanceActivationFeedSaveAdapter"
+              data-build-label="Save signed demographic feed adapter"
             >
               {registeringFeedAdapter ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save feed adapter
             </Button>
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5">
+          <div
+            className="space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5"
+            data-build-key="governanceActivationFeedIngestSignedSnapshotForm"
+            data-build-label="Ingest signed demographic feed snapshot"
+          >
             <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Ingest signed feed snapshot</p>
             <Label className="text-xs">Adapter</Label>
             <Select
@@ -732,6 +738,8 @@ export function GovernanceActivationFeedAdaptersPanel({
               className="w-full gap-2"
               disabled={ingestingSignedFeedSnapshot}
               onClick={() => void ingestSignedFeedSnapshot(ingestionDraft)}
+              data-build-key="governanceActivationFeedIngestSignedSnapshot"
+              data-build-label="Verify and ingest signed demographic snapshot"
             >
               {ingestingSignedFeedSnapshot ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Verify and ingest signed snapshot
@@ -741,7 +749,11 @@ export function GovernanceActivationFeedAdaptersPanel({
       )}
 
       {feedWorkerAlerts.length > 0 && (
-        <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5">
+        <div
+          className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/70 p-2.5"
+          data-build-key="governanceActivationFeedWorkerAlerts"
+          data-build-label="Feed worker freshness and signature alerts"
+        >
           <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Worker freshness + signature alerts</p>
           {feedWorkerAlerts.slice(0, 8).map((alert) => {
             const alertCount = countFeedWorkerAlerts(alert);
@@ -751,7 +763,12 @@ export function GovernanceActivationFeedAdaptersPanel({
             const customSweepMinutes = adapterRow?.worker_sweep_interval_minutes;
 
             return (
-              <div key={alert.adapter_id} className="rounded-md border border-border/60 bg-card p-2 text-xs">
+              <div
+                key={alert.adapter_id}
+                className="rounded-md border border-border/60 bg-card p-2 text-xs"
+                data-build-key={`governanceActivationFeedWorkerAlertCard__${alert.adapter_id}`}
+                data-build-label={`Feed worker alerts (${alert.adapter_key})`}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium text-foreground">
                     {alert.adapter_name} ({scopeLabel})
@@ -808,6 +825,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                       variant="outline"
                       disabled={resolvingFeedAlertKey === resolveAllKey}
                       onClick={() => void resolveFeedAlert(alert.adapter_id, null)}
+                      data-build-key={`governanceActivationFeedResolveAllAlerts__${alert.adapter_id}`}
+                      data-build-label={`Resolve all feed worker alerts (${alert.adapter_key})`}
                     >
                       {resolvingFeedAlertKey === resolveAllKey ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Resolve all'}
                     </Button>
@@ -818,6 +837,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                         variant="outline"
                         disabled={resolvingFeedAlertKey === `${alert.adapter_id}:signature_failure`}
                         onClick={() => void resolveFeedAlert(alert.adapter_id, 'signature_failure')}
+                        data-build-key={`governanceActivationFeedResolveSignatureAlerts__${alert.adapter_id}`}
+                        data-build-label={`Resolve signature feed worker alerts (${alert.adapter_key})`}
                       >
                         {resolvingFeedAlertKey === `${alert.adapter_id}:signature_failure`
                           ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -831,6 +852,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                         variant="outline"
                         disabled={resolvingFeedAlertKey === `${alert.adapter_id}:connectivity`}
                         onClick={() => void resolveFeedAlert(alert.adapter_id, 'connectivity')}
+                        data-build-key={`governanceActivationFeedResolveConnectivityAlerts__${alert.adapter_id}`}
+                        data-build-label={`Resolve connectivity feed worker alerts (${alert.adapter_key})`}
                       >
                         {resolvingFeedAlertKey === `${alert.adapter_id}:connectivity`
                           ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -844,6 +867,8 @@ export function GovernanceActivationFeedAdaptersPanel({
                         variant="outline"
                         disabled={resolvingFeedAlertKey === `${alert.adapter_id}:payload`}
                         onClick={() => void resolveFeedAlert(alert.adapter_id, 'payload')}
+                        data-build-key={`governanceActivationFeedResolvePayloadAlerts__${alert.adapter_id}`}
+                        data-build-label={`Resolve payload feed worker alerts (${alert.adapter_key})`}
                       >
                         {resolvingFeedAlertKey === `${alert.adapter_id}:payload`
                           ? <Loader2 className="h-4 w-4 animate-spin" />

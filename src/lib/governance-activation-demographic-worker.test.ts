@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatActivationDemographicFeedOutboxClosedStatusLabel,
   formatActivationDemographicFeedScopeLabel,
   isActivationDemographicFeedStale,
   parseActivationDemographicWorkerPayload,
@@ -72,5 +73,17 @@ describe('formatActivationDemographicFeedScopeLabel', () => {
   it('formats world and country labels', () => {
     expect(formatActivationDemographicFeedScopeLabel('world', '')).toBe('World');
     expect(formatActivationDemographicFeedScopeLabel('country', 'US')).toBe('US');
+  });
+});
+
+describe('formatActivationDemographicFeedOutboxClosedStatusLabel', () => {
+  it('maps known terminal outbox statuses', () => {
+    expect(formatActivationDemographicFeedOutboxClosedStatusLabel('completed')).toBe('Completed');
+    expect(formatActivationDemographicFeedOutboxClosedStatusLabel('cancelled')).toBe('Cancelled');
+    expect(formatActivationDemographicFeedOutboxClosedStatusLabel('failed')).toBe('Failed');
+  });
+
+  it('falls back for unknown statuses', () => {
+    expect(formatActivationDemographicFeedOutboxClosedStatusLabel('custom_status')).toBe('custom status');
   });
 });
