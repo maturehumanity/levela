@@ -182,6 +182,7 @@ export default function Governance() {
     distributionGateMet: boolean;
     federationOps: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   } | null>(null);
+  const [federationDistributionEscalationOpenPageCount, setFederationDistributionEscalationOpenPageCount] = useState(0);
   const [guardianRelayEscalationOpenPageCount, setGuardianRelayEscalationOpenPageCount] = useState(0);
   const isNativeMobileGovernanceDevice = useMemo(() => isNativeGovernanceApp(), []);
 
@@ -577,6 +578,7 @@ export default function Governance() {
     if (primaryError && isMissingGovernanceProposalBackend(primaryError)) {
       setBackendUnavailable(true);
       setVerifierFederationExecutionGate(null);
+      setFederationDistributionEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
@@ -598,6 +600,7 @@ export default function Governance() {
       });
       toast.error(t('governanceHub.loadFailed'));
       setVerifierFederationExecutionGate(null);
+      setFederationDistributionEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
@@ -699,13 +702,18 @@ export default function Governance() {
 
     if (!executionPageBoardResponse.error) {
       const executionPages = readGovernancePublicAuditExternalExecutionPageBoardRows(executionPageBoardResponse.data);
+      setFederationDistributionEscalationOpenPageCount(
+        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'verifier_federation_distribution'),
+      );
       setGuardianRelayEscalationOpenPageCount(
         countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'guardian_relay'),
       );
     } else if (isMissingPublicAuditAutomationBackend(executionPageBoardResponse.error)) {
+      setFederationDistributionEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
     } else {
       console.warn('Could not load external execution page board for governance hub:', executionPageBoardResponse.error);
+      setFederationDistributionEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
     }
 
@@ -1568,6 +1576,17 @@ export default function Governance() {
                     )}
                   </div>
                 )}
+              </Card>
+            )}
+
+            {federationDistributionEscalationOpenPageCount > 0 && (
+              <Card className="rounded-2xl border-orange-500/30 bg-orange-500/5 p-4 text-sm shadow-sm">
+                <p className="font-medium text-foreground">{t('governanceHub.federationDistributionEscalationBannerTitle')}</p>
+                <p className="mt-2 text-muted-foreground">
+                  {t('governanceHub.federationDistributionEscalationBannerBody', {
+                    count: federationDistributionEscalationOpenPageCount,
+                  })}
+                </p>
               </Card>
             )}
 

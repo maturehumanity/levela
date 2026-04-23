@@ -324,6 +324,35 @@ describe('governance-public-audit-automation helpers', () => {
     expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'guardian_relay')).toBe(1);
   });
 
+  it('can tally federation distribution and guardian relay open pages from one board list', () => {
+    const pages = [
+      {
+        pageId: 'f1',
+        batchId: 'b1',
+        pageKey: 'verifier_federation_distribution_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Federation distribution',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T00:00:00.000Z',
+        resolvedAt: null,
+      },
+      {
+        pageId: 'g1',
+        batchId: 'b1',
+        pageKey: 'guardian_relay_proof_distribution_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Relay',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T01:00:00.000Z',
+        resolvedAt: null,
+      },
+    ];
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'verifier_federation_distribution')).toBe(1);
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'guardian_relay')).toBe(1);
+  });
+
   it('formats queue job status labels for stewards', () => {
     expect(formatGovernancePublicAuditQueueJobStatusLabel('pending')).toBe('Pending');
     expect(formatGovernancePublicAuditQueueJobStatusLabel('COMPLETED')).toBe('Completed');
