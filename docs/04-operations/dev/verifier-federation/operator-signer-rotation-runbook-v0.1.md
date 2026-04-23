@@ -26,7 +26,7 @@ Operational steps for **Phase D** of `rollout-plan-v0.1.md` (same folder): rotat
 4. **Re-run federation ops readiness** if your policy requires federation onboarding counts or alerts to be clear (`governance_public_audit_verifier_mirror_federation_operations_summary`).
 5. **Capture** a new federation distribution package (`capture_governance_public_audit_verifier_federation_package`). If capture fails with the governance-approved publisher error, the effective directory still points at a signer who is not approved—fix signer governance before retrying.
 6. Have **independent approved directory signers** cosign via `sign_governance_public_audit_verifier_federation_package` until `governance_public_audit_verifier_federation_package_distribution_summary` shows `distribution_ready` for your policy thresholds.
-7. Optional: run `run_governance_public_audit_verifier_federation_distribution_verification` from the steward UI and resolve any `federation_distribution_*` alerts until ops summaries show verification **fresh** and alert counts at zero where policy demands it.
+7. Optional: run `run_governance_public_audit_verifier_federation_distribution_verification` from the steward UI (or rely on the hourly **pg_cron** job `verifier_federation_distribution_verification_tick` when pg_cron is installed) and resolve any `federation_distribution_*` alerts until ops summaries show verification **fresh** and alert counts at zero where policy demands it.
 
 # 4. Rotate a federation operator (onboarding path)
 
