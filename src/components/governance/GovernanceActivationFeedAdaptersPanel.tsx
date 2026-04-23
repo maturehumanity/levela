@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Copy, Loader2, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -196,6 +196,17 @@ export function GovernanceActivationFeedAdaptersPanel({
     return map;
   }, [feedAdapters]);
 
+  const recentClosedSweepFailureCount = useMemo(
+    () => feedWorkerOutboxRecentClosedJobs.filter((job) => job.status === 'failed').length,
+    [feedWorkerOutboxRecentClosedJobs],
+  );
+
+  useEffect(() => {
+    if (recentClosedSweepFailureCount > 0) {
+      setRecentClosedSweepJobsOpen(true);
+    }
+  }, [recentClosedSweepFailureCount]);
+
   if (feedBackendUnavailable) {
     return (
       <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
@@ -207,7 +218,11 @@ export function GovernanceActivationFeedAdaptersPanel({
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+    <div
+      className="rounded-xl border border-border/70 bg-muted/20 p-3"
+      data-build-key="governanceActivationFeedAdaptersPanel"
+      data-build-label="Signed demographic feed adapters panel"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Signed demographic feed adapters</p>
         <div className="flex flex-wrap items-center gap-2">
@@ -237,6 +252,8 @@ export function GovernanceActivationFeedAdaptersPanel({
             className="gap-2"
             onClick={() => void scheduleFeedWorkerJobs(false)}
             disabled={schedulingFeedWorkerJobs || !canManageFeeds || feedWorkerBackendUnavailable}
+            data-build-key="governanceActivationFeedQueueDueSweeps"
+            data-build-label="Queue due feed worker sweeps"
           >
             {schedulingFeedWorkerJobs ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Queue due sweeps
@@ -402,11 +419,16 @@ export function GovernanceActivationFeedAdaptersPanel({
                 variant="ghost"
                 size="sm"
                 className="h-auto w-full justify-start gap-2 px-0 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                data-build-key="governanceActivationFeedClosedSweepJobsToggle"
+                data-build-label="Recently closed sweep jobs section"
               >
                 {recentClosedSweepJobsOpen
                   ? <ChevronDown className="h-4 w-4 shrink-0" />
                   : <ChevronRight className="h-4 w-4 shrink-0" />}
                 Recently closed sweep jobs (up to 15)
+                {recentClosedSweepFailureCount > 0
+                  ? ` · ${recentClosedSweepFailureCount} failed`
+                  : ''}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-2 pt-1">
@@ -542,6 +564,8 @@ export function GovernanceActivationFeedAdaptersPanel({
               className="gap-2"
               disabled={escalatingFeedWorkerPublicExecution}
               onClick={() => void escalateFeedWorkerAlertsToPublicExecution()}
+              data-build-key="governanceActivationFeedEscalateWorkerAlerts"
+              data-build-label="Update on-call page for feed worker alerts"
             >
               {escalatingFeedWorkerPublicExecution ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Update on-call page for feed worker alerts
@@ -552,6 +576,8 @@ export function GovernanceActivationFeedAdaptersPanel({
               variant="outline"
               className="gap-2"
               onClick={() => void copyActivationFeedWorkerEscalationPageKey()}
+              data-build-key="governanceActivationFeedCopyEscalationPageKey"
+              data-build-label="Copy feed worker escalation page key"
             >
               <Copy className="h-4 w-4" />
               Copy on-call page key
