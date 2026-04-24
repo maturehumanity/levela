@@ -16,7 +16,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 const UserPageMenu = lazy(() => import('@/components/layout/UserPageMenu').then((module) => ({ default: module.UserPageMenu })));
-const ChatBar = lazy(() => import('@/components/ui/chat-bar').then((module) => ({ default: module.ChatBar })));
 
 interface RecentEndorsement {
   id: string;
@@ -1097,8 +1096,6 @@ export default function Home() {
         </motion.div>
       </div>
 
-      {/* Messaging */}
-      <Suspense fallback={null}><ChatBar /></Suspense>
     </AppLayout>
   );
 }

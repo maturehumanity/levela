@@ -21,6 +21,7 @@ const SignUp = lazy(() => import('@/pages/auth/SignUp'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword'));
 const Contribute = lazy(() => import('@/pages/Contribute'));
+const Messaging = lazy(() => import('@/pages/Messaging'));
 const DownloadPage = lazy(() => import('@/pages/Download'));
 const Features = lazy(() => import('@/pages/Features'));
 const Study = lazy(() => import('@/pages/Study'));
@@ -42,6 +43,8 @@ const RolesAdmin = lazy(() => import('@/pages/settings/RolesAdmin'));
 const UsersAdmin = lazy(() => import('@/pages/settings/UsersAdmin'));
 const PermissionsAdmin = lazy(() => import('@/pages/settings/PermissionsAdmin'));
 const GovernanceAdmin = lazy(() => import('@/pages/settings/GovernanceAdmin'));
+const LumaCreditsAdmin = lazy(() => import('@/pages/settings/LumaCreditsAdmin'));
+const LumaWallet = lazy(() => import('@/pages/settings/LumaWallet'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient();
@@ -188,6 +191,7 @@ const App = () => (
                   {/* Protected routes */}
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/contribute" element={<ProtectedRoute><Contribute /></ProtectedRoute>} />
+                  <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
                   <Route path="/study" element={<ProtectedRoute><Study /></ProtectedRoute>} />
                   <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
                   <Route path="/features" element={<ProtectedRoute><Navigate to="/study" replace /></ProtectedRoute>} />
@@ -241,6 +245,7 @@ const App = () => (
                     }
                   />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/settings/luma-wallet" element={<ProtectedRoute><LumaWallet /></ProtectedRoute>} />
                   <Route path="/settings/legal" element={<ProtectedRoute><TermsOfUse /></ProtectedRoute>} />
                   <Route
                     path="/settings/profile"
@@ -303,6 +308,14 @@ const App = () => (
                     element={
                       <ProtectedRoute requiredPermissions={['role.assign', 'settings.manage']}>
                         <PermissionsAdmin />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings/market/luma-credits"
+                    element={
+                      <ProtectedRoute requiredPermissions={['market.manage']}>
+                        <LumaCreditsAdmin />
                       </ProtectedRoute>
                     }
                   />

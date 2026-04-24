@@ -17,6 +17,7 @@ export const baseTranslations = {
     "features": "Features",
     "study": "Study",
     "contribute": "Contribute",
+    "messaging": "Messaging",
     "market": "Market",
     "home": "Home",
     "endorse": "Endorse",
@@ -180,6 +181,13 @@ export const baseTranslations = {
     "languageHint": "Your language choice is saved to your profile.",
     "editProfile": "Edit Profile",
     "editProfileDescription": "Update your name, bio, and avatar",
+    "lumaWallet": "Luma wallet",
+    "lumaWalletDescription": "Balance, send Luma, activity, and how marketplace payments work",
+    "lumaWalletPageTitle": "Luma wallet",
+    "lumaWalletPageSubtitle": "Your balance, transfers, and purchase history",
+    "lumaWalletBack": "Back to settings",
+    "lumaWalletOpenMarket": "Open Marketplace",
+    "lumaWalletSignIn": "Sign in on the home screen to manage your Luma wallet here.",
     "notifications": "Notifications",
     "notificationsDescription": "Manage notification preferences",
     "privacy": "Privacy",
@@ -206,6 +214,26 @@ export const baseTranslations = {
     "adminGovernanceDescription": "Manage policy parameters and monetary guardrails",
     "adminModules": "System Modules",
     "adminModulesDescription": "Review the internal module catalog and workflows",
+    "marketToolsTitle": "Marketplace tools",
+    "marketToolsDescription": "Credit Luma balances for pilots and support when you have marketplace access.",
+    "lumaCreditsCardTitle": "Credit Luma balances",
+    "lumaCreditsCardDescription": "Add Lumens to a verified member for testing or goodwill, with a full audit trail.",
+    "lumaMintTitle": "Credit Luma",
+    "lumaMintSubtitle": "For people with marketplace operator access. Every credit is logged.",
+    "lumaMintBack": "Back to settings",
+    "lumaMintUsernameLabel": "Member username (optional)",
+    "lumaMintUsernameHint": "If you fill this in, it is used first. Match their public handle; letter case does not matter.",
+    "lumaMintProfileIdLabel": "Member profile id (optional)",
+    "lumaMintProfileIdHint": "Use this when you already copied their profile id from admin tools. Leave username blank when using only this field.",
+    "lumaMintAmountLabel": "Amount in Luma",
+    "lumaMintMemoLabel": "Internal note (optional)",
+    "lumaMintSubmit": "Credit Luma",
+    "lumaMintWorking": "Crediting…",
+    "lumaMintSuccess": "Credit completed.",
+    "lumaMintForbidden": "You do not have permission to credit Luma.",
+    "lumaMintRecipientInvalid": "That member could not be found. Check the username or profile id.",
+    "lumaMintRecipientRequired": "Enter a username or a profile id.",
+    "lumaMintAmountInvalid": "Enter a valid amount greater than zero.",
     "signOut": "Sign out",
     "appInfoTitle": "Application version",
     "appInfoDescription": "Check which mobile release and build are currently installed on this device.",
@@ -245,10 +273,103 @@ export const baseTranslations = {
     }
   },
   "market": {
-    "title": "Market",
-    "subtitle": "Browse what’s coming to the Levela marketplace.",
-    "comingSoonTitle": "Marketplace coming soon",
-    "comingSoonDescription": "We’re preparing this space for future offers, tools, and opportunities."
+    "title": "Marketplace",
+    "subtitle": "Buy and sell products and services with other World Citizens. Every price and checkout uses Luma from your balance.",
+    "mobileTagline": "Shop listings from World Citizens",
+    "tabBrowse": "Browse",
+    "tabSelling": "Selling",
+    "walletShortcut": "Wallet",
+    "sellingEmpty": "You have no active listings. Tap the + button to post one.",
+    "signInToSell": "Sign in to list items and open your wallet.",
+    "searchPlaceholder": "Search listings by title or description",
+    "filterAll": "All",
+    "filterProducts": "Products",
+    "filterServices": "Services",
+    "listingsNoMatch": "No listings match your search or filters. Try different words or show all categories.",
+    "kindProduct": "Product",
+    "kindService": "Service",
+    "paymentsInfoTitle": "Paying and getting paid in Luma",
+    "paymentsInfoBody": "When you buy, Luma moves from your wallet to the seller in one step and the purchase appears in your activity. When you sell, each buyer’s payment adds Luma to your balance. There is no separate card checkout—keep enough Luma for the listed price before you confirm.",
+    "lumaBalanceTitle": "Your Luma balance",
+    "lumaBalanceLoading": "Loading balance…",
+    "lumaBalanceUnavailable": "Balance could not be loaded.",
+    "lumaBalanceHint": "Luma is Levela’s civic currency for people and organizations. One Luma equals one hundred Lumens, the smallest unit shown in your balance.",
+    "lumaBalanceSignIn": "Sign in to see your Luma balance and post an offer.",
+    "listingsTitle": "Offers",
+    "listingsLoading": "Loading offers…",
+    "listingsError": "Offers could not be loaded.",
+    "listingsEmpty": "No published offers yet. Be the first to post one.",
+    "sellerAnonymous": "Member",
+    "postedLabel": "Posted",
+    "postOfferButton": "Post an offer",
+    "sellFabLabel": "Sell",
+    "postOfferTitle": "Post an offer",
+    "postOfferDescription": "Describe what you provide, choose product or service, and set a price in Luma. Everyone can see published offers.",
+    "postOfferFieldTitle": "Title",
+    "postOfferFieldDescription": "Description (optional)",
+    "postOfferFieldPrice": "Price in Luma",
+    "postOfferPriceHint": "Use a number such as 10 or 12.5. Amounts save as exact Lumens behind the scenes.",
+    "postOfferSubmit": "Publish offer",
+    "postOfferSubmitting": "Publishing…",
+    "postOfferCancel": "Cancel",
+    "postOfferTitleRequired": "Please enter a short title.",
+    "postOfferPriceRequired": "Please enter a valid price greater than zero.",
+    "postOfferSaveError": "Could not save this offer.",
+    "archiveOffer": "Remove from market",
+    "archiveOfferShort": "Remove",
+    "archivingOffer": "Removing…",
+    "buyButton": "Buy",
+    "buyTitle": "Confirm payment",
+    "buyConfirm": "You will pay {price} to {seller} for: {title}. This cannot be undone from this screen.",
+    "buyPay": "Pay now",
+    "buyCancel": "Not now",
+    "buyWorking": "Paying…",
+    "buyErrorInsufficientBalance": "Your Luma balance is too low for this price.",
+    "buyErrorForbidden": "You cannot send Luma from this profile.",
+    "buyErrorOwnListing": "You cannot buy your own offer.",
+    "buyErrorListingUnavailable": "This offer is no longer available.",
+    "buyErrorListingMismatch": "This offer changed before payment. Refresh and try again.",
+    "buyErrorInvalidAmount": "That payment amount is not valid.",
+    "buyErrorInvalidRequest": "Something was wrong with this payment request.",
+    "buyErrorGeneric": "Payment did not go through. Please try again.",
+    "sendLumaButton": "Send Luma",
+    "activityTitle": "Your Luma activity",
+    "activityLoading": "Loading activity…",
+    "activityError": "Activity could not be loaded.",
+    "activityEmpty": "No Luma movements yet. Purchases, sends, and credits from the team will appear here.",
+    "activityTreasuryCredit": "Credit from the marketplace team",
+    "activityMarketPurchaseOut": "Market purchase",
+    "activityMarketPurchaseIn": "Market sale",
+    "activityPeerOut": "Sent to {other}",
+    "activityPeerIn": "Received from {other}",
+    "activityGenericOut": "Sent Luma",
+    "activityGenericIn": "Received Luma",
+    "peerSendTitle": "Send Luma to someone",
+    "peerSendDescription": "Enter their public username and the amount you want to send from your balance.",
+    "peerSendUsernameLabel": "Their username",
+    "peerSendUsernamePlaceholder": "exact handle, case does not matter",
+    "peerSendUsernameRequired": "Please enter the other person’s username.",
+    "peerSendRecipientNotFound": "No active member matches that username.",
+    "peerSendSelf": "You cannot send Luma to yourself here.",
+    "peerSendMemoLabel": "Note (optional)",
+    "peerSendSubmit": "Send payment",
+    "peerSendWorking": "Sending…",
+    "postOfferQuantityLabel": "How many can be sold at this price?",
+    "postOfferQuantityHint": "Each sale is one payment at the price above. When the count reaches zero, the offer leaves the market automatically.",
+    "postOfferQuantityInvalid": "Enter a whole number from 1 to 10,000.",
+    "postOfferKindLabel": "What are you offering?",
+    "postOfferKindProduct": "Product (goods or digital item)",
+    "postOfferKindService": "Service (work, lessons, repairs, and similar)",
+    "postOfferKindHint": "This helps buyers browse by category. The price is always in Luma either way.",
+    "listingStock": "{count} available at this price",
+    "listingSoldOut": "Sold out",
+    "buyErrorListingSoldOut": "That offer just sold out. Refresh the list.",
+    "buyErrorListingRace": "Inventory changed while paying. Refresh and try again.",
+    "activityFilterAll": "All",
+    "activityFilterPurchases": "Purchases",
+    "activityFilterSends": "Sends",
+    "activityFilterCredits": "Credits",
+    "activityFilteredEmpty": "Nothing in this category yet."
   },
   "governance": {
     "title": "Governance Policies",
@@ -779,6 +900,9 @@ export const baseTranslations = {
       }
     }
   },
+  "messaging": {
+    "subtitle": "Shared stream, calls, and quick updates with the community."
+  },
   "contribute": {
     "title": "Contribute",
     "subtitle": "Choose how you want to strengthen your presence and support the community.",
@@ -793,7 +917,7 @@ export const baseTranslations = {
       },
       "share": {
         "title": "Share an update",
-        "description": "Post to the Home feed to contribute thoughts, progress, or context."
+        "description": "Open Messaging for the shared stream, quick updates, and calls."
       },
       "score": {
         "title": "Review your score",
@@ -957,13 +1081,13 @@ export const baseTranslations = {
         "title": "Open the contribute hub",
         "summary": "Use the Contribute page as a home for actions that strengthen your presence and help other people.",
         "workflow": [
-          "Open Contribute from the bottom navigation.",
+          "Open Contribute from your page list, Law, or other in-app links that point to the hub.",
           "Choose the kind of contribution you want to make next.",
-          "Jump into the linked flow for endorsing, profile improvement, posting, or score review."
+          "Jump into the linked flow for endorsing, profile improvement, the messaging stream, or score review."
         ],
         "details": [
           "Contribute is designed as a central action hub rather than a single-purpose screen.",
-          "It gives high-intent actions a dedicated place in navigation.",
+          "It surfaces high-intent actions without requiring a primary tab in the bottom navigation.",
           "The page helps separate contribution actions from passive browsing."
         ]
       },
@@ -1010,16 +1134,16 @@ export const baseTranslations = {
       },
       "messaging": {
         "title": "Join the messaging stream",
-        "summary": "Use the built-in Messaging panel to send short messages and keep the shared conversation moving.",
+        "summary": "Use the Messaging page to send short messages, join calls, and keep the shared conversation moving.",
         "workflow": [
-          "Open the Messaging panel from Home.",
+          "Open Messaging from the bottom navigation or your page list.",
           "Type a message and submit it to the shared stream.",
           "Review the ongoing conversation as new messages appear."
         ],
         "details": [
           "Messaging is available as a lightweight shared communication surface.",
-          "The panel is intended for quick updates rather than long-form posts.",
-          "It remains accessible alongside the main Home experience."
+          "The experience is intended for quick updates rather than long-form posts.",
+          "It lives on its own route so it stays one tap away from Home, Study, Market, and Settings."
         ]
       },
       "scoreSnapshot": {
@@ -1201,18 +1325,74 @@ export const baseTranslations = {
           "The page includes the platform-law principle so users can understand that statement directly in the product."
         ]
       },
-      "marketPreview": {
-        "title": "Preview the marketplace",
-        "summary": "Check the Market page to see where future offers, tools, and opportunities will live.",
+      "lumaNativeCurrency": {
+        "title": "Luma: Levela’s native currency",
+        "summary": "Luma is Levela’s universal money for prices, payments, and savings. The smallest practical unit is the Lumen: one hundred Lumens make one Luma.",
         "workflow": [
-          "Open Market from the bottom navigation.",
-          "Review the placeholder state and current marketplace direction.",
-          "Return later as the marketplace grows into a fuller product area."
+          "Members and businesses will price goods and services in Luma as the marketplace grows.",
+          "Balances stay tied to verified profiles and follow governance rules aimed at safety, stability, and fair use.",
+          "The design favors everyday earning and spending—not open speculative trading."
         ],
         "details": [
-          "Market is reserved for future offers and opportunity surfaces.",
-          "It gives users a stable navigation destination for upcoming marketplace work.",
-          "The current state is intentionally lightweight while the concept matures."
+          "Issuance, stability, and wallet protections are described in the project’s civic monetary policy documentation.",
+          "Behind the scenes, amounts are tracked in exact whole Lumens so accounting stays precise as activity scales.",
+          "Governance and commerce features share this single native unit so the economy stays coherent across the app."
+        ]
+      },
+      "marketListingsLuma": {
+        "title": "Market listings in Luma",
+        "summary": "Members publish offers as products or services with titles, optional descriptions, prices in whole Lumens, and inventory that drops with each purchase until the offer archives.",
+        "workflow": [
+          "Open Market to browse a searchable grid of offers with prices shown in Luma.",
+          "When signed in, use Post an offer to choose product or service, describe the item, and set a price.",
+          "Remove your offer from the public list when it should no longer appear."
+        ],
+        "details": [
+          "Row level security limits who can create or change listings; shoppers only see published rows.",
+          "Market managers can update any listing using the market permission when moderation is needed.",
+          "Buying an offer moves Luma through a governed transfer; delivery and disputes can build on this foundation later."
+        ]
+      },
+      "lumaLedgerTransfers": {
+        "title": "Luma ledger and transfers",
+        "summary": "Payments move whole Lumens between wallet balances through a single database function, with an append-only ledger and idempotency keys.",
+        "workflow": [
+          "Use Buy on someone else’s offer to confirm and pay the listed price in Luma.",
+          "The app sends a transfer request with a fresh idempotency key so accidental double taps do not double pay.",
+          "Open your ledger history from future account tools; each row records sender, receiver, amount, and optional listing."
+        ],
+        "details": [
+          "Only the signed-in owner of the sending profile can run transfers; balances still cannot be edited directly from the client.",
+          "The ledger table rejects updates and deletes so the record stays trustworthy for audits.",
+          "Peer-to-peer sends reuse the same transfer function without tying the payment to a listing."
+        ]
+      },
+      "lumaTreasuryMintAndActivity": {
+        "title": "Treasury credits, peer send, and activity",
+        "summary": "Market operators can mint Lumens to members under permission checks, while everyone sees their own movement history and can send to another username.",
+        "workflow": [
+          "From Settings, marketplace operators open Credit Luma and enter a username or profile id plus an amount.",
+          "On Market, use Send Luma to pay another member directly from your balance.",
+          "Scroll Your Luma activity to review purchases, incoming credits, and sends in one place."
+        ],
+        "details": [
+          "Minting creates a treasury line in the ledger with no sender profile so audits stay honest about where value originated.",
+          "Activity rows respect privacy: you only see entries where you are the sender or receiver.",
+          "Large-scale monetary policy still lives with governance; this tool is for controlled operational credits."
+        ]
+      },
+      "marketPreview": {
+        "title": "World Citizen marketplace",
+        "summary": "The Market page is a living storefront where members list products and services, filter what they want, and pay in Luma.",
+        "workflow": [
+          "Open Market from the main navigation.",
+          "Search and filter by product or service, then open Buy to pay the listed Luma price.",
+          "Use Post an offer to sell, Send Luma for direct payments, and review your ledger in one place."
+        ],
+        "details": [
+          "Listings store exact Lumens for accounting while the interface speaks in Luma for readability.",
+          "Buying uses the same transfer path as other wallet movements so balances and history stay consistent.",
+          "Future releases can add photos, messaging, and delivery tools without changing the core Luma settlement model."
         ]
       },
       "phoneFirstSignup": {

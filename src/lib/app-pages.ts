@@ -11,6 +11,7 @@ export type NavigablePageId =
   | 'law'
   | 'terms'
   | 'contribute'
+  | 'messaging'
   | 'market'
   | 'search'
   | 'endorse'
@@ -46,6 +47,7 @@ export const appPageLinks: AppPageLink[] = [
   },
   { id: 'terms', path: '/terms', labelKey: pageRegistry.terms.labelKey, icon: pageRegistry.terms.icon },
   { id: 'contribute', path: '/contribute', labelKey: pageRegistry.contribute.labelKey, icon: pageRegistry.contribute.icon },
+  { id: 'messaging', path: '/messaging', labelKey: pageRegistry.messaging.labelKey, icon: pageRegistry.messaging.icon },
   { id: 'market', path: '/market', labelKey: pageRegistry.market.labelKey, icon: pageRegistry.market.icon },
   {
     id: 'search',

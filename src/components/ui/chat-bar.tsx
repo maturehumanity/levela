@@ -142,12 +142,12 @@ function MediaAudio({ stream }: { stream: MediaStream }) {
   return <audio ref={ref} autoPlay />;
 }
 
-export function ChatBar() {
+export function ChatBar({ initialExpanded = false }: { initialExpanded?: boolean } = {}) {
   const { profile, user } = useAuth();
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [loading, setLoading] = useState(true);
   const [selectedCallScope, setSelectedCallScope] = useState<CallScope>('direct');
   const [selectedTargetProfileId, setSelectedTargetProfileId] = useState('');
@@ -706,7 +706,7 @@ export function ChatBar() {
         console.error('ChatBar: Error fetching messages:', error);
         setMessages([]);
       } else {
-        setMessages((data || []) as Message[]);
+        setMessages(data ?? []);
       }
     } catch (error) {
       console.error('ChatBar: Unexpected fetch error:', error);

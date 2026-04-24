@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Award,
   BookOpen,
+  Coins,
   Compass,
   Fingerprint,
   Download,
@@ -11,18 +12,21 @@ import {
   Globe,
   GraduationCap,
   LogIn,
+  ArrowLeftRight,
   Search,
   Scale,
   Landmark,
   LayoutGrid,
-  MessageSquareText,
+  MessageCircle,
   Hammer,
+  PiggyBank,
   PlusCircle,
   Settings2,
   Shield,
   KeyRound,
   ShoppingBag,
   Store,
+  Tag,
   TrendingUp,
   Upload,
   UserRound,
@@ -95,6 +99,10 @@ export type FeatureId =
   | 'identifierLogin'
   | 'mobileDownloads'
   | 'lawLibrary'
+  | 'lumaLedgerTransfers'
+  | 'lumaTreasuryMintAndActivity'
+  | 'lumaNativeCurrency'
+  | 'marketListingsLuma'
   | 'marketPreview'
   | 'phoneFirstSignup'
   | 'profileEditing'
@@ -150,7 +158,7 @@ export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   editProfile: { id: 'editProfile', icon: Edit3, labelKey: 'features.pages.editProfile' },
   settings: { id: 'settings', icon: Settings2, labelKey: 'features.pages.settings' },
   pillars: { id: 'pillars', icon: TrendingUp, labelKey: 'features.pages.pillars' },
-  messaging: { id: 'messaging', icon: MessageSquareText, labelKey: 'features.pages.messaging' },
+  messaging: { id: 'messaging', icon: MessageCircle, labelKey: 'features.pages.messaging' },
   login: { id: 'login', icon: LogIn, labelKey: 'features.pages.login' },
   admin: { id: 'admin', icon: Shield, labelKey: 'features.pages.admin' },
   adminRoles: { id: 'adminRoles', icon: Fingerprint, labelKey: 'features.pages.adminRoles' },
@@ -254,7 +262,7 @@ export const featureRegistry: FeatureEntry[] = [
   },
   {
     id: 'messaging',
-    icon: MessageSquareText,
+    icon: MessageCircle,
     titleKey: 'features.catalog.messaging.title',
     summaryKey: 'features.catalog.messaging.summary',
     workflowKey: 'features.catalog.messaging.workflow',
@@ -391,6 +399,46 @@ export const featureRegistry: FeatureEntry[] = [
     detailsKey: 'features.catalog.termsUse.details',
     section: 'preferences',
     page: 'terms',
+  },
+  {
+    id: 'lumaNativeCurrency',
+    icon: Coins,
+    titleKey: 'features.catalog.lumaNativeCurrency.title',
+    summaryKey: 'features.catalog.lumaNativeCurrency.summary',
+    workflowKey: 'features.catalog.lumaNativeCurrency.workflow',
+    detailsKey: 'features.catalog.lumaNativeCurrency.details',
+    section: 'marketplace',
+    page: 'market',
+  },
+  {
+    id: 'lumaLedgerTransfers',
+    icon: ArrowLeftRight,
+    titleKey: 'features.catalog.lumaLedgerTransfers.title',
+    summaryKey: 'features.catalog.lumaLedgerTransfers.summary',
+    workflowKey: 'features.catalog.lumaLedgerTransfers.workflow',
+    detailsKey: 'features.catalog.lumaLedgerTransfers.details',
+    section: 'marketplace',
+    page: 'market',
+  },
+  {
+    id: 'lumaTreasuryMintAndActivity',
+    icon: PiggyBank,
+    titleKey: 'features.catalog.lumaTreasuryMintAndActivity.title',
+    summaryKey: 'features.catalog.lumaTreasuryMintAndActivity.summary',
+    workflowKey: 'features.catalog.lumaTreasuryMintAndActivity.workflow',
+    detailsKey: 'features.catalog.lumaTreasuryMintAndActivity.details',
+    section: 'marketplace',
+    page: 'market',
+  },
+  {
+    id: 'marketListingsLuma',
+    icon: Tag,
+    titleKey: 'features.catalog.marketListingsLuma.title',
+    summaryKey: 'features.catalog.marketListingsLuma.summary',
+    workflowKey: 'features.catalog.marketListingsLuma.workflow',
+    detailsKey: 'features.catalog.marketListingsLuma.details',
+    section: 'marketplace',
+    page: 'market',
   },
   {
     id: 'marketPreview',

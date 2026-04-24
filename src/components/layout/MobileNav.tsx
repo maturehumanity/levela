@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
-import { Home, BookOpen, Store, Settings, PlusCircle } from 'lucide-react';
+import { Home, BookOpen, Store, Settings, MessageCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const navItems = [
   { path: '/', icon: Home, label: 'Home' },
   { path: '/study', icon: BookOpen, label: 'Study' },
-  { path: '/contribute', icon: PlusCircle, label: 'Contribute' },
   { path: '/market', icon: Store, label: 'Market' },
+  { path: '/messaging', icon: MessageCircle, label: 'Messaging' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -27,8 +27,8 @@ export function MobileNav() {
               ? 'common.home'
               : item.label === 'Study'
                 ? 'common.study'
-                : item.label === 'Contribute'
-                  ? 'common.contribute'
+                : item.label === 'Messaging'
+                  ? 'common.messaging'
                   : item.label === 'Market'
                     ? 'common.market'
                     : 'common.settings';
@@ -48,7 +48,7 @@ export function MobileNav() {
               whileTap={{ scale: 0.9 }}
             >
               <div className="relative">
-                <Icon className={`w-6 h-6 ${item.path === '/contribute' ? 'w-7 h-7' : ''}`} />
+                <Icon className={`w-6 h-6 ${item.path === '/messaging' ? 'w-7 h-7' : ''}`} />
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
