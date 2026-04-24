@@ -56,14 +56,29 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         setIsLoadingLanguage(true);
       }
 
-      const nextMessages = language === 'en'
-        ? await loadBaseTranslations()
-        : await loadLanguagePack(language);
-
+      const base = await loadBaseTranslations();
       if (!active) return;
 
-      setMessages(nextMessages);
+      if (language === 'en') {
+        setMessages(base);
+        setIsLoadingLanguage(false);
+        return;
+      }
+
+      // `loadLanguagePack` can take a long time (it walks the full catalog via
+      // machine translation). Never block startup on it — show English first,
+      // then swap in the pack when ready.
+      setMessages(base);
       setIsLoadingLanguage(false);
+
+      try {
+        const pack = await loadLanguagePack(language);
+        if (active) {
+          setMessages(pack);
+        }
+      } catch {
+        // Keep English base messages if the pack fails.
+      }
     };
 
     void loadMessages();

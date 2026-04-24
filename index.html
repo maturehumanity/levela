@@ -66,7 +66,14 @@
           'error',
           function (event) {
             var target = event && event.target;
-            if (target && target.tagName === 'SCRIPT') {
+            // Only treat as a failed script *fetch* — runtime ErrorEvents also
+            // bubble with target sometimes pointing at the script element, and
+            // must not be mistaken for a missing bundle.
+            if (
+              target &&
+              target.tagName === 'SCRIPT' &&
+              !(event instanceof ErrorEvent)
+            ) {
               renderFallback('A required app script did not load.');
             }
           },
