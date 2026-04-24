@@ -191,6 +191,8 @@ if [ "$CHANNEL" = "both" ]; then
     prune_download_archive "$channel"
     write_update_manifest "$channel"
   done
+  # Same APK bytes as channel builds; matches src/lib/downloads.ts (ANDROID_DOWNLOAD_FILENAME).
+  cp "$APK_SOURCE" "$APK_TARGET_DIR/levela-debug-${RELEASE_ID}.apk"
   write_legacy_manifest
 else
   apk_filename="$(versioned_apk_filename "$CHANNEL")"
@@ -198,6 +200,7 @@ else
     cp "$APK_SOURCE" "$APK_TARGET"
   fi
   cp "$APK_SOURCE" "$APK_TARGET_DIR/$apk_filename"
+  cp "$APK_SOURCE" "$APK_TARGET_DIR/levela-debug-${RELEASE_ID}.apk"
   prune_download_archive "$CHANNEL"
   write_update_manifest "$CHANNEL"
   if [ "$CHANNEL" = "release" ]; then
