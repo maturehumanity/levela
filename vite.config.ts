@@ -3,6 +3,22 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+/**
+ * True only for the core React runtime packages. A loose `"/react/"` substring
+ * incorrectly matches `@floating-ui/react`, `@tanstack/react-query`, etc.,
+ * which then land in `react-vendor` and create a circular chunk graph with
+ * `overlay-ui-vendor` (undefined `createContext` at load time).
+ */
+function isReactCoreVendorChunk(id: string): boolean {
+  const n = id.replace(/\\/g, "/");
+  return (
+    /\/node_modules\/(react|react-dom|scheduler)\//.test(n)
+    || /\/node_modules\/\.pnpm\/[^/]+\/node_modules\/(react|react-dom|scheduler)\//.test(
+      n,
+    )
+  );
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -67,11 +83,7 @@ export default defineConfig(({ mode }) => ({
             return undefined;
           }
 
-          if (
-            id.includes("/react/")
-            || id.includes("/react-dom/")
-            || id.includes("/scheduler/")
-          ) {
+          if (isReactCoreVendorChunk(id)) {
             return "react-vendor";
           }
 
