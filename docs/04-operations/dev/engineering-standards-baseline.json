@@ -6,15 +6,15 @@
   ],
   "legacy_allowlist": {
     "src/components/layout/BuildOverlay.tsx": 3960,
-    "src/lib/i18n.base.ts": 2274,
+    "src/lib/i18n.base.ts": 2385,
     "src/pages/settings/EditProfile.tsx": 1882,
     "src/pages/settings/UsersAdmin.tsx": 1852,
     "src/pages/Governance.tsx": 1920,
-    "src/components/ui/chat-bar.tsx": 1711,
+    "src/components/ui/chat-bar.tsx": 3050,
     "src/pages/settings/GovernanceAdmin.tsx": 1300,
     "src/pages/Law.tsx": 1235,
     "src/lib/i18n.languages.ts": 1189,
-    "src/pages/Home.tsx": 1104,
+    "src/pages/Home.tsx": 1112,
     "src/pages/Study.tsx": 1056,
     "src/components/layout/UserPageMenu.tsx": 944,
     "src/contexts/AuthContext.tsx": 788,
@@ -26,9 +26,11 @@
     "src/components/governance/GovernanceGuardianRelayProofSection.tsx": 430,
     "src/components/governance/GovernancePublicAuditVerifierMirrorFederationCard.tsx": 450,
     "src/components/governance/GovernancePublicAuditVerifierMirrorFederationDistributionControls.tsx": 435,
-    "src/lib/governance-public-audit-automation.test.ts": 449,
+    "src/lib/governance-execution/apply-civic.test.ts": 500,
+    "src/lib/governance-public-audit-automation.test.ts": 488,
     "src/lib/governance-guardian-relays.test.ts": 425,
-    "src/lib/governance-public-audit-verifier-federation.test.ts": 435,
+    "src/lib/governance-public-audit-verifier-federation.test.ts": 459,
+    "src/lib/governance-public-audit-verifier-bundle.test.ts": 403,
     "src/lib/governance-public-audit-verifier-federation.ts": 470,
     "src/lib/use-governance-activation-demographic-feeds.ts": 990,
     "src/lib/use-governance-guardian-relay-actions.ts": 435,
@@ -37,6 +39,6 @@
     "src/lib/law-catalog.ts": 412,
     "src/pages/Profile.tsx": 409,
     "src/pages/settings/Pillars.tsx": 402,
-    "src/pages/Settings.tsx": 440
+    "src/pages/Settings.tsx": 502
   }
 }

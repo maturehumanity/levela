@@ -192,6 +192,70 @@ export const baseTranslations = {
     "notificationsDescription": "Manage notification preferences",
     "privacy": "Privacy",
     "privacyDescription": "Control who can see your profile",
+    "messaging": "Messaging",
+    "messagingDescription": "Where your history lives, relay limits, and encryption details",
+    "messagingSecurity": "Messaging encryption",
+    "messagingSecurityDescription": "Keys on this device and how person-to-person encryption works",
+    "messagingPreferencesBack": "Back to settings",
+    "messagingPreferencesTitle": "Messaging",
+    "messagingPreferencesSubtitle": "Choose where the full history should live and how long encrypted relay copies may stay on Levela.",
+    "messagingPreferencesEncryptionLink": "Encryption and device keys",
+    "messagingPreferencesEncryptionHint": "Private message keys are on by default. Open this screen if you change devices or need to turn keys off.",
+    "messagingPreferencesSignIn": "Sign in to manage messaging preferences.",
+    "messagingPreferencesSave": "Save messaging preferences",
+    "messagingPreferencesSaved": "Messaging preferences saved.",
+    "messagingPreferencesSaveFailed": "Could not save messaging preferences. Try again.",
+    "messagingBackupSectionTitle": "Your archive and backup",
+    "messagingBackupSectionBody":
+      "Levela is not a long-term archive for your full chat history. For a complete record, keep exports on this device or in a cloud folder you control (for example Google Drive, Dropbox, or OneDrive). Automated upload to those services is not wired in this version, so use their apps or export tools alongside anything you save from Levela.",
+    "messagingBackupProviderLabel": "Where should the full history live?",
+    "messagingBackupProviderPlaceholder": "Choose one option",
+    "messagingBackupNone": "Not specified yet",
+    "messagingBackupDevice": "This device only (I will export myself)",
+    "messagingBackupGoogleDrive": "Google Drive (I manage the folder)",
+    "messagingBackupDropbox": "Dropbox (I manage the folder)",
+    "messagingBackupOnedrive": "OneDrive (I manage the folder)",
+    "messagingBackupIcloud": "iCloud Drive (I manage the folder)",
+    "messagingBackupOther": "Another cloud or drive I control",
+    "messagingBackupNoteLabel": "Short note (optional)",
+    "messagingBackupNotePlaceholder": "Example: Family folder, work account",
+    "messagingBackupNoteHelp": "Do not paste passwords, API keys, or private links here. This note is only a reminder for you.",
+    "messagingRelaySectionTitle": "Relay copy on Levela",
+    "messagingRelaySectionBody":
+      "Because you have not declared a cloud archive you manage, tell us how long and how large an encrypted relay copy may be kept on the server for delivery and sync. Lower values reduce what stays in the database.",
+    "messagingRelaySectionCloud":
+      "You declared a cloud or device archive you manage. Levela can keep a smaller relay window on the server; exact cleanup timing is applied by automated jobs.",
+    "messagingRelayDaysLabel": "Maximum age on server (days)",
+    "messagingRelayMbLabel": "Approximate recent cap (MB)",
+    "messagingRelayDaysInvalid": "Enter a number of days between 1 and 365.",
+    "messagingRelayMbInvalid": "Enter a size between 1 and 200 MB.",
+    "messagingRelayAutomationNote":
+      "These numbers are stored with your profile for future automated cleanup jobs. They do not delete anything instantly in this release.",
+    "messagingOperatorCardTitle": "Operator note",
+    "messagingOperatorCardBody":
+      "You have settings management access. Relay limits here are end-user declarations. Scheduled deletion jobs should honor them together with moderation holds.",
+    "messagingSecurityBack": "Back to messaging settings",
+    "messagingSecurityTitle": "Messaging and calls security",
+    "messagingSecuritySubtitle": "Private chats, keys on this device, and voice or video protection.",
+    "messagingSecurityDmBody":
+      "Private messaging keys are turned on for you by default on supported browsers. When you and another person both have keys, your one-to-one chat text is encrypted before it leaves the device. Levela only stores unreadable ciphertext for those messages. Each of you keeps a secret key on this device only.",
+    "messagingSecurityDmFootnote":
+      "If someone loses their device or clears site data without a backup, older messages may not be readable anymore. This version does not include a recovery passphrase.",
+    "messagingSecurityCallsTitle": "Voice and video calls",
+    "messagingSecurityCallsBody":
+      "After a call connects, audio and video travel between browsers using standard WebRTC protections, including encrypted media between peers. Call invitations, accept or decline actions, and technical setup data still pass through Levela so the call can be placed.",
+    "messagingSecuritySignIn": "Sign in to manage messaging keys.",
+    "messagingSecurityEnable": "Create or repair keys on this device",
+    "messagingSecurityDisable": "Turn off on this device",
+    "messagingSecurityEnabled": "Private messaging keys are on for this device.",
+    "messagingSecurityDisabled": "Private messaging keys were removed from this device and your public key was cleared.",
+    "messagingSecurityEnableFailed": "Could not turn on keys. Try again.",
+    "messagingSecurityDisableFailed": "Could not turn off keys. Try again.",
+    "messagingSecurityStatusTitle": "Current status",
+    "messagingSecurityStatusLocalOn": "This device has a saved secret key for you.",
+    "messagingSecurityStatusLocalOff": "This device does not have a saved secret key for you yet.",
+    "messagingSecurityStatusServerOn": "Your profile advertises a public key so others can encrypt to you.",
+    "messagingSecurityStatusServerOff": "Your profile does not advertise a public key yet.",
     "safety": "Safety",
     "safetyDescription": "View your reports and blocked users",
     "termsPrivacy": "Terms of Use",
@@ -212,6 +276,10 @@ export const baseTranslations = {
     "adminPermissionsDescription": "Edit what each role can access",
     "adminGovernance": "Governance",
     "adminGovernanceDescription": "Manage policy parameters and monetary guardrails",
+    "civicGovernanceTitle": "Civic governance",
+    "civicGovernanceDescription": "Proposals, voting eligibility, and participation for members.",
+    "governanceHub": "Governance hub",
+    "governanceHubDescription": "Open the citizen workspace for proposals and civic status.",
     "adminModules": "System Modules",
     "adminModulesDescription": "Review the internal module catalog and workflows",
     "marketToolsTitle": "Marketplace tools",
@@ -491,6 +559,55 @@ export const baseTranslations = {
       "eligibility": "Eligibility",
       "eligibleCitizens": "Eligible citizens",
       "mode": "Decision mode"
+    },
+    "identityVerification": {
+      "title": "Identity verification",
+      "badgeVerified": "Verified",
+      "badgeNotStarted": "Not started",
+      "badgeFinishingUp": "Finishing setup",
+      "verifiedBody": "Your identity is verified. You can keep building trust through endorsements and take part in governance when you meet the other eligibility checks.",
+      "noCaseBody": "You have not started the structured verification flow yet. Add your profile details and submit a verification request from your profile settings when you are ready.",
+      "draftIncompleteBody": "Your verification draft still has checklist items to finish before reviewers can move forward.",
+      "draftReadyBody": "Your verification checklist looks complete. Submit the case from your profile when you want reviewers to pick it up.",
+      "underReviewBody": "Reviewers are evaluating your submission. You will see the outcome on your profile when the review is complete.",
+      "rejectedBody": "The last verification decision was not approved. Review any notes on your profile and submit again when you are eligible.",
+      "revokedBody": "Verification was revoked for your account. Review your profile and any governance notices, then follow steward guidance before trying again.",
+      "approvedPendingProfileBody": "Your case is approved and your public profile is updating. Refresh in a moment or open profile settings to confirm everything looks correct.",
+      "genericBody": "Your verification status recently changed. Open profile settings for the latest details.",
+      "backendUnavailable": "Identity verification records are not available in this environment yet, so status cannot be shown here.",
+      "loadFailed": "Could not load your verification status right now. You can still open profile settings to continue.",
+      "ctaReviewProfile": "Open profile settings",
+      "ctaStartInProfile": "Start in profile settings",
+      "ctaContinueInProfile": "Continue in profile settings",
+      "ctaViewStatusInProfile": "View status in profile settings",
+      "ctaReviewInProfile": "Review in profile settings",
+      "checklist": {
+        "personal": "Official identity details are still incomplete.",
+        "contact": "Contact details are still incomplete.",
+        "live": "Live verification step is still incomplete."
+      }
+    },
+    "activationReview": {
+      "title": "Civic activation readiness",
+      "subtitle": "Stewards track verified participation before formal country or world activation. Figures are indicative and steward-reviewed.",
+      "stewardshipNote": "Evidence, demographic snapshots, and steward decisions stay in the internal activation review workspace.",
+      "coverageLabel": "Estimated verified coverage: {percent}%",
+      "thresholdLabel": "Readiness target: {percent}%",
+      "countsLabel": "{eligible} governance-eligible verified members count toward readiness out of about {target} residents in the reference population.",
+      "countsLabelNoTarget": "{eligible} governance-eligible verified members currently count toward readiness.",
+      "lastDemographicIngest": "Latest demographic snapshot ingested: {at}",
+      "backendUnavailable": "Activation readiness data is not available in this environment yet.",
+      "loadFailed": "Could not load activation readiness right now. Try again later or ask a steward if this persists.",
+      "empty": "No published activation scope matched your profile yet. When stewards publish world or country rows, they will appear here.",
+      "statuses": {
+        "pre_activation": "Pre-activation",
+        "pending_review": "Pending review",
+        "approved_for_activation": "Approved for activation",
+        "activated": "Activated",
+        "rejected": "Rejected",
+        "revoked": "Revoked",
+        "unknown": "Status updating"
+      }
     },
     "createTitle": "Create proposal",
     "createDescription": "Eligible citizens can submit proposals here. When you are the only eligible citizen, bootstrap mode can approve immediately without waiting.",
@@ -899,9 +1016,6 @@ export const baseTranslations = {
         "body": "Levela may limit visibility, suspend actions, remove content, restrict permissions, or restrict accounts when conduct, content, or behavior conflicts with the platform’s rules, safety standards, or civic integrity requirements. Levela should also maintain review and appeal pathways appropriate to the seriousness of the action taken."
       }
     }
-  },
-  "messaging": {
-    "subtitle": "Shared stream, calls, and quick updates with the community."
   },
   "contribute": {
     "title": "Contribute",
@@ -1721,6 +1835,8 @@ export const baseTranslations = {
     "discoverEndorse": "Discover and endorse",
     "endorse": "Endorse",
     "recognizeSomeone": "Recognize someone",
+    "governanceHub": "Governance hub",
+    "governanceHubDescription": "Proposals, eligibility, and civic participation",
     "downloadApp": "Download app",
     "downloadAppDescription": "Install the latest Android test build.",
     "scanQrInstall": "Scan to install on your phone",
@@ -1920,6 +2036,26 @@ export const baseTranslations = {
       "calls": "Calls",
       "video": "Video"
     },
+    "inbox": {
+      "filterAll": "All",
+      "filterUnread": "Unread",
+      "filterFavourites": "Favourites",
+      "newChat": "New chat",
+      "threadLoadingTitle": "Chat",
+      "backToChats": "Back to chats",
+      "ariaFavouriteThread": "Add to favourites",
+      "ariaUnfavouriteThread": "Remove from favourites",
+      "ariaVoiceCall": "Voice call",
+      "ariaVideoCall": "Video call",
+      "agentCallsUnavailable": "Voice and video calls are not available in this assistant chat.",
+      "selectMessages": "Select",
+      "cancelSelection": "Cancel selection",
+      "selectionCount": "{count} selected",
+      "deleteSelected": "Delete",
+      "deleteSelectedNone": "Select one or more messages to delete.",
+      "deleteFailed": "Could not delete those messages.",
+      "deleteFailedWithReason": "Could not delete messages: {reason}"
+    },
     "contacts": {
       "searchPlaceholder": "Search people by name or username",
       "add": "Add",
@@ -1929,6 +2065,27 @@ export const baseTranslations = {
       "signInToSearch": "Sign in to search members",
       "savedHint": "People you add appear here and in the Calls tab picker.",
       "viewProfile": "Profile"
+    },
+    "private": {
+      "conversationsHint": "Your chats",
+      "loadFailed": "Could not load your conversations.",
+      "loadFailedWithReason": "Could not load your conversations. {reason}",
+      "nelaPinnedSubtitle": "In-app assistant",
+      "nelaPinnedLabel": "Nela (In-app assistant)",
+      "nelaOpenFailed":
+        "Could not open a chat with Nela. Your Supabase project may be missing the private messaging migrations, or the Nela system profile row may not exist yet.",
+      "nelaOpenFailedWithReason": "Could not open a chat with Nela: {reason}",
+      "selectThread": "Pick a chat from the list above.",
+      "openDmFailed": "Could not open this chat.",
+      "sendFailed": "Your message could not be sent. Please try again.",
+      "sendFailedWithReason": "Your message could not be sent: {reason}",
+      "agentReplyFailed": "Your message was saved, but Nela could not reply right now. Try again in a moment.",
+      "agentReplyFailedWithReason": "Nela could not reply: {reason}",
+      "sendingRequiresThread": "Pick a chat before sending a message.",
+      "encryptedPreview": "Encrypted message",
+      "e2eeUndecryptable": "This message could not be decrypted on this device.",
+      "directE2eeOnHint":
+        "This chat uses private keys on both sides. Levela stores only ciphertext for new messages while both people keep keys turned on."
     },
     "calls": {
       "scopeLabel": "Call type",
@@ -1967,7 +2124,9 @@ export const baseTranslations = {
       "mute": "Mute",
       "unmute": "Unmute",
       "cameraOn": "Camera On",
-      "cameraOff": "Camera Off"
+      "cameraOff": "Camera Off",
+      "mediaEncryptionHint":
+        "Voice and video use encrypted media between participants once the call connects. Call setup still goes through Levela so people can find each other and exchange technical details."
     }
   },
   "admin": {

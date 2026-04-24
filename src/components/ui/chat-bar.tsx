@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,6 +17,10 @@ import {
   Loader2,
   Search,
   UserPlus,
+  ChevronLeft,
+  Star,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -28,6 +32,14 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { NELA_ASSISTANT_PROFILE_ID } from '@/lib/messaging-constants';
+import {
+  buildSharedEncryptionKey,
+  decryptUtf8Plaintext,
+  decodePublicKeyBase64,
+  encryptUtf8Plaintext,
+  getDeviceMessagingSecretKey,
+} from '@/lib/messaging-e2ee';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -51,7 +63,113 @@ interface SavedContact {
   avatar_url: string | null;
 }
 
+interface PrivateConversationRow {
+  conversation_id: string;
+  kind: string;
+  peer_profile_id: string;
+  peer_username: string | null;
+  peer_full_name: string | null;
+  peer_avatar_url: string | null;
+  last_content: string | null;
+  last_at: string | null;
+  last_is_e2ee?: boolean;
+}
+
+interface PrivateMsgRow {
+  id: string;
+  content: string | null;
+  message_kind: string | null;
+  cipher_nonce: string | null;
+  cipher_text: string | null;
+  created_at: string;
+  sender_id: string;
+  is_edited: boolean | null;
+  sender: Message['sender'];
+}
+
+function toDisplayMessage(
+  row: PrivateMsgRow,
+  t: (key: string) => string,
+  peerPkB64: string | null,
+  mySk: Uint8Array | null,
+): Message {
+  const peerPk = peerPkB64 ? decodePublicKeyBase64(peerPkB64) : null;
+  const shared =
+    peerPk && mySk && peerPk.length === 32 && mySk.length === 32
+      ? buildSharedEncryptionKey(mySk, peerPk)
+      : null;
+
+  if (row.message_kind === 'e2ee_v1' && row.cipher_nonce && row.cipher_text && shared) {
+    const plain = decryptUtf8Plaintext(row.cipher_nonce, row.cipher_text, shared);
+    return {
+      id: row.id,
+      content: plain ?? t('chatBar.private.e2eeUndecryptable'),
+      created_at: row.created_at,
+      sender_id: row.sender_id,
+      is_edited: row.is_edited,
+      sender: row.sender,
+    };
+  }
+
+  return {
+    id: row.id,
+    content: row.content ?? '',
+    created_at: row.created_at,
+    sender_id: row.sender_id,
+    is_edited: row.is_edited,
+    sender: row.sender,
+  };
+}
+
+const MESSAGING_LAST_READ_PREFIX = 'messaging_last_read_v1';
+const MESSAGING_FAVOURITES_PREFIX = 'messaging_favourites_v1';
+
+function profileStorageKey(prefix: string, profileId: string) {
+  return `${prefix}:${profileId}`;
+}
+
+function loadLastReadMap(profileId: string): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(profileStorageKey(MESSAGING_LAST_READ_PREFIX, profileId));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === 'string') out[k] = v;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function loadFavouriteIdSet(profileId: string): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(profileStorageKey(MESSAGING_FAVOURITES_PREFIX, profileId));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+  } catch {
+    return new Set();
+  }
+}
+
+function resolveConversationKind(
+  conversationId: string,
+  rows: PrivateConversationRow[],
+  kindByIdRef: { current: Record<string, string> },
+): string | null {
+  const hit = rows.find((c) => c.conversation_id === conversationId);
+  if (hit?.kind) return hit.kind;
+  return kindByIdRef.current[conversationId] ?? null;
+}
+
 type MessagingTab = 'chats' | 'calls' | 'video';
+type InboxFilter = 'all' | 'unread' | 'favourites';
 
 const SAVED_MESSAGING_CONTACTS_KEY = 'levela-messaging-saved-contacts-v1';
 const SAVED_CONTACTS_CAP = 40;
@@ -164,15 +282,30 @@ export type ChatBarVariant = 'floating' | 'page';
 export function ChatBar({
   initialExpanded = false,
   variant = 'floating',
-}: { initialExpanded?: boolean; variant?: ChatBarVariant } = {}) {
+  routeConversationId = null,
+}: { initialExpanded?: boolean; variant?: ChatBarVariant; routeConversationId?: string | null } = {}) {
   const navigate = useNavigate();
   const { profile, user } = useAuth();
   const { t } = useLanguage();
+  const tRef = useRef(t);
+  tRef.current = t;
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [loading, setLoading] = useState(true);
+  const [conversations, setConversations] = useState<PrivateConversationRow[]>([]);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const conversationKindByIdRef = useRef<Record<string, string>>({});
+  const [peerMessagingPublicKeyB64, setPeerMessagingPublicKeyB64] = useState<string | null>(null);
+  const [localMessagingSecretKey, setLocalMessagingSecretKey] = useState<Uint8Array | null>(null);
+  const peerMessagingPublicKeyB64Ref = useRef<string | null>(null);
+  const localMessagingSecretKeyRef = useRef<Uint8Array | null>(null);
+  const rawPrivateRowsRef = useRef<PrivateMsgRow[]>([]);
   const [messagingTab, setMessagingTab] = useState<MessagingTab>('chats');
+  const [messageSelectionMode, setMessageSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(() => new Set());
+  const messageLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [savedContacts, setSavedContacts] = useState<SavedContact[]>([]);
   const [contactQuery, setContactQuery] = useState('');
   const [contactResults, setContactResults] = useState<SavedContact[]>([]);
@@ -189,6 +322,7 @@ export function ChatBar({
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const contactSearchInputRef = useRef<HTMLInputElement>(null);
   const callChannelRef = useRef<RealtimeChannel | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -200,21 +334,18 @@ export function ChatBar({
 
   const currentUserName = profile?.full_name || profile?.username || t('chatBar.anonymous');
 
-  const callTargets = useMemo(() => {
-    const byId = new Map<string, string>();
-
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-      const message = messages[index];
-      if (!message.sender_id || message.sender_id === profile?.id) continue;
-      if (byId.has(message.sender_id)) continue;
-      byId.set(
-        message.sender_id,
-        message.sender?.full_name || message.sender?.username || t('chatBar.anonymous')
-      );
+  const conversationCallTargets = useMemo(() => {
+    const out: { id: string; name: string }[] = [];
+    for (const row of conversations) {
+      if (row.kind !== 'direct') continue;
+      if (row.peer_profile_id === NELA_ASSISTANT_PROFILE_ID) continue;
+      out.push({
+        id: row.peer_profile_id,
+        name: row.peer_full_name || row.peer_username || t('chatBar.anonymous'),
+      });
     }
-
-    return Array.from(byId.entries()).map(([id, name]) => ({ id, name }));
-  }, [messages, profile?.id, t]);
+    return out;
+  }, [conversations, t]);
 
   const mergedCallTargets = useMemo(() => {
     const byId = new Map<string, string>();
@@ -225,11 +356,218 @@ export function ChatBar({
         contact.full_name || contact.username || t('chatBar.anonymous')
       );
     }
-    for (const target of callTargets) {
+    for (const target of conversationCallTargets) {
       byId.set(target.id, target.name);
     }
     return Array.from(byId.entries()).map(([id, name]) => ({ id, name }));
-  }, [savedContacts, callTargets, profile?.id, t]);
+  }, [savedContacts, conversationCallTargets, profile?.id, t]);
+
+  const directDmE2eeReady = useMemo(() => {
+    if (!selectedConversationId) return false;
+    const row = conversations.find((c) => c.conversation_id === selectedConversationId);
+    if (!row || row.kind !== 'direct' || row.peer_profile_id === NELA_ASSISTANT_PROFILE_ID) return false;
+    if (!localMessagingSecretKey || localMessagingSecretKey.length !== 32) return false;
+    if (!peerMessagingPublicKeyB64) return false;
+    const peerPk = decodePublicKeyBase64(peerMessagingPublicKeyB64);
+    return Boolean(peerPk && peerPk.length === 32);
+  }, [conversations, selectedConversationId, localMessagingSecretKey, peerMessagingPublicKeyB64]);
+
+  const selectedConversationRow = useMemo(
+    () =>
+      selectedConversationId
+        ? (conversations.find((c) => c.conversation_id === selectedConversationId) ?? null)
+        : null,
+    [conversations, selectedConversationId],
+  );
+
+  const isMessagingPage = variant === 'page';
+  const isMessagingInbox = isMessagingPage && !routeConversationId;
+  const isMessagingThread = isMessagingPage && Boolean(routeConversationId);
+
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  const [lastReadAtByConversation, setLastReadAtByConversation] = useState<Record<string, string>>({});
+  const [favouriteConversationIds, setFavouriteConversationIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (!profile?.id) {
+      setLastReadAtByConversation({});
+      setFavouriteConversationIds(new Set());
+      return;
+    }
+    setLastReadAtByConversation(loadLastReadMap(profile.id));
+    setFavouriteConversationIds(loadFavouriteIdSet(profile.id));
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!isMessagingThread || !routeConversationId || !profile?.id) return;
+    const iso = new Date().toISOString();
+    setLastReadAtByConversation((prev) => {
+      const next = { ...prev, [routeConversationId]: iso };
+      try {
+        window.localStorage.setItem(
+          profileStorageKey(MESSAGING_LAST_READ_PREFIX, profile.id),
+          JSON.stringify(next),
+        );
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, [isMessagingThread, routeConversationId, profile?.id]);
+
+  useEffect(() => {
+    if (!isMessagingPage) return;
+    if (routeConversationId) {
+      setSelectedConversationId(routeConversationId);
+    } else {
+      setSelectedConversationId(null);
+    }
+  }, [isMessagingPage, routeConversationId]);
+
+  useEffect(() => {
+    setMessageSelectionMode(false);
+    setSelectedMessageIds(new Set());
+    if (messageLongPressTimerRef.current !== null) {
+      window.clearTimeout(messageLongPressTimerRef.current);
+      messageLongPressTimerRef.current = null;
+    }
+  }, [selectedConversationId, routeConversationId]);
+
+  useEffect(() => {
+    for (const row of conversations) {
+      conversationKindByIdRef.current[row.conversation_id] = row.kind;
+    }
+  }, [conversations]);
+
+  useEffect(() => {
+    if (!isMessagingThread || !routeConversationId) return;
+    const row = conversations.find((c) => c.conversation_id === routeConversationId);
+    if (row?.kind === 'direct') {
+      setSelectedTargetProfileId(row.peer_profile_id);
+      setSelectedCallScope('direct');
+    }
+  }, [isMessagingThread, routeConversationId, conversations]);
+
+  useEffect(() => {
+    if (isMessagingPage) return;
+    if (!selectedConversationId) {
+      setMessagingTab('chats');
+    }
+  }, [isMessagingPage, selectedConversationId]);
+
+  const openPrivateThread = useCallback(
+    (conversationId: string, peerProfileId?: string | null) => {
+      if (variant === 'page') {
+        navigate(`/messaging/${conversationId}`);
+        return;
+      }
+      setSelectedConversationId(conversationId);
+      if (peerProfileId) {
+        setSelectedTargetProfileId(peerProfileId);
+      }
+    },
+    [variant, navigate],
+  );
+
+  const toggleFavouriteConversation = useCallback(
+    (conversationId: string) => {
+      if (!profile?.id) return;
+      setFavouriteConversationIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(conversationId)) next.delete(conversationId);
+        else next.add(conversationId);
+        try {
+          window.localStorage.setItem(
+            profileStorageKey(MESSAGING_FAVOURITES_PREFIX, profile.id),
+            JSON.stringify([...next]),
+          );
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    },
+    [profile?.id],
+  );
+
+  const nelaListRow = useMemo(
+    () =>
+      conversations.find(
+        (r) => r.kind === 'agent' && r.peer_profile_id === NELA_ASSISTANT_PROFILE_ID,
+      ) ?? null,
+    [conversations],
+  );
+
+  const dmRowsWithoutNela = useMemo(
+    () =>
+      conversations.filter(
+        (row) => !(row.kind === 'agent' && row.peer_profile_id === NELA_ASSISTANT_PROFILE_ID),
+      ),
+    [conversations],
+  );
+
+  const filteredDmRows = useMemo(() => {
+    if (inboxFilter === 'favourites') {
+      return dmRowsWithoutNela.filter((r) => favouriteConversationIds.has(r.conversation_id));
+    }
+    if (inboxFilter === 'unread') {
+      return dmRowsWithoutNela.filter((r) => {
+        if (!r.last_at) return false;
+        const readAt = lastReadAtByConversation[r.conversation_id];
+        if (!readAt) return true;
+        return new Date(r.last_at) > new Date(readAt);
+      });
+    }
+    return dmRowsWithoutNela;
+  }, [dmRowsWithoutNela, inboxFilter, favouriteConversationIds, lastReadAtByConversation]);
+
+  const showNelaPinnedInInbox = useMemo(() => {
+    if (inboxFilter === 'all') return true;
+    if (!nelaListRow) return true;
+    if (inboxFilter === 'favourites') {
+      return favouriteConversationIds.has(nelaListRow.conversation_id);
+    }
+    if (inboxFilter === 'unread') {
+      if (!nelaListRow.last_at) return false;
+      const readAt = lastReadAtByConversation[nelaListRow.conversation_id];
+      if (!readAt) return true;
+      return new Date(nelaListRow.last_at) > new Date(readAt);
+    }
+    return true;
+  }, [inboxFilter, nelaListRow, favouriteConversationIds, lastReadAtByConversation]);
+
+  const threadPeerTitle = useMemo(() => {
+    if (selectedConversationRow) {
+      if (
+        selectedConversationRow.kind === 'agent' &&
+        selectedConversationRow.peer_profile_id === NELA_ASSISTANT_PROFILE_ID
+      ) {
+        return t('chatBar.private.nelaPinnedLabel');
+      }
+      return (
+        selectedConversationRow.peer_full_name ||
+        selectedConversationRow.peer_username ||
+        t('chatBar.anonymous')
+      );
+    }
+    if (routeConversationId) {
+      const k = resolveConversationKind(routeConversationId, conversations, conversationKindByIdRef);
+      if (k === 'agent') {
+        return t('chatBar.private.nelaPinnedLabel');
+      }
+    }
+    return t('chatBar.inbox.threadLoadingTitle');
+  }, [selectedConversationRow, conversations, routeConversationId, t]);
+
+  const isAgentThread = useMemo(() => {
+    if (!routeConversationId) return false;
+    return (
+      resolveConversationKind(routeConversationId, conversations, conversationKindByIdRef) === 'agent'
+    );
+  }, [routeConversationId, conversations]);
+
+  peerMessagingPublicKeyB64Ref.current = peerMessagingPublicKeyB64;
+  localMessagingSecretKeyRef.current = localMessagingSecretKey;
 
   const remoteStreamEntries = useMemo(
     () => Object.entries(remoteStreams),
@@ -314,6 +652,7 @@ export function ChatBar({
           .select('id, username, full_name, avatar_url')
           .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
           .neq('id', profile.id)
+          .neq('id', NELA_ASSISTANT_PROFILE_ID)
           .limit(12);
 
         if (!error && data) {
@@ -330,20 +669,249 @@ export function ChatBar({
 
   useEffect(() => {
     if (!profile?.id) {
+      setLocalMessagingSecretKey(null);
+      return;
+    }
+    let cancelled = false;
+    void getDeviceMessagingSecretKey(profile.id).then((sk) => {
+      if (!cancelled) setLocalMessagingSecretKey(sk);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile?.id || !selectedConversationId) {
+      setPeerMessagingPublicKeyB64(null);
+      return;
+    }
+    const sel = conversations.find((c) => c.conversation_id === selectedConversationId);
+    if (!sel || sel.kind !== 'direct' || sel.peer_profile_id === NELA_ASSISTANT_PROFILE_ID) {
+      setPeerMessagingPublicKeyB64(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('messaging_x25519_public_key')
+        .eq('id', sel.peer_profile_id)
+        .single();
+      if (cancelled) return;
+      if (error || !data?.messaging_x25519_public_key) {
+        setPeerMessagingPublicKeyB64(null);
+        return;
+      }
+      setPeerMessagingPublicKeyB64(String(data.messaging_x25519_public_key));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id, selectedConversationId, conversations]);
+
+  useEffect(() => {
+    if (!rawPrivateRowsRef.current.length) return;
+    setMessages((prev) => {
+      const mapped = rawPrivateRowsRef.current.map((row) =>
+        toDisplayMessage(
+          row,
+          (key) => tRef.current(key),
+          peerMessagingPublicKeyB64Ref.current,
+          localMessagingSecretKeyRef.current,
+        ),
+      );
+      const locals = prev.filter((m) => m.id.startsWith('local-') || m.id.startsWith('failed-'));
+      return [...mapped, ...locals];
+    });
+  }, [peerMessagingPublicKeyB64, localMessagingSecretKey]);
+
+  useEffect(() => {
+    if (!profile?.id) {
+      setConversations([]);
+      setSelectedConversationId(null);
+      setLoading(false);
+      setConversationsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      setConversationsLoading(true);
+      const { data, error } = await supabase.rpc('private_list_my_conversations');
+      if (cancelled) return;
+      if (error) {
+        console.error('ChatBar: list conversations failed', error);
+        const reason = error.message?.trim();
+        toast.error(
+          reason
+            ? tRef.current('chatBar.private.loadFailedWithReason', { reason })
+            : tRef.current('chatBar.private.loadFailed'),
+        );
+        setConversations([]);
+        setConversationsLoading(false);
+        return;
+      }
+
+      let rows = (data ?? []) as PrivateConversationRow[];
+      if (!rows.some((r) => r.kind === 'agent')) {
+        const { error: agentErr } = await supabase.rpc('private_get_or_create_agent_conversation');
+        if (!agentErr) {
+          const { data: again } = await supabase.rpc('private_list_my_conversations');
+          if (!cancelled && again) {
+            rows = again as PrivateConversationRow[];
+          }
+        }
+      }
+
+      if (cancelled) return;
+      for (const r of rows) {
+        conversationKindByIdRef.current[r.conversation_id] = r.kind;
+      }
+      setConversations(rows);
+      if (variant !== 'page') {
+        setSelectedConversationId((prev) => {
+          if (prev && rows.some((r) => r.conversation_id === prev)) return prev;
+          const agent = rows.find((r) => r.kind === 'agent');
+          return agent?.conversation_id ?? rows[0]?.conversation_id ?? null;
+        });
+      }
+      setConversationsLoading(false);
+    })();
+
+    const unsubscribeCallSignals = subscribeToCallSignals();
+
+    return () => {
+      cancelled = true;
+      unsubscribeCallSignals();
+      void hangupActiveCall(false);
+    };
+  }, [profile?.id, variant]);
+
+  useEffect(() => {
+    if (!profile?.id || !selectedConversationId) {
+      setMessages([]);
       setLoading(false);
       return;
     }
 
-    void fetchMessages();
-    const unsubscribeMessages = subscribeToMessages();
-    const unsubscribeCallSignals = subscribeToCallSignals();
+    let cancelled = false;
+    setLoading(true);
+
+    void (async () => {
+      const { data, error } = await supabase
+        .from('private_messages')
+        .select(
+          `
+          id,
+          content,
+          message_kind,
+          cipher_nonce,
+          cipher_text,
+          created_at,
+          sender_id,
+          is_edited,
+          sender:profiles!private_messages_sender_id_fkey(id, username, full_name, avatar_url)
+        `,
+        )
+        .eq('conversation_id', selectedConversationId)
+        .order('created_at', { ascending: true })
+        .limit(200);
+
+      if (cancelled) return;
+      if (error) {
+        console.error('ChatBar: fetch private messages failed', error);
+        rawPrivateRowsRef.current = [];
+        setMessages([]);
+      } else {
+        const rows = (data ?? []) as PrivateMsgRow[];
+        rawPrivateRowsRef.current = rows;
+        setMessages(
+          rows.map((row) =>
+            toDisplayMessage(
+              row,
+              (key) => tRef.current(key),
+              peerMessagingPublicKeyB64Ref.current,
+              localMessagingSecretKeyRef.current,
+            ),
+          ),
+        );
+      }
+      setLoading(false);
+    })();
+
+    const channel = supabase
+      .channel(`private-messages-${selectedConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'private_messages',
+          filter: `conversation_id=eq.${selectedConversationId}`,
+        },
+        (payload) => {
+          const insertedId = (payload.new as { id?: string }).id;
+          if (!insertedId) return;
+          void supabase
+            .from('private_messages')
+            .select(
+              `
+              id,
+              content,
+              message_kind,
+              cipher_nonce,
+              cipher_text,
+              created_at,
+              sender_id,
+              is_edited,
+              sender:profiles!private_messages_sender_id_fkey(id, username, full_name, avatar_url)
+            `,
+            )
+            .eq('id', insertedId)
+            .single()
+            .then(({ data: row }) => {
+              if (!row) return;
+              const pr = row as PrivateMsgRow;
+              if (!rawPrivateRowsRef.current.some((r) => r.id === pr.id)) {
+                rawPrivateRowsRef.current = [...rawPrivateRowsRef.current, pr];
+              }
+              const display = toDisplayMessage(
+                pr,
+                (key) => tRef.current(key),
+                peerMessagingPublicKeyB64Ref.current,
+                localMessagingSecretKeyRef.current,
+              );
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === display.id)) return prev;
+                return [...prev, display];
+              });
+            });
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'private_messages',
+          filter: `conversation_id=eq.${selectedConversationId}`,
+        },
+        (payload) => {
+          const deletedId = (payload.old as { id?: string })?.id;
+          if (!deletedId) return;
+          rawPrivateRowsRef.current = rawPrivateRowsRef.current.filter((r) => r.id !== deletedId);
+          setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+        },
+      )
+      .subscribe();
 
     return () => {
-      unsubscribeMessages();
-      unsubscribeCallSignals();
-      void hangupActiveCall(false);
+      cancelled = true;
+      void supabase.removeChannel(channel);
     };
-  }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.id, selectedConversationId]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -797,72 +1365,6 @@ export function ChatBar({
     };
   };
 
-  const fetchMessages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          sender_id,
-          is_edited,
-          sender:profiles!messages_sender_id_fkey(id, username, full_name, avatar_url)
-        `)
-        .order('created_at', { ascending: true })
-        .limit(50);
-
-      if (error) {
-        console.error('ChatBar: Error fetching messages:', error);
-        setMessages([]);
-      } else {
-        setMessages(data ?? []);
-      }
-    } catch (error) {
-      console.error('ChatBar: Unexpected fetch error:', error);
-      setMessages([]);
-    }
-
-    setLoading(false);
-  };
-
-  const subscribeToMessages = () => {
-    const channel = supabase
-      .channel('messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-          supabase
-            .from('messages')
-            .select(`
-              id,
-              content,
-              created_at,
-              sender_id,
-              is_edited,
-              sender:profiles!messages_sender_id_fkey(id, username, full_name, avatar_url)
-            `)
-            .eq('id', payload.new.id)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                setMessages((prev) => [...prev, data as Message]);
-              }
-            });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  };
-
   const handleSendMessage = (event?: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>) => {
     if (event) {
       event.preventDefault();
@@ -871,6 +1373,11 @@ export function ChatBar({
 
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage) return;
+
+    if (profile?.id && !selectedConversationId) {
+      toast.info(t('chatBar.private.sendingRequiresThread'));
+      return;
+    }
 
     const sender = profile || {
       id: `anonymous-${Date.now()}`,
@@ -904,29 +1411,111 @@ export function ChatBar({
   };
 
   const sendToDatabase = async (messageObj: Message, content: string) => {
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: messageObj.sender_id,
-          content,
-        });
+    if (!profile?.id || !selectedConversationId) return;
 
-      if (error) {
+    const conversationId = selectedConversationId;
+    const activeKind = resolveConversationKind(conversationId, conversations, conversationKindByIdRef);
+    const useE2ee = activeKind === 'direct' && directDmE2eeReady;
+
+    let insertPayload: Record<string, unknown> = {
+      conversation_id: conversationId,
+      sender_id: messageObj.sender_id,
+      content,
+      message_kind: 'plaintext',
+    };
+
+    if (useE2ee && localMessagingSecretKeyRef.current && peerMessagingPublicKeyB64Ref.current) {
+      const peerPk = decodePublicKeyBase64(peerMessagingPublicKeyB64Ref.current);
+      if (peerPk) {
+        const shared = buildSharedEncryptionKey(localMessagingSecretKeyRef.current, peerPk);
+        const enc = encryptUtf8Plaintext(content, shared);
+        insertPayload = {
+          conversation_id: conversationId,
+          sender_id: messageObj.sender_id,
+          content: null,
+          message_kind: 'e2ee_v1',
+          cipher_nonce: enc.nonceB64,
+          cipher_text: enc.cipherB64,
+        };
+      }
+    }
+
+    try {
+      const { data: inserted, error } = await supabase
+        .from('private_messages')
+        .insert(insertPayload)
+        .select(
+          `
+          id,
+          content,
+          message_kind,
+          cipher_nonce,
+          cipher_text,
+          created_at,
+          sender_id,
+          is_edited,
+          sender:profiles!private_messages_sender_id_fkey(id, username, full_name, avatar_url)
+        `,
+        )
+        .single();
+
+      if (error || !inserted) {
+        const reason = error?.message?.trim();
+        toast.error(
+          reason ? t('chatBar.private.sendFailedWithReason', { reason }) : t('chatBar.private.sendFailed'),
+        );
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === messageObj.id ? { ...msg, id: `failed-${msg.id}` } : msg
           )
         );
-      } else {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === messageObj.id ? { ...msg, id: `sent-${Date.now()}` } : msg
-          )
-        );
+        return;
+      }
+
+      const ins = inserted as unknown as PrivateMsgRow;
+      if (!rawPrivateRowsRef.current.some((r) => r.id === ins.id)) {
+        rawPrivateRowsRef.current = [...rawPrivateRowsRef.current, ins];
+      }
+      const display = toDisplayMessage(
+        ins,
+        (key) => t(key),
+        peerMessagingPublicKeyB64Ref.current,
+        localMessagingSecretKeyRef.current,
+      );
+      setMessages((prev) => prev.map((msg) => (msg.id === messageObj.id ? display : msg)));
+
+      const usedE2ee = insertPayload.message_kind === 'e2ee_v1';
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.conversation_id === conversationId
+            ? {
+                ...c,
+                last_content: usedE2ee ? null : content,
+                last_at: display.created_at,
+                last_is_e2ee: usedE2ee,
+              }
+            : c
+        )
+      );
+
+      if (activeKind === 'agent') {
+        void supabase.functions
+          .invoke('messaging-agent-reply', { body: { conversation_id: conversationId } })
+          .then(({ error: fnError }) => {
+            if (fnError) {
+              console.warn('ChatBar: agent reply function failed', fnError);
+              const r = fnError.message?.trim();
+              toast.error(
+                r
+                  ? t('chatBar.private.agentReplyFailedWithReason', { reason: r })
+                  : t('chatBar.private.agentReplyFailed'),
+              );
+            }
+          });
       }
     } catch (error) {
       console.error('ChatBar: send message failed:', error);
+      toast.error(t('chatBar.private.sendFailed'));
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === messageObj.id ? { ...msg, id: `failed-${msg.id}` } : msg
@@ -937,27 +1526,212 @@ export function ChatBar({
 
   const retryMessage = async (messageId: string) => {
     const message = messages.find((candidate) => candidate.id === messageId);
-    if (!message) return;
+    if (!message || !profile?.id || !selectedConversationId) return;
+
+    const activeKind = resolveConversationKind(
+      selectedConversationId,
+      conversations,
+      conversationKindByIdRef,
+    );
+    const useE2ee = activeKind === 'direct' && directDmE2eeReady;
+    let insertPayload: Record<string, unknown> = {
+      conversation_id: selectedConversationId,
+      sender_id: message.sender_id,
+      content: message.content,
+      message_kind: 'plaintext',
+    };
+
+    if (useE2ee && localMessagingSecretKeyRef.current && peerMessagingPublicKeyB64Ref.current) {
+      const peerPk = decodePublicKeyBase64(peerMessagingPublicKeyB64Ref.current);
+      if (peerPk) {
+        const shared = buildSharedEncryptionKey(localMessagingSecretKeyRef.current, peerPk);
+        const enc = encryptUtf8Plaintext(message.content, shared);
+        insertPayload = {
+          conversation_id: selectedConversationId,
+          sender_id: message.sender_id,
+          content: null,
+          message_kind: 'e2ee_v1',
+          cipher_nonce: enc.nonceB64,
+          cipher_text: enc.cipherB64,
+        };
+      }
+    }
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: message.sender_id,
-          content: message.content,
-        });
-
-      if (error) return;
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? { ...msg, id: `sent-${Date.now()}` } : msg
+      const { data: inserted, error } = await supabase
+        .from('private_messages')
+        .insert(insertPayload)
+        .select(
+          `
+          id,
+          content,
+          message_kind,
+          cipher_nonce,
+          cipher_text,
+          created_at,
+          sender_id,
+          is_edited,
+          sender:profiles!private_messages_sender_id_fkey(id, username, full_name, avatar_url)
+        `,
         )
+        .single();
+
+      if (error || !inserted) {
+        const reason = error?.message?.trim();
+        toast.error(
+          reason ? t('chatBar.private.sendFailedWithReason', { reason }) : t('chatBar.private.sendFailed'),
+        );
+        return;
+      }
+
+      const ins = inserted as unknown as PrivateMsgRow;
+      if (!rawPrivateRowsRef.current.some((r) => r.id === ins.id)) {
+        rawPrivateRowsRef.current = [...rawPrivateRowsRef.current, ins];
+      }
+      const display = toDisplayMessage(
+        ins,
+        (key) => t(key),
+        peerMessagingPublicKeyB64Ref.current,
+        localMessagingSecretKeyRef.current,
       );
+      setMessages((prev) => prev.map((msg) => (msg.id === messageId ? display : msg)));
+
+      if (activeKind === 'agent') {
+        void supabase.functions
+          .invoke('messaging-agent-reply', { body: { conversation_id: selectedConversationId } })
+          .then(({ error: fnError }) => {
+            if (fnError) {
+              console.warn('ChatBar: agent reply function failed', fnError);
+              const r = fnError.message?.trim();
+              toast.error(
+                r
+                  ? t('chatBar.private.agentReplyFailedWithReason', { reason: r })
+                  : t('chatBar.private.agentReplyFailed'),
+              );
+            }
+          });
+      }
     } catch (error) {
       console.error('ChatBar: retry failed:', error);
     }
   };
+
+  const clearMessageLongPressTimer = () => {
+    if (messageLongPressTimerRef.current !== null) {
+      window.clearTimeout(messageLongPressTimerRef.current);
+      messageLongPressTimerRef.current = null;
+    }
+  };
+
+  const deleteSelectedMessages = useCallback(async () => {
+    if (!profile?.id || !selectedConversationId) return;
+    const ids = [...selectedMessageIds].filter((id) => !id.startsWith('local-') && !id.startsWith('failed-'));
+    if (!ids.length) {
+      toast.error(tRef.current('chatBar.inbox.deleteSelectedNone'));
+      return;
+    }
+    const { error } = await supabase.from('private_messages').delete().in('id', ids);
+    if (error) {
+      console.error('ChatBar: delete messages failed', error);
+      const reason = error.message?.trim();
+      toast.error(
+        reason
+          ? tRef.current('chatBar.inbox.deleteFailedWithReason', { reason })
+          : tRef.current('chatBar.inbox.deleteFailed'),
+      );
+      return;
+    }
+    rawPrivateRowsRef.current = rawPrivateRowsRef.current.filter((r) => !ids.includes(r.id));
+    setMessages((prev) => prev.filter((m) => !ids.includes(m.id)));
+    setSelectedMessageIds(new Set());
+    setMessageSelectionMode(false);
+    const { data: list } = await supabase.rpc('private_list_my_conversations');
+    if (list) setConversations(list as PrivateConversationRow[]);
+  }, [profile?.id, selectedConversationId, selectedMessageIds]);
+
+  const onMessageRowClick = (messageId: string) => {
+    if (!messageSelectionMode) return;
+    if (messageId.startsWith('local-') || messageId.startsWith('failed-')) return;
+    setSelectedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) next.delete(messageId);
+      else next.add(messageId);
+      return next;
+    });
+  };
+
+  const onMessagePointerDown = (event: React.PointerEvent, messageId: string) => {
+    if (messageSelectionMode) return;
+    if (event.button !== 0) return;
+    if (messageId.startsWith('local-') || messageId.startsWith('failed-')) return;
+    if (event.pointerType !== 'touch') return;
+    clearMessageLongPressTimer();
+    messageLongPressTimerRef.current = window.setTimeout(() => {
+      messageLongPressTimerRef.current = null;
+      setMessageSelectionMode(true);
+      setSelectedMessageIds(new Set([messageId]));
+    }, 550);
+  };
+
+  const openDirectConversation = async (peerProfileId: string) => {
+    if (!profile?.id || peerProfileId === profile.id) return;
+    const { data, error } = await supabase.rpc('private_get_or_create_direct_conversation', {
+      p_other_profile_id: peerProfileId,
+    });
+    if (error || !data) {
+      console.error('ChatBar: open direct conversation failed', error);
+      toast.error(t('chatBar.private.openDmFailed'));
+      return;
+    }
+    const convId = data as string;
+    const { data: list } = await supabase.rpc('private_list_my_conversations');
+    setConversations((list ?? []) as PrivateConversationRow[]);
+    conversationKindByIdRef.current[convId] = 'direct';
+    setSelectedConversationId(convId);
+    setMessagingTab('chats');
+    if (variant === 'page') {
+      navigate(`/messaging/${convId}`);
+    }
+  };
+
+  const openNelaConversation = useCallback(async () => {
+    if (!profile?.id) return;
+    const { data, error } = await supabase.rpc('private_get_or_create_agent_conversation');
+    if (error || data == null) {
+      console.error('ChatBar: open Nela conversation failed', error);
+      const reason = error?.message?.trim();
+      toast.error(
+        reason ? t('chatBar.private.nelaOpenFailedWithReason', { reason }) : t('chatBar.private.nelaOpenFailed'),
+      );
+      return;
+    }
+    const convId = String(data);
+    conversationKindByIdRef.current[convId] = 'agent';
+    setSelectedConversationId(convId);
+    setMessagingTab('chats');
+    setConversations((prev) => {
+      if (prev.some((r) => r.conversation_id === convId)) return prev;
+      const row: PrivateConversationRow = {
+        conversation_id: convId,
+        kind: 'agent',
+        peer_profile_id: NELA_ASSISTANT_PROFILE_ID,
+        peer_username: 'nela',
+        peer_full_name: 'Nela',
+        peer_avatar_url: null,
+        last_content: null,
+        last_at: null,
+        last_is_e2ee: false,
+      };
+      return [row, ...prev];
+    });
+    const { data: list, error: listErr } = await supabase.rpc('private_list_my_conversations');
+    if (!listErr && list?.length) {
+      setConversations(list as PrivateConversationRow[]);
+    }
+    if (variant === 'page') {
+      navigate(`/messaging/${convId}`);
+    }
+  }, [profile?.id, t, variant, navigate]);
 
   const startCall = async (mode: CallMode) => {
     if (!profile?.id) {
@@ -1183,8 +1957,8 @@ export function ChatBar({
     if (!contact.id || contact.id === profile?.id) return;
     if (savedContacts.some((c) => c.id === contact.id)) {
       toast.info(t('chatBar.contacts.alreadyAdded'));
+      void openDirectConversation(contact.id);
       setSelectedTargetProfileId(contact.id);
-      setMessagingTab('calls');
       return;
     }
     const next = [...savedContacts, contact].slice(0, SAVED_CONTACTS_CAP);
@@ -1195,8 +1969,8 @@ export function ChatBar({
       /* ignore storage failures */
     }
     toast.success(t('chatBar.contacts.added'));
+    void openDirectConversation(contact.id);
     setSelectedTargetProfileId(contact.id);
-    setMessagingTab('calls');
   };
 
   const isPage = variant === 'page';
@@ -1266,6 +2040,8 @@ export function ChatBar({
           })}
         </p>
       )}
+
+      <p className="text-[11px] text-muted-foreground leading-snug">{t('chatBar.calls.mediaEncryptionHint')}</p>
     </div>
   );
 
@@ -1273,6 +2049,11 @@ export function ChatBar({
     <div>
       {loading ? (
         <div className="py-4 text-center text-muted-foreground">{t('chatBar.loading')}</div>
+      ) : profile?.id && !selectedConversationId ? (
+        <div className="py-4 text-center text-muted-foreground">
+          <MessageCircle className="mx-auto mb-2 h-8 w-8 opacity-50" />
+          <p>{t('chatBar.private.selectThread')}</p>
+        </div>
       ) : messages.length === 0 ? (
         <div className="py-4 text-center text-muted-foreground">
           <MessageCircle className="mx-auto mb-2 h-8 w-8 opacity-50" />
@@ -1284,14 +2065,36 @@ export function ChatBar({
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-2 ${
+              className={cn(
+                'flex gap-2 rounded-md p-1 -m-1 transition-colors',
+                messageSelectionMode && 'cursor-pointer',
+                messageSelectionMode &&
+                  selectedMessageIds.has(message.id) &&
+                  'bg-primary/10 ring-1 ring-primary/25',
                 message.id.startsWith('failed-')
                   ? 'opacity-60'
                   : message.id.startsWith('local-')
                     ? 'opacity-80'
-                    : ''
-              }`}
+                    : '',
+              )}
+              onClick={() => onMessageRowClick(message.id)}
+              onPointerDown={(e) => onMessagePointerDown(e, message.id)}
+              onPointerUp={clearMessageLongPressTimer}
+              onPointerCancel={clearMessageLongPressTimer}
+              onPointerLeave={(e) => {
+                if (e.pointerType === 'touch') clearMessageLongPressTimer();
+              }}
             >
+              {messageSelectionMode ? (
+                <div className="flex h-8 w-6 shrink-0 items-center justify-center" aria-hidden>
+                  <span
+                    className={cn(
+                      'h-4 w-4 rounded border border-muted-foreground/60',
+                      selectedMessageIds.has(message.id) && 'border-primary bg-primary',
+                    )}
+                  />
+                </div>
+              ) : null}
               <Avatar className="h-8 w-8 flex-shrink-0">
                 <AvatarImage src={message.sender?.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-xs text-primary">
@@ -1314,7 +2117,10 @@ export function ChatBar({
                   {message.id.startsWith('failed-') && (
                     <button
                       type="button"
-                      onClick={() => void retryMessage(message.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void retryMessage(message.id);
+                      }}
                       className="ml-2 text-xs text-destructive underline hover:text-destructive/80"
                     >
                       {t('chatBar.retry')}
@@ -1349,17 +2155,19 @@ export function ChatBar({
               isPage && 'min-h-0 flex-1 overflow-hidden rounded-xl',
             )}
           >
-            <div className="flex items-center justify-between p-3 border-b border-border">
-              <h3 className="font-semibold text-foreground">{t('chatBar.title')}</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsExpanded(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            {!isPage ? (
+              <div className="flex items-center justify-between border-b border-border p-3">
+                <h3 className="font-semibold text-foreground">{t('chatBar.title')}</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : null}
 
             {(callStatus !== 'idle' || incomingCall) && (
               <div className="px-3 py-2 border-b border-border bg-muted/30 space-y-2">
@@ -1499,41 +2307,38 @@ export function ChatBar({
               </div>
             )}
 
-            {showMessagingTabs ? (
-              <Tabs
-                value={messagingTab}
-                onValueChange={(value) => setMessagingTab(value as MessagingTab)}
-                className="flex min-h-0 flex-1 flex-col"
-              >
-                <TabsList className="grid h-12 w-full shrink-0 grid-cols-3 rounded-none border-b border-border bg-muted/15 p-0">
-                  <TabsTrigger
-                    value="chats"
-                    className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
-                  >
-                    <MessageCircle className="h-4 w-4 shrink-0" />
-                    {t('chatBar.tabs.chats')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="calls"
-                    className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
-                  >
-                    <Phone className="h-4 w-4 shrink-0" />
-                    {t('chatBar.tabs.calls')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="video"
-                    className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
-                  >
-                    <Video className="h-4 w-4 shrink-0" />
-                    {t('chatBar.tabs.video')}
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent
-                  value="chats"
-                  className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=inactive]:hidden"
-                >
-                  <div className="shrink-0 space-y-2 border-b border-border bg-muted/10 px-3 py-2">
+            {showMessagingTabs && isMessagingInbox ? (
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-muted/15 px-2 py-2">
+                    {(['all', 'unread', 'favourites'] as const).map((filterKey) => (
+                      <Button
+                        key={filterKey}
+                        type="button"
+                        variant={inboxFilter === filterKey ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-8 shrink-0 rounded-full px-3 text-xs"
+                        onClick={() => setInboxFilter(filterKey)}
+                      >
+                        {filterKey === 'all'
+                          ? t('chatBar.inbox.filterAll')
+                          : filterKey === 'unread'
+                            ? t('chatBar.inbox.filterUnread')
+                            : t('chatBar.inbox.filterFavourites')}
+                      </Button>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto h-8 w-8 shrink-0 rounded-full p-0"
+                      onClick={() => contactSearchInputRef.current?.focus()}
+                      aria-label={t('chatBar.inbox.newChat')}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    <div className="space-y-2 border-b border-border bg-muted/10 px-3 py-2">
                     {!profile?.id ? (
                       <p className="text-xs text-muted-foreground">{t('chatBar.contacts.signInToSearch')}</p>
                     ) : (
@@ -1541,6 +2346,7 @@ export function ChatBar({
                         <div className="relative">
                           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
+                            ref={contactSearchInputRef}
                             type="search"
                             value={contactQuery}
                             onChange={(event) => setContactQuery(event.target.value)}
@@ -1617,8 +2423,8 @@ export function ChatBar({
                                   type="button"
                                   className="rounded-full border border-border bg-background px-2.5 py-1 text-left text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
                                   onClick={() => {
+                                    void openDirectConversation(c.id);
                                     setSelectedTargetProfileId(c.id);
-                                    setMessagingTab('calls');
                                   }}
                                 >
                                   {c.full_name || c.username || t('chatBar.anonymous')}
@@ -1627,13 +2433,498 @@ export function ChatBar({
                             </div>
                           </div>
                         )}
+                        {profile?.id ? (
+                          <div className="rounded-md border border-border bg-background">
+                            <p className="border-b border-border bg-muted/40 px-3 py-1.5 text-[11px] text-muted-foreground">
+                              {t('chatBar.private.conversationsHint')}
+                            </p>
+                            <div className="max-h-[min(40vh,320px)] overflow-y-auto">
+                              {showNelaPinnedInInbox ? (
+                              <button
+                                type="button"
+                                onClick={() => void openNelaConversation()}
+                                className="flex w-full items-center gap-2 border-b border-border px-2 py-2 text-left transition-colors hover:bg-muted/50"
+                              >
+                                <Avatar className="h-9 w-9 shrink-0">
+                                  <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
+                                    N
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-medium text-foreground">
+                                    {t('chatBar.private.nelaPinnedLabel')}
+                                  </p>
+                                </div>
+                              </button>
+                              ) : null}
+                              {conversationsLoading && conversations.length === 0 ? (
+                                <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                                  {t('chatBar.loading')}
+                                </div>
+                              ) : (
+                                <ul className="divide-y divide-border">
+                                  {filteredDmRows.map((row) => (
+                                    <li key={row.conversation_id}>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openPrivateThread(
+                                            row.conversation_id,
+                                            row.kind === 'direct' ? row.peer_profile_id : null,
+                                          )
+                                        }
+                                        className="flex w-full items-center gap-2 px-2 py-2 text-left transition-colors hover:bg-muted/50"
+                                      >
+                                        <Avatar className="h-9 w-9 shrink-0">
+                                          <AvatarImage src={row.peer_avatar_url || undefined} />
+                                          <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                            {getInitials(row.peer_full_name)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-baseline justify-between gap-2">
+                                            <p className="truncate text-sm font-medium text-foreground">
+                                              {row.peer_full_name || row.peer_username || t('chatBar.anonymous')}
+                                            </p>
+                                            {row.last_at ? (
+                                              <span className="shrink-0 text-[10px] text-muted-foreground">
+                                                {formatTime(row.last_at)}
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                          {row.peer_username ? (
+                                            <p className="truncate text-xs text-muted-foreground">@{row.peer_username}</p>
+                                          ) : null}
+                                          {row.last_is_e2ee ? (
+                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                              {t('chatBar.private.encryptedPreview')}
+                                            </p>
+                                          ) : row.last_content ? (
+                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">{row.last_content}</p>
+                                          ) : null}
+                                        </div>
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                    </div>
+                  </div>
+                </div>
+            ) : showMessagingTabs && isMessagingThread ? (
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <div className="flex shrink-0 items-center gap-1 border-b border-border bg-muted/10 px-1 py-2 sm:gap-2 sm:px-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 shrink-0 p-0"
+                      onClick={() => {
+                        if (messageSelectionMode) {
+                          setMessageSelectionMode(false);
+                          setSelectedMessageIds(new Set());
+                          clearMessageLongPressTimer();
+                        } else {
+                          navigate('/messaging');
+                        }
+                      }}
+                      aria-label={
+                        messageSelectionMode
+                          ? t('chatBar.inbox.cancelSelection')
+                          : t('chatBar.inbox.backToChats')
+                      }
+                    >
+                      {messageSelectionMode ? <X className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                    </Button>
+                    {messageSelectionMode ? (
+                      <>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {t('chatBar.inbox.selectionCount', { count: selectedMessageIds.size })}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="h-9 shrink-0 gap-1 px-2"
+                          disabled={selectedMessageIds.size === 0}
+                          onClick={() => void deleteSelectedMessages()}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="hidden text-xs sm:inline">{t('chatBar.inbox.deleteSelected')}</span>
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {selectedConversationRow ? (
+                          <Avatar className="h-9 w-9 shrink-0">
+                            <AvatarImage src={selectedConversationRow.peer_avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                              {selectedConversationRow.kind === 'agent' &&
+                              selectedConversationRow.peer_profile_id === NELA_ASSISTANT_PROFILE_ID
+                                ? 'N'
+                                : getInitials(selectedConversationRow.peer_full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{threadPeerTitle}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 shrink-0 px-2 text-xs"
+                          onClick={() => {
+                            setMessageSelectionMode(true);
+                            setSelectedMessageIds(new Set());
+                          }}
+                        >
+                          {t('chatBar.inbox.selectMessages')}
+                        </Button>
+                        {routeConversationId ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 w-9 shrink-0 p-0"
+                            onClick={() => toggleFavouriteConversation(routeConversationId)}
+                            aria-label={
+                              favouriteConversationIds.has(routeConversationId)
+                                ? t('chatBar.inbox.ariaUnfavouriteThread')
+                                : t('chatBar.inbox.ariaFavouriteThread')
+                            }
+                          >
+                            <Star
+                              className={cn(
+                                'h-4 w-4',
+                                favouriteConversationIds.has(routeConversationId) &&
+                                  'fill-primary text-primary',
+                              )}
+                            />
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 shrink-0 p-0"
+                          disabled={isAgentThread}
+                          title={isAgentThread ? t('chatBar.inbox.agentCallsUnavailable') : undefined}
+                          onClick={() => void startCall('voice')}
+                          aria-label={t('chatBar.inbox.ariaVoiceCall')}
+                        >
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 shrink-0 p-0"
+                          disabled={isAgentThread}
+                          title={isAgentThread ? t('chatBar.inbox.agentCallsUnavailable') : undefined}
+                          onClick={() => void startCall('video')}
+                          aria-label={t('chatBar.inbox.ariaVideoCall')}
+                        >
+                          <Video className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  {directDmE2eeReady ? (
+                    <p className="border-b border-border/60 bg-muted/15 px-3 py-2 text-[11px] text-muted-foreground">
+                      {t('chatBar.private.directE2eeOnHint')}
+                    </p>
+                  ) : null}
+                  <ScrollArea
+                    className={cn('p-3', isPage ? 'min-h-0 flex-1' : 'h-64')}
+                    ref={scrollAreaRef}
+                    hideScrollbar
+                  >
+                    {messageThread}
+                  </ScrollArea>
+                  <div className="shrink-0 border-t border-border p-3">
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={newMessage}
+                        onChange={(event) => setNewMessage(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleSendMessage();
+                          }
+                        }}
+                        placeholder={t('chatBar.placeholder')}
+                        className="flex-1"
+                        maxLength={500}
+                        disabled={messageSelectionMode}
+                      />
+                      <Button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleSendMessage();
+                        }}
+                        disabled={
+                          messageSelectionMode ||
+                          !newMessage.trim() ||
+                          Boolean(profile?.id && (!selectedConversationId || conversationsLoading))
+                        }
+                        className="px-3"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+            ) : showMessagingTabs && variant !== 'page' ? (
+              <Tabs
+                value={messagingTab}
+                onValueChange={(value) => setMessagingTab(value as MessagingTab)}
+                className="flex min-h-0 flex-1 flex-col"
+              >
+                <TabsList className="grid h-12 w-full shrink-0 grid-cols-3 rounded-none border-b border-border bg-muted/15 p-0">
+                    <TabsTrigger
+                      value="chats"
+                      className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
+                    >
+                      <MessageCircle className="h-4 w-4 shrink-0" />
+                      {t('chatBar.tabs.chats')}
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="calls"
+                      className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
+                    >
+                      <Phone className="h-4 w-4 shrink-0" />
+                      {t('chatBar.tabs.calls')}
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="video"
+                      className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
+                    >
+                      <Video className="h-4 w-4 shrink-0" />
+                      {t('chatBar.tabs.video')}
+                    </TabsTrigger>
+                  </TabsList>
+                <TabsContent
+                  value="chats"
+                  className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=inactive]:hidden"
+                >
+                  <div className="shrink-0 space-y-2 border-b border-border bg-muted/10 px-3 py-2">
+                    {!profile?.id ? (
+                      <p className="text-xs text-muted-foreground">{t('chatBar.contacts.signInToSearch')}</p>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            ref={contactSearchInputRef}
+                            type="search"
+                            value={contactQuery}
+                            onChange={(event) => setContactQuery(event.target.value)}
+                            placeholder={t('chatBar.contacts.searchPlaceholder')}
+                            className="h-9 border-border bg-background pl-9"
+                            autoComplete="off"
+                            enterKeyHint="search"
+                          />
+                        </div>
+                        {contactQuery.trim().length >= 2 && (
+                          <div className="max-h-36 overflow-y-auto rounded-md border border-border bg-background">
+                            {contactSearchLoading ? (
+                              <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                                {t('chatBar.loading')}
+                              </div>
+                            ) : contactResults.length === 0 ? (
+                              <p className="px-3 py-2 text-xs text-muted-foreground">
+                                {t('chatBar.contacts.noResults')}
+                              </p>
+                            ) : (
+                              <ul className="divide-y divide-border">
+                                {contactResults.map((row) => (
+                                  <li key={row.id}>
+                                    <div className="flex items-center gap-2 px-2 py-2">
+                                      <Avatar className="h-9 w-9 shrink-0">
+                                        <AvatarImage src={row.avatar_url || undefined} />
+                                        <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                          {getInitials(row.full_name)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium text-foreground">
+                                          {row.full_name || row.username || t('chatBar.anonymous')}
+                                        </p>
+                                        {row.username ? (
+                                          <p className="truncate text-xs text-muted-foreground">@{row.username}</p>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 px-2 text-xs"
+                                          onClick={() => navigate(`/user/${row.id}`)}
+                                        >
+                                          {t('chatBar.contacts.viewProfile')}
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          className="h-8 gap-1 px-2 text-xs"
+                                          onClick={() => addContactFromSearch(row)}
+                                        >
+                                          <UserPlus className="h-3.5 w-3.5" />
+                                          {t('chatBar.contacts.add')}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                        {contactQuery.trim().length < 2 && savedContacts.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">{t('chatBar.contacts.savedHint')}</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {savedContacts.map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  className="rounded-full border border-border bg-background px-2.5 py-1 text-left text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                                  onClick={() => {
+                                    void openDirectConversation(c.id);
+                                    setSelectedTargetProfileId(c.id);
+                                  }}
+                                >
+                                  {c.full_name || c.username || t('chatBar.anonymous')}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {profile?.id ? (
+                          <div className="max-h-44 overflow-hidden rounded-md border border-border bg-background">
+                            <p className="border-b border-border bg-muted/40 px-3 py-1.5 text-[11px] text-muted-foreground">
+                              {t('chatBar.private.conversationsHint')}
+                            </p>
+                            <div className="max-h-36 overflow-y-auto">
+                              <button
+                                type="button"
+                                onClick={() => void openNelaConversation()}
+                                className={cn(
+                                  'flex w-full items-center gap-2 border-b border-border px-2 py-2 text-left transition-colors hover:bg-muted/50',
+                                  selectedConversationRow?.kind === 'agent' &&
+                                    selectedConversationRow.peer_profile_id === NELA_ASSISTANT_PROFILE_ID &&
+                                    'bg-primary/15 ring-2 ring-inset ring-primary/40',
+                                )}
+                              >
+                                <Avatar className="h-9 w-9 shrink-0">
+                                  <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
+                                    N
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-medium text-foreground">
+                                    {t('chatBar.private.nelaPinnedLabel')}
+                                  </p>
+                                </div>
+                              </button>
+                              {conversationsLoading && conversations.length === 0 ? (
+                                <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                                  {t('chatBar.loading')}
+                                </div>
+                              ) : (
+                                <ul className="divide-y divide-border">
+                                  {conversations
+                                    .filter(
+                                      (row) =>
+                                        !(
+                                          row.kind === 'agent' &&
+                                          row.peer_profile_id === NELA_ASSISTANT_PROFILE_ID
+                                        ),
+                                    )
+                                    .map((row) => (
+                                    <li key={row.conversation_id}>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openPrivateThread(
+                                            row.conversation_id,
+                                            row.kind === 'direct' ? row.peer_profile_id : null,
+                                          )
+                                        }
+                                        className={cn(
+                                          'flex w-full items-center gap-2 px-2 py-2 text-left transition-colors hover:bg-muted/50',
+                                          selectedConversationId === row.conversation_id &&
+                                            'bg-primary/15 ring-2 ring-inset ring-primary/40',
+                                        )}
+                                      >
+                                        <Avatar className="h-9 w-9 shrink-0">
+                                          <AvatarImage src={row.peer_avatar_url || undefined} />
+                                          <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                            {getInitials(row.peer_full_name)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-baseline justify-between gap-2">
+                                            <p className="truncate text-sm font-medium text-foreground">
+                                              {row.peer_full_name || row.peer_username || t('chatBar.anonymous')}
+                                            </p>
+                                            {row.last_at ? (
+                                              <span className="shrink-0 text-[10px] text-muted-foreground">
+                                                {formatTime(row.last_at)}
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                          {row.peer_username ? (
+                                            <p className="truncate text-xs text-muted-foreground">@{row.peer_username}</p>
+                                          ) : null}
+                                          {row.last_is_e2ee ? (
+                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                              {t('chatBar.private.encryptedPreview')}
+                                            </p>
+                                          ) : row.last_content ? (
+                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">{row.last_content}</p>
+                                          ) : null}
+                                        </div>
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
                       </>
                     )}
                   </div>
 
+                  {directDmE2eeReady ? (
+                    <p className="border-b border-border/60 bg-muted/15 px-3 py-2 text-[11px] text-muted-foreground">
+                      {t('chatBar.private.directE2eeOnHint')}
+                    </p>
+                  ) : null}
+
                   <ScrollArea
                     className={cn('p-3', isPage ? 'min-h-0 flex-1' : 'h-64')}
                     ref={scrollAreaRef}
+                    hideScrollbar
                   >
                     {messageThread}
                   </ScrollArea>
@@ -1654,6 +2945,7 @@ export function ChatBar({
                         placeholder={t('chatBar.placeholder')}
                         className="flex-1"
                         maxLength={500}
+                        disabled={messageSelectionMode}
                       />
                       <Button
                         type="button"
@@ -1662,7 +2954,11 @@ export function ChatBar({
                           event.stopPropagation();
                           handleSendMessage();
                         }}
-                        disabled={!newMessage.trim()}
+                        disabled={
+                          messageSelectionMode ||
+                          !newMessage.trim() ||
+                          Boolean(profile?.id && (!selectedConversationId || conversationsLoading))
+                        }
                         className="px-3"
                       >
                         <Send className="h-4 w-4" />
