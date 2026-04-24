@@ -1915,6 +1915,21 @@ export const baseTranslations = {
     "placeholder": "Type a message...",
     "retry": "Retry",
     "anonymous": "Anonymous",
+    "tabs": {
+      "chats": "Chats",
+      "calls": "Calls",
+      "video": "Video"
+    },
+    "contacts": {
+      "searchPlaceholder": "Search people by name or username",
+      "add": "Add",
+      "added": "Added to your call list",
+      "alreadyAdded": "Already in your call list",
+      "noResults": "No people found",
+      "signInToSearch": "Sign in to search members",
+      "savedHint": "People you add appear here and in the Calls tab picker.",
+      "viewProfile": "Profile"
+    },
     "calls": {
       "scopeLabel": "Call type",
       "scopeDirect": "1:1",
@@ -1922,6 +1937,7 @@ export const baseTranslations = {
       "targetLabel": "Person",
       "noTargets": "No recent users to call",
       "startVoice": "Voice",
+      "startCall": "Call",
       "startVideo": "Video",
       "signInRequired": "Please sign in to start a call.",
       "finishCurrent": "Finish the current call first.",

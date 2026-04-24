@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send,
@@ -14,6 +15,8 @@ import {
   Camera,
   CameraOff,
   Loader2,
+  Search,
+  UserPlus,
 } from 'lucide-react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -23,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +43,18 @@ interface Message {
     avatar_url: string | null;
   };
 }
+
+interface SavedContact {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
+type MessagingTab = 'chats' | 'calls' | 'video';
+
+const SAVED_MESSAGING_CONTACTS_KEY = 'levela-messaging-saved-contacts-v1';
+const SAVED_CONTACTS_CAP = 40;
 
 type CallMode = 'voice' | 'video';
 type CallScope = 'direct' | 'group';
@@ -149,12 +165,18 @@ export function ChatBar({
   initialExpanded = false,
   variant = 'floating',
 }: { initialExpanded?: boolean; variant?: ChatBarVariant } = {}) {
+  const navigate = useNavigate();
   const { profile, user } = useAuth();
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [loading, setLoading] = useState(true);
+  const [messagingTab, setMessagingTab] = useState<MessagingTab>('chats');
+  const [savedContacts, setSavedContacts] = useState<SavedContact[]>([]);
+  const [contactQuery, setContactQuery] = useState('');
+  const [contactResults, setContactResults] = useState<SavedContact[]>([]);
+  const [contactSearchLoading, setContactSearchLoading] = useState(false);
   const [selectedCallScope, setSelectedCallScope] = useState<CallScope>('direct');
   const [selectedTargetProfileId, setSelectedTargetProfileId] = useState('');
   const [callStatus, setCallStatus] = useState<CallStatus>('idle');
@@ -194,6 +216,21 @@ export function ChatBar({
     return Array.from(byId.entries()).map(([id, name]) => ({ id, name }));
   }, [messages, profile?.id, t]);
 
+  const mergedCallTargets = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const contact of savedContacts) {
+      if (!contact.id || contact.id === profile?.id) continue;
+      byId.set(
+        contact.id,
+        contact.full_name || contact.username || t('chatBar.anonymous')
+      );
+    }
+    for (const target of callTargets) {
+      byId.set(target.id, target.name);
+    }
+    return Array.from(byId.entries()).map(([id, name]) => ({ id, name }));
+  }, [savedContacts, callTargets, profile?.id, t]);
+
   const remoteStreamEntries = useMemo(
     () => Object.entries(remoteStreams),
     [remoteStreams]
@@ -212,17 +249,84 @@ export function ChatBar({
   }, [callStatus]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(SAVED_MESSAGING_CONTACTS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return;
+      const next: SavedContact[] = [];
+      for (const row of parsed) {
+        if (
+          row &&
+          typeof row === 'object' &&
+          'id' in row &&
+          typeof (row as SavedContact).id === 'string'
+        ) {
+          const c = row as SavedContact;
+          next.push({
+            id: c.id,
+            username: c.username ?? null,
+            full_name: c.full_name ?? null,
+            avatar_url: c.avatar_url ?? null,
+          });
+        }
+      }
+      setSavedContacts(next.slice(0, SAVED_CONTACTS_CAP));
+    } catch {
+      /* ignore corrupt storage */
+    }
+  }, []);
+
+  useEffect(() => {
     if (selectedCallScope !== 'direct') return;
-    if (callTargets.length === 0) {
+    if (mergedCallTargets.length === 0) {
       if (selectedTargetProfileId) setSelectedTargetProfileId('');
       return;
     }
 
-    const selectedStillExists = callTargets.some((target) => target.id === selectedTargetProfileId);
+    const selectedStillExists = mergedCallTargets.some(
+      (target) => target.id === selectedTargetProfileId
+    );
     if (!selectedStillExists) {
-      setSelectedTargetProfileId(callTargets[0].id);
+      setSelectedTargetProfileId(mergedCallTargets[0].id);
     }
-  }, [selectedCallScope, callTargets, selectedTargetProfileId]);
+  }, [selectedCallScope, mergedCallTargets, selectedTargetProfileId]);
+
+  useEffect(() => {
+    if (!profile?.id) {
+      setContactResults([]);
+      return;
+    }
+
+    const q = contactQuery.trim();
+    if (q.length < 2) {
+      setContactResults([]);
+      setContactSearchLoading(false);
+      return;
+    }
+
+    setContactSearchLoading(true);
+    const handle = window.setTimeout(() => {
+      void (async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+          .neq('id', profile.id)
+          .limit(12);
+
+        if (!error && data) {
+          setContactResults(data as SavedContact[]);
+        } else {
+          setContactResults([]);
+        }
+        setContactSearchLoading(false);
+      })();
+    }, 300);
+
+    return () => window.clearTimeout(handle);
+  }, [contactQuery, profile?.id]);
 
   useEffect(() => {
     if (!profile?.id) {
@@ -1075,7 +1179,155 @@ export function ChatBar({
     console.log('ChatBar: No user; rendering chat in local-only mode');
   }
 
+  const addContactFromSearch = (contact: SavedContact) => {
+    if (!contact.id || contact.id === profile?.id) return;
+    if (savedContacts.some((c) => c.id === contact.id)) {
+      toast.info(t('chatBar.contacts.alreadyAdded'));
+      setSelectedTargetProfileId(contact.id);
+      setMessagingTab('calls');
+      return;
+    }
+    const next = [...savedContacts, contact].slice(0, SAVED_CONTACTS_CAP);
+    setSavedContacts(next);
+    try {
+      window.localStorage.setItem(SAVED_MESSAGING_CONTACTS_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore storage failures */
+    }
+    toast.success(t('chatBar.contacts.added'));
+    setSelectedTargetProfileId(contact.id);
+    setMessagingTab('calls');
+  };
+
   const isPage = variant === 'page';
+  const showMessagingTabs = callStatus === 'idle' && !incomingCall;
+
+  const callSetupFields = (callKind: 'voice' | 'video') => (
+    <div className="space-y-2 border-b border-border bg-muted/20 px-3 py-3">
+      <div className="flex items-center gap-2">
+        <label className="whitespace-nowrap text-xs text-muted-foreground">
+          {t('chatBar.calls.scopeLabel')}
+        </label>
+        <select
+          className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-xs"
+          value={selectedCallScope}
+          onChange={(event) => setSelectedCallScope(event.target.value as CallScope)}
+          disabled={!profile?.id}
+        >
+          <option value="direct">{t('chatBar.calls.scopeDirect')}</option>
+          <option value="group">{t('chatBar.calls.scopeGroup')}</option>
+        </select>
+      </div>
+
+      {selectedCallScope === 'direct' && (
+        <div className="flex items-center gap-2">
+          <label className="whitespace-nowrap text-xs text-muted-foreground">
+            {t('chatBar.calls.targetLabel')}
+          </label>
+          <select
+            className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-xs"
+            value={selectedTargetProfileId}
+            onChange={(event) => setSelectedTargetProfileId(event.target.value)}
+            disabled={!profile?.id || mergedCallTargets.length === 0}
+          >
+            {mergedCallTargets.length === 0 ? (
+              <option value="">{t('chatBar.calls.noTargets')}</option>
+            ) : (
+              mergedCallTargets.map((target) => (
+                <option key={target.id} value={target.id}>
+                  {target.name}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+      )}
+
+      <Button
+        variant="default"
+        size="default"
+        className="h-10 w-full gap-2"
+        onClick={() => void startCall(callKind === 'voice' ? 'voice' : 'video')}
+        disabled={!canStartCall}
+      >
+        {callKind === 'voice' ? (
+          <Phone className="h-4 w-4 shrink-0" />
+        ) : (
+          <Video className="h-4 w-4 shrink-0" />
+        )}
+        {callKind === 'voice' ? t('chatBar.calls.startCall') : t('chatBar.calls.startVideo')}
+      </Button>
+
+      {selectedCallScope === 'group' && (
+        <p className="text-[11px] text-muted-foreground">
+          {t('chatBar.calls.capHint', {
+            video: GROUP_VIDEO_MAX_PARTICIPANTS,
+            voice: GROUP_VOICE_MAX_PARTICIPANTS,
+          })}
+        </p>
+      )}
+    </div>
+  );
+
+  const messageThread = (
+    <div>
+      {loading ? (
+        <div className="py-4 text-center text-muted-foreground">{t('chatBar.loading')}</div>
+      ) : messages.length === 0 ? (
+        <div className="py-4 text-center text-muted-foreground">
+          <MessageCircle className="mx-auto mb-2 h-8 w-8 opacity-50" />
+          <p>{t('chatBar.emptyTitle')}</p>
+          <p className="text-sm">{t('chatBar.emptySubtitle')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-2 ${
+                message.id.startsWith('failed-')
+                  ? 'opacity-60'
+                  : message.id.startsWith('local-')
+                    ? 'opacity-80'
+                    : ''
+              }`}
+            >
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarImage src={message.sender?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                  {getInitials(message.sender?.full_name)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-baseline gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {message.sender?.full_name || t('chatBar.anonymous')}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatTime(message.created_at)}
+                  </span>
+                </div>
+
+                <p className="break-words text-sm text-foreground">
+                  {message.content}
+                  {message.id.startsWith('failed-') && (
+                    <button
+                      type="button"
+                      onClick={() => void retryMessage(message.id)}
+                      className="ml-2 text-xs text-destructive underline hover:text-destructive/80"
+                    >
+                      {t('chatBar.retry')}
+                    </button>
+                  )}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -1108,81 +1360,6 @@ export function ChatBar({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-
-            {callStatus === 'idle' && (
-              <div className="px-3 py-2 border-b border-border bg-muted/20 space-y-2">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-muted-foreground whitespace-nowrap">
-                    {t('chatBar.calls.scopeLabel')}
-                  </label>
-                  <select
-                    className="h-8 rounded-md border border-border bg-background px-2 text-xs flex-1"
-                    value={selectedCallScope}
-                    onChange={(event) => setSelectedCallScope(event.target.value as CallScope)}
-                    disabled={!profile?.id}
-                  >
-                    <option value="direct">{t('chatBar.calls.scopeDirect')}</option>
-                    <option value="group">{t('chatBar.calls.scopeGroup')}</option>
-                  </select>
-                </div>
-
-                {selectedCallScope === 'direct' && (
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-muted-foreground whitespace-nowrap">
-                      {t('chatBar.calls.targetLabel')}
-                    </label>
-                    <select
-                      className="h-8 rounded-md border border-border bg-background px-2 text-xs flex-1"
-                      value={selectedTargetProfileId}
-                      onChange={(event) => setSelectedTargetProfileId(event.target.value)}
-                      disabled={!profile?.id || callTargets.length === 0}
-                    >
-                      {callTargets.length === 0 ? (
-                        <option value="">{t('chatBar.calls.noTargets')}</option>
-                      ) : (
-                        callTargets.map((target) => (
-                          <option key={target.id} value={target.id}>
-                            {target.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 flex-1"
-                    onClick={() => void startCall('voice')}
-                    disabled={!canStartCall}
-                  >
-                    <Phone className="h-4 w-4 mr-1" />
-                    {t('chatBar.calls.startVoice')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 flex-1"
-                    onClick={() => void startCall('video')}
-                    disabled={!canStartCall}
-                  >
-                    <Video className="h-4 w-4 mr-1" />
-                    {t('chatBar.calls.startVideo')}
-                  </Button>
-                </div>
-
-                {selectedCallScope === 'group' && (
-                  <p className="text-[11px] text-muted-foreground">
-                    {t('chatBar.calls.capHint', {
-                      video: GROUP_VIDEO_MAX_PARTICIPANTS,
-                      voice: GROUP_VOICE_MAX_PARTICIPANTS,
-                    })}
-                  </p>
-                )}
-              </div>
-            )}
 
             {(callStatus !== 'idle' || incomingCall) && (
               <div className="px-3 py-2 border-b border-border bg-muted/30 space-y-2">
@@ -1322,99 +1499,195 @@ export function ChatBar({
               </div>
             )}
 
-            <ScrollArea
-              className={cn('p-3', isPage ? 'min-h-0 flex-1' : 'h-64')}
-              ref={scrollAreaRef}
-            >
-              {loading ? (
-                <div className="text-center text-muted-foreground py-4">
-                  {t('chatBar.loading')}
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="text-center text-muted-foreground py-4">
-                  <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>{t('chatBar.emptyTitle')}</p>
-                  <p className="text-sm">{t('chatBar.emptySubtitle')}</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex gap-2 ${
-                        message.id.startsWith('failed-')
-                          ? 'opacity-60'
-                          : message.id.startsWith('local-')
-                            ? 'opacity-80'
-                            : ''
-                      }`}
-                    >
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <AvatarImage src={message.sender?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {getInitials(message.sender?.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
+            {showMessagingTabs ? (
+              <Tabs
+                value={messagingTab}
+                onValueChange={(value) => setMessagingTab(value as MessagingTab)}
+                className="flex min-h-0 flex-1 flex-col"
+              >
+                <TabsList className="grid h-12 w-full shrink-0 grid-cols-3 rounded-none border-b border-border bg-muted/15 p-0">
+                  <TabsTrigger
+                    value="chats"
+                    className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
+                  >
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    {t('chatBar.tabs.chats')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="calls"
+                    className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
+                  >
+                    <Phone className="h-4 w-4 shrink-0" />
+                    {t('chatBar.tabs.calls')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="video"
+                    className="gap-1.5 rounded-none border-b-2 border-transparent px-1 text-xs font-medium data-[state=active]:border-primary data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-2 sm:text-sm"
+                  >
+                    <Video className="h-4 w-4 shrink-0" />
+                    {t('chatBar.tabs.video')}
+                  </TabsTrigger>
+                </TabsList>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2 mb-1">
-                          <span className="font-medium text-foreground text-sm">
-                            {message.sender?.full_name || t('chatBar.anonymous')}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatTime(message.created_at)}
-                          </span>
-                        </div>
-
-                        <p className="text-sm text-foreground break-words">
-                          {message.content}
-                          {message.id.startsWith('failed-') && (
-                            <button
-                              onClick={() => void retryMessage(message.id)}
-                              className="text-xs text-destructive ml-2 hover:text-destructive/80 underline"
-                            >
-                              {t('chatBar.retry')}
-                            </button>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-
-            <div className="p-3 border-t border-border">
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={newMessage}
-                  onChange={(event) => setNewMessage(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder={t('chatBar.placeholder')}
-                  className="flex-1"
-                  maxLength={500}
-                />
-                <Button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    handleSendMessage();
-                  }}
-                  disabled={!newMessage.trim()}
-                  className="px-3"
+                <TabsContent
+                  value="chats"
+                  className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=inactive]:hidden"
                 >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+                  <div className="shrink-0 space-y-2 border-b border-border bg-muted/10 px-3 py-2">
+                    {!profile?.id ? (
+                      <p className="text-xs text-muted-foreground">{t('chatBar.contacts.signInToSearch')}</p>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            type="search"
+                            value={contactQuery}
+                            onChange={(event) => setContactQuery(event.target.value)}
+                            placeholder={t('chatBar.contacts.searchPlaceholder')}
+                            className="h-9 border-border bg-background pl-9"
+                            autoComplete="off"
+                            enterKeyHint="search"
+                          />
+                        </div>
+                        {contactQuery.trim().length >= 2 && (
+                          <div className="max-h-36 overflow-y-auto rounded-md border border-border bg-background">
+                            {contactSearchLoading ? (
+                              <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                                {t('chatBar.loading')}
+                              </div>
+                            ) : contactResults.length === 0 ? (
+                              <p className="px-3 py-2 text-xs text-muted-foreground">
+                                {t('chatBar.contacts.noResults')}
+                              </p>
+                            ) : (
+                              <ul className="divide-y divide-border">
+                                {contactResults.map((row) => (
+                                  <li key={row.id}>
+                                    <div className="flex items-center gap-2 px-2 py-2">
+                                      <Avatar className="h-9 w-9 shrink-0">
+                                        <AvatarImage src={row.avatar_url || undefined} />
+                                        <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                          {getInitials(row.full_name)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium text-foreground">
+                                          {row.full_name || row.username || t('chatBar.anonymous')}
+                                        </p>
+                                        {row.username ? (
+                                          <p className="truncate text-xs text-muted-foreground">@{row.username}</p>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 px-2 text-xs"
+                                          onClick={() => navigate(`/user/${row.id}`)}
+                                        >
+                                          {t('chatBar.contacts.viewProfile')}
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          className="h-8 gap-1 px-2 text-xs"
+                                          onClick={() => addContactFromSearch(row)}
+                                        >
+                                          <UserPlus className="h-3.5 w-3.5" />
+                                          {t('chatBar.contacts.add')}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                        {contactQuery.trim().length < 2 && savedContacts.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">{t('chatBar.contacts.savedHint')}</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {savedContacts.map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  className="rounded-full border border-border bg-background px-2.5 py-1 text-left text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                                  onClick={() => {
+                                    setSelectedTargetProfileId(c.id);
+                                    setMessagingTab('calls');
+                                  }}
+                                >
+                                  {c.full_name || c.username || t('chatBar.anonymous')}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <ScrollArea
+                    className={cn('p-3', isPage ? 'min-h-0 flex-1' : 'h-64')}
+                    ref={scrollAreaRef}
+                  >
+                    {messageThread}
+                  </ScrollArea>
+
+                  <div className="shrink-0 border-t border-border p-3">
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={newMessage}
+                        onChange={(event) => setNewMessage(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleSendMessage();
+                          }
+                        }}
+                        placeholder={t('chatBar.placeholder')}
+                        className="flex-1"
+                        maxLength={500}
+                      />
+                      <Button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleSendMessage();
+                        }}
+                        disabled={!newMessage.trim()}
+                        className="px-3"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent
+                  value="calls"
+                  className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=inactive]:hidden"
+                >
+                  {callSetupFields('voice')}
+                </TabsContent>
+
+                <TabsContent
+                  value="video"
+                  className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=inactive]:hidden"
+                >
+                  {callSetupFields('video')}
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="min-h-0 flex-1" />
+            )}
           </motion.div>
         ) : (
           <motion.div
