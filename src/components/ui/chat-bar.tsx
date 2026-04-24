@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;
@@ -142,7 +143,12 @@ function MediaAudio({ stream }: { stream: MediaStream }) {
   return <audio ref={ref} autoPlay />;
 }
 
-export function ChatBar({ initialExpanded = false }: { initialExpanded?: boolean } = {}) {
+export type ChatBarVariant = 'floating' | 'page';
+
+export function ChatBar({
+  initialExpanded = false,
+  variant = 'floating',
+}: { initialExpanded?: boolean; variant?: ChatBarVariant } = {}) {
   const { profile, user } = useAuth();
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1069,15 +1075,27 @@ export function ChatBar({ initialExpanded = false }: { initialExpanded?: boolean
     console.log('ChatBar: No user; rendering chat in local-only mode');
   }
 
+  const isPage = variant === 'page';
+
   return (
-    <div className="fixed bottom-28 right-4 z-40 max-w-md w-full">
+    <div
+      className={cn(
+        'w-full',
+        isPage
+          ? 'relative z-30 flex min-h-0 flex-1 flex-col'
+          : 'fixed bottom-28 right-4 z-40 max-w-md',
+      )}
+    >
       <AnimatePresence>
         {isExpanded ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-background border border-border rounded-lg shadow-glow w-full"
+            className={cn(
+              'flex w-full flex-col bg-background border border-border rounded-lg shadow-glow',
+              isPage && 'min-h-0 flex-1 overflow-hidden rounded-xl',
+            )}
           >
             <div className="flex items-center justify-between p-3 border-b border-border">
               <h3 className="font-semibold text-foreground">{t('chatBar.title')}</h3>
@@ -1304,7 +1322,10 @@ export function ChatBar({ initialExpanded = false }: { initialExpanded?: boolean
               </div>
             )}
 
-            <ScrollArea className="h-64 p-3" ref={scrollAreaRef}>
+            <ScrollArea
+              className={cn('p-3', isPage ? 'min-h-0 flex-1' : 'h-64')}
+              ref={scrollAreaRef}
+            >
               {loading ? (
                 <div className="text-center text-muted-foreground py-4">
                   {t('chatBar.loading')}
@@ -1400,7 +1421,7 @@ export function ChatBar({ initialExpanded = false }: { initialExpanded?: boolean
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="flex justify-end"
+            className={cn('flex justify-end', isPage && 'min-h-0 flex-1 flex-col justify-end')}
           >
             <Button
               onClick={() => setIsExpanded(true)}
