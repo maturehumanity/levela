@@ -99,8 +99,10 @@ async function bootstrapApp() {
 
     const appModule = await import("./App.tsx");
     const App = appModule.default;
-    createRoot(rootElement).render(<App />);
+    // Signal boot progress before first paint so the HTML watchdog does not fire
+    // while React commits a large tree on slow phones.
     markBootReady();
+    createRoot(rootElement).render(<App />);
 
     try {
       window.sessionStorage.removeItem(BOOT_RECOVERY_SESSION_KEY);

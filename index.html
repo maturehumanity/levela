@@ -48,8 +48,18 @@
           }
         }
 
+        var bootWatchdogMs = 60000;
+        var bootTimeoutId = window.setTimeout(function () {
+          if (!bootComplete) {
+            renderFallback(
+              'The first launch after an update can take up to a minute on slower devices and connections. If this message stays, reload once or reinstall the latest APK from the website.',
+            );
+          }
+        }, bootWatchdogMs);
+
         window.__LEVELA_BOOT_READY__ = function () {
           bootComplete = true;
+          window.clearTimeout(bootTimeoutId);
         };
 
         window.addEventListener(
@@ -62,12 +72,6 @@
           },
           true
         );
-
-        window.setTimeout(function () {
-          if (!bootComplete) {
-            renderFallback('Startup timed out after the update. Please reload once.');
-          }
-        }, 10000);
       })();
     </script>
   </head>
