@@ -29,6 +29,16 @@ describe('governance-signing', () => {
     ).toBe('{"a":{"c":["x",{"x":1,"y":2}],"d":true},"z":1}');
   });
 
+  it('stableStringify omits undefined object entries and handles primitives', () => {
+    expect(stableStringify({ b: 1, a: undefined })).toBe('{"b":1}');
+    expect(stableStringify([1, 2, 3])).toBe('[1,2,3]');
+    expect(stableStringify(true)).toBe('true');
+    expect(stableStringify(null)).toBe('null');
+    expect(stableStringify({})).toBe('{}');
+    expect(stableStringify({ nested: {}, z: 0 })).toBe('{"nested":{},"z":0}');
+    expect(stableStringify(42)).toBe('42');
+  });
+
   it('produces the same hash for equivalent payloads with different key order', async () => {
     const left = await hashGovernanceIntent({
       actorProfileId: 'profile-1',

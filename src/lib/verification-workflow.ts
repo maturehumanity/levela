@@ -3,6 +3,115 @@ import type { Database } from '@/integrations/supabase/types';
 export type IdentityVerificationCaseStatus = Database['public']['Enums']['identity_verification_case_status'];
 export type IdentityVerificationDecision = Database['public']['Enums']['identity_verification_decision'];
 
+export type GovernanceHubIdentityVerificationCasePick = Pick<
+  Database['public']['Tables']['identity_verification_cases']['Row'],
+  'status' | 'personal_info_completed' | 'contact_info_completed' | 'live_verification_completed'
+>;
+
+export type GovernanceHubIdentityVerificationPresentation = {
+  badgeStatus: IdentityVerificationCaseStatus;
+  /** When set, prefer this hub-specific label over `getVerificationCaseStatusLabelKey`. */
+  badgeLabelKey?: string;
+  bodyKey: string;
+  checklistKeys: string[];
+  ctaLabelKey: string;
+};
+
+export function resolveGovernanceHubIdentityVerificationPresentation(args: {
+  isVerified: boolean;
+  caseRow: GovernanceHubIdentityVerificationCasePick | null;
+}): GovernanceHubIdentityVerificationPresentation {
+  const { isVerified, caseRow } = args;
+
+  if (isVerified) {
+    return {
+      badgeStatus: 'approved',
+      badgeLabelKey: 'governanceHub.identityVerification.badgeVerified',
+      bodyKey: 'governanceHub.identityVerification.verifiedBody',
+      checklistKeys: [],
+      ctaLabelKey: 'governanceHub.identityVerification.ctaReviewProfile',
+    };
+  }
+
+  if (!caseRow) {
+    return {
+      badgeStatus: 'draft',
+      badgeLabelKey: 'governanceHub.identityVerification.badgeNotStarted',
+      bodyKey: 'governanceHub.identityVerification.noCaseBody',
+      checklistKeys: [],
+      ctaLabelKey: 'governanceHub.identityVerification.ctaStartInProfile',
+    };
+  }
+
+  const { status, personal_info_completed, contact_info_completed, live_verification_completed } = caseRow;
+
+  if (status === 'approved') {
+    return {
+      badgeStatus: 'in_review',
+      badgeLabelKey: 'governanceHub.identityVerification.badgeFinishingUp',
+      bodyKey: 'governanceHub.identityVerification.approvedPendingProfileBody',
+      checklistKeys: [],
+      ctaLabelKey: 'governanceHub.identityVerification.ctaViewStatusInProfile',
+    };
+  }
+
+  if (status === 'draft') {
+    const checklistKeys: string[] = [];
+    if (!personal_info_completed) {
+      checklistKeys.push('governanceHub.identityVerification.checklist.personal');
+    }
+    if (!contact_info_completed) {
+      checklistKeys.push('governanceHub.identityVerification.checklist.contact');
+    }
+    if (!live_verification_completed) {
+      checklistKeys.push('governanceHub.identityVerification.checklist.live');
+    }
+
+    return {
+      badgeStatus: 'draft',
+      bodyKey: checklistKeys.length
+        ? 'governanceHub.identityVerification.draftIncompleteBody'
+        : 'governanceHub.identityVerification.draftReadyBody',
+      checklistKeys,
+      ctaLabelKey: 'governanceHub.identityVerification.ctaContinueInProfile',
+    };
+  }
+
+  if (status === 'submitted' || status === 'in_review') {
+    return {
+      badgeStatus: status,
+      bodyKey: 'governanceHub.identityVerification.underReviewBody',
+      checklistKeys: [],
+      ctaLabelKey: 'governanceHub.identityVerification.ctaViewStatusInProfile',
+    };
+  }
+
+  if (status === 'rejected') {
+    return {
+      badgeStatus: 'rejected',
+      bodyKey: 'governanceHub.identityVerification.rejectedBody',
+      checklistKeys: [],
+      ctaLabelKey: 'governanceHub.identityVerification.ctaReviewInProfile',
+    };
+  }
+
+  if (status === 'revoked') {
+    return {
+      badgeStatus: 'revoked',
+      bodyKey: 'governanceHub.identityVerification.revokedBody',
+      checklistKeys: [],
+      ctaLabelKey: 'governanceHub.identityVerification.ctaReviewInProfile',
+    };
+  }
+
+  return {
+    badgeStatus: status,
+    bodyKey: 'governanceHub.identityVerification.genericBody',
+    checklistKeys: [],
+    ctaLabelKey: 'governanceHub.identityVerification.ctaReviewProfile',
+  };
+}
+
 export function getVerificationCaseStatusLabelKey(status: IdentityVerificationCaseStatus) {
   switch (status) {
     case 'submitted':

@@ -336,9 +336,9 @@ export default function Law() {
     }
 
     const nextEntries = buildLawEntries(
-      (sourcesResult.data || []) as LawSourceRow[],
-      (sectionsResult.data || []) as LawSectionRow[],
-      (articlesResult.data || []) as LawArticleRow[],
+      sourcesResult.data ?? [],
+      sectionsResult.data ?? [],
+      articlesResult.data ?? [],
     );
 
     setEntries(nextEntries.length ? nextEntries : toFallbackEntries());
@@ -395,8 +395,8 @@ export default function Law() {
       return;
     }
 
-    setMyContributions((contributionsResult.data || []) as ContributionListItem[]);
-    const reviewerItems = (reviewResult.data || []) as ContributionListItem[];
+    setMyContributions(contributionsResult.data ?? []);
+    const reviewerItems = reviewResult.data ?? [];
     setReviewQueue(reviewerItems.filter((item) => item.status === 'pending'));
     setReviewHistory(reviewerItems.filter((item) => item.status !== 'pending'));
     setContributionsLoading(false);
@@ -621,15 +621,20 @@ export default function Law() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-4"
+          className="flex items-start justify-between gap-4"
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Scale className="h-7 w-7" />
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Scale className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-display font-bold text-foreground">{t('law.title')}</h1>
+              <p className="text-base text-muted-foreground">{t('law.subtitle')}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">{t('law.title')}</h1>
-            <p className="text-base text-muted-foreground">{t('law.subtitle')}</p>
-          </div>
+          <Button type="button" size="icon" variant="outline" className="h-9 w-9" onClick={() => navigate('/search?tab=all')} aria-label={t('common.search')}>
+            <Search className="h-4 w-4" />
+          </Button>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>

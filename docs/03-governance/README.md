@@ -14,3 +14,5 @@ Current draft governance set:
 - `governance-permission-model-v0.1.md`
 - `country-activation-framework-v0.1.md`
 - `advisory-high-council-model-v0.1.md`
+- `specialist-network-framework-v0.1.md`
+- `levela-constitutional-tokenomics-governance.md`

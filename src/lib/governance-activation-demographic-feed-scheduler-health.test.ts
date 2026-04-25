@@ -63,6 +63,31 @@ describe('computeActivationFeedSchedulerCronRunHealthBadge', () => {
     });
     expect(badge?.label).toBe('Latest cron run failed');
   });
+
+  it('surfaces missing cron run timestamps when the job is registered and active', () => {
+    const badge = computeActivationFeedSchedulerCronRunHealthBadge({
+      status: {
+        ...base,
+        latest_cron_run_started_at: null,
+      },
+      nowMs: Date.parse('2026-01-01T01:00:00.000Z'),
+      staleAfterMs: 60 * 60 * 1000,
+    });
+    expect(badge?.label).toBe('No cron run recorded');
+  });
+
+  it('treats an in-progress cron status as higher priority than staleness', () => {
+    const badge = computeActivationFeedSchedulerCronRunHealthBadge({
+      status: {
+        ...base,
+        latest_cron_run_started_at: '2026-01-01T00:00:00.000Z',
+        latest_cron_run_status: 'running',
+      },
+      nowMs: Date.parse('2026-01-01T05:00:00.000Z'),
+      staleAfterMs: 60 * 60 * 1000,
+    });
+    expect(badge?.label).toBe('Cron run in progress');
+  });
 });
 
 describe('formatApproxStaleDurationMs', () => {
@@ -77,6 +102,23 @@ describe('formatApproxStaleDurationMs', () => {
 
   it('uses singular minute for a one-minute window', () => {
     expect(formatApproxStaleDurationMs(60 * 1000)).toBe('1 minute');
+  });
+
+  it('collapses non-positive or non-finite inputs', () => {
+    expect(formatApproxStaleDurationMs(0)).toBe('less than a minute');
+    expect(formatApproxStaleDurationMs(-5 * 60 * 1000)).toBe('less than a minute');
+    expect(formatApproxStaleDurationMs(Number.NaN)).toBe('less than a minute');
+  });
+
+  it('uses day-based wording for very long windows', () => {
+    expect(formatApproxStaleDurationMs(24 * 60 * 60 * 1000)).toBe('1 day');
+    expect(formatApproxStaleDurationMs(48 * 60 * 60 * 1000)).toBe('2 days');
+  });
+
+  it('uses the two-hour boundary for hours versus minutes', () => {
+    expect(formatApproxStaleDurationMs(120 * 60 * 1000)).toBe('2 hours');
+    expect(formatApproxStaleDurationMs(119 * 60 * 1000)).toBe('119 minutes');
+    expect(formatApproxStaleDurationMs(60 * 60 * 1000)).toBe('1 hour');
   });
 });
 
@@ -105,6 +147,24 @@ describe('computeActivationFeedSchedulerEnqueueHealthBadge', () => {
     const badge = computeActivationFeedSchedulerEnqueueHealthBadge({
       latestScheduledEnqueueAt: '2026-01-01T00:00:00.000Z',
       nowMs: Date.parse('2026-01-01T00:30:00.000Z'),
+      staleAfterMs: 60 * 60 * 1000,
+    });
+    expect(badge?.label).toBe('Schedule enqueue is fresh');
+  });
+
+  it('surfaces missing enqueue timestamps before freshness checks', () => {
+    const badge = computeActivationFeedSchedulerEnqueueHealthBadge({
+      latestScheduledEnqueueAt: null,
+      nowMs: Date.parse('2026-01-01T12:00:00.000Z'),
+      staleAfterMs: 60 * 60 * 1000,
+    });
+    expect(badge?.label).toBe('No schedule enqueue observed');
+  });
+
+  it('treats unparseable enqueue timestamps as fresh (no stale comparison)', () => {
+    const badge = computeActivationFeedSchedulerEnqueueHealthBadge({
+      latestScheduledEnqueueAt: 'not-a-timestamp',
+      nowMs: Date.parse('2026-01-01T12:00:00.000Z'),
       staleAfterMs: 60 * 60 * 1000,
     });
     expect(badge?.label).toBe('Schedule enqueue is fresh');

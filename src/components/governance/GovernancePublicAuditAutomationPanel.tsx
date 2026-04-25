@@ -48,6 +48,7 @@ export function GovernancePublicAuditAutomationPanel({
     externalExecutionPolicy,
     externalExecutionPagingSummary,
     externalExecutionPages,
+    externalExecutionAutomationStatus,
     loadAutomationData,
     registerAnchorAdapter,
     recordImmutableAnchor,
@@ -125,7 +126,52 @@ export function GovernancePublicAuditAutomationPanel({
             Open pages {externalExecutionPagingSummary.openPageCount}
           </Badge>
         )}
+        {externalExecutionAutomationStatus && (
+          <Badge
+            variant="outline"
+            className={
+              externalExecutionAutomationStatus.cronSchemaAvailable
+                && externalExecutionAutomationStatus.cronJobRegistered
+                && externalExecutionAutomationStatus.cronJobActive
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+            }
+          >
+            Automation cron {
+              externalExecutionAutomationStatus.cronSchemaAvailable
+                && externalExecutionAutomationStatus.cronJobRegistered
+                && externalExecutionAutomationStatus.cronJobActive
+                ? 'healthy'
+                : 'needs attention'
+            }
+          </Badge>
+        )}
       </div>
+
+      {externalExecutionAutomationStatus && (
+        <div className="mt-2 grid gap-2 lg:grid-cols-3">
+          <div className="rounded-lg border border-border/60 bg-background/70 p-2.5 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Automation runtime</p>
+            <p className="mt-1">pg_cron schema: {externalExecutionAutomationStatus.cronSchemaAvailable ? 'available' : 'missing'}</p>
+            <p>Cron job: {externalExecutionAutomationStatus.cronJobRegistered ? 'registered' : 'not registered'}</p>
+            <p>Job active: {externalExecutionAutomationStatus.cronJobActive ? 'yes' : 'no'}</p>
+            <p>Schedule: {externalExecutionAutomationStatus.cronJobSchedule ?? 'n/a'}</p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-background/70 p-2.5 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Latest automation cycle</p>
+            <p className="mt-1">Batch: {externalExecutionAutomationStatus.latestBatchId ?? 'n/a'}</p>
+            <p>Cycle evaluated: {formatTimestamp(externalExecutionAutomationStatus.latestCycleEvaluatedAt)}</p>
+            <p>Anchor jobs scheduled: {externalExecutionAutomationStatus.latestCycleAnchorJobsScheduled}</p>
+            <p>Verifier jobs scheduled: {externalExecutionAutomationStatus.latestCycleVerifierJobsScheduled}</p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-background/70 p-2.5 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Latest observed activity</p>
+            <p className="mt-1">Anchor job scheduled: {formatTimestamp(externalExecutionAutomationStatus.latestAnchorJobScheduledAt)}</p>
+            <p>Verifier job scheduled: {formatTimestamp(externalExecutionAutomationStatus.latestVerifierJobScheduledAt)}</p>
+            <p>SLA page opened: {formatTimestamp(externalExecutionAutomationStatus.latestExternalExecutionPageOpenedAt)}</p>
+          </div>
+        </div>
+      )}
 
       {operationsSlaSummary && (
         <div className="mt-3 grid gap-2 lg:grid-cols-3">

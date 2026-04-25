@@ -234,3 +234,72 @@ export interface GovernancePublicAuditVerifierFederationPackageSignatureRow {
   signerJurisdictionCountryCode: string | null;
   signedAt: string | null;
 }
+
+export interface GovernancePublicAuditVerifierFederationExchangeAttestationSummary {
+  batchId: string | null;
+  lookbackHours: number;
+  attestationCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  needsFollowupCount: number;
+  distinctOperatorCount: number;
+  distinctExternalOperatorCount: number;
+  receiptEvidenceCount: number;
+  receiptVerifiedCount: number;
+  receiptPendingVerificationCount: number;
+  latestAttestedAt: string | null;
+}
+
+export interface GovernancePublicAuditVerifierFederationExchangeAttestationRow {
+  attestationId: string;
+  packageId: string;
+  batchId: string;
+  packageHash: string;
+  operatorLabel: string;
+  operatorIdentityUri: string | null;
+  operatorTrustDomain: string;
+  operatorJurisdictionCountryCode: string | null;
+  exchangeChannel: string;
+  attestationVerdict: 'accepted' | 'rejected' | 'needs_followup' | 'unknown';
+  attestationNotes: string | null;
+  attestationMetadata: Record<string, unknown> | null;
+  receiptPayload: Record<string, unknown> | null;
+  receiptSignature: string | null;
+  receiptSignerKey: string | null;
+  receiptSignatureAlgorithm: string | null;
+  receiptVerified: boolean;
+  receiptVerifiedAt: string | null;
+  receiptVerificationNotes: string | null;
+  receiptVerifiedBy: string | null;
+  receiptVerifiedByName: string | null;
+  attestedBy: string | null;
+  attestedByName: string | null;
+  attestedAt: string | null;
+}
+
+export interface GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary {
+  policyKey: string;
+  policyName: string;
+  lookbackHours: number;
+  warningPendingThreshold: number;
+  criticalPendingThreshold: number;
+  escalationEnabled: boolean;
+  oncallChannel: string;
+  receiptMaxVerificationAgeHours: number;
+  criticalStaleReceiptCountThreshold: number;
+  metadata: Record<string, unknown> | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  updatedByName: string | null;
+}
+
+export interface GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow {
+  eventId: string;
+  policyKey: string;
+  eventType: 'created' | 'updated' | 'rollback' | 'unknown';
+  actorProfileId: string | null;
+  actorName: string | null;
+  eventMessage: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string | null;
+}

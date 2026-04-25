@@ -17,16 +17,17 @@ import {
   CURRENT_ANDROID_RELEASE_LABEL,
   formatReleaseLabel,
   isAndroidUpdateAvailable,
-  isAndroidUpdateManifest,
   shouldPromptForAndroidUpdate,
   type AndroidUpdateManifest,
 } from '@/lib/app-updates';
+import { loadManifestForUserUpdateChannel } from '@/lib/android-update-manifest';
 import { canUseExternalAndroidApkUpdates, DISTRIBUTION_CHANNEL } from '@/lib/distribution';
-import { getAndroidUpdateScriptUrl } from '@/lib/downloads';
-import type { AppUpdateChannel } from '@/lib/update-channel';
-import { getAppUpdateChannel, onAppUpdateChannelChange } from '@/lib/update-channel';
+import { getAppUpdateChannel, type AppUpdateChannel } from '@/lib/update-channel';
 
-const DISMISSED_ANDROID_RELEASE_KEY = 'levela-dismissed-android-release';
+const DISMISSED_ANDROID_KEYS: Record<AppUpdateChannel, string> = {
+  release: 'levela-dismissed-android-release',
+  testing: 'levela-dismissed-android-testing',
+};
 const PENDING_ANDROID_RELEASE_KEY = 'levela-pending-android-release';
 const UPDATE_INSTALL_GRACE_PERIOD_MS = 20 * 60 * 1000;
 const STORAGE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 60;
@@ -34,9 +35,11 @@ const STORAGE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 60;
 type PendingAndroidRelease = {
   releaseId: string;
   startedAt: number;
+  channel: AppUpdateChannel;
 };
 
 let dismissedReleaseMemory: string | null = null;
+let dismissedTestingMemory: string | null = null;
 let pendingReleaseMemory: PendingAndroidRelease | null = null;
 let promptedReleaseMemory: string | null = null;
 
@@ -114,23 +117,29 @@ function removeStorageItem(key: string) {
   }
 }
 
-function getDismissedReleaseId() {
-  const stored = readStorageItem(DISMISSED_ANDROID_RELEASE_KEY);
+function getDismissedReleaseId(channel: AppUpdateChannel) {
+  const key = DISMISSED_ANDROID_KEYS[channel];
+  const stored = readStorageItem(key);
   if (stored) {
-    dismissedReleaseMemory = stored;
+    if (channel === 'release') dismissedReleaseMemory = stored;
+    else dismissedTestingMemory = stored;
     return stored;
   }
-  return dismissedReleaseMemory;
+  return channel === 'release' ? dismissedReleaseMemory : dismissedTestingMemory;
 }
 
-function acknowledgeRelease(releaseId: string) {
-  dismissedReleaseMemory = releaseId;
-  writeStorageItem(DISMISSED_ANDROID_RELEASE_KEY, releaseId);
+function acknowledgeRelease(releaseId: string, channel: AppUpdateChannel) {
+  const key = DISMISSED_ANDROID_KEYS[channel];
+  if (channel === 'release') dismissedReleaseMemory = releaseId;
+  else dismissedTestingMemory = releaseId;
+  writeStorageItem(key, releaseId);
 }
 
-function clearAcknowledgedRelease() {
-  dismissedReleaseMemory = null;
-  removeStorageItem(DISMISSED_ANDROID_RELEASE_KEY);
+function clearAcknowledgedRelease(channel: AppUpdateChannel) {
+  const key = DISMISSED_ANDROID_KEYS[channel];
+  if (channel === 'release') dismissedReleaseMemory = null;
+  else dismissedTestingMemory = null;
+  removeStorageItem(key);
 }
 
 function getPendingRelease(): PendingAndroidRelease | null {
@@ -143,12 +152,18 @@ function getPendingRelease(): PendingAndroidRelease | null {
 
   try {
     const parsed = JSON.parse(source) as Partial<PendingAndroidRelease>;
-    if (typeof parsed.releaseId !== 'string' || typeof parsed.startedAt !== 'number') {
+    if (
+      typeof parsed.releaseId !== 'string'
+      || typeof parsed.startedAt !== 'number'
+      || (parsed.channel !== 'release' && parsed.channel !== 'testing')
+    ) {
+      clearPendingRelease();
       return null;
     }
     pendingReleaseMemory = {
       releaseId: parsed.releaseId,
       startedAt: parsed.startedAt,
+      channel: parsed.channel,
     };
     return pendingReleaseMemory;
   } catch {
@@ -156,10 +171,11 @@ function getPendingRelease(): PendingAndroidRelease | null {
   }
 }
 
-function markReleaseAsInstalling(releaseId: string) {
+function markReleaseAsInstalling(releaseId: string, channel: AppUpdateChannel) {
   pendingReleaseMemory = {
     releaseId,
     startedAt: Date.now(),
+    channel,
   };
   writeStorageItem(PENDING_ANDROID_RELEASE_KEY, JSON.stringify(pendingReleaseMemory));
 }
@@ -169,39 +185,13 @@ function clearPendingRelease() {
   removeStorageItem(PENDING_ANDROID_RELEASE_KEY);
 }
 
-function loadRemoteManifest(channel: AppUpdateChannel) {
-  return new Promise<unknown>((resolve, reject) => {
-    const script = document.createElement('script');
-    const scriptUrl = new URL(getAndroidUpdateScriptUrl(channel));
-    const updateWindow = window as typeof window & {
-      __LEVELA_ANDROID_UPDATE__?: unknown;
-    };
-
-    delete updateWindow.__LEVELA_ANDROID_UPDATE__;
-
-    scriptUrl.searchParams.set('ts', Date.now().toString());
-    script.src = scriptUrl.toString();
-    script.async = true;
-
-    script.onload = () => {
-      resolve(updateWindow.__LEVELA_ANDROID_UPDATE__);
-      script.remove();
-    };
-
-    script.onerror = () => {
-      script.remove();
-      reject(new Error('Could not load the Android update manifest.'));
-    };
-
-    document.head.appendChild(script);
-  });
-}
-
 export function AppUpdatePrompt() {
   const { t } = useLanguage();
-  const [availableUpdate, setAvailableUpdate] = useState<AndroidUpdateManifest | null>(null);
+  const [availableUpdate, setAvailableUpdate] = useState<{
+    manifest: AndroidUpdateManifest;
+    channel: AppUpdateChannel;
+  } | null>(null);
   const [isLaunchingUpdate, setIsLaunchingUpdate] = useState(false);
-  const [appUpdateChannel, setAppUpdateChannel] = useState(getAppUpdateChannel);
   const updateLaunchLockRef = useRef(false);
   const releaseLaunchTimeoutRef = useRef<number | null>(null);
   const allowsExternalAndroidApkUpdates = useMemo(
@@ -214,23 +204,24 @@ export function AppUpdatePrompt() {
   );
   const shouldUseExternalApkPrompt = isAndroidNativeApp && allowsExternalAndroidApkUpdates;
 
-  useEffect(() => onAppUpdateChannelChange(setAppUpdateChannel), []);
-
   const checkForUpdates = useCallback(async () => {
     if (!shouldUseExternalApkPrompt) {
       return;
     }
 
     try {
-      const manifest = await loadRemoteManifest(appUpdateChannel);
+      const channel = getAppUpdateChannel();
+      const manifest = await loadManifestForUserUpdateChannel();
 
-      if (!isAndroidUpdateManifest(manifest)) {
+      if (!manifest) {
         return;
       }
 
       const pendingRelease = getPendingRelease();
       if (pendingRelease) {
-        const stillInstallingSameRelease = pendingRelease.releaseId === manifest.releaseId
+        const stillInstallingSameRelease =
+          pendingRelease.channel === channel
+          && pendingRelease.releaseId === manifest.releaseId
           && Date.now() - pendingRelease.startedAt < UPDATE_INSTALL_GRACE_PERIOD_MS;
 
         if (stillInstallingSameRelease) {
@@ -241,20 +232,21 @@ export function AppUpdatePrompt() {
         clearPendingRelease();
       }
 
-      const dismissedReleaseId = getDismissedReleaseId();
+      const dismissedReleaseId = getDismissedReleaseId(channel);
       const updateAvailable = isAndroidUpdateAvailable(CURRENT_ANDROID_RELEASE, manifest);
 
       if (updateAvailable && shouldPromptForAndroidUpdate(CURRENT_ANDROID_RELEASE, manifest, dismissedReleaseId)) {
-        if (promptedReleaseMemory === manifest.releaseId) {
+        const promptedKey = `${channel}:${manifest.releaseId}`;
+        if (promptedReleaseMemory === promptedKey) {
           return;
         }
-        promptedReleaseMemory = manifest.releaseId;
-        setAvailableUpdate(manifest);
+        promptedReleaseMemory = promptedKey;
+        setAvailableUpdate({ manifest, channel });
         return;
       }
 
       if (!updateAvailable && dismissedReleaseId === manifest.releaseId) {
-        clearAcknowledgedRelease();
+        clearAcknowledgedRelease(channel);
       }
 
       if (!updateAvailable) {
@@ -265,7 +257,7 @@ export function AppUpdatePrompt() {
     } catch {
       // Ignore update check failures so offline use remains unaffected.
     }
-  }, [appUpdateChannel, shouldUseExternalApkPrompt]);
+  }, [shouldUseExternalApkPrompt]);
 
   useEffect(() => {
     if (!shouldUseExternalApkPrompt) {
@@ -304,8 +296,8 @@ export function AppUpdatePrompt() {
   }
 
   const handleLater = () => {
-    acknowledgeRelease(availableUpdate.releaseId);
-    promptedReleaseMemory = availableUpdate.releaseId;
+    acknowledgeRelease(availableUpdate.manifest.releaseId, availableUpdate.channel);
+    promptedReleaseMemory = `${availableUpdate.channel}:${availableUpdate.manifest.releaseId}`;
     setAvailableUpdate(null);
   };
 
@@ -315,14 +307,14 @@ export function AppUpdatePrompt() {
     setIsLaunchingUpdate(true);
 
     // Suppress repeated prompts for the same release while install flow is in progress.
-    acknowledgeRelease(availableUpdate.releaseId);
-    markReleaseAsInstalling(availableUpdate.releaseId);
-    promptedReleaseMemory = availableUpdate.releaseId;
+    acknowledgeRelease(availableUpdate.manifest.releaseId, availableUpdate.channel);
+    markReleaseAsInstalling(availableUpdate.manifest.releaseId, availableUpdate.channel);
+    promptedReleaseMemory = `${availableUpdate.channel}:${availableUpdate.manifest.releaseId}`;
 
     // On Android WebView, window.open can still return null even when it already launched
     // the external downloader, causing a second fallback navigation and duplicate prompts.
     // Use a single navigation path to avoid double download flows.
-    const downloadUrl = new URL(availableUpdate.downloadUrl);
+    const downloadUrl = new URL(availableUpdate.manifest.downloadUrl);
     downloadUrl.searchParams.set('install_attempt', Date.now().toString());
     window.location.assign(downloadUrl.toString());
 
@@ -342,41 +334,14 @@ export function AppUpdatePrompt() {
           <AlertDialogTitle>{t('appUpdate.title')}</AlertDialogTitle>
           <AlertDialogDescription>
             {t('appUpdate.description', {
-              latestVersion: formatReleaseLabel(availableUpdate.version, availableUpdate.buildNumber),
+              latestVersion: formatReleaseLabel(
+                availableUpdate.manifest.version,
+                availableUpdate.manifest.buildNumber,
+              ),
               currentVersion: CURRENT_ANDROID_RELEASE_LABEL,
             })}
           </AlertDialogDescription>
         </AlertDialogHeader>
-
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{t('appUpdate.body')}</p>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-foreground">{t('appUpdate.currentVersion')}</span>
-              <span className="text-muted-foreground">{CURRENT_ANDROID_RELEASE_LABEL}</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <span className="font-medium text-foreground">{t('appUpdate.latestVersion')}</span>
-              <span className="text-muted-foreground">
-                {formatReleaseLabel(availableUpdate.version, availableUpdate.buildNumber)}
-              </span>
-            </div>
-          </div>
-
-          {availableUpdate.notes && availableUpdate.notes.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">{t('appUpdate.releaseNotes')}</p>
-              <ul className="space-y-2 pl-5 text-sm text-muted-foreground">
-                {availableUpdate.notes.map((note) => (
-                  <li key={note} className="list-disc">
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={handleLater} disabled={isLaunchingUpdate}>

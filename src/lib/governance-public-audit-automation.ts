@@ -82,6 +82,21 @@ export interface GovernancePublicAuditExternalExecutionPagingSummary {
   latestOpenPageAt: string | null;
 }
 
+export interface GovernancePublicAuditExternalExecutionAutomationStatus {
+  cronSchemaAvailable: boolean;
+  cronJobRegistered: boolean;
+  cronJobActive: boolean;
+  cronJobSchedule: string | null;
+  cronJobCommand: string | null;
+  latestBatchId: string | null;
+  latestCycleAnchorJobsScheduled: number;
+  latestCycleVerifierJobsScheduled: number;
+  latestCycleEvaluatedAt: string | null;
+  latestAnchorJobScheduledAt: string | null;
+  latestVerifierJobScheduledAt: string | null;
+  latestExternalExecutionPageOpenedAt: string | null;
+}
+
 export interface GovernancePublicAuditExternalExecutionPageBoardRow {
   pageId: string;
   batchId: string | null;
@@ -284,6 +299,27 @@ export function readGovernancePublicAuditExternalExecutionPagingSummary(rows: un
   };
 }
 
+export function readGovernancePublicAuditExternalExecutionAutomationStatus(rows: unknown): GovernancePublicAuditExternalExecutionAutomationStatus | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  return {
+    cronSchemaAvailable: asBoolean(row.cron_schema_available, false),
+    cronJobRegistered: asBoolean(row.cron_job_registered, false),
+    cronJobActive: asBoolean(row.cron_job_active, false),
+    cronJobSchedule: asNullableString(row.cron_job_schedule),
+    cronJobCommand: asNullableString(row.cron_job_command),
+    latestBatchId: asNullableString(row.latest_batch_id),
+    latestCycleAnchorJobsScheduled: asNonNegativeInteger(row.latest_cycle_anchor_jobs_scheduled),
+    latestCycleVerifierJobsScheduled: asNonNegativeInteger(row.latest_cycle_verifier_jobs_scheduled),
+    latestCycleEvaluatedAt: asNullableString(row.latest_cycle_evaluated_at),
+    latestAnchorJobScheduledAt: asNullableString(row.latest_anchor_job_scheduled_at),
+    latestVerifierJobScheduledAt: asNullableString(row.latest_verifier_job_scheduled_at),
+    latestExternalExecutionPageOpenedAt: asNullableString(row.latest_external_execution_page_opened_at),
+  };
+}
+
 export function readGovernancePublicAuditExternalExecutionPageBoardRows(rows: unknown): GovernancePublicAuditExternalExecutionPageBoardRow[] {
   if (!Array.isArray(rows)) return [];
 
@@ -383,6 +419,7 @@ export function isMissingPublicAuditAutomationBackend(error: { code?: string | n
     || message.includes('claim_governance_public_audit_external_execution_jobs')
     || message.includes('governance_public_audit_external_execution_paging_summary')
     || message.includes('governance_public_audit_external_execution_page_board')
+    || message.includes('governance_public_audit_external_execution_automation_status')
     || message.includes('resolve_governance_public_audit_external_execution_page')
     || message.includes('current_profile_can_manage_public_audit_verifiers')
   );

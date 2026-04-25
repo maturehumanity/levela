@@ -156,7 +156,7 @@ export function UsersAdminDesktopTable({
                     {canLoginAsFromAdmin && (
                       <Button variant="ghost" size="sm" className={cn('gap-2', isCurrentUser && 'opacity-40')} onClick={() => onLoginAsUser(user)} disabled={isCurrentUser || switchingUserId === user.id}>
                         {switchingUserId === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-                        {t('admin.users.loginAsUser')}
+                        Request emergency access
                       </Button>
                     )}
                   </div>

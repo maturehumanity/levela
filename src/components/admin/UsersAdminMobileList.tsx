@@ -182,7 +182,7 @@ export function UsersAdminMobileList({
                   {user.is_verified ? <BadgeX className="h-4 w-4" /> : <BadgeCheck className="h-4 w-4" />}
                 </Button>
                 {canLoginAsFromAdmin && (
-                  <Button variant="ghost" size="icon" className="h-9 w-9 border border-border/70 bg-background/60 hover:border-border hover:bg-accent/70" onClick={(event) => { event.stopPropagation(); onLoginAsUser(user); }} disabled={isCurrentUser || loginBusy} aria-label={t('admin.users.loginAsUser')} title={isCurrentUser ? t('admin.users.cannotEditSelf') : t('admin.users.loginAsUser')}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 border border-border/70 bg-background/60 hover:border-border hover:bg-accent/70" onClick={(event) => { event.stopPropagation(); onLoginAsUser(user); }} disabled={isCurrentUser || loginBusy} aria-label="Request emergency access" title={isCurrentUser ? t('admin.users.cannotEditSelf') : 'Request emergency access'}>
                     {loginBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
                   </Button>
                 )}
@@ -209,7 +209,7 @@ export function UsersAdminMobileList({
                   {canLoginAsFromAdmin && (
                     <Button variant="ghost" size="sm" className="w-full gap-2" onClick={(event) => { event.stopPropagation(); onLoginAsUser(user); }} disabled={isCurrentUser || loginBusy}>
                       {loginBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-                      {t('admin.users.loginAsUser')}
+                      Request emergency access
                     </Button>
                   )}
                 </div>

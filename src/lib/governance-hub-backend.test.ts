@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { isMissingGovernanceProposalBackend, isMissingGovernanceSanctionsBackend } from '@/lib/governance-hub-backend';
+import {
+  isMissingGovernanceProposalBackend,
+  isMissingGovernanceSanctionsBackend,
+  isMissingIdentityVerificationCasesBackend,
+} from '@/lib/governance-hub-backend';
 
 describe('governance-hub-backend', () => {
   describe('isMissingGovernanceProposalBackend', () => {
@@ -36,6 +40,30 @@ describe('governance-hub-backend', () => {
           details: null,
         }),
       ).toBe(true);
+
+      expect(
+        isMissingGovernanceProposalBackend({
+          code: 'PGRST202',
+          message: 'Could not find the function public.governance_proposal_vote_tally',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingGovernanceProposalBackend({
+          code: null,
+          message: 'relation "governance_proposal_votes" does not exist',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingGovernanceProposalBackend({
+          code: null,
+          message: null,
+          details: 'hint: check governance_execution_units migration',
+        }),
+      ).toBe(true);
     });
 
     it('returns false for null or unrelated errors', () => {
@@ -67,6 +95,22 @@ describe('governance-hub-backend', () => {
           details: null,
         }),
       ).toBe(true);
+
+      expect(
+        isMissingGovernanceSanctionsBackend({
+          code: 'PGRST202',
+          message: 'Could not find the function public.list_governance_sanctions',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingGovernanceSanctionsBackend({
+          code: null,
+          message: '',
+          details: 'GOVERNANCE_SANCTION_APPEALS row missing',
+        }),
+      ).toBe(true);
     });
 
     it('returns false for null or unrelated errors', () => {
@@ -75,6 +119,37 @@ describe('governance-hub-backend', () => {
         isMissingGovernanceSanctionsBackend({
           code: '22023',
           message: 'invalid input syntax',
+          details: null,
+        }),
+      ).toBe(false);
+    });
+  });
+
+  describe('isMissingIdentityVerificationCasesBackend', () => {
+    it('detects missing identity verification case storage', () => {
+      expect(
+        isMissingIdentityVerificationCasesBackend({
+          code: '42P01',
+          message: 'relation "identity_verification_cases" does not exist',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingIdentityVerificationCasesBackend({
+          code: 'PGRST205',
+          message: 'Could not find the table public.identity_verification_cases in the schema cache',
+          details: null,
+        }),
+      ).toBe(true);
+    });
+
+    it('returns false for null or unrelated errors', () => {
+      expect(isMissingIdentityVerificationCasesBackend(null)).toBe(false);
+      expect(
+        isMissingIdentityVerificationCasesBackend({
+          code: '42501',
+          message: 'permission denied for table profiles',
           details: null,
         }),
       ).toBe(false);

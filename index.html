@@ -22,6 +22,25 @@
     <script>
       (function () {
         var bootComplete = false;
+        var bootFailureReason = 'unknown';
+        var BOOT_FAILURE_REPORT_KEY = 'levela-last-boot-failure';
+
+        function rememberBootFailure(reason) {
+          try {
+            var payload = {
+              reason: reason || 'unknown',
+              at: new Date().toISOString(),
+              href: window.location.href,
+            };
+            window.localStorage.setItem(BOOT_FAILURE_REPORT_KEY, JSON.stringify(payload));
+          } catch (_error) {
+            // Ignore storage failures.
+          }
+        }
+
+        function getInstallStableLabel() {
+          return 'Install stable build';
+        }
 
         function renderFallback(message) {
           var root = document.getElementById('root');
@@ -35,7 +54,11 @@
             '<div style="width:100%;max-width:540px;border:1px solid rgba(88,117,146,.35);border-radius:24px;background:rgba(10,22,34,.92);padding:20px;">' +
             '<h1 style="margin:0 0 8px 0;font-size:24px;line-height:1.2;">Levela could not start</h1>' +
             '<p style="margin:0 0 14px 0;font-size:14px;line-height:1.5;color:#aac2da;">' + message + '</p>' +
+            '<p style="margin:0 0 14px 0;font-size:13px;line-height:1.5;color:#93adc6;">If this is a bad testing build, install the stable production build and reopen the app.</p>' +
+            '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
             '<button id="levela-boot-reload" type="button" style="height:40px;border:0;border-radius:12px;background:#34d1c6;color:#02151f;font-weight:600;padding:0 16px;cursor:pointer;">Reload app</button>' +
+            '<button id="levela-boot-stable" type="button" style="height:40px;border:1px solid rgba(88,117,146,.5);border-radius:12px;background:transparent;color:#e8f2ff;font-weight:600;padding:0 16px;cursor:pointer;">' + getInstallStableLabel() + '</button>' +
+            '</div>' +
             '</div></div>';
 
           var button = document.getElementById('levela-boot-reload');
@@ -46,11 +69,36 @@
               window.location.replace(url.toString());
             });
           }
+
+          var stableButton = document.getElementById('levela-boot-stable');
+          if (stableButton) {
+            stableButton.addEventListener('click', function () {
+              var fallbackUrl = '/downloads/levela-debug.apk';
+              var withTs = fallbackUrl + '?boot_fallback=' + Date.now();
+
+              fetch('/updates/android-release.json?ts=' + Date.now(), { cache: 'no-store' })
+                .then(function (response) {
+                  if (!response.ok) return null;
+                  return response.json();
+                })
+                .then(function (manifest) {
+                  var url = manifest && typeof manifest.downloadUrl === 'string'
+                    ? manifest.downloadUrl
+                    : withTs;
+                  window.location.assign(url);
+                })
+                .catch(function () {
+                  window.location.assign(withTs);
+                });
+            });
+          }
         }
 
         var bootWatchdogMs = 60000;
         var bootTimeoutId = window.setTimeout(function () {
           if (!bootComplete) {
+            bootFailureReason = 'boot-timeout';
+            rememberBootFailure(bootFailureReason);
             renderFallback(
               'The first launch after an update can take up to a minute on slower devices and connections. If this message stays, reload once or reinstall the latest APK from the website.',
             );
@@ -66,6 +114,12 @@
           'error',
           function (event) {
             var target = event && event.target;
+            if (event instanceof ErrorEvent && !bootComplete) {
+              bootFailureReason = 'runtime-error';
+              rememberBootFailure(bootFailureReason);
+              renderFallback('The testing build crashed before startup finished.');
+              return;
+            }
             // Only treat as a failed script *fetch* — runtime ErrorEvents also
             // bubble with target sometimes pointing at the script element, and
             // must not be mistaken for a missing bundle.
@@ -74,6 +128,8 @@
               target.tagName === 'SCRIPT' &&
               !(event instanceof ErrorEvent)
             ) {
+              bootFailureReason = 'script-load-failure';
+              rememberBootFailure(bootFailureReason);
               renderFallback('A required app script did not load.');
             }
           },

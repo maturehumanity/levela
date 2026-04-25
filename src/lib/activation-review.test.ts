@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { isActivationScopeDeclared } from '@/lib/activation-review';
 
 describe('activation review helpers', () => {
+  it('treats null and undefined reviews as not declared', () => {
+    expect(isActivationScopeDeclared(null)).toBe(false);
+    expect(isActivationScopeDeclared(undefined)).toBe(false);
+  });
+
   it('treats only activated reviews with declaration timestamps as declared', () => {
     expect(
       isActivationScopeDeclared({

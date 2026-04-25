@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import {
   isMissingPublicAuditAnchoringBackend,
   readGovernancePublicAuditChainStatus,
@@ -25,7 +27,31 @@ describe('governance-public-audit helpers', () => {
     });
   });
 
+  it('preserves optional invalid batch id strings on otherwise valid chain payloads', () => {
+    const parsed = readGovernancePublicAuditChainStatus({
+      checked_batch_count: 2,
+      link_valid: false,
+      hash_valid: true,
+      valid: false,
+      first_invalid_link_batch_id: 'batch-trouble',
+      first_invalid_hash_batch_id: null,
+    } as never);
+
+    expect(parsed).toEqual({
+      checkedBatchCount: 2,
+      linkValid: false,
+      hashValid: true,
+      valid: false,
+      firstInvalidLinkBatchId: 'batch-trouble',
+      firstInvalidHashBatchId: null,
+    });
+  });
+
   it('returns null for malformed chain payloads', () => {
+    expect(readGovernancePublicAuditChainStatus(null)).toBeNull();
+    expect(readGovernancePublicAuditChainStatus(undefined)).toBeNull();
+    expect(readGovernancePublicAuditChainStatus([] as never)).toBeNull();
+
     expect(
       readGovernancePublicAuditChainStatus({
         checked_batch_count: '7',
@@ -34,6 +60,44 @@ describe('governance-public-audit helpers', () => {
         valid: true,
       } as never),
     ).toBeNull();
+
+    expect(
+      readGovernancePublicAuditChainStatus({
+        checked_batch_count: -1,
+        link_valid: true,
+        hash_valid: true,
+        valid: true,
+      } as never),
+    ).toBeNull();
+
+    expect(
+      readGovernancePublicAuditChainStatus({
+        checked_batch_count: 3,
+        link_valid: 'true',
+        hash_valid: true,
+        valid: true,
+      } as never),
+    ).toBeNull();
+  });
+
+  it('floors fractional checked batch counts when parsing chain payloads', () => {
+    expect(
+      readGovernancePublicAuditChainStatus({
+        checked_batch_count: 4.9,
+        link_valid: true,
+        hash_valid: true,
+        valid: true,
+        first_invalid_link_batch_id: null,
+        first_invalid_hash_batch_id: null,
+      } as never),
+    ).toEqual({
+      checkedBatchCount: 4,
+      linkValid: true,
+      hashValid: true,
+      valid: true,
+      firstInvalidLinkBatchId: null,
+      firstInvalidHashBatchId: null,
+    });
   });
 
   it('summarizes batch metadata for UI cards', () => {
@@ -49,6 +113,46 @@ describe('governance-public-audit helpers', () => {
       eventCount: 4,
       hashPreview: 'abcdef012345...23456789',
     });
+  });
+
+  it('treats anchoring as incomplete unless both timestamp and reference are present', () => {
+    const hash = 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789';
+    expect(
+      summarizeGovernancePublicAuditBatch({
+        batch_hash: hash,
+        event_count: 1,
+        anchored_at: '2026-04-20T12:00:00Z',
+        anchor_reference: null,
+      } as never).anchored,
+    ).toBe(false);
+    expect(
+      summarizeGovernancePublicAuditBatch({
+        batch_hash: hash,
+        event_count: 1,
+        anchored_at: null,
+        anchor_reference: 'ipfs://bafyexample',
+      } as never).anchored,
+    ).toBe(false);
+  });
+
+  it('clamps event counts to non-negative integers', () => {
+    const hash = 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789';
+    expect(
+      summarizeGovernancePublicAuditBatch({
+        batch_hash: hash,
+        event_count: -2.7,
+        anchored_at: null,
+        anchor_reference: null,
+      } as never).eventCount,
+    ).toBe(0);
+    expect(
+      summarizeGovernancePublicAuditBatch({
+        batch_hash: hash,
+        event_count: 2.9,
+        anchored_at: null,
+        anchor_reference: null,
+      } as never).eventCount,
+    ).toBe(2);
   });
 
   it('detects missing anchoring backend from PostgREST codes', () => {
@@ -77,6 +181,24 @@ describe('governance-public-audit helpers', () => {
         code: null,
         message: 'relation "governance_public_audit_batches" does not exist',
         details: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('detects missing anchoring backend when messages reference other audit tables', () => {
+    expect(
+      isMissingPublicAuditAnchoringBackend({
+        code: null,
+        message: 'relation "governance_public_audit_events" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingPublicAuditAnchoringBackend({
+        code: null,
+        message: null,
+        details: 'timeout calling verify_governance_public_audit_chain',
       }),
     ).toBe(true);
   });

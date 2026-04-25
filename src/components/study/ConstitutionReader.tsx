@@ -132,12 +132,14 @@ type ConstitutionReaderProps = {
   mode?: 'full' | 'summary' | 'articles';
   bookmarkedKeys?: Set<string>;
   onToggleArticleBookmark?: (articleId: string, articleHeading: string) => void;
+  searchQuery?: string;
 };
 
 export function ConstitutionReader({
   mode = 'full',
   bookmarkedKeys,
   onToggleArticleBookmark,
+  searchQuery = '',
 }: ConstitutionReaderProps) {
   const parsedSections = useMemo(
     () =>
@@ -154,6 +156,45 @@ export function ConstitutionReader({
     () => parsedSections.filter((section) => section.kind === 'article'),
     [parsedSections],
   );
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const articleMatches = useMemo(() => {
+    if (!normalizedQuery) return new Map<string, string[]>();
+
+    const stripMarkdown = (text: string) =>
+      text
+        .replace(/\r\n/g, '\n')
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/^\s*[-*+]\s+/gm, '')
+        .replace(/^\s*\d+\.\s+/gm, '')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const splitIntoSentences = (text: string) =>
+      text
+        .split(/(?<=[.!?])\s+/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean);
+
+    const nextMatches = new Map<string, string[]>();
+    articleSections.forEach((section) => {
+      const sentences = splitIntoSentences(stripMarkdown(section.markdown))
+        .filter((sentence) => sentence.toLowerCase().includes(normalizedQuery))
+        .slice(0, 4);
+      if (sentences.length > 0) {
+        nextMatches.set(section.id, sentences);
+      }
+    });
+    return nextMatches;
+  }, [articleSections, normalizedQuery]);
+  const visibleArticleSections = useMemo(
+    () => (normalizedQuery ? articleSections.filter((section) => articleMatches.has(section.id)) : articleSections),
+    [articleMatches, articleSections, normalizedQuery],
+  );
   const [openArticleId, setOpenArticleId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -169,6 +210,20 @@ export function ConstitutionReader({
       setOpenArticleId(null);
     }
   }, [articleSections, openArticleId]);
+
+  useEffect(() => {
+    if (!normalizedQuery) return;
+    if (visibleArticleSections.length === 0) {
+      setOpenArticleId(null);
+      return;
+    }
+    setOpenArticleId((current) => {
+      if (current && visibleArticleSections.some((section) => section.id === current)) {
+        return current;
+      }
+      return visibleArticleSections[0].id;
+    });
+  }, [normalizedQuery, visibleArticleSections]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -250,12 +305,33 @@ export function ConstitutionReader({
     });
 
   if (mode === 'articles') {
+    const renderHighlightedQuery = (sentence: string) => {
+      if (!normalizedQuery) return sentence;
+      const escapedQuery = normalizedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const parts = sentence.split(new RegExp(`(${escapedQuery})`, 'gi'));
+      return parts.map((part, index) => {
+        if (part.toLowerCase() === normalizedQuery) {
+          return (
+            <mark key={`${part}-${index}`} className="rounded bg-primary/20 px-1 text-foreground">
+              {part}
+            </mark>
+          );
+        }
+        return <span key={`${part}-${index}`}>{part}</span>;
+      });
+    };
+
     return (
       <Card className="border-border/70 bg-card/95 p-4 shadow-sm">
         <div className="space-y-2">
-          {articleSections.map((section) => {
+          {visibleArticleSections.length === 0 && normalizedQuery ? (
+            <p className="px-1 py-2 text-sm text-muted-foreground">
+              No constitution articles contain this exact keyword or phrase.
+            </p>
+          ) : visibleArticleSections.map((section) => {
             const isOpen = openArticleId === section.id;
             const subHeadings = subArticleHeadings(section.blocks);
+            const matchingSentences = articleMatches.get(section.id) ?? [];
             const articleBookmarkKey = `${CONSTITUTION_ARTICLE_BOOKMARK_PREFIX}${section.id}`;
             const isBookmarked = bookmarkedKeys?.has(articleBookmarkKey) || false;
             return (
@@ -298,6 +374,21 @@ export function ConstitutionReader({
                     {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </div>
+
+                {normalizedQuery && matchingSentences.length > 0 && (
+                  <div className="border-t border-border/70 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+                      Matching sentences
+                    </p>
+                    <ul className="mt-2 space-y-2">
+                      {matchingSentences.map((sentence) => (
+                        <li key={`${section.id}-${sentence}`} className="text-sm text-muted-foreground">
+                          {renderHighlightedQuery(sentence)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {isOpen && (
                   <div className="border-t border-border/70 px-4 py-3">

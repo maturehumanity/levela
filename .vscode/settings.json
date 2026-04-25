@@ -1,4 +1,7 @@
 {
   "task.allowAutomaticTasks": "on",
-  "npm.packageManager": "npm"
+  "npm.packageManager": "npm",
+  "window.restoreWindows": "none",
+  "workbench.startupEditor": "none",
+  "workbench.editor.restoreViewState": false
 }

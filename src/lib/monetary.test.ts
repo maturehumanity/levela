@@ -7,6 +7,10 @@ import {
   createSupplyState,
   evaluateIssuanceRequest,
   executeApprovedIssuance,
+  formatLumaFromLumens,
+  fromLumens,
+  parseUserLumaInputToLumens,
+  toLumens,
   triggerAffordabilityAlert,
   type ApprovalState,
   type IssuanceRequest,
@@ -47,6 +51,39 @@ function createRequest(overrides: Partial<IssuanceRequest> = {}): IssuanceReques
     ...overrides,
   };
 }
+
+describe('Luma amount helpers', () => {
+  it('formats whole lumens without trailing decimals when fractional part is zero', () => {
+    expect(formatLumaFromLumens(0, { locale: 'en-US' })).toMatch(/^0\s+LU$/);
+    expect(formatLumaFromLumens(100, { locale: 'en-US' })).toMatch(/^1\s+LU$/);
+  });
+
+  it('formats fractional Luma using two decimal places by default', () => {
+    expect(formatLumaFromLumens(1, { locale: 'en-US' })).toBe('0.01 LU');
+    expect(formatLumaFromLumens(12345, { locale: 'en-US' })).toBe('123.45 LU');
+  });
+
+  it('can show the full currency name instead of the symbol', () => {
+    expect(formatLumaFromLumens(100, { locale: 'en-US', useSymbol: false })).toBe('1 Luma');
+  });
+
+  it('parses user input strings into lumens', () => {
+    expect(parseUserLumaInputToLumens('')).toBeNull();
+    expect(parseUserLumaInputToLumens('12')).toBe(toLumens(12));
+    expect(parseUserLumaInputToLumens('12,5')).toBe(toLumens(12.5));
+    expect(parseUserLumaInputToLumens('not-a-number')).toBeNull();
+  });
+
+  it('rejects invalid lumens for formatting', () => {
+    expect(() => formatLumaFromLumens(1.5)).toThrow(RangeError);
+    expect(() => formatLumaFromLumens(-1)).toThrow(RangeError);
+  });
+
+  it('keeps toLumens and fromLumens consistent for representative values', () => {
+    expect(toLumens(0.1)).toBe(10);
+    expect(fromLumens(10)).toBe(0.1);
+  });
+});
 
 describe('monetary module', () => {
   it('calculates inflation dampening and quarterly issuance ceiling from the policy formula', () => {

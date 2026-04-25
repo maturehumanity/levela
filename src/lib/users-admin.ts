@@ -40,11 +40,6 @@ export type ProfileRow = {
   updated_at: string;
 };
 
-export type RolePermissionRow = {
-  role: AppRole;
-  permission: AppPermission;
-};
-
 export type ProfessionRow = Database['public']['Tables']['professions']['Row'];
 export type ProfileProfessionRow = Database['public']['Tables']['profile_professions']['Row'];
 export type VerificationCaseRow = Database['public']['Tables']['identity_verification_cases']['Row'];

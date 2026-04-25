@@ -1,7 +1,7 @@
 import type { AppPermission } from '@/lib/access-control';
 import { permissionListHasAny } from '@/lib/access-control';
 import type { LucideIcon } from 'lucide-react';
-import { Award, BookOpen, Landmark, LayoutGrid } from 'lucide-react';
+import { Award, BookOpen, FileSignature, Landmark, LayoutGrid } from 'lucide-react';
 import { pageRegistry } from '@/lib/feature-registry';
 
 export type NavigablePageId =
@@ -13,6 +13,7 @@ export type NavigablePageId =
   | 'contribute'
   | 'messaging'
   | 'market'
+  | 'agreements'
   | 'search'
   | 'endorse'
   | 'profile'
@@ -49,6 +50,7 @@ export const appPageLinks: AppPageLink[] = [
   { id: 'contribute', path: '/contribute', labelKey: pageRegistry.contribute.labelKey, icon: pageRegistry.contribute.icon },
   { id: 'messaging', path: '/messaging', labelKey: pageRegistry.messaging.labelKey, icon: pageRegistry.messaging.icon },
   { id: 'market', path: '/market', labelKey: pageRegistry.market.labelKey, icon: pageRegistry.market.icon },
+  { id: 'agreements', path: '/agreements', labelKey: pageRegistry.agreements.labelKey, icon: FileSignature },
   {
     id: 'search',
     path: '/search',

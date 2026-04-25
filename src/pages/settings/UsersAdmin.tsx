@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -32,6 +33,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
+  readGovernancePublicAuditExternalExecutionPageBoardRows,
+  type GovernancePublicAuditExternalExecutionPageBoardRow,
+} from '@/lib/governance-public-audit-automation';
+import {
   getEffectiveCitizenshipStatus,
   getNextUserExperienceLevel,
   type OverrideMode,
@@ -39,13 +44,108 @@ import {
   type ProfessionStatusMode,
   type ProfileProfessionRow,
   type ProfileRow,
-  type RolePermissionRow,
   userExperienceLevelLabelMap,
   type VerificationCaseRow,
   type GovernanceSanctionAppealRow,
   type GovernanceSanctionRow,
 } from '@/lib/users-admin';
 import { UsersAdminOverview } from '@/components/admin/UsersAdminOverview';
+
+type EmergencyAccessRequestRow = {
+  request_id: string;
+  target_profile_id: string;
+  target_display_name: string;
+  target_username: string | null;
+  request_reason: string;
+  request_status: 'pending' | 'approved' | 'rejected' | 'expired';
+  requested_by: string;
+  requested_by_name: string;
+  reviewed_by: string | null;
+  reviewed_by_name: string | null;
+  review_notes: string | null;
+  reviewed_at: string | null;
+  approved_expires_at: string | null;
+  consumed_at: string | null;
+  consumed_by: string | null;
+  consumed_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type EmergencyAccessEventSummaryRow = {
+  lookback_hours: number;
+  request_count: number;
+  approved_count: number;
+  rejected_count: number;
+  expired_count: number;
+  consumed_count: number;
+  pending_count: number;
+  latest_event_at: string | null;
+};
+
+type EmergencyAccessOpsSummaryRow = {
+  pending_count: number;
+  stale_pending_count: number;
+  approved_unconsumed_count: number;
+  near_expiry_approved_count: number;
+  consumed_count: number;
+  rejected_count: number;
+  expired_count: number;
+  latest_request_at: string | null;
+  latest_event_at: string | null;
+};
+
+type EmergencyAccessOpsPolicyRow = {
+  policy_key: string;
+  policy_name: string;
+  pending_max_age_hours: number;
+  approved_max_age_minutes: number;
+  near_expiry_window_minutes: number;
+  escalation_enabled: boolean;
+  oncall_channel: string;
+  updated_at: string | null;
+};
+
+type EmergencyAccessOpsPolicyEventRow = {
+  event_id: string;
+  policy_key: string;
+  event_type: 'created' | 'updated';
+  actor_profile_id: string | null;
+  actor_name: string | null;
+  event_message: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  rollback_eligible?: boolean;
+  rollback_eligibility_reason?: string | null;
+};
+
+const EMERGENCY_OPS_POLICY_SCHEMA_VERSION = '1';
+const EMERGENCY_OPS_POLICY_MAX_ROLLBACK_AGE_HOURS = 336;
+
+type EmergencyAccessRequestEventRow = {
+  event_id: string;
+  request_id: string;
+  event_type: 'requested' | 'approved' | 'rejected' | 'expired' | 'consumed' | 'updated';
+  event_message: string;
+  actor_profile_id: string | null;
+  actor_name: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+type EmergencyAccessEscalationHistoryRow = {
+  page_id: string;
+  batch_id: string | null;
+  page_key: string;
+  severity: 'info' | 'warning' | 'critical';
+  page_status: 'open' | 'acknowledged' | 'resolved';
+  page_message: string;
+  oncall_channel: string;
+  opened_at: string;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
+  updated_at: string;
+};
 
 const UsersAdminSelectedPanel = lazy(() =>
   import('@/components/admin/UsersAdminSelectedPanel').then((module) => ({ default: module.UsersAdminSelectedPanel })),
@@ -64,7 +164,7 @@ const UsersAdminDesktopTable = lazy(() =>
 );
 
 const sectionOrder: SectionId[] = ['home', 'discovery', 'knowledge', 'identity', 'contribution', 'marketplace', 'preferences', 'administration'];
-const pageOrder: PageId[] = ['home', 'messaging', 'features', 'law', 'profile', 'editProfile', 'endorse', 'market', 'settings', 'adminUsers', 'adminPermissions'];
+const pageOrder: PageId[] = ['home', 'messaging', 'study', 'features', 'law', 'profile', 'editProfile', 'endorse', 'market', 'settings', 'adminUsers', 'adminPermissions'];
 
 const emptyCreateUserForm = {
   fullName: '',
@@ -101,7 +201,7 @@ function serializeOverrideModes(overrideModes: Record<AppPermission, OverrideMod
 
 export default function UsersAdmin() {
   const navigate = useNavigate();
-  const { profile, refreshProfile, signInWithOtp } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { t, language } = useLanguage();
   const isMobile = useIsMobile();
   const [users, setUsers] = useState<ProfileRow[]>([]);
@@ -128,6 +228,30 @@ export default function UsersAdmin() {
   const [sanctionSavingUserId, setSanctionSavingUserId] = useState<string | null>(null);
   const [appealSavingId, setAppealSavingId] = useState<string | null>(null);
   const [switchingUserId, setSwitchingUserId] = useState<string | null>(null);
+  const [emergencyAccessRequests, setEmergencyAccessRequests] = useState<EmergencyAccessRequestRow[]>([]);
+  const [emergencyAccessSummary, setEmergencyAccessSummary] = useState<EmergencyAccessEventSummaryRow | null>(null);
+  const [emergencyAccessOpsSummary, setEmergencyAccessOpsSummary] = useState<EmergencyAccessOpsSummaryRow | null>(null);
+  const [emergencyAccessOpsPolicy, setEmergencyAccessOpsPolicy] = useState<EmergencyAccessOpsPolicyRow | null>(null);
+  const [savingEmergencyAccessOpsPolicy, setSavingEmergencyAccessOpsPolicy] = useState(false);
+  const [emergencyAccessOpsPolicyDraft, setEmergencyAccessOpsPolicyDraft] = useState({
+    pendingMaxAgeHours: '24',
+    approvedMaxAgeMinutes: '120',
+    nearExpiryWindowMinutes: '15',
+    escalationEnabled: true,
+    oncallChannel: 'public_audit_ops',
+  });
+  const [reviewingEmergencyRequestId, setReviewingEmergencyRequestId] = useState<string | null>(null);
+  const [expandedEmergencyRequestId, setExpandedEmergencyRequestId] = useState<string | null>(null);
+  const [loadingEmergencyEventsRequestId, setLoadingEmergencyEventsRequestId] = useState<string | null>(null);
+  const [emergencyEventsByRequest, setEmergencyEventsByRequest] = useState<Record<string, EmergencyAccessRequestEventRow[]>>({});
+  const [emergencyStatusFilter, setEmergencyStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'expired'>('all');
+  const [emergencySearch, setEmergencySearch] = useState('');
+  const [emergencyEscalationPages, setEmergencyEscalationPages] = useState<GovernancePublicAuditExternalExecutionPageBoardRow[]>([]);
+  const [emergencyEscalationHistory, setEmergencyEscalationHistory] = useState<EmergencyAccessEscalationHistoryRow[]>([]);
+  const [acknowledgingEmergencyEscalationPageId, setAcknowledgingEmergencyEscalationPageId] = useState<string | null>(null);
+  const [resolvingEmergencyEscalationPageId, setResolvingEmergencyEscalationPageId] = useState<string | null>(null);
+  const [emergencyAccessOpsPolicyEvents, setEmergencyAccessOpsPolicyEvents] = useState<EmergencyAccessOpsPolicyEventRow[]>([]);
+  const [rollingBackEmergencyAccessOpsPolicyEventId, setRollingBackEmergencyAccessOpsPolicyEventId] = useState<string | null>(null);
   const latestOverrideSignatureRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -141,6 +265,13 @@ export default function UsersAdmin() {
       { data: verificationCasesData, error: verificationCasesError },
       { data: sanctionsData, error: sanctionsError },
       { data: appealsData, error: appealsError },
+      { data: emergencyAccessData, error: emergencyAccessError },
+      { data: emergencyAccessSummaryData, error: emergencyAccessSummaryError },
+      { data: emergencyAccessOpsSummaryData, error: emergencyAccessOpsSummaryError },
+      { data: emergencyAccessOpsPolicyData, error: emergencyAccessOpsPolicyError },
+      { data: emergencyAccessOpsPolicyEventsData, error: emergencyAccessOpsPolicyEventsError },
+      executionPageBoardResponse,
+      emergencyEscalationHistoryResponse,
     ] = await Promise.all([
       supabase.from('profiles').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
       supabase.from('role_permissions').select('role,permission'),
@@ -149,6 +280,35 @@ export default function UsersAdmin() {
       supabase.from('identity_verification_cases').select('*'),
       supabase.from('governance_sanctions').select('*').order('created_at', { ascending: false }),
       supabase.from('governance_sanction_appeals').select('*').order('created_at', { ascending: false }),
+      supabase.rpc('governance_emergency_access_request_board', {
+        requested_status: null,
+        max_requests: 120,
+      }),
+      supabase.rpc('governance_emergency_access_event_summary', {
+        requested_lookback_hours: 168,
+      }),
+      supabase.rpc('governance_emergency_access_ops_summary', {
+        requested_pending_max_age_hours: emergencyAccessOpsPolicy ? emergencyAccessOpsPolicy.pending_max_age_hours : 24,
+        requested_near_expiry_window_minutes: emergencyAccessOpsPolicy ? emergencyAccessOpsPolicy.near_expiry_window_minutes : 15,
+      }),
+      supabase.rpc('governance_emergency_access_ops_policy_summary', {
+        requested_policy_key: 'default',
+      }),
+      supabase.rpc('governance_emergency_access_ops_policy_event_eligibility', {
+        requested_policy_key: 'default',
+        requested_lookback_hours: 336,
+        max_events: 120,
+        max_rollback_age_hours: EMERGENCY_OPS_POLICY_MAX_ROLLBACK_AGE_HOURS,
+        required_policy_schema_version: EMERGENCY_OPS_POLICY_SCHEMA_VERSION,
+      }),
+      supabase.rpc('governance_public_audit_external_execution_page_board', {
+        max_pages: 120,
+      }),
+      supabase.rpc('governance_public_audit_external_execution_page_history', {
+        requested_page_key_substring: 'governance_emergency_access_ops_escalation',
+        requested_lookback_hours: 168,
+        max_pages: 240,
+      }),
     ]);
 
     if (usersError) {
@@ -185,18 +345,45 @@ export default function UsersAdmin() {
       console.error('Error loading governance sanction appeals:', appealsError);
       toast.error(t('admin.users.appealsLoadFailed'));
     }
+    if (emergencyAccessError) {
+      console.error('Error loading emergency access requests:', emergencyAccessError);
+      toast.error('Could not load emergency access requests.');
+    }
+    if (emergencyAccessSummaryError) {
+      console.error('Error loading emergency access summary:', emergencyAccessSummaryError);
+      toast.error('Could not load emergency access event summary.');
+    }
+    if (emergencyAccessOpsSummaryError) {
+      console.error('Error loading emergency access operations summary:', emergencyAccessOpsSummaryError);
+      toast.error('Could not load emergency access operations summary.');
+    }
+    if (emergencyAccessOpsPolicyError) {
+      console.error('Error loading emergency access operations policy:', emergencyAccessOpsPolicyError);
+      toast.error('Could not load emergency access operations policy.');
+    }
+    if (emergencyAccessOpsPolicyEventsError) {
+      console.error('Error loading emergency access operations policy event history:', emergencyAccessOpsPolicyEventsError);
+      toast.error('Could not load emergency access operations policy history.');
+    }
+    if (executionPageBoardResponse.error) {
+      console.error('Error loading external execution page board for emergency access stewardship:', executionPageBoardResponse.error);
+    }
+    if (emergencyEscalationHistoryResponse.error) {
+      console.error('Error loading emergency access escalation history:', emergencyEscalationHistoryResponse.error);
+      toast.error('Could not load emergency escalation history.');
+    }
 
     const groupedRolePermissions = Object.fromEntries(
       APP_ROLES.map((role) => [
         role,
-        ((matrixData || []) as RolePermissionRow[])
+        (matrixData ?? [])
           .filter((entry) => entry.role === role)
           .map((entry) => entry.permission),
       ]),
     ) as Record<AppRole, AppPermission[]>;
 
-    const nextUsers = ((usersData || []) as ProfileRow[]).sort((a, b) => Number(b.is_admin) - Number(a.is_admin));
-    const groupedProfessions = ((profileProfessionsData || []) as ProfileProfessionRow[]).reduce<Record<string, ProfileProfessionRow[]>>(
+    const nextUsers = (usersData ?? []).sort((a, b) => Number(b.is_admin) - Number(a.is_admin));
+    const groupedProfessions = (profileProfessionsData ?? []).reduce<Record<string, ProfileProfessionRow[]>>(
       (accumulator, assignment) => {
         if (!accumulator[assignment.profile_id]) {
           accumulator[assignment.profile_id] = [];
@@ -206,14 +393,14 @@ export default function UsersAdmin() {
       },
       {},
     );
-    const verificationCaseMap = ((verificationCasesData || []) as VerificationCaseRow[]).reduce<Record<string, VerificationCaseRow>>(
+    const verificationCaseMap = (verificationCasesData ?? []).reduce<Record<string, VerificationCaseRow>>(
       (accumulator, verificationCase) => {
         accumulator[verificationCase.profile_id] = verificationCase;
         return accumulator;
       },
       {},
     );
-    const sanctionsMap = ((sanctionsData || []) as GovernanceSanctionRow[]).reduce<Record<string, GovernanceSanctionRow[]>>(
+    const sanctionsMap = (sanctionsData ?? []).reduce<Record<string, GovernanceSanctionRow[]>>(
       (accumulator, sanction) => {
         if (!accumulator[sanction.profile_id]) {
           accumulator[sanction.profile_id] = [];
@@ -223,7 +410,7 @@ export default function UsersAdmin() {
       },
       {},
     );
-    const appealsMap = ((appealsData || []) as GovernanceSanctionAppealRow[]).reduce<Record<string, GovernanceSanctionAppealRow[]>>(
+    const appealsMap = (appealsData ?? []).reduce<Record<string, GovernanceSanctionAppealRow[]>>(
       (accumulator, appeal) => {
         if (!accumulator[appeal.profile_id]) {
           accumulator[appeal.profile_id] = [];
@@ -236,17 +423,37 @@ export default function UsersAdmin() {
 
     setUsers(nextUsers);
     setRolePermissions(groupedRolePermissions);
-    setProfessions((professionsData || []) as ProfessionRow[]);
+    setProfessions(professionsData ?? []);
     setUserProfessions(groupedProfessions);
     setVerificationCasesByProfile(verificationCaseMap);
     setSanctionsByProfile(sanctionsMap);
     setAppealsByProfile(appealsMap);
+    setEmergencyAccessRequests((emergencyAccessData ?? []) as EmergencyAccessRequestRow[]);
+    setEmergencyAccessSummary(((emergencyAccessSummaryData ?? [])[0] ?? null) as EmergencyAccessEventSummaryRow | null);
+    setEmergencyAccessOpsSummary(((emergencyAccessOpsSummaryData ?? [])[0] ?? null) as EmergencyAccessOpsSummaryRow | null);
+    const nextPolicy = ((emergencyAccessOpsPolicyData ?? [])[0] ?? null) as EmergencyAccessOpsPolicyRow | null;
+    setEmergencyAccessOpsPolicy(nextPolicy);
+    if (nextPolicy) {
+      setEmergencyAccessOpsPolicyDraft({
+        pendingMaxAgeHours: String(nextPolicy.pending_max_age_hours),
+        approvedMaxAgeMinutes: String(nextPolicy.approved_max_age_minutes),
+        nearExpiryWindowMinutes: String(nextPolicy.near_expiry_window_minutes),
+        escalationEnabled: Boolean(nextPolicy.escalation_enabled),
+        oncallChannel: nextPolicy.oncall_channel || 'public_audit_ops',
+      });
+    }
+    setEmergencyAccessOpsPolicyEvents((emergencyAccessOpsPolicyEventsData ?? []) as EmergencyAccessOpsPolicyEventRow[]);
+    setEmergencyEscalationPages(
+      readGovernancePublicAuditExternalExecutionPageBoardRows(executionPageBoardResponse.data)
+        .filter((page) => page.pageKey.includes('governance_emergency_access_ops_escalation')),
+    );
+    setEmergencyEscalationHistory((emergencyEscalationHistoryResponse.data ?? []) as EmergencyAccessEscalationHistoryRow[]);
     setSelectedUserId((current) => {
       if (!current) return null;
       return nextUsers.some((user) => user.id === current) ? current : null;
     });
     setLoading(false);
-  }, [t]);
+  }, [emergencyAccessOpsPolicy, t]);
 
   useEffect(() => {
     void loadData();
@@ -431,6 +638,27 @@ export default function UsersAdmin() {
   };
 
   const canLoginAsFromAdmin = Boolean(profile?.effective_permissions?.includes('settings.manage'));
+  const canReviewEmergencyAccess = Boolean(profile?.effective_permissions?.includes('settings.manage'));
+
+  const filteredEmergencyRequests = useMemo(() => {
+    const statusFiltered = emergencyStatusFilter === 'all'
+      ? emergencyAccessRequests
+      : emergencyAccessRequests.filter((request) => request.request_status === emergencyStatusFilter);
+    const normalizedSearch = emergencySearch.trim().toLowerCase();
+    if (!normalizedSearch) return statusFiltered;
+    return statusFiltered.filter((request) =>
+      [
+        request.target_display_name,
+        request.target_username,
+        request.requested_by_name,
+        request.request_reason,
+        request.review_notes,
+        request.request_id,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
+    );
+  }, [emergencyAccessRequests, emergencySearch, emergencyStatusFilter]);
 
   const handleLoginAsUser = async (targetUser: ProfileRow) => {
     if (!canLoginAsFromAdmin) {
@@ -438,40 +666,245 @@ export default function UsersAdmin() {
       return;
     }
 
-    setSwitchingUserId(targetUser.id);
+    const defaultReason = `Emergency support request for ${targetUser.full_name || targetUser.username || 'user'} (${targetUser.id}).`;
+    const reason = window.prompt(
+      'Enter emergency access reason (required, recorded for governance audit).',
+      defaultReason,
+    );
 
-    const { data, error } = await supabase.functions.invoke('admin-impersonate-user', {
-      body: { profileId: targetUser.id },
-    });
-
-    if (error || !data?.email || !data?.token) {
-      toast.error(t('admin.users.loginAsUserFailed'));
-      setSwitchingUserId(null);
+    if (!reason || !reason.trim()) {
+      toast.error('Emergency access request cancelled: reason is required.');
       return;
     }
 
-    const { error: signInError } = await signInWithOtp(
-      {
-        email: data.email,
-        token: data.token,
-        type: 'magiclink',
-      },
-      { preserveCurrentSession: true },
-    );
+    setSwitchingUserId(targetUser.id);
 
-    if (signInError) {
-      toast.error(t('admin.users.loginAsUserFailed'));
+    const { data, error } = await supabase.rpc('request_governance_emergency_access', {
+      target_profile_id: targetUser.id,
+      request_reason: reason.trim(),
+    });
+
+    if (error || typeof data !== 'string' || !data.trim()) {
+      toast.error('Could not submit emergency access request.');
       setSwitchingUserId(null);
       return;
     }
 
     toast.success(
-      t('admin.users.loginAsUserSuccess', {
-        user: targetUser.full_name || targetUser.username || t('common.anonymousUser'),
-      }),
+      `Emergency access request submitted for ${targetUser.full_name || targetUser.username || 'user'}. Request ID: ${data}.`,
     );
-    navigate('/');
+    setSwitchingUserId(null);
+    await loadData();
   };
+
+  const handleReviewEmergencyAccessRequest = async (
+    request: EmergencyAccessRequestRow,
+    nextStatus: 'approved' | 'rejected' | 'expired',
+  ) => {
+    if (!canReviewEmergencyAccess) return;
+    setReviewingEmergencyRequestId(request.request_id);
+
+    const defaultNotes = nextStatus === 'approved'
+      ? `Approved by governance staff for emergency support case on ${new Date().toISOString()}.`
+      : '';
+    const notesInput = window.prompt(
+      nextStatus === 'approved'
+        ? 'Optional approval notes (leave blank to continue).'
+        : 'Review notes are required when rejecting or expiring a request.',
+      defaultNotes,
+    );
+    const reviewNotes = notesInput?.trim() || '';
+
+    if ((nextStatus === 'rejected' || nextStatus === 'expired') && !reviewNotes) {
+      toast.error('Review notes are required for rejected or expired emergency access requests.');
+      setReviewingEmergencyRequestId(null);
+      return;
+    }
+
+    let approvedTtlMinutes = 30;
+    if (nextStatus === 'approved') {
+      const ttlInput = window.prompt('Approved access TTL in minutes (required, min 1).', '30');
+      const parsedTtl = Number.parseInt(ttlInput || '', 10);
+      if (!Number.isFinite(parsedTtl) || parsedTtl < 1) {
+        toast.error('A valid approval TTL is required.');
+        setReviewingEmergencyRequestId(null);
+        return;
+      }
+      approvedTtlMinutes = parsedTtl;
+    }
+
+    const { error } = await supabase.rpc('review_governance_emergency_access_request', {
+      target_request_id: request.request_id,
+      next_status: nextStatus,
+      review_notes: reviewNotes || null,
+      approved_ttl_minutes: approvedTtlMinutes,
+    });
+
+    if (error) {
+      console.error('Error reviewing emergency access request:', error);
+      toast.error('Could not update emergency access request.');
+      setReviewingEmergencyRequestId(null);
+      return;
+    }
+
+    toast.success(`Emergency access request marked ${nextStatus}.`);
+    setReviewingEmergencyRequestId(null);
+    await loadData();
+  };
+
+  const handleToggleEmergencyRequestTimeline = async (requestId: string) => {
+    if (expandedEmergencyRequestId === requestId) {
+      setExpandedEmergencyRequestId(null);
+      return;
+    }
+
+    setExpandedEmergencyRequestId(requestId);
+    if (emergencyEventsByRequest[requestId]) return;
+
+    setLoadingEmergencyEventsRequestId(requestId);
+    const { data, error } = await supabase.rpc('governance_emergency_access_request_event_board', {
+      target_request_id: requestId,
+      max_events: 40,
+    });
+
+    if (error) {
+      console.error('Error loading emergency access request events:', error);
+      toast.error('Could not load emergency access timeline.');
+      setLoadingEmergencyEventsRequestId(null);
+      return;
+    }
+
+    setEmergencyEventsByRequest((current) => ({
+      ...current,
+      [requestId]: (data ?? []) as EmergencyAccessRequestEventRow[],
+    }));
+    setLoadingEmergencyEventsRequestId(null);
+  };
+
+  const handleAcknowledgeEmergencyEscalationPage = async (pageId: string) => {
+    setAcknowledgingEmergencyEscalationPageId(pageId);
+    const notes = window.prompt('Optional acknowledgement notes for this emergency-access escalation page:', '');
+
+    const { error } = await supabase.rpc('acknowledge_governance_public_audit_external_execution_page', {
+      target_page_id: pageId,
+      acknowledgement_notes: notes?.trim() || null,
+    });
+
+    if (error) {
+      console.error('Error acknowledging emergency access escalation page:', error);
+      toast.error('Could not acknowledge emergency access escalation page.');
+      setAcknowledgingEmergencyEscalationPageId(null);
+      return;
+    }
+
+    toast.success('Emergency access escalation page acknowledged.');
+    setAcknowledgingEmergencyEscalationPageId(null);
+    await loadData();
+  };
+
+  const handleResolveEmergencyEscalationPage = async (pageId: string) => {
+    setResolvingEmergencyEscalationPageId(pageId);
+    const notes = window.prompt('Optional resolution notes for this emergency-access escalation page:', '');
+
+    const { error } = await supabase.rpc('resolve_governance_public_audit_external_execution_page', {
+      target_page_id: pageId,
+      resolution_notes: notes?.trim() || null,
+    });
+
+    if (error) {
+      console.error('Error resolving emergency access escalation page:', error);
+      toast.error('Could not resolve emergency access escalation page.');
+      setResolvingEmergencyEscalationPageId(null);
+      return;
+    }
+
+    toast.success('Emergency access escalation page resolved.');
+    setResolvingEmergencyEscalationPageId(null);
+    await loadData();
+  };
+
+  const handleSaveEmergencyAccessOpsPolicy = async () => {
+    setSavingEmergencyAccessOpsPolicy(true);
+    const pendingMaxAgeHours = Number.parseInt(emergencyAccessOpsPolicyDraft.pendingMaxAgeHours, 10);
+    const approvedMaxAgeMinutes = Number.parseInt(emergencyAccessOpsPolicyDraft.approvedMaxAgeMinutes, 10);
+    const nearExpiryWindowMinutes = Number.parseInt(emergencyAccessOpsPolicyDraft.nearExpiryWindowMinutes, 10);
+    if (!Number.isFinite(pendingMaxAgeHours) || pendingMaxAgeHours < 1
+      || !Number.isFinite(approvedMaxAgeMinutes) || approvedMaxAgeMinutes < 1
+      || !Number.isFinite(nearExpiryWindowMinutes) || nearExpiryWindowMinutes < 1
+    ) {
+      toast.error('All emergency operations policy thresholds must be positive numbers.');
+      setSavingEmergencyAccessOpsPolicy(false);
+      return;
+    }
+
+    const { error } = await supabase.rpc('set_governance_emergency_access_ops_policy', {
+      requested_policy_key: 'default',
+      requested_policy_name: 'Default emergency access operations policy',
+      requested_pending_max_age_hours: pendingMaxAgeHours,
+      requested_approved_max_age_minutes: approvedMaxAgeMinutes,
+      requested_near_expiry_window_minutes: nearExpiryWindowMinutes,
+      requested_escalation_enabled: emergencyAccessOpsPolicyDraft.escalationEnabled,
+      requested_oncall_channel: emergencyAccessOpsPolicyDraft.oncallChannel.trim() || 'public_audit_ops',
+      metadata: { source: 'users_admin_emergency_access_ops_policy' },
+    });
+
+    if (error) {
+      console.error('Error saving emergency access operations policy:', error);
+      toast.error('Could not save emergency access operations policy.');
+      setSavingEmergencyAccessOpsPolicy(false);
+      return;
+    }
+
+    toast.success('Emergency access operations policy saved.');
+    setSavingEmergencyAccessOpsPolicy(false);
+    await loadData();
+  };
+
+  const handleRollbackEmergencyAccessOpsPolicyToEvent = async (eventId: string) => {
+    setRollingBackEmergencyAccessOpsPolicyEventId(eventId);
+    const confirmed = window.confirm(
+      'Rollback emergency access operations policy to this historical event snapshot?',
+    );
+    if (!confirmed) {
+      setRollingBackEmergencyAccessOpsPolicyEventId(null);
+      return;
+    }
+
+    const { error } = await supabase.rpc('rollback_governance_emergency_access_ops_policy_to_event', {
+      target_event_id: eventId,
+      max_rollback_age_hours: EMERGENCY_OPS_POLICY_MAX_ROLLBACK_AGE_HOURS,
+      required_policy_schema_version: EMERGENCY_OPS_POLICY_SCHEMA_VERSION,
+    });
+
+    if (error) {
+      console.error('Error rolling back emergency access operations policy:', error);
+      toast.error('Could not rollback emergency access operations policy.');
+      setRollingBackEmergencyAccessOpsPolicyEventId(null);
+      return;
+    }
+
+    toast.success('Emergency access operations policy rolled back.');
+    setRollingBackEmergencyAccessOpsPolicyEventId(null);
+    await loadData();
+  };
+
+  const emergencyEscalationTrend = useMemo(() => {
+    const summary = {
+      opened: 0,
+      acknowledged: 0,
+      resolved: 0,
+      critical: 0,
+      warning: 0,
+    };
+    for (const row of emergencyEscalationHistory) {
+      summary.opened += 1;
+      if (row.page_status === 'acknowledged') summary.acknowledged += 1;
+      if (row.page_status === 'resolved') summary.resolved += 1;
+      if (row.severity === 'critical') summary.critical += 1;
+      if (row.severity === 'warning') summary.warning += 1;
+    }
+    return summary;
+  }, [emergencyEscalationHistory]);
 
   const handleRoleChange = async (target: ProfileRow, nextRole: AppRole) => {
     if (!profile) return;
@@ -1079,6 +1512,346 @@ export default function UsersAdmin() {
             />
           </Suspense>
         )}
+
+        <Card className="rounded-3xl border-border/60 p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-base font-semibold text-foreground">Emergency Access Requests</h3>
+            <span className="text-xs text-muted-foreground">
+              {emergencyAccessRequests.filter((request) => request.request_status === 'pending').length} pending
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            All emergency access requests are governance-audited. Approve or reject pending requests explicitly.
+          </p>
+          {emergencyAccessSummary && (
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">7d activity</p>
+                <p className="mt-1">Requested: {emergencyAccessSummary.request_count}</p>
+                <p>Consumed: {emergencyAccessSummary.consumed_count}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Reviews</p>
+                <p className="mt-1">Approved: {emergencyAccessSummary.approved_count}</p>
+                <p>Rejected: {emergencyAccessSummary.rejected_count}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Expiry / pending</p>
+                <p className="mt-1">Expired: {emergencyAccessSummary.expired_count}</p>
+                <p>Pending now: {emergencyAccessSummary.pending_count}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Latest event</p>
+                <p className="mt-1">{emergencyAccessSummary.latest_event_at ? formatDate(emergencyAccessSummary.latest_event_at) : 'n/a'}</p>
+              </div>
+            </div>
+          )}
+          {emergencyAccessOpsSummary && (
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Ops watch</p>
+                <p className="mt-1">Pending: {emergencyAccessOpsSummary.pending_count}</p>
+                <p>Stale pending: {emergencyAccessOpsSummary.stale_pending_count}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Approved (unconsumed)</p>
+                <p className="mt-1">Open approvals: {emergencyAccessOpsSummary.approved_unconsumed_count}</p>
+                <p>Near expiry (15m): {emergencyAccessOpsSummary.near_expiry_approved_count}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Closed states</p>
+                <p className="mt-1">Consumed: {emergencyAccessOpsSummary.consumed_count}</p>
+                <p>Expired: {emergencyAccessOpsSummary.expired_count}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Latest ops signal</p>
+                <p className="mt-1">Latest request: {emergencyAccessOpsSummary.latest_request_at ? formatDate(emergencyAccessOpsSummary.latest_request_at) : 'n/a'}</p>
+                <p>Latest event: {emergencyAccessOpsSummary.latest_event_at ? formatDate(emergencyAccessOpsSummary.latest_event_at) : 'n/a'}</p>
+              </div>
+            </div>
+          )}
+          {emergencyAccessOpsPolicy && (
+            <div className="mt-2 rounded-lg border border-border/60 bg-background/70 p-2.5 text-xs text-muted-foreground">
+              <p className="font-semibold uppercase tracking-[0.12em] text-foreground">Emergency ops policy</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                <Input
+                  value={emergencyAccessOpsPolicyDraft.pendingMaxAgeHours}
+                  onChange={(event) => setEmergencyAccessOpsPolicyDraft((current) => ({ ...current, pendingMaxAgeHours: event.target.value }))}
+                  placeholder="Pending max age (h)"
+                />
+                <Input
+                  value={emergencyAccessOpsPolicyDraft.approvedMaxAgeMinutes}
+                  onChange={(event) => setEmergencyAccessOpsPolicyDraft((current) => ({ ...current, approvedMaxAgeMinutes: event.target.value }))}
+                  placeholder="Approved max age (m)"
+                />
+                <Input
+                  value={emergencyAccessOpsPolicyDraft.nearExpiryWindowMinutes}
+                  onChange={(event) => setEmergencyAccessOpsPolicyDraft((current) => ({ ...current, nearExpiryWindowMinutes: event.target.value }))}
+                  placeholder="Near-expiry window (m)"
+                />
+                <Input
+                  value={emergencyAccessOpsPolicyDraft.oncallChannel}
+                  onChange={(event) => setEmergencyAccessOpsPolicyDraft((current) => ({ ...current, oncallChannel: event.target.value }))}
+                  placeholder="On-call channel"
+                />
+                <button
+                  type="button"
+                  className="rounded-md border border-border/70 bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-accent/60"
+                  onClick={() => setEmergencyAccessOpsPolicyDraft((current) => ({ ...current, escalationEnabled: !current.escalationEnabled }))}
+                >
+                  Escalation {emergencyAccessOpsPolicyDraft.escalationEnabled ? 'enabled' : 'disabled'}
+                </button>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Updated: {emergencyAccessOpsPolicy.updated_at ? formatDate(emergencyAccessOpsPolicy.updated_at) : 'n/a'}
+                </p>
+                <button
+                  type="button"
+                  className="rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary disabled:opacity-60"
+                  disabled={savingEmergencyAccessOpsPolicy}
+                  onClick={() => void handleSaveEmergencyAccessOpsPolicy()}
+                >
+                  {savingEmergencyAccessOpsPolicy ? 'Saving...' : 'Save policy'}
+                </button>
+              </div>
+            </div>
+          )}
+          {emergencyAccessOpsPolicyEvents.length > 0 && (
+            <details className="mt-2 rounded-lg border border-border/60 bg-background/70 p-2.5">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Emergency ops policy change timeline (14 days)
+              </summary>
+              <div className="mt-2 space-y-2">
+                {emergencyAccessOpsPolicyEvents.slice(0, 30).map((event) => (
+                  <div key={event.event_id} className="rounded-md border border-border/60 bg-background p-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{event.event_type.toUpperCase()}</p>
+                      <p className="text-muted-foreground">{formatDate(event.created_at)}</p>
+                    </div>
+                    <p className="mt-1 text-muted-foreground">{event.event_message}</p>
+                    {event.actor_name && <p className="mt-1 text-muted-foreground">Actor: {event.actor_name}</p>}
+                    <p className="mt-1 text-muted-foreground">
+                      Rollback eligibility: {event.rollback_eligibility_reason ?? 'Unknown'}
+                    </p>
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="rounded-md border border-border/70 bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-accent/60 disabled:opacity-60"
+                        disabled={
+                          rollingBackEmergencyAccessOpsPolicyEventId === event.event_id
+                          || !event.rollback_eligible
+                        }
+                        onClick={() => void handleRollbackEmergencyAccessOpsPolicyToEvent(event.event_id)}
+                      >
+                        {rollingBackEmergencyAccessOpsPolicyEventId === event.event_id ? 'Rolling back...' : 'Rollback to this snapshot'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          {emergencyEscalationPages.length > 0 && (
+            <div className="mt-2 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Emergency access escalation pages
+              </p>
+              {emergencyEscalationPages.map((page) => (
+                <div key={page.pageId} className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold text-foreground">{page.pageStatus.toUpperCase()} · {page.severity.toUpperCase()}</p>
+                    <p>{formatDate(page.openedAt)}</p>
+                  </div>
+                  <p className="mt-1">{page.pageMessage}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(page.pageStatus === 'open') && (
+                      <button
+                        type="button"
+                        className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 disabled:opacity-60 dark:text-amber-300"
+                        disabled={acknowledgingEmergencyEscalationPageId === page.pageId}
+                        onClick={() => void handleAcknowledgeEmergencyEscalationPage(page.pageId)}
+                      >
+                        Acknowledge
+                      </button>
+                    )}
+                    {(page.pageStatus === 'open' || page.pageStatus === 'acknowledged') && (
+                      <button
+                        type="button"
+                        className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 disabled:opacity-60 dark:text-emerald-300"
+                        disabled={resolvingEmergencyEscalationPageId === page.pageId}
+                        onClick={() => void handleResolveEmergencyEscalationPage(page.pageId)}
+                      >
+                        Resolve
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">7d escalation history</p>
+              <p className="mt-1">Opened: {emergencyEscalationTrend.opened}</p>
+              <p>Resolved: {emergencyEscalationTrend.resolved}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">In-flight pages</p>
+              <p className="mt-1">Open board pages: {emergencyEscalationPages.filter((page) => page.pageStatus === 'open').length}</p>
+              <p>Acknowledged board pages: {emergencyEscalationPages.filter((page) => page.pageStatus === 'acknowledged').length}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">Severity mix</p>
+              <p className="mt-1">Critical: {emergencyEscalationTrend.critical}</p>
+              <p>Warning: {emergencyEscalationTrend.warning}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/70 p-2 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">Latest incident</p>
+              <p className="mt-1">
+                {emergencyEscalationHistory[0]?.opened_at ? formatDate(emergencyEscalationHistory[0].opened_at) : 'n/a'}
+              </p>
+              <p>
+                {emergencyEscalationHistory[0]?.page_status
+                  ? emergencyEscalationHistory[0].page_status.toUpperCase()
+                  : 'NO DATA'}
+              </p>
+            </div>
+          </div>
+          {emergencyEscalationHistory.length > 0 && (
+            <details className="mt-2 rounded-lg border border-border/60 bg-background/70 p-2.5">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Emergency escalation timeline (7 days)
+              </summary>
+              <div className="mt-2 space-y-2">
+                {emergencyEscalationHistory.slice(0, 30).map((row) => (
+                  <div key={row.page_id} className="rounded-md border border-border/60 bg-background p-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{row.page_status.toUpperCase()} · {row.severity.toUpperCase()}</p>
+                      <p className="text-muted-foreground">{formatDate(row.opened_at)}</p>
+                    </div>
+                    <p className="mt-1 text-muted-foreground">{row.page_message}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      Batch: {row.batch_id || 'n/a'} · Ack: {row.acknowledged_at ? formatDate(row.acknowledged_at) : 'n/a'} · Resolved: {row.resolved_at ? formatDate(row.resolved_at) : 'n/a'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Select
+              value={emergencyStatusFilter}
+              onValueChange={(value) => setEmergencyStatusFilter(value as typeof emergencyStatusFilter)}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+            <input
+              type="search"
+              value={emergencySearch}
+              onChange={(event) => setEmergencySearch(event.target.value)}
+              placeholder="Search target, requester, reason, or request id"
+              className="h-9 min-w-[260px] rounded-md border border-border/70 bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="mt-3 space-y-2">
+            {filteredEmergencyRequests.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No emergency access requests recorded yet.</p>
+            ) : (
+              filteredEmergencyRequests.slice(0, 20).map((request) => (
+                <div key={request.request_id} className="rounded-xl border border-border/70 bg-background/60 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {request.target_display_name}
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {request.request_status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Requested by {request.requested_by_name} on {formatDate(request.created_at)}
+                  </p>
+                  {request.approved_expires_at && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Approved until: {formatDate(request.approved_expires_at)}
+                    </p>
+                  )}
+                  {request.consumed_at && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Consumed: {formatDate(request.consumed_at)}{request.consumed_by_name ? ` by ${request.consumed_by_name}` : ''}
+                    </p>
+                  )}
+                  <p className="mt-1 text-sm text-foreground">{request.request_reason}</p>
+                  {request.review_notes && (
+                    <p className="mt-1 text-xs text-muted-foreground">Review notes: {request.review_notes}</p>
+                  )}
+                  {canReviewEmergencyAccess && request.request_status === 'pending' && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 disabled:opacity-60 dark:text-emerald-300"
+                        onClick={() => void handleReviewEmergencyAccessRequest(request, 'approved')}
+                        disabled={reviewingEmergencyRequestId === request.request_id}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-700 disabled:opacity-60 dark:text-rose-300"
+                        onClick={() => void handleReviewEmergencyAccessRequest(request, 'rejected')}
+                        disabled={reviewingEmergencyRequestId === request.request_id}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="rounded-md border border-border/70 bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent/60"
+                      onClick={() => void handleToggleEmergencyRequestTimeline(request.request_id)}
+                    >
+                      {expandedEmergencyRequestId === request.request_id ? 'Hide timeline' : 'View timeline'}
+                    </button>
+                  </div>
+                  {expandedEmergencyRequestId === request.request_id && (
+                    <div className="mt-2 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+                      {loadingEmergencyEventsRequestId === request.request_id ? (
+                        <p className="text-xs text-muted-foreground">Loading timeline...</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {(emergencyEventsByRequest[request.request_id] ?? []).length === 0 ? (
+                            <p className="text-xs text-muted-foreground">No timeline events recorded.</p>
+                          ) : (
+                            (emergencyEventsByRequest[request.request_id] ?? []).map((event) => (
+                              <div key={event.event_id} className="rounded-md border border-border/60 bg-background/70 p-2 text-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <span className="font-medium text-foreground">{event.event_type.toUpperCase()}</span>
+                                  <span className="text-muted-foreground">{formatDate(event.created_at)}</span>
+                                </div>
+                                <p className="mt-1 text-foreground">{event.event_message}</p>
+                                {event.actor_name && <p className="mt-1 text-muted-foreground">Actor: {event.actor_name}</p>}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
 
         <Suspense fallback={null}>
           <UsersAdminCreateUserDialog

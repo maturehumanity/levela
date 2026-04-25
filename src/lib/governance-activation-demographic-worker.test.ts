@@ -66,9 +66,20 @@ describe('isActivationDemographicFeedStale', () => {
     expect(isActivationDemographicFeedStale(null, 24)).toBe(true);
   });
 
+  it('treats unparseable timestamps as stale', () => {
+    expect(isActivationDemographicFeedStale('not-a-date', 24)).toBe(true);
+  });
+
   it('returns false for fresh timestamps', () => {
     const freshTimestamp = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     expect(isActivationDemographicFeedStale(freshTimestamp, 2)).toBe(false);
+  });
+
+  it('uses at least a one-hour freshness window', () => {
+    const almostStale = new Date(Date.now() - 50 * 60 * 1000).toISOString();
+    expect(isActivationDemographicFeedStale(almostStale, 0)).toBe(false);
+    const stale = new Date(Date.now() - 70 * 60 * 1000).toISOString();
+    expect(isActivationDemographicFeedStale(stale, 0)).toBe(true);
   });
 });
 
@@ -76,6 +87,7 @@ describe('formatActivationDemographicFeedScopeLabel', () => {
   it('formats world and country labels', () => {
     expect(formatActivationDemographicFeedScopeLabel('world', '')).toBe('World');
     expect(formatActivationDemographicFeedScopeLabel('country', 'US')).toBe('US');
+    expect(formatActivationDemographicFeedScopeLabel('country', '  ')).toBe('Country');
   });
 });
 
@@ -95,6 +107,9 @@ describe('formatActivationDemographicFeedWorkerRunOutcomeLabel', () => {
   it('maps known worker run outcomes', () => {
     expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('ingested')).toBe('Ingested');
     expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('signature_failed')).toBe('Signature check failed');
+    expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('fetch_failed')).toBe('Fetch failed');
+    expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('invalid_payload')).toBe('Invalid payload');
+    expect(formatActivationDemographicFeedWorkerRunOutcomeLabel('ingestion_failed')).toBe('Ingestion failed');
   });
 
   it('falls back for unknown outcomes', () => {
@@ -106,6 +121,8 @@ describe('formatActivationDemographicFeedWorkerAlertKindLabel', () => {
   it('maps known alert kinds', () => {
     expect(formatActivationDemographicFeedWorkerAlertKindLabel('signature_failure')).toBe('Signature');
     expect(formatActivationDemographicFeedWorkerAlertKindLabel('freshness')).toBe('Freshness');
+    expect(formatActivationDemographicFeedWorkerAlertKindLabel('connectivity')).toBe('Connectivity');
+    expect(formatActivationDemographicFeedWorkerAlertKindLabel('payload')).toBe('Payload');
   });
 
   it('falls back for unknown kinds', () => {
@@ -120,5 +137,13 @@ describe('formatTruncatedGovernanceNote', () => {
 
   it('truncates long text', () => {
     expect(formatTruncatedGovernanceNote('0123456789abcdef', 10)).toBe('0123456789…');
+  });
+
+  it('trims surrounding whitespace before measuring length', () => {
+    expect(formatTruncatedGovernanceNote('  hi  ', 10)).toBe('hi');
+  });
+
+  it('honors a zero max length as immediate truncation', () => {
+    expect(formatTruncatedGovernanceNote('abc', 0)).toBe('…');
   });
 });

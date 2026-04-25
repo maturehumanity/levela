@@ -7,12 +7,14 @@ import {
   isMissingPublicAuditAutomationBackend,
   readGovernancePublicAuditAnchorExecutionJobBoardRows,
   readGovernancePublicAuditExternalExecutionPageBoardRows,
+  readGovernancePublicAuditExternalExecutionAutomationStatus,
   readGovernancePublicAuditExternalExecutionPagingSummary,
   readGovernancePublicAuditExternalExecutionPolicySummary,
   readGovernancePublicAuditOperationsSlaSummary,
   type GovernancePublicAuditAnchorAdapterRow,
   type GovernancePublicAuditAnchorExecutionJobBoardRow,
   type GovernancePublicAuditExternalExecutionPageBoardRow,
+  type GovernancePublicAuditExternalExecutionAutomationStatus,
   type GovernancePublicAuditExternalExecutionPagingSummary,
   type GovernancePublicAuditExternalExecutionPolicySummary,
   type GovernancePublicAuditImmutableAnchorRow,
@@ -34,6 +36,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
   const [externalExecutionPolicy, setExternalExecutionPolicy] = useState<GovernancePublicAuditExternalExecutionPolicySummary | null>(null);
   const [externalExecutionPagingSummary, setExternalExecutionPagingSummary] = useState<GovernancePublicAuditExternalExecutionPagingSummary | null>(null);
   const [externalExecutionPages, setExternalExecutionPages] = useState<GovernancePublicAuditExternalExecutionPageBoardRow[]>([]);
+  const [externalExecutionAutomationStatus, setExternalExecutionAutomationStatus] = useState<GovernancePublicAuditExternalExecutionAutomationStatus | null>(null);
 
   const loadAutomationData = useCallback(async () => {
     setLoadingAutomationData(true);
@@ -48,6 +51,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
       policySummaryResponse,
       pagingSummaryResponse,
       pageBoardResponse,
+      automationStatusResponse,
     ] = await Promise.all([
       supabase
         .from('governance_public_audit_anchor_adapters')
@@ -102,6 +106,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
         requested_batch_id: args.latestBatchId,
         max_pages: GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
       }),
+      supabase.rpc('governance_public_audit_external_execution_automation_status'),
     ]);
 
     const sharedError = adapterResponse.error
@@ -112,7 +117,8 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
       || anchorExecutionBoardResponse.error
       || policySummaryResponse.error
       || pagingSummaryResponse.error
-      || pageBoardResponse.error;
+      || pageBoardResponse.error
+      || automationStatusResponse.error;
 
     if (isMissingPublicAuditAutomationBackend(sharedError)) {
       setAutomationBackendUnavailable(true);
@@ -131,6 +137,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
         policySummaryError: policySummaryResponse.error,
         pagingSummaryError: pagingSummaryResponse.error,
         pageBoardError: pageBoardResponse.error,
+        automationStatusError: automationStatusResponse.error,
       });
       toast.error('Could not load immutable anchoring automation data.');
       setLoadingAutomationData(false);
@@ -145,6 +152,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
     setExternalExecutionPolicy(readGovernancePublicAuditExternalExecutionPolicySummary(policySummaryResponse.data));
     setExternalExecutionPagingSummary(readGovernancePublicAuditExternalExecutionPagingSummary(pagingSummaryResponse.data));
     setExternalExecutionPages(readGovernancePublicAuditExternalExecutionPageBoardRows(pageBoardResponse.data));
+    setExternalExecutionAutomationStatus(readGovernancePublicAuditExternalExecutionAutomationStatus(automationStatusResponse.data));
     setCanManageAutomation(Boolean(permissionResponse.data));
     setAutomationBackendUnavailable(false);
     setLoadingAutomationData(false);
@@ -173,6 +181,7 @@ export function useGovernancePublicAuditAutomation(args: { latestBatchId: string
     externalExecutionPolicy,
     externalExecutionPagingSummary,
     externalExecutionPages,
+    externalExecutionAutomationStatus,
     loadAutomationData,
     ...actions,
   };

@@ -1,19 +1,29 @@
 import type {
+  GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
+  GovernancePublicAuditVerifierFederationExchangeAttestationRow,
+  GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
   GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   GovernancePublicAuditVerifierFederationPackage,
   GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   GovernancePublicAuditVerifierFederationPackageHistoryRow,
   GovernancePublicAuditVerifierFederationPackageSignatureRow,
   GovernancePublicAuditVerifierFederationRecentPackageRow,
+  GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
 } from '@/lib/governance-public-audit-verifier-federation.types';
 
 export type {
+  GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
+  GovernancePublicAuditVerifierFederationExchangeAttestationRow,
+  GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
   GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   GovernancePublicAuditVerifierFederationPackage,
   GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   GovernancePublicAuditVerifierFederationPackageHistoryRow,
   GovernancePublicAuditVerifierFederationPackageSignatureRow,
   GovernancePublicAuditVerifierFederationRecentPackageRow,
+  GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
 } from '@/lib/governance-public-audit-verifier-federation.types';
 
 function asString(value: unknown, fallback = '') {
@@ -47,9 +57,130 @@ function asBoolean(value: unknown, fallback = false) {
   return fallback;
 }
 
+function asAttestationVerdict(
+  value: unknown,
+): GovernancePublicAuditVerifierFederationExchangeAttestationRow['attestationVerdict'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'accepted' || normalized === 'rejected' || normalized === 'needs_followup') return normalized;
+  return 'unknown';
+}
+
+function asPolicyEventType(
+  value: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow['eventType'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'created' || normalized === 'updated' || normalized === 'rollback') return normalized;
+  return 'unknown';
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeAttestationSummary(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeAttestationSummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  return {
+    batchId: asNullableString(row.batch_id),
+    lookbackHours: asNonNegativeInteger(row.lookback_hours, 168),
+    attestationCount: asNonNegativeInteger(row.attestation_count),
+    acceptedCount: asNonNegativeInteger(row.accepted_count),
+    rejectedCount: asNonNegativeInteger(row.rejected_count),
+    needsFollowupCount: asNonNegativeInteger(row.needs_followup_count),
+    distinctOperatorCount: asNonNegativeInteger(row.distinct_operator_count),
+    distinctExternalOperatorCount: asNonNegativeInteger(row.distinct_external_operator_count),
+    receiptEvidenceCount: asNonNegativeInteger(row.receipt_evidence_count),
+    receiptVerifiedCount: asNonNegativeInteger(row.receipt_verified_count),
+    receiptPendingVerificationCount: asNonNegativeInteger(row.receipt_pending_verification_count),
+    latestAttestedAt: asNullableString(row.latest_attested_at),
+  };
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeAttestationRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeAttestationRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      attestationId: asString(entry.attestation_id),
+      packageId: asString(entry.package_id),
+      batchId: asString(entry.batch_id),
+      packageHash: asString(entry.package_hash),
+      operatorLabel: asString(entry.operator_label),
+      operatorIdentityUri: asNullableString(entry.operator_identity_uri),
+      operatorTrustDomain: asString(entry.operator_trust_domain, 'external'),
+      operatorJurisdictionCountryCode: asNullableString(entry.operator_jurisdiction_country_code),
+      exchangeChannel: asString(entry.exchange_channel, 'api'),
+      attestationVerdict: asAttestationVerdict(entry.attestation_verdict),
+      attestationNotes: asNullableString(entry.attestation_notes),
+      attestationMetadata: asRecord(entry.attestation_metadata),
+      receiptPayload: asRecord(entry.receipt_payload),
+      receiptSignature: asNullableString(entry.receipt_signature),
+      receiptSignerKey: asNullableString(entry.receipt_signer_key),
+      receiptSignatureAlgorithm: asNullableString(entry.receipt_signature_algorithm),
+      receiptVerified: asBoolean(entry.receipt_verified, false),
+      receiptVerifiedAt: asNullableString(entry.receipt_verified_at),
+      receiptVerificationNotes: asNullableString(entry.receipt_verification_notes),
+      receiptVerifiedBy: asNullableString(entry.receipt_verified_by),
+      receiptVerifiedByName: asNullableString(entry.receipt_verified_by_name),
+      attestedBy: asNullableString(entry.attested_by),
+      attestedByName: asNullableString(entry.attested_by_name),
+      attestedAt: asNullableString(entry.attested_at),
+    }))
+    .filter((entry) => entry.attestationId.length > 0 && entry.packageId.length > 0 && entry.operatorLabel.length > 0);
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  return {
+    policyKey: asString(row.policy_key),
+    policyName: asString(row.policy_name),
+    lookbackHours: asNonNegativeInteger(row.lookback_hours, 336),
+    warningPendingThreshold: asNonNegativeInteger(row.warning_pending_threshold, 1),
+    criticalPendingThreshold: asNonNegativeInteger(row.critical_pending_threshold, 5),
+    escalationEnabled: asBoolean(row.escalation_enabled, true),
+    oncallChannel: asString(row.oncall_channel, 'public_audit_ops'),
+    receiptMaxVerificationAgeHours: asNonNegativeInteger(row.receipt_max_verification_age_hours, 72),
+    criticalStaleReceiptCountThreshold: asNonNegativeInteger(row.critical_stale_receipt_count_threshold, 3),
+    metadata: asRecord(row.metadata),
+    updatedAt: asNullableString(row.updated_at),
+    updatedBy: asNullableString(row.updated_by),
+    updatedByName: asNullableString(row.updated_by_name),
+  };
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      eventId: asString(entry.event_id),
+      policyKey: asString(entry.policy_key),
+      eventType: asPolicyEventType(entry.event_type),
+      actorProfileId: asNullableString(entry.actor_profile_id),
+      actorName: asNullableString(entry.actor_name),
+      eventMessage: asString(entry.event_message),
+      metadata: asRecord(entry.metadata),
+      createdAt: asNullableString(entry.created_at),
+    }))
+    .filter((entry) => entry.eventId.length > 0 && entry.policyKey.length > 0);
 }
 
 export function readGovernancePublicAuditVerifierFederationPackage(
@@ -191,6 +322,114 @@ export function readGovernancePublicAuditVerifierFederationDistributionGateSnaps
     federationOpsReady: asBoolean(row.federation_ops_ready, false),
     distributionReady: asBoolean(row.distribution_ready, false),
   };
+}
+
+export type GovernancePublicAuditVerifierFederationOpsReadinessIssue =
+  | 'operators_below_minimum'
+  | 'critical_alert_budget_exceeded'
+  | 'alert_sla_breaches_open'
+  | 'distribution_verification_stale'
+  | 'distribution_verification_alerts_open'
+  | 'worker_run_not_ok'
+  | 'federation_ops_not_ready';
+
+export type GovernancePublicAuditVerifierFederationDistributionReadinessIssue =
+  | 'missing_distribution_package'
+  | 'distribution_signatures_below_required'
+  | 'federation_ops_not_ready'
+  | 'distribution_gate_not_ready';
+
+export function readGovernancePublicAuditVerifierFederationOpsReadinessIssues(
+  summary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null,
+): GovernancePublicAuditVerifierFederationOpsReadinessIssue[] {
+  if (!summary) return ['federation_ops_not_ready'];
+
+  const issues: GovernancePublicAuditVerifierFederationOpsReadinessIssue[] = [];
+  if (summary.onboardedOperatorCount < summary.minOnboardedFederationOperators) {
+    issues.push('operators_below_minimum');
+  }
+  if (summary.openCriticalAlertCount > summary.maxOpenCriticalFederationAlerts) {
+    issues.push('critical_alert_budget_exceeded');
+  }
+  if (summary.alertSlaBreachedCount > 0) {
+    issues.push('alert_sla_breaches_open');
+  }
+  if (summary.distributionVerificationStale) {
+    issues.push('distribution_verification_stale');
+  }
+  if (summary.openDistributionVerificationAlertCount > 0) {
+    issues.push('distribution_verification_alerts_open');
+  }
+  if (summary.lastWorkerRunStatus !== 'ok') {
+    issues.push('worker_run_not_ok');
+  }
+  if (!summary.federationOpsReady) {
+    issues.push('federation_ops_not_ready');
+  }
+  return issues;
+}
+
+export function readGovernancePublicAuditVerifierFederationDistributionReadinessIssues(args: {
+  snapshot: GovernancePublicAuditVerifierFederationDistributionGateSnapshot | null;
+  federationOperationsSummary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
+}): GovernancePublicAuditVerifierFederationDistributionReadinessIssue[] {
+  const { snapshot, federationOperationsSummary } = args;
+  if (!snapshot) return ['missing_distribution_package', 'distribution_gate_not_ready'];
+
+  const issues: GovernancePublicAuditVerifierFederationDistributionReadinessIssue[] = [];
+  if (!snapshot.hasCapturedPackage) {
+    issues.push('missing_distribution_package');
+  }
+  if (snapshot.signatureCount < snapshot.requiredDistributionSignatures) {
+    issues.push('distribution_signatures_below_required');
+  }
+  if (!snapshot.federationOpsReady || !federationOperationsSummary?.federationOpsReady) {
+    issues.push('federation_ops_not_ready');
+  }
+  if (!snapshot.distributionReady) {
+    issues.push('distribution_gate_not_ready');
+  }
+  return issues;
+}
+
+export function formatGovernancePublicAuditVerifierFederationDistributionReadinessIssue(
+  issue: GovernancePublicAuditVerifierFederationDistributionReadinessIssue,
+): string {
+  switch (issue) {
+    case 'missing_distribution_package':
+      return 'No captured federation distribution package exists yet.';
+    case 'distribution_signatures_below_required':
+      return 'Captured package still needs more distribution signatures.';
+    case 'federation_ops_not_ready':
+      return 'Federation operations readiness is not met.';
+    case 'distribution_gate_not_ready':
+      return 'Distribution gate status is still pending.';
+    default:
+      return 'Distribution readiness requirement is not met.';
+  }
+}
+
+export function formatGovernancePublicAuditVerifierFederationOpsReadinessIssue(
+  issue: GovernancePublicAuditVerifierFederationOpsReadinessIssue,
+): string {
+  switch (issue) {
+    case 'operators_below_minimum':
+      return 'Onboarded federation operators are below the configured minimum.';
+    case 'critical_alert_budget_exceeded':
+      return 'Open critical federation alerts exceed the configured budget.';
+    case 'alert_sla_breaches_open':
+      return 'At least one federation alert is beyond the SLA window.';
+    case 'distribution_verification_stale':
+      return 'Distribution verification is stale.';
+    case 'distribution_verification_alerts_open':
+      return 'Open distribution verification alerts remain unresolved.';
+    case 'worker_run_not_ok':
+      return 'Latest federation worker run is not OK.';
+    case 'federation_ops_not_ready':
+      return 'Federation operations summary is not ready.';
+    default:
+      return 'Federation operations readiness requirement is not met.';
+  }
 }
 
 export function readGovernancePublicAuditVerifierFederationPackageSignatureRows(

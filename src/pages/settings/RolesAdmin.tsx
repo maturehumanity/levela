@@ -18,16 +18,11 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { APP_ROLES, type AppPermission, type AppRole } from '@/lib/access-control';
+import { APP_ROLES, type AppRole } from '@/lib/access-control';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-type RolePermissionRow = {
-  role: AppRole;
-  permission: AppPermission;
-};
 
 const roleIconMap = {
   guest: User,
@@ -66,7 +61,7 @@ export default function RolesAdmin() {
       const counts = Object.fromEntries(
         APP_ROLES.map((role) => [
           role,
-          ((data || []) as RolePermissionRow[]).filter((entry) => entry.role === role).length,
+          (data ?? []).filter((entry) => entry.role === role).length,
         ]),
       ) as Record<AppRole, number>;
 

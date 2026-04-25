@@ -5,11 +5,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type {
+  GovernancePublicAuditVerifierFederationExchangeAttestationRow,
+  GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
+  GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   GovernancePublicAuditVerifierFederationPackage,
   GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   GovernancePublicAuditVerifierFederationPackageHistoryRow,
   GovernancePublicAuditVerifierFederationPackageSignatureRow,
   GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
+} from '@/lib/governance-public-audit-verifiers';
+import {
+  formatGovernancePublicAuditVerifierFederationDistributionReadinessIssue,
+  formatGovernancePublicAuditVerifierFederationOpsReadinessIssue,
+  readGovernancePublicAuditVerifierFederationDistributionReadinessIssues,
+  readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
+  readGovernancePublicAuditVerifierFederationOpsReadinessIssues,
 } from '@/lib/governance-public-audit-verifiers';
 import { previewVerifierFederationPackagePayloadSha256Hex, sha256HexFromUtf8 } from '@/lib/verifier-federation-deterministic-json';
 
@@ -19,10 +31,18 @@ interface GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps
   federationPackageDistributionSummary: GovernancePublicAuditVerifierFederationPackageDistributionSummary | null;
   federationPackageSignatures: GovernancePublicAuditVerifierFederationPackageSignatureRow[];
   federationPackageHistory: GovernancePublicAuditVerifierFederationPackageHistoryRow[];
+  federationExchangeAttestationSummary: GovernancePublicAuditVerifierFederationExchangeAttestationSummary | null;
+  federationExchangeAttestations: GovernancePublicAuditVerifierFederationExchangeAttestationRow[];
+  federationExchangeReceiptPolicySummary: GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary | null;
+  federationExchangeReceiptPolicyEvents: GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow[];
   federationOperationsSummary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   capturingFederationPackage: boolean;
   signingFederationPackage: boolean;
   verifyingFederationDistribution: boolean;
+  recordingFederationExchangeAttestation: boolean;
+  verifyingFederationExchangeReceipt: boolean;
+  savingFederationExchangeReceiptPolicy: boolean;
+  rollingBackFederationExchangeReceiptPolicyEventId: string | null;
   captureFederationPackage: (packageNotes: string) => Promise<void> | void;
   signFederationPackage: (draft: {
     packageId: string;
@@ -35,6 +55,35 @@ interface GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps
     distributionChannel: string;
   }) => Promise<void> | void;
   runFederationDistributionVerification: (staleAfterHours: string) => Promise<void> | void;
+  recordFederationExchangeAttestation: (draft: {
+    packageId: string;
+    operatorLabel: string;
+    operatorIdentityUri: string;
+    operatorTrustDomain: string;
+    operatorJurisdictionCountryCode: string;
+    exchangeChannel: string;
+    attestationVerdict: string;
+    attestationNotes: string;
+    receiptPayloadText: string;
+    receiptSignature: string;
+    receiptSignerKey: string;
+    receiptSignatureAlgorithm: string;
+  }) => Promise<void> | void;
+  verifyFederationExchangeReceipt: (draft: {
+    attestationId: string;
+    receiptVerified: boolean;
+    receiptVerificationNotes: string;
+  }) => Promise<void> | void;
+  saveFederationExchangeReceiptPolicy: (draft: {
+    lookbackHours: string;
+    warningPendingThreshold: string;
+    criticalPendingThreshold: string;
+    escalationEnabled: boolean;
+    oncallChannel: string;
+    receiptMaxVerificationAgeHours: string;
+    criticalStaleReceiptCountThreshold: string;
+  }) => Promise<void> | void;
+  rollbackFederationExchangeReceiptPolicyToEvent: (eventId: string) => Promise<void> | void;
   formatTimestamp: (value: string | null) => string;
 }
 
@@ -50,13 +99,25 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
   federationPackageDistributionSummary,
   federationPackageSignatures,
   federationPackageHistory,
+  federationExchangeAttestationSummary,
+  federationExchangeAttestations,
+  federationExchangeReceiptPolicySummary,
+  federationExchangeReceiptPolicyEvents,
   federationOperationsSummary,
   capturingFederationPackage,
   signingFederationPackage,
   verifyingFederationDistribution,
+  recordingFederationExchangeAttestation,
+  verifyingFederationExchangeReceipt,
+  savingFederationExchangeReceiptPolicy,
+  rollingBackFederationExchangeReceiptPolicyEventId,
   captureFederationPackage,
   signFederationPackage,
   runFederationDistributionVerification,
+  recordFederationExchangeAttestation,
+  verifyFederationExchangeReceipt,
+  saveFederationExchangeReceiptPolicy,
+  rollbackFederationExchangeReceiptPolicyToEvent,
   formatTimestamp,
 }: GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps) {
   const [packageNotes, setPackageNotes] = useState('');
@@ -76,21 +137,90 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
   const [hashPreview, setHashPreview] = useState<{ hex: string; matches: boolean } | null>(null);
   const [serverDigestLoading, setServerDigestLoading] = useState(false);
   const [serverDigestPreview, setServerDigestPreview] = useState<{ hex: string; matches: boolean } | null>(null);
+  const [exchangeAttestationDraft, setExchangeAttestationDraft] = useState({
+    operatorLabel: '',
+    operatorIdentityUri: '',
+    operatorTrustDomain: 'external',
+    operatorJurisdictionCountryCode: '',
+    exchangeChannel: 'api',
+    attestationVerdict: 'accepted',
+    attestationNotes: '',
+    receiptPayloadText: '',
+    receiptSignature: '',
+    receiptSignerKey: '',
+    receiptSignatureAlgorithm: 'ed25519',
+  });
+  const [receiptPolicyDraft, setReceiptPolicyDraft] = useState({
+    lookbackHours: '336',
+    warningPendingThreshold: '1',
+    criticalPendingThreshold: '5',
+    escalationEnabled: true,
+    oncallChannel: 'public_audit_ops',
+    receiptMaxVerificationAgeHours: '72',
+    criticalStaleReceiptCountThreshold: '3',
+  });
 
   const signingTargetPackageId = useMemo(
     () => federationPackageDistributionSummary?.packageId || '',
     [federationPackageDistributionSummary?.packageId],
   );
+  const distributionGateSnapshot = useMemo<GovernancePublicAuditVerifierFederationDistributionGateSnapshot | null>(
+    () => {
+      if (!federationPackageDistributionSummary) return null;
+      return {
+        hasCapturedPackage: true,
+        packageId: federationPackageDistributionSummary.packageId,
+        batchId: federationPackageDistributionSummary.batchId,
+        capturedAt: federationPackageDistributionSummary.capturedAt,
+        packageVersion: federationPackageDistributionSummary.packageVersion,
+        packageHash: federationPackageDistributionSummary.packageHash,
+        sourceDirectoryHash: federationPackageDistributionSummary.sourceDirectoryHash,
+        requiredDistributionSignatures: federationPackageDistributionSummary.requiredDistributionSignatures,
+        signatureCount: federationPackageDistributionSummary.signatureCount,
+        distinctSignerCount: federationPackageDistributionSummary.distinctSignerCount,
+        distinctSignerJurisdictionsCount: federationPackageDistributionSummary.distinctSignerJurisdictionsCount,
+        distinctSignerTrustDomainsCount: federationPackageDistributionSummary.distinctSignerTrustDomainsCount,
+        lastSignedAt: federationPackageDistributionSummary.lastSignedAt,
+        federationOpsReady: federationPackageDistributionSummary.federationOpsReady,
+        distributionReady: federationPackageDistributionSummary.distributionReady,
+      };
+    },
+    [federationPackageDistributionSummary],
+  );
+  const distributionReadinessIssues = useMemo(
+    () => readGovernancePublicAuditVerifierFederationDistributionReadinessIssues({
+      snapshot: distributionGateSnapshot,
+      federationOperationsSummary,
+    }),
+    [distributionGateSnapshot, federationOperationsSummary],
+  );
+  const opsReadinessIssues = useMemo(
+    () => readGovernancePublicAuditVerifierFederationOpsReadinessIssues(federationOperationsSummary),
+    [federationOperationsSummary],
+  );
 
   useEffect(() => {
     if (!federationOperationsSummary) return;
     setStaleAfterHours(String(federationOperationsSummary.distributionVerificationLookbackHours));
-  }, [federationOperationsSummary?.distributionVerificationLookbackHours]);
+  }, [federationOperationsSummary]);
 
   useEffect(() => {
     setHashPreview(null);
     setServerDigestPreview(null);
   }, [federationPackage?.packageHash, federationPackage?.packagePayload, federationPackage?.digestSourceText]);
+
+  useEffect(() => {
+    if (!federationExchangeReceiptPolicySummary) return;
+    setReceiptPolicyDraft({
+      lookbackHours: String(federationExchangeReceiptPolicySummary.lookbackHours),
+      warningPendingThreshold: String(federationExchangeReceiptPolicySummary.warningPendingThreshold),
+      criticalPendingThreshold: String(federationExchangeReceiptPolicySummary.criticalPendingThreshold),
+      escalationEnabled: federationExchangeReceiptPolicySummary.escalationEnabled,
+      oncallChannel: federationExchangeReceiptPolicySummary.oncallChannel || 'public_audit_ops',
+      receiptMaxVerificationAgeHours: String(federationExchangeReceiptPolicySummary.receiptMaxVerificationAgeHours),
+      criticalStaleReceiptCountThreshold: String(federationExchangeReceiptPolicySummary.criticalStaleReceiptCountThreshold),
+    });
+  }, [federationExchangeReceiptPolicySummary]);
 
   const runSortedKeyHashPreview = useCallback(async () => {
     if (!federationPackage) return;
@@ -202,6 +332,162 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
           >
             Policy mismatch alerts {federationOperationsSummary.openDistributionPolicyMismatchAlertCount}
           </Badge>
+        </div>
+      )}
+      {federationExchangeAttestationSummary && (
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Exchange attestations {federationExchangeAttestationSummary.attestationCount}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={
+              federationExchangeAttestationSummary.needsFollowupCount > 0
+                ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-border bg-muted text-muted-foreground'
+            }
+          >
+            Needs follow-up {federationExchangeAttestationSummary.needsFollowupCount}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={
+              federationExchangeAttestationSummary.rejectedCount > 0
+                ? 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                : 'border-border bg-muted text-muted-foreground'
+            }
+          >
+            Rejected {federationExchangeAttestationSummary.rejectedCount}
+          </Badge>
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Distinct external operators {federationExchangeAttestationSummary.distinctExternalOperatorCount}
+          </Badge>
+          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+            Receipt evidence {federationExchangeAttestationSummary.receiptEvidenceCount}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={
+              federationExchangeAttestationSummary.receiptPendingVerificationCount > 0
+                ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+            }
+          >
+            Receipt pending {federationExchangeAttestationSummary.receiptPendingVerificationCount}
+          </Badge>
+        </div>
+      )}
+      {federationExchangeReceiptPolicySummary && (
+        <div className="rounded-md border border-border/60 bg-card p-2 text-xs">
+          <p className="font-medium text-foreground">Receipt escalation policy</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <Input
+              value={receiptPolicyDraft.lookbackHours}
+              onChange={(event) => setReceiptPolicyDraft((current) => ({ ...current, lookbackHours: event.target.value }))}
+              placeholder="Lookback (hours)"
+            />
+            <Input
+              value={receiptPolicyDraft.warningPendingThreshold}
+              onChange={(event) => setReceiptPolicyDraft((current) => ({ ...current, warningPendingThreshold: event.target.value }))}
+              placeholder="Warning threshold (pending)"
+            />
+            <Input
+              value={receiptPolicyDraft.criticalPendingThreshold}
+              onChange={(event) => setReceiptPolicyDraft((current) => ({ ...current, criticalPendingThreshold: event.target.value }))}
+              placeholder="Critical threshold (pending)"
+            />
+            <Input
+              value={receiptPolicyDraft.oncallChannel}
+              onChange={(event) => setReceiptPolicyDraft((current) => ({ ...current, oncallChannel: event.target.value }))}
+              placeholder="On-call channel"
+            />
+            <Input
+              value={receiptPolicyDraft.receiptMaxVerificationAgeHours}
+              onChange={(event) => setReceiptPolicyDraft((current) => ({ ...current, receiptMaxVerificationAgeHours: event.target.value }))}
+              placeholder="Max receipt age (hours)"
+            />
+            <Input
+              value={receiptPolicyDraft.criticalStaleReceiptCountThreshold}
+              onChange={(event) => setReceiptPolicyDraft((current) => ({ ...current, criticalStaleReceiptCountThreshold: event.target.value }))}
+              placeholder="Critical stale-count threshold"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => setReceiptPolicyDraft((current) => ({ ...current, escalationEnabled: !current.escalationEnabled }))}
+            >
+              Escalation {receiptPolicyDraft.escalationEnabled ? 'enabled' : 'disabled'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={savingFederationExchangeReceiptPolicy}
+              onClick={() => void saveFederationExchangeReceiptPolicy({
+                lookbackHours: receiptPolicyDraft.lookbackHours,
+                warningPendingThreshold: receiptPolicyDraft.warningPendingThreshold,
+                criticalPendingThreshold: receiptPolicyDraft.criticalPendingThreshold,
+                escalationEnabled: receiptPolicyDraft.escalationEnabled,
+                oncallChannel: receiptPolicyDraft.oncallChannel,
+                receiptMaxVerificationAgeHours: receiptPolicyDraft.receiptMaxVerificationAgeHours,
+                criticalStaleReceiptCountThreshold: receiptPolicyDraft.criticalStaleReceiptCountThreshold,
+              })}
+            >
+              {savingFederationExchangeReceiptPolicy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Save receipt escalation policy
+            </Button>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Updated {formatTimestamp(federationExchangeReceiptPolicySummary.updatedAt)}
+            {federationExchangeReceiptPolicySummary.updatedByName ? ` by ${federationExchangeReceiptPolicySummary.updatedByName}` : ''}
+          </p>
+          {federationExchangeReceiptPolicyEvents.length > 0 && (
+            <details className="mt-2 rounded border border-border/60 bg-background/70 p-2">
+              <summary className="cursor-pointer text-[11px] font-medium text-foreground">
+                Receipt policy timeline
+              </summary>
+              <div className="mt-2 space-y-2">
+                {federationExchangeReceiptPolicyEvents.slice(0, 20).map((event) => (
+                  <div key={event.eventId} className="rounded border border-border/50 bg-background/60 p-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{event.eventType.toUpperCase()}</p>
+                      <p>{formatTimestamp(event.createdAt)}</p>
+                    </div>
+                    <p className="mt-1">{event.eventMessage}</p>
+                    {event.actorName ? <p className="mt-1 text-[11px]">Actor: {event.actorName}</p> : null}
+                    {(event.eventType === 'created' || event.eventType === 'updated') ? (
+                      <div className="mt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          disabled={rollingBackFederationExchangeReceiptPolicyEventId === event.eventId}
+                          onClick={() => void rollbackFederationExchangeReceiptPolicyToEvent(event.eventId)}
+                        >
+                          {rollingBackFederationExchangeReceiptPolicyEventId === event.eventId ? 'Rolling back...' : 'Rollback to snapshot'}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+      {(distributionReadinessIssues.length > 0 || opsReadinessIssues.length > 0) && (
+        <div className="space-y-1 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs text-amber-800 dark:text-amber-200">
+          <p className="font-medium text-foreground">Readiness blockers</p>
+          {distributionReadinessIssues.map((issue) => (
+            <p key={`dist-${issue}`}>- {formatGovernancePublicAuditVerifierFederationDistributionReadinessIssue(issue)}</p>
+          ))}
+          {opsReadinessIssues.map((issue) => (
+            <p key={`ops-${issue}`}>- {formatGovernancePublicAuditVerifierFederationOpsReadinessIssue(issue)}</p>
+          ))}
         </div>
       )}
 
@@ -368,6 +654,91 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
           <p className="text-xs text-muted-foreground">
             The distribution signer key must match an active, governance-approved entry in verifier mirror directory signers.
           </p>
+          <div className="mt-1 rounded-md border border-border/60 bg-background/40 p-2">
+            <p className="mb-2 text-xs font-medium text-foreground">Record cross-operator exchange attestation</p>
+            <div className="space-y-2">
+              <Input
+                value={exchangeAttestationDraft.operatorLabel}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, operatorLabel: event.target.value }))}
+                placeholder="Operator label"
+              />
+              <Input
+                value={exchangeAttestationDraft.operatorIdentityUri}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, operatorIdentityUri: event.target.value }))}
+                placeholder="Operator identity URI (optional)"
+              />
+              <Input
+                value={exchangeAttestationDraft.operatorTrustDomain}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, operatorTrustDomain: event.target.value }))}
+                placeholder="Operator trust domain"
+              />
+              <Input
+                value={exchangeAttestationDraft.operatorJurisdictionCountryCode}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, operatorJurisdictionCountryCode: event.target.value.toUpperCase() }))}
+                placeholder="Operator jurisdiction country code (optional)"
+                maxLength={2}
+              />
+              <Input
+                value={exchangeAttestationDraft.exchangeChannel}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, exchangeChannel: event.target.value }))}
+                placeholder="Exchange channel"
+              />
+              <Input
+                value={exchangeAttestationDraft.attestationVerdict}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, attestationVerdict: event.target.value }))}
+                placeholder="Attestation verdict (accepted|rejected|needs_followup)"
+              />
+              <Input
+                value={exchangeAttestationDraft.attestationNotes}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, attestationNotes: event.target.value }))}
+                placeholder="Attestation notes (optional)"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                disabled={recordingFederationExchangeAttestation || !signingTargetPackageId || !exchangeAttestationDraft.operatorLabel.trim()}
+                onClick={() => void recordFederationExchangeAttestation({
+                  packageId: signingTargetPackageId,
+                  operatorLabel: exchangeAttestationDraft.operatorLabel,
+                  operatorIdentityUri: exchangeAttestationDraft.operatorIdentityUri,
+                  operatorTrustDomain: exchangeAttestationDraft.operatorTrustDomain,
+                  operatorJurisdictionCountryCode: exchangeAttestationDraft.operatorJurisdictionCountryCode,
+                  exchangeChannel: exchangeAttestationDraft.exchangeChannel,
+                  attestationVerdict: exchangeAttestationDraft.attestationVerdict,
+                  attestationNotes: exchangeAttestationDraft.attestationNotes,
+                  receiptPayloadText: exchangeAttestationDraft.receiptPayloadText,
+                  receiptSignature: exchangeAttestationDraft.receiptSignature,
+                  receiptSignerKey: exchangeAttestationDraft.receiptSignerKey,
+                  receiptSignatureAlgorithm: exchangeAttestationDraft.receiptSignatureAlgorithm,
+                })}
+              >
+                {recordingFederationExchangeAttestation ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Record exchange attestation
+              </Button>
+              <Input
+                value={exchangeAttestationDraft.receiptPayloadText}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, receiptPayloadText: event.target.value }))}
+                placeholder='Receipt payload JSON (optional)'
+              />
+              <Input
+                value={exchangeAttestationDraft.receiptSignature}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, receiptSignature: event.target.value }))}
+                placeholder='Receipt signature (optional)'
+              />
+              <Input
+                value={exchangeAttestationDraft.receiptSignerKey}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, receiptSignerKey: event.target.value }))}
+                placeholder='Receipt signer key (optional)'
+              />
+              <Input
+                value={exchangeAttestationDraft.receiptSignatureAlgorithm}
+                onChange={(event) => setExchangeAttestationDraft((current) => ({ ...current, receiptSignatureAlgorithm: event.target.value }))}
+                placeholder='Receipt signature algorithm (optional)'
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -413,6 +784,70 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
                 Trust domain {signature.signerTrustDomain}
                 {signature.signerJurisdictionCountryCode ? ` • ${signature.signerJurisdictionCountryCode}` : ''}
               </p>
+            </div>
+          ))}
+        </div>
+      )}
+      {federationExchangeAttestations.length > 0 && (
+        <div className="space-y-1 rounded-md border border-border/60 bg-card p-2 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Cross-operator exchange attestations</p>
+          {federationExchangeAttestations.slice(0, 12).map((attestation) => (
+            <div key={attestation.attestationId} className="rounded-md border border-border/50 bg-background/60 p-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-foreground">{attestation.operatorLabel}</p>
+                <span>{formatTimestamp(attestation.attestedAt)}</span>
+              </div>
+              <p className="mt-1">
+                Verdict {attestation.attestationVerdict} • Channel {attestation.exchangeChannel} • Trust domain {attestation.operatorTrustDomain}
+                {attestation.operatorJurisdictionCountryCode ? ` • ${attestation.operatorJurisdictionCountryCode}` : ''}
+              </p>
+              {attestation.attestedByName ? (
+                <p className="mt-1">Recorded by {attestation.attestedByName}</p>
+              ) : null}
+              {attestation.attestationNotes ? (
+                <p className="mt-1 text-[11px] leading-snug">{attestation.attestationNotes}</p>
+              ) : null}
+              <p className="mt-1 text-[11px] leading-snug">
+                Receipt evidence {attestation.receiptSignature && attestation.receiptSignerKey ? 'present' : 'missing'}
+                {' • '}
+                Verification {attestation.receiptVerified ? 'verified' : 'pending'}
+                {attestation.receiptVerifiedByName ? ` by ${attestation.receiptVerifiedByName}` : ''}
+              </p>
+              {attestation.receiptVerificationNotes ? (
+                <p className="mt-1 text-[11px] leading-snug">{attestation.receiptVerificationNotes}</p>
+              ) : null}
+              {canManageMirrorFederation && attestation.receiptSignature && attestation.receiptSignerKey ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    disabled={verifyingFederationExchangeReceipt}
+                    onClick={() => void verifyFederationExchangeReceipt({
+                      attestationId: attestation.attestationId,
+                      receiptVerified: true,
+                      receiptVerificationNotes: 'Verified by governance stewardship from provided exchange receipt evidence.',
+                    })}
+                  >
+                    Mark receipt verified
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    disabled={verifyingFederationExchangeReceipt}
+                    onClick={() => void verifyFederationExchangeReceipt({
+                      attestationId: attestation.attestationId,
+                      receiptVerified: false,
+                      receiptVerificationNotes: 'Receipt evidence reviewed and marked unverified by governance stewardship.',
+                    })}
+                  >
+                    Mark receipt unverified
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

@@ -1,11 +1,12 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.1.25",
+  "version": "0.1.29",
   "type": "module",
   "scripts": {
     "workspace:check": "bash scripts/check-workspace-drift.sh",
     "workspace:check:strict": "bash scripts/check-workspace-drift.sh --strict",
+    "dev:auto": "vite",
     "dev": "npm run workspace:check && vite",
     "build": "npm run workspace:check && vite build",
     "build:dev": "vite build --mode development",
@@ -13,6 +14,7 @@
     "icons:generate": "node scripts/generate-icon-assets.mjs",
     "release:bump": "bash scripts/release-bump.sh",
     "update:application": "npm run workspace:check:strict && bash scripts/update-application.sh",
+    "promote:android-testing-to-release": "node scripts/promote-android-testing-to-release.mjs",
     "cap:android": "npm run build:android && npx cap sync android && npx cap open android",
     "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
     "standards:check": "node scripts/check-engineering-standards.mjs",
@@ -81,6 +83,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "tweetnacl": "^1.0.3",
     "vaul": "^0.9.9",
     "zod": "^3.25.76"
   },

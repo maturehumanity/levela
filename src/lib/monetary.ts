@@ -1,3 +1,13 @@
+/** Repo-relative path to the full monetary policy and security model for agents and humans. */
+export const LUMA_POLICY_SPEC_RELATIVE_PATH =
+  'docs/02-moderated/policies/monetary/levela_luma_monetary_policy_and_ai_agent_spec.md' as const;
+
+/**
+ * Canonical native civic currency for Levela (medium of exchange, unit of account).
+ * Amounts in APIs and the database should use **whole Lumens** (integer); use {@link formatLumaFromLumens} for display.
+ *
+ * @see {@link LUMA_POLICY_SPEC_RELATIVE_PATH}
+ */
 export const LUMA_CURRENCY = {
   name: 'Luma',
   ticker: 'LUMA',
@@ -5,6 +15,47 @@ export const LUMA_CURRENCY = {
   subunitName: 'Lumen',
   subunitsPerUnit: 100,
 } as const;
+
+export type FormatLumaFromLumensOptions = {
+  locale?: string;
+  /** When false, suffix uses the full currency name instead of the short symbol. */
+  useSymbol?: boolean;
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+};
+
+/**
+ * Format a non-negative **whole Lumen** balance for UI (avoids float drift from repeated fractional math).
+ */
+export function formatLumaFromLumens(lumens: number, options?: FormatLumaFromLumensOptions): string {
+  if (!Number.isInteger(lumens) || lumens < 0) {
+    throw new RangeError('lumens must be a non-negative integer');
+  }
+  if (lumens > Number.MAX_SAFE_INTEGER) {
+    throw new RangeError('lumens exceeds safe integer range for display');
+  }
+  const whole = Math.floor(lumens / LUMA_CURRENCY.subunitsPerUnit);
+  const frac = lumens % LUMA_CURRENCY.subunitsPerUnit;
+  const lumaAsNumber = whole + frac / LUMA_CURRENCY.subunitsPerUnit;
+  const fmt = new Intl.NumberFormat(options?.locale, {
+    minimumFractionDigits: options?.minimumFractionDigits ?? (frac === 0 ? 0 : 2),
+    maximumFractionDigits: options?.maximumFractionDigits ?? 2,
+  });
+  const suffix = options?.useSymbol === false ? ` ${LUMA_CURRENCY.name}` : ` ${LUMA_CURRENCY.symbol}`;
+  return `${fmt.format(lumaAsNumber)}${suffix}`;
+}
+
+/**
+ * Parse a user-entered decimal Luma amount (e.g. from a price field) into whole Lumens.
+ * Accepts optional commas as decimal separators. Returns null if empty or invalid.
+ */
+export function parseUserLumaInputToLumens(raw: string): number | null {
+  const normalized = raw.trim().replace(/\s/g, '').replace(/,/g, '.');
+  if (normalized === '') return null;
+  const n = Number(normalized);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return toLumens(n);
+}
 
 export const CIVIC_BASKET_BASELINE_INDEX = 100;
 

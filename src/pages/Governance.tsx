@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Clock3, Landmark, Loader2, Vote, XCircle } from 'lucide-react';
+import { Landmark, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -9,7 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { GovernanceGuardianSignoffCard } from '@/components/governance/GovernanceGuardianSignoffCard';
+import { GovernanceHubActivationReadinessCard } from '@/components/governance/GovernanceHubActivationReadinessCard';
+import { GovernanceHubAdditionalDetailsPanel } from '@/components/governance/GovernanceHubAdditionalDetailsPanel';
+import { GovernanceHubProposalSignalsSection } from '@/components/governance/GovernanceHubProposalSignalsSection';
+import { GovernanceHubProposalsList } from '@/components/governance/GovernanceHubProposalsList';
+import { GovernanceHubSanctionsSection } from '@/components/governance/GovernanceHubSanctionsSection';
+import { GovernanceHubIdentityVerificationCard } from '@/components/governance/GovernanceHubIdentityVerificationCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +43,23 @@ import {
   sameGovernanceEligibilitySnapshot,
   type GovernanceEligibilitySnapshotPayload,
 } from '@/lib/governance-eligibility-snapshots';
-import { isMissingGovernanceProposalBackend, isMissingGovernanceSanctionsBackend } from '@/lib/governance-hub-backend';
+import {
+  isMissingActivationReviewBackend,
+  normalizeProfileCountryCodeForActivation,
+  pickActivationReviewsForCitizenHub,
+  type ActivationThresholdReviewHubRow,
+} from '@/lib/governance-activation-review';
+import {
+  buildFederationExecutionGateMessages,
+  buildGuardianRelayExecutionGateMessages,
+  type GovernanceHubFederationExecutionGate,
+  type GovernanceHubGuardianRelayExecutionGate,
+} from '@/lib/governance-execution-gates';
+import {
+  isMissingGovernanceProposalBackend,
+  isMissingGovernanceSanctionsBackend,
+  isMissingIdentityVerificationCasesBackend,
+} from '@/lib/governance-hub-backend';
 import {
   computeGovernanceTimingWindow,
   getGovernanceDecisionClassLabelKey,
@@ -44,6 +67,8 @@ import {
   getGovernanceVoteChoiceLabelKey,
   resolveGovernanceProposal,
 } from '@/lib/governance-proposals';
+import { buildGovernanceVoteHistoryForVoter } from '@/lib/governance-vote-history';
+import { buildGovernanceExecutionTasksForUser } from '@/lib/governance-execution-tasks';
 import {
   readGovernanceExecutionThresholdRuleFromMetadata,
   resolveGovernanceExecutionThresholdRule,
@@ -77,8 +102,17 @@ import {
   readGovernancePublicAuditVerifierMirrorFederationOperationsSummary,
   type GovernancePublicAuditVerifierMirrorFederationOperationsSummary,
 } from '@/lib/governance-public-audit-verifiers';
+import {
+  readGovernanceGuardianRelayDistributionReadinessIssues,
+  readGovernanceProposalGuardianRelayClientVerificationDistributionSummary,
+} from '@/lib/governance-guardian-relay-distribution';
+import {
+  isMissingGuardianRelayBackend,
+  readGovernanceProposalGuardianRelayOperationsSummary,
+} from '@/lib/governance-guardian-relays';
 import { createEmptyGovernanceProposalDraft } from '@/lib/governance-proposal-draft';
-import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
+import { calculateLevelaScore } from '@/lib/scoring';
+import { resolveGovernanceHubIdentityVerificationPresentation, type GovernanceHubIdentityVerificationCasePick } from '@/lib/verification-workflow';
 import type { PillarId } from '@/lib/constants';
 
 const GovernanceProposalComposer = lazy(() =>
@@ -131,6 +165,7 @@ async function resolveGovernanceExecutionNotReadyMessage(
 export default function Governance() {
   const { profile, refreshProfile } = useAuth();
   const { t, language } = useLanguage();
+  const [mobilePane, setMobilePane] = useState<'board' | 'workspace'>('board');
   const [proposalDraft, setProposalDraft] = useState(createEmptyGovernanceProposalDraft);
   const [governanceScore, setGovernanceScore] = useState<number | null>(null);
   const [loadingEligibility, setLoadingEligibility] = useState(true);
@@ -157,14 +192,20 @@ export default function Governance() {
   const [submittingAppealForSanctionId, setSubmittingAppealForSanctionId] = useState<string | null>(null);
   const [appealDraftBySanctionId, setAppealDraftBySanctionId] = useState<Record<string, { reason: string; evidence: string }>>({});
   const [lastSnapshot, setLastSnapshot] = useState<GovernanceEligibilitySnapshotPayload | null>(null);
-  const [verifierFederationExecutionGate, setVerifierFederationExecutionGate] = useState<{
-    policyRequiresFederationDistribution: boolean;
-    distributionGateMet: boolean;
-    federationOps: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
-  } | null>(null);
+  const [verifierFederationExecutionGate, setVerifierFederationExecutionGate] = useState<GovernanceHubFederationExecutionGate | null>(null);
   const [federationDistributionEscalationOpenPageCount, setFederationDistributionEscalationOpenPageCount] = useState(0);
   const [activationDemographicFeedEscalationOpenPageCount, setActivationDemographicFeedEscalationOpenPageCount] = useState(0);
   const [guardianRelayEscalationOpenPageCount, setGuardianRelayEscalationOpenPageCount] = useState(0);
+  const [emergencyAccessOpsEscalationOpenPageCount, setEmergencyAccessOpsEscalationOpenPageCount] = useState(0);
+  const [guardianRelayExecutionGate, setGuardianRelayExecutionGate] = useState<GovernanceHubGuardianRelayExecutionGate | null>(null);
+  const [identityVerificationCase, setIdentityVerificationCase] = useState<GovernanceHubIdentityVerificationCasePick | null>(null);
+  const [identityVerificationLoading, setIdentityVerificationLoading] = useState(true);
+  const [identityVerificationUnavailable, setIdentityVerificationUnavailable] = useState(false);
+  const [identityVerificationLoadFailed, setIdentityVerificationLoadFailed] = useState(false);
+  const [activationHubReviews, setActivationHubReviews] = useState<ActivationThresholdReviewHubRow[]>([]);
+  const [activationHubLoading, setActivationHubLoading] = useState(true);
+  const [activationHubUnavailable, setActivationHubUnavailable] = useState(false);
+  const [activationHubLoadFailed, setActivationHubLoadFailed] = useState(false);
   const isNativeMobileGovernanceDevice = useMemo(() => isNativeGovernanceApp(), []);
 
   const projectedCitizenshipStatus = useMemo(
@@ -252,7 +293,7 @@ export default function Governance() {
         return;
       }
 
-      const typedEndorsements = ((data || []) as Endorsement[]).map((item) => ({
+      const typedEndorsements = (data ?? []).map((item) => ({
         ...item,
         pillar: item.pillar as PillarId,
       }));
@@ -350,14 +391,170 @@ export default function Governance() {
       return;
     }
 
-    setSanctions((sanctionsResponse.data || []) as GovernanceSanctionRow[]);
-    setAppeals((appealsResponse.data || []) as GovernanceSanctionAppealRow[]);
+    setSanctions(sanctionsResponse.data ?? []);
+    setAppeals(appealsResponse.data ?? []);
     setSanctionsBackendUnavailable(false);
   }, [profile?.id]);
 
   useEffect(() => {
     void loadSanctionsAndAppeals();
   }, [loadSanctionsAndAppeals]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIdentityVerificationCase = async () => {
+      if (!profile?.id) {
+        setIdentityVerificationCase(null);
+        setIdentityVerificationUnavailable(false);
+        setIdentityVerificationLoadFailed(false);
+        setIdentityVerificationLoading(false);
+        return;
+      }
+
+      setIdentityVerificationLoading(true);
+      setIdentityVerificationLoadFailed(false);
+
+      const { data, error } = await supabase
+        .from('identity_verification_cases')
+        .select('status, personal_info_completed, contact_info_completed, live_verification_completed')
+        .eq('profile_id', profile.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        if (isMissingIdentityVerificationCasesBackend(error)) {
+          setIdentityVerificationUnavailable(true);
+          setIdentityVerificationLoadFailed(false);
+          setIdentityVerificationCase(null);
+        } else {
+          console.error('Failed to load identity verification case for governance hub:', error);
+          setIdentityVerificationUnavailable(false);
+          setIdentityVerificationLoadFailed(true);
+          setIdentityVerificationCase(null);
+        }
+        setIdentityVerificationLoading(false);
+        return;
+      }
+
+      setIdentityVerificationUnavailable(false);
+      setIdentityVerificationLoadFailed(false);
+      setIdentityVerificationCase(data);
+      setIdentityVerificationLoading(false);
+    };
+
+    void loadIdentityVerificationCase();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
+
+  const identityVerificationPresentation = useMemo(() => {
+    if (!profile?.id || identityVerificationLoading || identityVerificationUnavailable || identityVerificationLoadFailed) {
+      return null;
+    }
+
+    return resolveGovernanceHubIdentityVerificationPresentation({
+      isVerified: Boolean(profile.is_verified),
+      caseRow: identityVerificationCase,
+    });
+  }, [
+    identityVerificationCase,
+    identityVerificationLoadFailed,
+    identityVerificationLoading,
+    identityVerificationUnavailable,
+    profile?.id,
+    profile?.is_verified,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadActivationHubReviews = async () => {
+      if (!profile?.id) {
+        setActivationHubReviews([]);
+        setActivationHubUnavailable(false);
+        setActivationHubLoadFailed(false);
+        setActivationHubLoading(false);
+        return;
+      }
+
+      setActivationHubLoading(true);
+      setActivationHubLoadFailed(false);
+
+      const { data, error } = await supabase
+        .from('activation_threshold_reviews')
+        .select(
+          'id, scope_type, country_code, jurisdiction_label, status, threshold_percent, target_population, eligible_verified_citizens_count, metadata, updated_at',
+        )
+        .order('updated_at', { ascending: false })
+        .limit(120);
+
+      if (cancelled) return;
+
+      if (error) {
+        if (isMissingActivationReviewBackend(error)) {
+          setActivationHubUnavailable(true);
+          setActivationHubLoadFailed(false);
+          setActivationHubReviews([]);
+        } else {
+          console.error('Failed to load activation threshold reviews for governance hub:', error);
+          setActivationHubUnavailable(false);
+          setActivationHubLoadFailed(true);
+          setActivationHubReviews([]);
+        }
+        setActivationHubLoading(false);
+        return;
+      }
+
+      setActivationHubUnavailable(false);
+      setActivationHubLoadFailed(false);
+      setActivationHubReviews(data ?? []);
+      setActivationHubLoading(false);
+    };
+
+    void loadActivationHubReviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
+
+  const normalizedActivationMemberCountryCode = useMemo(
+    () => normalizeProfileCountryCodeForActivation(profile?.country_code),
+    [profile?.country_code],
+  );
+
+  const citizenActivationReviews = useMemo(
+    () => pickActivationReviewsForCitizenHub(activationHubReviews, normalizedActivationMemberCountryCode),
+    [activationHubReviews, normalizedActivationMemberCountryCode],
+  );
+
+  const proposalsById = useMemo(
+    () => Object.fromEntries(proposals.map((item) => [item.id, item])) as Record<string, ProposalRow>,
+    [proposals],
+  );
+
+  const governanceVoteHistoryEntries = useMemo(() => {
+    if (!profile?.id || backendUnavailable) return [];
+
+    return buildGovernanceVoteHistoryForVoter({
+      votes,
+      proposalsById,
+      voterId: profile.id,
+    });
+  }, [backendUnavailable, profile?.id, proposalsById, votes]);
+
+  const federationOpsGateMessages = useMemo(
+    () => buildFederationExecutionGateMessages(t, verifierFederationExecutionGate),
+    [t, verifierFederationExecutionGate],
+  );
+  const guardianRelayGateMessages = useMemo(
+    () => buildGuardianRelayExecutionGateMessages(t, guardianRelayExecutionGate),
+    [guardianRelayExecutionGate, t],
+  );
 
   const queueImplementationsForProposal = useCallback(async (
     proposal: ProposalRow,
@@ -559,9 +756,11 @@ export default function Governance() {
     if (primaryError && isMissingGovernanceProposalBackend(primaryError)) {
       setBackendUnavailable(true);
       setVerifierFederationExecutionGate(null);
+      setGuardianRelayExecutionGate(null);
       setFederationDistributionEscalationOpenPageCount(0);
       setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
+      setEmergencyAccessOpsEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
     }
@@ -582,23 +781,25 @@ export default function Governance() {
       });
       toast.error(t('governanceHub.loadFailed'));
       setVerifierFederationExecutionGate(null);
+      setGuardianRelayExecutionGate(null);
       setFederationDistributionEscalationOpenPageCount(0);
       setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
+      setEmergencyAccessOpsEscalationOpenPageCount(0);
       setLoadingHub(false);
       return;
     }
 
-    const nextProposals = (proposalResponse.data || []) as ProposalRow[];
-    const nextVotes = (voteResponse.data || []) as VoteRow[];
-    const nextEvents = (eventResponse.data || []) as EventRow[];
-    const nextEligibleCitizenCount = eligibleCountResponse.count || 0;
-    const nextProfileDirectory = (profileDirectoryResponse.data || []) as ProfileDirectoryRow[];
-    const nextMonetaryPolicyProfiles = (monetaryPoliciesResponse.data || []) as MonetaryPolicyProfileRow[];
-    const nextContentItems = (contentItemsResponse.data || []) as ContentItemRow[];
-    const nextExecutionUnits = (executionUnitsResponse.data || []) as GovernanceExecutionUnitRow[];
-    const nextUnitMemberships = (membershipsResponse.data || []) as ExecutionUnitMembershipRow[];
-    const nextImplementations = (implementationsResponse.data || []) as ProposalImplementationRow[];
+    const nextProposals = proposalResponse.data ?? [];
+    const nextVotes = voteResponse.data ?? [];
+    const nextEvents = eventResponse.data ?? [];
+    const nextEligibleCitizenCount = eligibleCountResponse.count ?? 0;
+    const nextProfileDirectory = profileDirectoryResponse.data ?? [];
+    const nextMonetaryPolicyProfiles = monetaryPoliciesResponse.data ?? [];
+    const nextContentItems = contentItemsResponse.data ?? [];
+    const nextExecutionUnits = executionUnitsResponse.data ?? [];
+    const nextUnitMemberships = membershipsResponse.data ?? [];
+    const nextImplementations = implementationsResponse.data ?? [];
     const availableUnitsByKey = Object.fromEntries(
       nextExecutionUnits.map((unit) => [unit.unit_key, unit]),
     ) as Record<string, GovernanceExecutionUnitRow>;
@@ -648,7 +849,15 @@ export default function Governance() {
     setBackendUnavailable(false);
 
     const gateProposalId = nextProposals[0]?.id ?? '00000000-0000-0000-0000-000000000000';
-    const [latestBatchRowResponse, failoverSummaryResponse, federationDistributionGateResponse, federationOpsSummaryResponse] = await Promise.all([
+    const [
+      latestBatchRowResponse,
+      failoverSummaryResponse,
+      federationDistributionGateResponse,
+      federationOpsSummaryResponse,
+      guardianRelayDistributionGateResponse,
+      guardianRelayOpsSummaryResponse,
+      guardianRelayDistributionSummaryResponse,
+    ] = await Promise.all([
       supabase
         .from('governance_public_audit_batches')
         .select('id')
@@ -661,6 +870,15 @@ export default function Governance() {
         requested_policy_key: 'default',
         requested_lookback_hours: 24,
         requested_alert_sla_hours: 12,
+      }),
+      supabase.rpc('governance_proposal_meets_guardian_relay_distribution_gate', { target_proposal_id: gateProposalId }),
+      supabase.rpc('governance_proposal_guardian_relay_operations_summary', {
+        target_proposal_id: gateProposalId,
+        requested_policy_key: 'guardian_relay_default',
+        requested_attestation_sla_minutes: null,
+      }),
+      supabase.rpc('governance_proposal_guardian_relay_client_verification_distribution_summary', {
+        target_proposal_id: gateProposalId,
       }),
     ]);
 
@@ -701,6 +919,28 @@ export default function Governance() {
       });
     }
 
+    const guardianRelayGateError = guardianRelayDistributionGateResponse.error || guardianRelayOpsSummaryResponse.error;
+    if (guardianRelayGateError && isMissingGuardianRelayBackend(guardianRelayGateError)) {
+      setGuardianRelayExecutionGate(null);
+    } else if (guardianRelayGateError) {
+      console.warn('Could not load guardian relay execution gate context for governance hub:', guardianRelayGateError);
+      setGuardianRelayExecutionGate(null);
+    } else {
+      const relayOps = readGovernanceProposalGuardianRelayOperationsSummary(guardianRelayOpsSummaryResponse.data);
+      const relayDistributionSummary = readGovernanceProposalGuardianRelayClientVerificationDistributionSummary(
+        guardianRelayDistributionSummaryResponse.data,
+      );
+      const relayDistributionIssues = readGovernanceGuardianRelayDistributionReadinessIssues({
+        distributionSummary: relayDistributionSummary,
+        relayOperationsSummary: relayOps,
+      });
+      setGuardianRelayExecutionGate({
+        policyRequiresRelayDistribution: Boolean(relayOps?.requireRelayOpsReadiness),
+        distributionGateMet: relayDistributionIssues.length === 0 && Boolean(guardianRelayDistributionGateResponse.data),
+        relayOps,
+      });
+    }
+
     if (!executionPageBoardResponse.error) {
       const executionPages = readGovernancePublicAuditExternalExecutionPageBoardRows(executionPageBoardResponse.data);
       setFederationDistributionEscalationOpenPageCount(
@@ -712,15 +952,20 @@ export default function Governance() {
       setGuardianRelayEscalationOpenPageCount(
         countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'guardian_relay'),
       );
+      setEmergencyAccessOpsEscalationOpenPageCount(
+        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'emergency_access'),
+      );
     } else if (isMissingPublicAuditAutomationBackend(executionPageBoardResponse.error)) {
       setFederationDistributionEscalationOpenPageCount(0);
       setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
+      setEmergencyAccessOpsEscalationOpenPageCount(0);
     } else {
       console.warn('Could not load external execution page board for governance hub:', executionPageBoardResponse.error);
       setFederationDistributionEscalationOpenPageCount(0);
       setActivationDemographicFeedEscalationOpenPageCount(0);
       setGuardianRelayEscalationOpenPageCount(0);
+      setEmergencyAccessOpsEscalationOpenPageCount(0);
     }
 
     setLoadingHub(false);
@@ -773,6 +1018,15 @@ export default function Governance() {
     () => new Set(unitMemberships.filter((membership) => membership.profile_id === profile?.id).map((membership) => membership.unit_id)),
     [profile?.id, unitMemberships],
   );
+  const governanceExecutionTasks = useMemo(() => {
+    if (!profile?.id || backendUnavailable || loadingHub) return [];
+    return buildGovernanceExecutionTasksForUser({
+      implementations,
+      proposalsById,
+      unitsById,
+      currentUserUnitIds,
+    });
+  }, [backendUnavailable, currentUserUnitIds, implementations, loadingHub, profile?.id, proposalsById, unitsById]);
   const contentItemsById = useMemo(
     () => Object.fromEntries(contentItems.map((item) => [item.id, item])) as Record<string, ContentItemRow>,
     [contentItems],
@@ -825,6 +1079,26 @@ export default function Governance() {
         return accumulator;
       }, {}),
     [appeals],
+  );
+  const openProposalsCount = useMemo(
+    () => proposals.filter((proposal) => proposal.status === 'open').length,
+    [proposals],
+  );
+  const proposalsNeedingMyVoteCount = useMemo(
+    () => proposals.filter((proposal) => proposal.status === 'open' && !currentUserVotes[proposal.id]).length,
+    [currentUserVotes, proposals],
+  );
+  const pendingProposals = useMemo(
+    () => proposals.filter((proposal) => proposal.status === 'open'),
+    [proposals],
+  );
+  const passedProposals = useMemo(
+    () => proposals.filter((proposal) => proposal.status !== 'open'),
+    [proposals],
+  );
+  const currentSuggestions = useMemo(
+    () => pendingProposals.filter((proposal) => !currentUserVotes[proposal.id]).slice(0, 4),
+    [currentUserVotes, pendingProposals],
   );
 
   const formatDateTime = (value: string | null) => {
@@ -1016,6 +1290,50 @@ export default function Governance() {
     await loadGovernanceHub();
   };
 
+  const handleLoadAgreementsProposalTemplate = () => {
+    const initiatorLabel = profile?.full_name?.trim() || profile?.username?.trim() || t('common.you');
+
+    setProposalDraft({
+      title: 'Levela Agreements MVP and Governance Vote-Flow Test',
+      summary:
+        'Introduce digital agreement templates linked from Market into a dedicated Agreements workspace, then run this vote with Nela to validate the collective governance flow.',
+      body: [
+        'Initiator: ' + initiatorLabel,
+        '',
+        'Proposal objective',
+        '- Launch a minimum viable Agreements module for buyer-seller and service-provider agreements in Levela.',
+        '- Keep Market as the discovery entry point, and route drafting/signing to Agreements workspace.',
+        '- Use this proposal as a live test for multi-citizen voting (initiator + Nela).',
+        '',
+        'MVP scope',
+        '- Add Agreement templates: Core, Product, and Service.',
+        '- Allow both parties to edit permitted sections before signing.',
+        '- Add status lifecycle: draft, pending_counterparty, signed, cancelled.',
+        '- Capture digital signatures, timestamp, signer ids, and immutable signed snapshot.',
+        '- Link each agreement record back to a Market listing when started from Market.',
+        '',
+        'UX flow',
+        '- User discovers listing in Market and taps Start agreement.',
+        '- System opens prefilled agreement draft in Agreements workspace.',
+        '- Both parties review/edit terms and sign digitally.',
+        '- Signed agreement appears in both parties history with audit trail.',
+        '',
+        'Governance acceptance criteria',
+        '- This proposal remains open long enough for both me and Nela to vote.',
+        '- Both votes are visible in Governance > Proposals tally and event history.',
+        '- Proposal can finalize according to quorum/threshold rules without errors.',
+        '- Final decision summary is recorded and visible in proposal details.',
+      ].join('\n'),
+      decisionClass: 'ordinary',
+      execution: {
+        ...createEmptyGovernanceProposalDraft().execution,
+        actionType: 'manual_follow_through',
+        notes:
+          'After approval, implement Agreements MVP with Market entry integration and run vote-flow QA with initiator and Nela accounts.',
+      },
+    });
+  };
+
   const handleVote = async (proposal: ProposalRow, choice: Database['public']['Enums']['governance_vote_choice']) => {
     if (!profile?.id) {
       toast.error(t('governanceHub.voteBlocked'));
@@ -1082,7 +1400,7 @@ export default function Governance() {
     if (!refreshedVotesError) {
       await finalizeProposalIfReady(
         proposal,
-        (refreshedVotes || []) as VoteRow[],
+        refreshedVotes ?? [],
         profile.id,
         unitsByKey,
         implementationsByProposal[proposal.id] || [],
@@ -1271,617 +1589,287 @@ export default function Governance() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 px-4 py-6">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-              <Landmark className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-display font-bold text-foreground">{t('governanceHub.title')}</h1>
-              <p className="text-sm text-muted-foreground">{t('governanceHub.subtitle')}</p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.04 }}
-          className="grid gap-3 md:grid-cols-4"
-        >
-          <Card className="rounded-3xl border-border/60 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.cards.score')}</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              {loadingEligibility ? '—' : governanceScore?.toFixed(1) ?? '—'}
-            </p>
-          </Card>
-          <Card className="rounded-3xl border-border/60 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.cards.eligibility')}</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              {governanceEligibility.eligible ? t('governanceHub.eligible') : t('governanceHub.ineligible')}
-            </p>
-          </Card>
-          <Card className="rounded-3xl border-border/60 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.cards.eligibleCitizens')}</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{eligibleCitizenCount}</p>
-          </Card>
-          <Card className="rounded-3xl border-border/60 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.cards.mode')}</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              {eligibleCitizenCount <= 1 ? t('governanceHub.bootstrapMode') : t('governanceHub.collectiveMode')}
-            </p>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <Card className="rounded-3xl border-border/60 p-5 shadow-sm">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant={governanceEligibility.eligible ? 'secondary' : 'outline'}>
-                {governanceEligibility.eligible ? t('governanceHub.eligible') : t('governanceHub.ineligible')}
-              </Badge>
-              <Badge variant={profile?.is_active_citizen ? 'secondary' : 'outline'}>
-                {profile?.is_active_citizen ? t('admin.users.activeCitizenBadge') : t('governanceHub.notActiveCitizen')}
-              </Badge>
-            </div>
-
-            {!governanceEligibility.eligible && (
-              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <p>{t('governanceHub.requirementsTitle')}</p>
-                {requirementMessages.map((message) => (
-                  <p key={message}>• {message}</p>
-                ))}
-                {proposalBlockedBySanction && <p>• {t('governanceHub.proposeBlockedBySanction')}</p>}
-                {voteBlockedBySanction && <p>• {t('governanceHub.voteBlockedBySanction')}</p>}
-                {eligibilityUnavailable && <p>• {t('governanceHub.scoreUnavailable')}</p>}
+      <div className="h-[calc(100vh-6.5rem)] overflow-hidden px-3 py-3">
+        <div className="flex h-full flex-col gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                <Landmark className="h-4 w-4" />
               </div>
-            )}
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="rounded-3xl border-border/60 p-5 shadow-sm">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-foreground">{t('governanceHub.sanctionsTitle')}</h2>
-              <p className="text-sm text-muted-foreground">{t('governanceHub.sanctionsDescription')}</p>
+              <div>
+                <h1 className="text-xl font-display font-bold text-foreground">{t('governanceHub.title')}</h1>
+              </div>
             </div>
+            <TooltipProvider>
+              <div className="flex gap-2">
+                <Button type="button" size="icon" variant="outline" className="h-8 w-8" asChild>
+                  <Link to="/search?tab=people" aria-label={t('common.search')}>
+                    <Search className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <div className="hidden gap-2 md:flex">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant={governanceEligibility.eligible ? 'secondary' : 'outline'}>
+                      {governanceEligibility.eligible ? t('governanceHub.eligible') : t('governanceHub.ineligible')}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('governanceHub.requirementsTitle')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant={profile?.is_active_citizen ? 'secondary' : 'outline'}>
+                      {profile?.is_active_citizen ? t('admin.users.activeCitizenBadge') : t('governanceHub.notActiveCitizen')}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('governanceHub.cards.eligibleCitizens')}</TooltipContent>
+                </Tooltip>
+                </div>
+              </div>
+            </TooltipProvider>
+          </div>
 
-            {sanctionsBackendUnavailable ? (
-              <p className="mt-4 text-sm text-muted-foreground">{t('governanceHub.backendUnavailable')}</p>
-            ) : (
-              <div className="mt-4 space-y-4">
-                {activeSanctions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t('governanceHub.activeSanctionsEmpty')}</p>
-                ) : (
-                  activeSanctions.map((sanction) => {
-                    const scope = getGovernanceSanctionScopeOptionFromRow(sanction);
-                    const openAppeal = openAppealsBySanctionId[sanction.id] || null;
-                    const draft = appealDraftBySanctionId[sanction.id] || { reason: '', evidence: '' };
-                    const canSubmitAppeal = !openAppeal;
+          <div className="grid grid-cols-2 gap-2 md:hidden">
+            <Button
+              size="sm"
+              variant={mobilePane === 'board' ? 'secondary' : 'outline'}
+              onClick={() => setMobilePane('board')}
+            >
+              Participate
+            </Button>
+            <Button
+              size="sm"
+              variant={mobilePane === 'workspace' ? 'secondary' : 'outline'}
+              onClick={() => setMobilePane('workspace')}
+            >
+              Workspace
+            </Button>
+          </div>
 
-                    return (
-                      <div key={sanction.id} className="space-y-3 rounded-2xl border border-border/60 bg-background/70 p-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="outline" className="rounded-full">
-                            {t(getGovernanceSanctionScopeLabelKey(scope))}
-                          </Badge>
-                          {openAppeal && (
-                            <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">
-                              {t(getGovernanceSanctionAppealStatusLabelKey(openAppeal.status))}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-foreground">
-                          <span className="font-medium">{t('governanceHub.sanctionReasonLabel')}:</span> {sanction.reason}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t('governanceHub.sanctionStartsAtLabel')}: {formatDateTime(sanction.starts_at)}
-                          {' • '}
-                          {t('governanceHub.sanctionEndsAtLabel')}: {sanction.ends_at ? formatDateTime(sanction.ends_at) : '—'}
-                        </p>
+          <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-12">
+            <div className={`min-h-0 space-y-3 overflow-y-auto pr-1 md:col-span-4 ${mobilePane === 'board' ? 'hidden md:block' : ''}`}>
+              <Card className="rounded-2xl border-border/60 p-3 shadow-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.cards.score')}</p>
+                    <p className="mt-1 text-xl font-semibold text-foreground">{loadingEligibility ? '—' : governanceScore?.toFixed(1) ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.cards.mode')}</p>
+                    <p className="mt-1 text-xl font-semibold text-foreground">
+                      {eligibleCitizenCount <= 1 ? t('governanceHub.bootstrapMode') : t('governanceHub.collectiveMode')}
+                    </p>
+                  </div>
+                </div>
+                {!governanceEligibility.eligible ? (
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {requirementMessages.slice(0, 1).map((message) => <p key={message}>• {message}</p>)}
+                  </div>
+                ) : null}
+              </Card>
 
-                        {openAppeal ? (
-                          <p className="text-sm text-muted-foreground">{t('governanceHub.appealAlreadyOpen')}</p>
-                        ) : (
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-foreground">{t('governanceHub.appealsTitle')}</p>
-                            <label className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.appealReasonLabel')}</label>
-                            <Textarea
-                              value={draft.reason}
-                              placeholder={t('governanceHub.appealReasonPlaceholder')}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                setAppealDraftBySanctionId((current) => ({
-                                  ...current,
-                                  [sanction.id]: {
-                                    ...draft,
-                                    reason: value,
-                                  },
-                                }));
-                              }}
-                            />
-                            <label className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.appealEvidenceLabel')}</label>
-                            <Textarea
-                              value={draft.evidence}
-                              placeholder={t('governanceHub.appealEvidencePlaceholder')}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                setAppealDraftBySanctionId((current) => ({
-                                  ...current,
-                                  [sanction.id]: {
-                                    ...draft,
-                                    evidence: value,
-                                  },
-                                }));
-                              }}
-                            />
-                            <Button
-                              className="w-full md:w-auto"
-                              disabled={!canSubmitAppeal || submittingAppealForSanctionId === sanction.id}
-                              onClick={() => void handleSubmitAppeal(sanction)}
-                            >
-                              {submittingAppealForSanctionId === sanction.id ? t('common.saving') : t('governanceHub.appealSubmit')}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-
+              <Card className="rounded-2xl border-border/60 p-3 shadow-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-foreground">Current suggestions</h2>
+                  <Badge variant="outline">{currentSuggestions.length}</Badge>
+                </div>
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">{t('governanceHub.appealsTitle')}</h3>
-                  {appeals.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t('governanceHub.appealsEmpty')}</p>
+                  {currentSuggestions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No suggestions right now.</p>
                   ) : (
-                    <div className="space-y-2">
-                      {appeals.map((appeal) => (
-                        <div key={appeal.id} className="rounded-2xl border border-border/60 bg-background/70 p-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="rounded-full text-[11px]">
-                              {t(getGovernanceSanctionAppealStatusLabelKey(appeal.status))}
-                            </Badge>
-                          </div>
-                          <p className="mt-2 text-sm text-foreground">{appeal.appeal_reason}</p>
-                          <p className="mt-2 text-xs text-muted-foreground">{formatDateTime(appeal.opened_at)}</p>
-                        </div>
-                      ))}
-                    </div>
+                    currentSuggestions.map((proposal) => (
+                      <a
+                        key={proposal.id}
+                        href={`#proposal-${proposal.id}`}
+                        className="block rounded-xl border border-border/60 bg-background/70 p-2 text-sm hover:border-primary/50"
+                      >
+                        <p className="line-clamp-1 font-medium text-foreground">{proposal.title}</p>
+                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{proposal.summary}</p>
+                      </a>
+                    ))
                   )}
                 </div>
-              </div>
-            )}
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-          <Suspense
-            fallback={(
-              <Card className="rounded-3xl border-border/60 p-5 shadow-sm">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{t('common.loading')}</span>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                  <Card className="rounded-xl border-border/60 bg-background/70 p-2 text-center shadow-none">
+                    <p className="text-muted-foreground">Needs vote</p>
+                    <p className="mt-0.5 text-base font-semibold text-foreground">{proposalsNeedingMyVoteCount}</p>
+                  </Card>
+                  <Card className="rounded-xl border-border/60 bg-background/70 p-2 text-center shadow-none">
+                    <p className="text-muted-foreground">My tasks</p>
+                    <p className="mt-0.5 text-base font-semibold text-foreground">{governanceExecutionTasks.length}</p>
+                  </Card>
+                  <Card className="rounded-xl border-border/60 bg-background/70 p-2 text-center shadow-none">
+                    <p className="text-muted-foreground">Open</p>
+                    <p className="mt-0.5 text-base font-semibold text-foreground">{openProposalsCount}</p>
+                  </Card>
                 </div>
               </Card>
-            )}
-          >
-            <GovernanceProposalComposer
-              draft={proposalDraft}
-              executionUnits={executionUnits}
-              profileDirectory={profileDirectory}
-              monetaryPolicyProfiles={monetaryPolicyProfiles}
-              contentItems={contentItems}
-              studyCertificationOptions={studyCertificationOptions}
-              creatingProposal={creatingProposal}
-              governanceEligible={governanceEligibility.eligible && !proposalBlockedBySanction}
-              backendUnavailable={backendUnavailable}
-              formatContentItemLabel={formatContentItemLabel}
-              formatProfileLabel={formatProfileLabel}
-              onCreate={() => void handleCreateProposal()}
-              onDraftChange={setProposalDraft}
-              t={t}
-            />
-          </Suspense>
-        </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
-          <div className="space-y-3">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{t('governanceHub.unitsTitle')}</h2>
-              <p className="text-sm text-muted-foreground">{t('governanceHub.unitsDescription')}</p>
-            </div>
-
-            {loadingHub ? (
-              <Card className="flex items-center justify-center gap-2 rounded-3xl border-border/60 px-6 py-12 text-muted-foreground shadow-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>{t('common.loading')}</span>
-              </Card>
-            ) : executionUnits.length === 0 ? (
-              <Card className="rounded-3xl border-border/60 p-5 text-sm text-muted-foreground shadow-sm">
-                {t('governanceHub.unitsEmpty')}
-              </Card>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {executionUnits.map((unit) => {
-                  const memberships = membershipsByUnit[unit.id] || [];
-
-                  return (
-                    <Card key={unit.id} className="rounded-3xl border-border/60 p-4 shadow-sm">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-sm font-semibold text-foreground">{unit.name}</h3>
-                          <Badge variant="outline">{memberships.length} {t('governanceHub.unitSeats')}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{unit.description}</p>
-                        <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{unit.domain_key}</p>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{t('governanceHub.proposalsTitle')}</h2>
-                <p className="text-sm text-muted-foreground">{t('governanceHub.proposalsDescription')}</p>
-              </div>
-            </div>
-
-            {verifierFederationExecutionGate?.policyRequiresFederationDistribution
-              && (
-                !verifierFederationExecutionGate.distributionGateMet
-                || (
-                  verifierFederationExecutionGate.federationOps !== null
-                  && !verifierFederationExecutionGate.federationOps.federationOpsReady
-                )
-              ) && (
-              <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 p-4 text-sm shadow-sm">
-                <p className="font-medium text-foreground">{t('governanceHub.federationExecutionGateBannerTitle')}</p>
-                {!verifierFederationExecutionGate.distributionGateMet && (
-                  <p className="mt-2 text-muted-foreground">{t('governanceHub.federationDistributionGateBannerBody')}</p>
-                )}
-                {verifierFederationExecutionGate.federationOps !== null
-                  && !verifierFederationExecutionGate.federationOps.federationOpsReady && (
-                  <div className="mt-2 space-y-2 text-muted-foreground">
-                    <p>{t('governanceHub.federationOpsGateIntro')}</p>
-                    {verifierFederationExecutionGate.federationOps.onboardedOperatorCount
-                      < verifierFederationExecutionGate.federationOps.minOnboardedFederationOperators && (
-                      <p>
-                        {t('governanceHub.federationOpsGateOperators', {
-                          have: verifierFederationExecutionGate.federationOps.onboardedOperatorCount,
-                          need: verifierFederationExecutionGate.federationOps.minOnboardedFederationOperators,
-                        })}
-                      </p>
-                    )}
-                    {verifierFederationExecutionGate.federationOps.openCriticalAlertCount
-                      > verifierFederationExecutionGate.federationOps.maxOpenCriticalFederationAlerts && (
-                      <p>
-                        {t('governanceHub.federationOpsGateCriticalAlerts', {
-                          open: verifierFederationExecutionGate.federationOps.openCriticalAlertCount,
-                          max: verifierFederationExecutionGate.federationOps.maxOpenCriticalFederationAlerts,
-                        })}
-                      </p>
-                    )}
-                    {verifierFederationExecutionGate.federationOps.alertSlaBreachedCount > 0 && (
-                      <p>{t('governanceHub.federationOpsGateSlaBreaches')}</p>
-                    )}
-                    {verifierFederationExecutionGate.federationOps.distributionVerificationStale && (
-                      <p>{t('governanceHub.federationOpsGateStaleVerification')}</p>
-                    )}
-                    {verifierFederationExecutionGate.federationOps.openDistributionVerificationAlertCount > 0 && (
-                      <p>
-                        {t('governanceHub.federationOpsGateDistributionAlerts', {
-                          count: verifierFederationExecutionGate.federationOps.openDistributionVerificationAlertCount,
-                        })}
-                      </p>
-                    )}
+              <details id="governance-create" className="rounded-2xl border border-border/60 p-3">
+                <summary className="cursor-pointer text-sm font-medium text-foreground">Propose</summary>
+                <div className="mt-3">
+                  <div className="mb-2 flex justify-end">
+                    <Button type="button" variant="outline" size="sm" disabled={!profile?.id} onClick={handleLoadAgreementsProposalTemplate}>
+                      Load template
+                    </Button>
                   </div>
-                )}
-                <p className="mt-3 text-sm">
-                  <Link
-                    to="/settings/admin/governance#stewardship-public-audit-tools"
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {t('governanceHub.governanceStewardshipToolsLink')}
-                  </Link>
-                </p>
-              </Card>
-            )}
-
-            {federationDistributionEscalationOpenPageCount > 0 && (
-              <Card className="rounded-2xl border-orange-500/30 bg-orange-500/5 p-4 text-sm shadow-sm">
-                <p className="font-medium text-foreground">{t('governanceHub.federationDistributionEscalationBannerTitle')}</p>
-                <p className="mt-2 text-muted-foreground">
-                  {t('governanceHub.federationDistributionEscalationBannerBody', {
-                    count: federationDistributionEscalationOpenPageCount,
-                  })}
-                </p>
-                <p className="mt-3 text-sm">
-                  <Link
-                    to="/settings/admin/governance#stewardship-public-audit-tools"
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {t('governanceHub.governanceStewardshipToolsLink')}
-                  </Link>
-                </p>
-              </Card>
-            )}
-
-            {activationDemographicFeedEscalationOpenPageCount > 0 && (
-              <Card className="rounded-2xl border-teal-500/30 bg-teal-500/5 p-4 text-sm shadow-sm">
-                <p className="font-medium text-foreground">{t('governanceHub.activationDemographicFeedEscalationBannerTitle')}</p>
-                <p className="mt-2 text-muted-foreground">
-                  {t('governanceHub.activationDemographicFeedEscalationBannerBody', {
-                    count: activationDemographicFeedEscalationOpenPageCount,
-                  })}
-                </p>
-                <p className="mt-3 text-sm">
-                  <Link
-                    to="/settings/admin/governance#stewardship-activation-review"
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {t('governanceHub.governanceActivationStewardshipLink')}
-                  </Link>
-                </p>
-              </Card>
-            )}
-
-            {guardianRelayEscalationOpenPageCount > 0 && (
-              <Card className="rounded-2xl border-sky-500/30 bg-sky-500/5 p-4 text-sm shadow-sm">
-                <p className="font-medium text-foreground">{t('governanceHub.guardianRelayEscalationBannerTitle')}</p>
-                <p className="mt-2 text-muted-foreground">
-                  {t('governanceHub.guardianRelayEscalationBannerBody', { count: guardianRelayEscalationOpenPageCount })}
-                </p>
-                <p className="mt-3 text-sm">
-                  <Link
-                    to="/settings/admin/governance#stewardship-public-audit-tools"
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {t('governanceHub.governanceStewardshipToolsLink')}
-                  </Link>
-                </p>
-              </Card>
-            )}
-
-            {loadingHub ? (
-              <Card className="flex items-center justify-center gap-2 rounded-3xl border-border/60 px-6 py-16 text-muted-foreground shadow-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>{t('common.loading')}</span>
-              </Card>
-            ) : backendUnavailable ? (
-              <Card className="rounded-3xl border-border/60 p-5 text-sm text-muted-foreground shadow-sm">
-                {t('governanceHub.backendUnavailable')}
-              </Card>
-            ) : proposals.length === 0 ? (
-              <Card className="rounded-3xl border-border/60 p-5 text-sm text-muted-foreground shadow-sm">
-                {t('governanceHub.empty')}
-              </Card>
-            ) : (
-              proposals.map((proposal) => {
-                const proposalVotes = votesByProposal[proposal.id] || [];
-                const currentVote = currentUserVotes[proposal.id];
-                const recentEvent = events.find((event) => event.proposal_id === proposal.id);
-                const proposalImplementations = implementationsByProposal[proposal.id] || [];
-                const executionSpec = readGovernanceProposalExecutionSpec(proposal.metadata);
-                const requiresGuardianSignoff = (
-                  readGovernanceExecutionThresholdRuleFromMetadata(proposal.metadata)
-                  || resolveGovernanceExecutionThresholdRule({
-                    actionType: executionSpec.actionType,
-                    decisionClass: proposal.decision_class,
-                  })
-                ).approvalClass === 'guardian_threshold';
-
-                return (
-                  <Card key={proposal.id} className="rounded-3xl border-border/60 p-5 shadow-sm">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary">{t(getGovernanceProposalStatusLabelKey(proposal.status))}</Badge>
-                          <Badge variant="outline">{t(getGovernanceDecisionClassLabelKey(proposal.decision_class))}</Badge>
-                          <Badge variant="outline">{t(getGovernanceExecutionActionLabelKey(executionSpec.actionType))}</Badge>
-                          {proposal.bootstrap_mode && <Badge variant="outline">{t('governanceHub.bootstrapMode')}</Badge>}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">{proposal.title}</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">{proposal.summary}</p>
-                        </div>
-                        <p className="text-sm leading-6 text-foreground/90">{proposal.body}</p>
-                        <p className="text-sm text-muted-foreground">{describeGovernanceProposalExecution(executionSpec)}</p>
+                  <Suspense
+                    fallback={(
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{t('common.loading')}</span>
                       </div>
+                    )}
+                  >
+                    <GovernanceProposalComposer
+                      draft={proposalDraft}
+                      executionUnits={executionUnits}
+                      profileDirectory={profileDirectory}
+                      monetaryPolicyProfiles={monetaryPolicyProfiles}
+                      contentItems={contentItems}
+                      studyCertificationOptions={studyCertificationOptions}
+                      creatingProposal={creatingProposal}
+                      governanceEligible={governanceEligibility.eligible && !proposalBlockedBySanction}
+                      backendUnavailable={backendUnavailable}
+                      formatContentItemLabel={formatContentItemLabel}
+                      formatProfileLabel={formatProfileLabel}
+                      onCreate={() => void handleCreateProposal()}
+                      onDraftChange={setProposalDraft}
+                      t={t}
+                    />
+                  </Suspense>
+                </div>
+              </details>
+            </div>
 
-                      <div className="min-w-[240px] space-y-3 rounded-2xl border border-border/60 bg-background/60 p-4">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.opensAt')}</p>
-                            <p className="mt-1 text-foreground">{formatDateTime(proposal.opens_at)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.closesAt')}</p>
-                            <p className="mt-1 text-foreground">{formatDateTime(proposal.closes_at)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.quorum')}</p>
-                            <p className="mt-1 text-foreground">{proposal.required_quorum}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t('governanceHub.eligibleSnapshot')}</p>
-                            <p className="mt-1 text-foreground">{proposal.eligible_voter_count_snapshot}</p>
-                          </div>
-                        </div>
+            <div id="governance-proposals" className={`min-h-0 space-y-3 md:col-span-8 ${mobilePane === 'workspace' ? 'hidden md:block' : ''}`}>
+              <Card className="rounded-2xl border-border/60 p-3 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-foreground">Participate</h2>
+                  <div className="text-xs text-muted-foreground">
+                    Pending: <span className="font-semibold text-foreground">{pendingProposals.length}</span>
+                    {' · '}
+                    Passed/Closed: <span className="font-semibold text-foreground">{passedProposals.length}</span>
+                  </div>
+                </div>
+              </Card>
 
-                        <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-700 dark:text-emerald-300">
-                            <p className="text-xs uppercase tracking-[0.14em]">{t('governanceHub.voteChoices.approve')}</p>
-                            <p className="mt-1 font-semibold">{proposalVotes.filter((vote) => vote.choice === 'approve').length}</p>
-                          </div>
-                          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-rose-700 dark:text-rose-300">
-                            <p className="text-xs uppercase tracking-[0.14em]">{t('governanceHub.voteChoices.reject')}</p>
-                            <p className="mt-1 font-semibold">{proposalVotes.filter((vote) => vote.choice === 'reject').length}</p>
-                          </div>
-                          <div className="rounded-2xl border border-border/60 bg-muted/60 px-3 py-2 text-muted-foreground">
-                            <p className="text-xs uppercase tracking-[0.14em]">{t('governanceHub.voteChoices.abstain')}</p>
-                            <p className="mt-1 font-semibold">{proposalVotes.filter((vote) => vote.choice === 'abstain').length}</p>
-                          </div>
-                        </div>
+              <div className="grid h-[calc(100%-3.5rem)] min-h-0 gap-3 lg:grid-cols-2">
+                <Card className="min-h-0 rounded-2xl border-border/60 p-3 shadow-sm">
+                  <div className="mb-2">
+                    <h3 className="text-base font-semibold text-foreground">Pending proposals</h3>
+                  </div>
+                  <div className="h-[calc(100%-2.25rem)] overflow-y-auto pr-1">
+                    <GovernanceHubProposalsList
+                      t={t}
+                      formatDateTime={formatDateTime}
+                      formatProfileLabel={formatProfileLabel}
+                      formatContentItemLabel={formatContentItemLabel}
+                      loadingHub={loadingHub}
+                      backendUnavailable={backendUnavailable}
+                      proposals={pendingProposals}
+                      votesByProposal={votesByProposal}
+                      currentUserVotes={currentUserVotes}
+                      events={events}
+                      implementationsByProposal={implementationsByProposal}
+                      governanceEligible={governanceEligibility.eligible}
+                      voteBlockedBySanction={voteBlockedBySanction}
+                      votingProposalId={votingProposalId}
+                      onVote={handleVote}
+                      isGuardianSigner={isGuardianSigner}
+                      profileId={profile?.id ?? null}
+                      onGuardianSignoffUpdated={loadGovernanceHub}
+                      unitsById={unitsById}
+                      currentUserUnitIds={currentUserUnitIds}
+                      executionBlockedBySanction={executionBlockedBySanction}
+                      profileDirectoryById={profileDirectoryById}
+                      monetaryPolicyProfiles={monetaryPolicyProfiles}
+                      contentItemsById={contentItemsById}
+                      studyCertificationLabelByKey={studyCertificationLabelByKey}
+                      executingImplementationId={executingImplementationId}
+                      onExecuteImplementation={handleExecuteImplementation}
+                      showControls={false}
+                      emptyLabel="No pending proposals."
+                    />
+                  </div>
+                </Card>
 
-                        {currentVote && (
-                          <p className="text-sm text-muted-foreground">
-                            {t('governanceHub.yourVote', { choice: t(getGovernanceVoteChoiceLabelKey(currentVote.choice)) })}
-                          </p>
-                        )}
+                <Card className="min-h-0 rounded-2xl border-border/60 p-3 shadow-sm">
+                  <div className="mb-2">
+                    <h3 className="text-base font-semibold text-foreground">Passed and closed proposals</h3>
+                  </div>
+                  <div className="h-[calc(100%-2.25rem)] overflow-y-auto pr-1">
+                    <GovernanceHubProposalsList
+                      t={t}
+                      formatDateTime={formatDateTime}
+                      formatProfileLabel={formatProfileLabel}
+                      formatContentItemLabel={formatContentItemLabel}
+                      loadingHub={loadingHub}
+                      backendUnavailable={backendUnavailable}
+                      proposals={passedProposals}
+                      votesByProposal={votesByProposal}
+                      currentUserVotes={currentUserVotes}
+                      events={events}
+                      implementationsByProposal={implementationsByProposal}
+                      governanceEligible={governanceEligibility.eligible}
+                      voteBlockedBySanction={voteBlockedBySanction}
+                      votingProposalId={votingProposalId}
+                      onVote={handleVote}
+                      isGuardianSigner={isGuardianSigner}
+                      profileId={profile?.id ?? null}
+                      onGuardianSignoffUpdated={loadGovernanceHub}
+                      unitsById={unitsById}
+                      currentUserUnitIds={currentUserUnitIds}
+                      executionBlockedBySanction={executionBlockedBySanction}
+                      profileDirectoryById={profileDirectoryById}
+                      monetaryPolicyProfiles={monetaryPolicyProfiles}
+                      contentItemsById={contentItemsById}
+                      studyCertificationLabelByKey={studyCertificationLabelByKey}
+                      executingImplementationId={executingImplementationId}
+                      onExecuteImplementation={handleExecuteImplementation}
+                      showControls={false}
+                      emptyLabel="No resolved proposals yet."
+                    />
+                  </div>
+                </Card>
+              </div>
 
-                        {recentEvent && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock3 className="h-3.5 w-3.5" />
-                            <span>{formatDateTime(recentEvent.created_at)}</span>
-                          </div>
-                        )}
-
-                        {proposal.status === 'open' && (
-                          <div className="grid grid-cols-1 gap-2">
-                            <Button
-                              variant="secondary"
-                              className="gap-2"
-                              disabled={!governanceEligibility.eligible || voteBlockedBySanction || votingProposalId === proposal.id}
-                              onClick={() => void handleVote(proposal, 'approve')}
-                            >
-                              {votingProposalId === proposal.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                              {t('governanceHub.actions.approve')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="gap-2"
-                              disabled={!governanceEligibility.eligible || voteBlockedBySanction || votingProposalId === proposal.id}
-                              onClick={() => void handleVote(proposal, 'reject')}
-                            >
-                              <XCircle className="h-4 w-4" />
-                              {t('governanceHub.actions.reject')}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              className="gap-2"
-                              disabled={!governanceEligibility.eligible || voteBlockedBySanction || votingProposalId === proposal.id}
-                              onClick={() => void handleVote(proposal, 'abstain')}
-                            >
-                              <Vote className="h-4 w-4" />
-                              {t('governanceHub.actions.abstain')}
-                            </Button>
-                            <GovernanceGuardianSignoffCard
-                              proposalId={proposal.id}
-                              proposalStatus={proposal.status}
-                              requiresGuardianSignoff={requiresGuardianSignoff}
-                              isGuardianSigner={isGuardianSigner}
-                              isBlocked={voteBlockedBySanction}
-                              profileId={profile?.id ?? null}
-                              onUpdated={loadGovernanceHub}
-                            />
-                          </div>
-                        )}
-
-                        {proposal.final_decision_summary && (
-                          <p className="text-sm text-muted-foreground">{proposal.final_decision_summary}</p>
-                        )}
-
-                        {proposalImplementations.length > 0 && (
-                          <div className="space-y-2 rounded-2xl border border-border/60 bg-background/70 p-3">
-                            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                              {t('governanceHub.implementationQueueTitle')}
-                            </p>
-                            {proposalImplementations.map((implementation) => {
-                              const unit = unitsById[implementation.unit_id];
-                              const canExecuteImplementation = currentUserUnitIds.has(implementation.unit_id)
-                                && executionSpec.autoExecutable
-                                && !executionBlockedBySanction
-                                && (implementation.status === 'queued' || implementation.status === 'blocked');
-                              const targetProfile = 'profileId' in executionSpec
-                                ? profileDirectoryById[executionSpec.profileId]
-                                : null;
-                              const targetPolicy = 'policyProfileId' in executionSpec
-                                ? monetaryPolicyProfiles.find((policy) => policy.id === executionSpec.policyProfileId) || null
-                                : null;
-                              const targetContentItem = 'contentItemId' in executionSpec
-                                ? contentItemsById[executionSpec.contentItemId] || null
-                                : null;
-                              const targetCertification = 'certificationKey' in executionSpec
-                                ? studyCertificationLabelByKey[executionSpec.certificationKey] || executionSpec.certificationKey
-                                : null;
-                              return (
-                                <div key={implementation.id} className="rounded-2xl border border-border/60 p-3">
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <p className="text-sm font-medium text-foreground">
-                                      {unit?.name || t(getGovernanceUnitLabelKey((implementation.metadata as { unit_key?: string } | null)?.unit_key || 'civic_operations'))}
-                                    </p>
-                                    <Badge
-                                      className={getGovernanceImplementationStatusClassName(implementation.status)}
-                                      variant="outline"
-                                    >
-                                      {t(getGovernanceImplementationStatusLabelKey(implementation.status))}
-                                    </Badge>
-                                  </div>
-                                  <p className="mt-2 text-sm text-muted-foreground">{implementation.implementation_summary}</p>
-                                  {'targetUnitKey' in executionSpec && (
-                                    <p className="mt-2 text-xs text-muted-foreground">
-                                      {t('governanceHub.targetUnitLabel')}: {t(getGovernanceUnitLabelKey(executionSpec.targetUnitKey))}
-                                    </p>
-                                  )}
-                                  {targetProfile && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {t('governanceHub.targetProfileLabel')}: {formatProfileLabel(targetProfile)}
-                                    </p>
-                                  )}
-                                  {targetPolicy && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {t('governanceHub.targetPolicyLabel')}: {targetPolicy.policy_name} ({targetPolicy.version})
-                                    </p>
-                                  )}
-                                  {targetCertification && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {t('governanceHub.targetCertificationLabel')}: {targetCertification}
-                                    </p>
-                                  )}
-                                  {targetContentItem && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {t('governanceHub.targetContentItemLabel')}: {formatContentItemLabel(targetContentItem)}
-                                    </p>
-                                  )}
-                                  <p className="mt-2 text-xs text-muted-foreground">
-                                    {t('governanceHub.assignedAt')}: {formatDateTime(implementation.assigned_at)}
-                                  </p>
-                                  {canExecuteImplementation && (
-                                    <div className="mt-3 flex justify-end">
-                                      <Button
-                                        size="sm"
-                                        className="gap-2"
-                                        disabled={executingImplementationId === implementation.id}
-                                        onClick={() => void handleExecuteImplementation(proposal, implementation)}
-                                      >
-                                        {executingImplementationId === implementation.id ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                          <ArrowRight className="h-4 w-4" />
-                                        )}
-                                        {t('governanceHub.executeAction')}
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })
-            )}
+              <GovernanceHubAdditionalDetailsPanel
+                t={t}
+                formatDateTime={formatDateTime}
+                profileId={profile?.id}
+                backendUnavailable={backendUnavailable}
+                loadingHub={loadingHub}
+                governanceVoteHistoryEntries={governanceVoteHistoryEntries}
+                governanceExecutionTasks={governanceExecutionTasks}
+                verifierFederationExecutionGate={verifierFederationExecutionGate}
+                federationOpsGateMessages={federationOpsGateMessages}
+                guardianRelayExecutionGate={guardianRelayExecutionGate}
+                guardianRelayGateMessages={guardianRelayGateMessages}
+                federationDistributionEscalationOpenPageCount={federationDistributionEscalationOpenPageCount}
+                activationDemographicFeedEscalationOpenPageCount={activationDemographicFeedEscalationOpenPageCount}
+                guardianRelayEscalationOpenPageCount={guardianRelayEscalationOpenPageCount}
+                emergencyAccessOpsEscalationOpenPageCount={emergencyAccessOpsEscalationOpenPageCount}
+                identityVerificationPresentation={identityVerificationPresentation}
+                identityVerificationLoading={identityVerificationLoading}
+                identityVerificationUnavailable={identityVerificationUnavailable}
+                identityVerificationLoadFailed={identityVerificationLoadFailed}
+                citizenActivationReviews={citizenActivationReviews}
+                activationHubLoading={activationHubLoading}
+                activationHubUnavailable={activationHubUnavailable}
+                activationHubLoadFailed={activationHubLoadFailed}
+                sanctionsBackendUnavailable={sanctionsBackendUnavailable}
+                activeSanctions={activeSanctions}
+                openAppealsBySanctionId={openAppealsBySanctionId}
+                appealDraftBySanctionId={appealDraftBySanctionId}
+                setAppealDraftBySanctionId={setAppealDraftBySanctionId}
+                submittingAppealForSanctionId={submittingAppealForSanctionId}
+                onSubmitAppeal={handleSubmitAppeal}
+                appeals={appeals}
+              />
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </AppLayout>
   );

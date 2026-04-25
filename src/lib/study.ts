@@ -208,7 +208,7 @@ export const FOUNDATION_STUDY_MATERIALS: StudyMaterial[] = [
     titleKey: 'study.materials.economyPolicyBaseline.title',
     summaryKey: 'study.materials.economyPolicyBaseline.summary',
     materialType: 'legalText',
-    route: '/study?domain=economy',
+    route: '/study?domain=economy&material=economy-policy-baseline',
     availableNow: true,
   },
   {
@@ -218,6 +218,15 @@ export const FOUNDATION_STUDY_MATERIALS: StudyMaterial[] = [
     summaryKey: 'study.materials.economyCitizenGuide.summary',
     materialType: 'guide',
     route: '/study?domain=economy',
+    availableNow: true,
+  },
+  {
+    key: 'economy-constitutional-tokenomics-governance',
+    domainId: 'economy',
+    titleKey: 'study.materials.economyConstitutionalTokenomicsGovernance.title',
+    summaryKey: 'study.materials.economyConstitutionalTokenomicsGovernance.summary',
+    materialType: 'legalText',
+    route: '/study?domain=economy&material=economy-constitutional-tokenomics-governance',
     availableNow: true,
   },
 ];

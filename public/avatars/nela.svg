@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Nela">
+  <defs>
+    <linearGradient id="nela-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#0b3a4a"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="nela-ring" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#99f6e4" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="nela-shirt" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#115e59"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="64" cy="64" r="62" fill="url(#nela-bg)" />
+  <circle cx="64" cy="64" r="56" fill="none" stroke="url(#nela-ring)" stroke-width="3" opacity="0.65" />
+
+  <!-- Neck/shoulders -->
+  <path
+    d="M30 104c3-18 17-29 34-29s31 11 34 29"
+    fill="url(#nela-shirt)"
+    stroke="#99f6e4"
+    stroke-opacity="0.35"
+    stroke-width="2"
+  />
+
+  <!-- Face -->
+  <circle cx="64" cy="57" r="22" fill="#f2d3bc" />
+  <path d="M42 55c0-13 10-24 22-24s22 11 22 24" fill="#1e293b" />
+  <path d="M49 77c3 3 9 5 15 5s12-2 15-5" fill="none" stroke="#c28771" stroke-width="2.5" stroke-linecap="round" />
+
+  <!-- Eyes -->
+  <circle cx="56" cy="57" r="2.7" fill="#0f172a" />
+  <circle cx="72" cy="57" r="2.7" fill="#0f172a" />
+
+  <!-- Ear piece to keep assistant feel -->
+  <path d="M86 58a8 8 0 0 1 0 12" fill="none" stroke="#99f6e4" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="86" cy="64" r="2.2" fill="#99f6e4" />
+</svg>

@@ -73,6 +73,41 @@ describe('governance-eligibility', () => {
     expect(normalizeGovernanceScoreForRole('founder', 96.2)).toBe(96.2);
   });
 
+  it('normalizes non-founder scores without a floor', () => {
+    expect(normalizeGovernanceScoreForRole('citizen', 42.5)).toBe(42.5);
+    expect(normalizeGovernanceScoreForRole('citizen', null)).toBeNull();
+  });
+
+  it('marks score unavailable when endorsements are missing', () => {
+    expect(
+      evaluateGovernanceEligibility({
+        isVerified: true,
+        score: null,
+        isNativeMobileApp: true,
+      }),
+    ).toEqual({
+      eligible: false,
+      influenceWeight: 0,
+      minScore: MIN_GOVERNANCE_SCORE,
+      reasons: ['score_unavailable'],
+    });
+  });
+
+  it('accumulates eligibility reasons in stable order', () => {
+    expect(
+      evaluateGovernanceEligibility({
+        isVerified: false,
+        score: null,
+        isNativeMobileApp: false,
+      }),
+    ).toEqual({
+      eligible: false,
+      influenceWeight: 0,
+      minScore: MIN_GOVERNANCE_SCORE,
+      reasons: ['mobile_app_required', 'verified_required', 'score_unavailable'],
+    });
+  });
+
   it('allows a verified founder on native mobile even when endorsements are below the threshold', () => {
     expect(
       evaluateGovernanceEligibility({
@@ -87,5 +122,58 @@ describe('governance-eligibility', () => {
       minScore: MIN_GOVERNANCE_SCORE,
       reasons: [],
     });
+  });
+
+  it('honors a caller-provided minimum governance score override', () => {
+    expect(
+      evaluateGovernanceEligibility({
+        isVerified: true,
+        score: 80,
+        isNativeMobileApp: true,
+        minScore: 90,
+      }),
+    ).toEqual({
+      eligible: false,
+      influenceWeight: 0,
+      minScore: 90,
+      reasons: ['minimum_score_required'],
+    });
+  });
+
+  it('applies the founder score floor before comparing against a raised minScore', () => {
+    expect(
+      evaluateGovernanceEligibility({
+        isVerified: true,
+        role: 'founder',
+        score: 12.4,
+        isNativeMobileApp: true,
+        minScore: 90,
+      }),
+    ).toEqual({
+      eligible: false,
+      influenceWeight: 0,
+      minScore: 90,
+      reasons: ['minimum_score_required'],
+    });
+  });
+
+  it('treats a null score as unavailable even for founders', () => {
+    expect(
+      evaluateGovernanceEligibility({
+        isVerified: true,
+        role: 'founder',
+        score: null,
+        isNativeMobileApp: true,
+      }),
+    ).toEqual({
+      eligible: false,
+      influenceWeight: 0,
+      minScore: MIN_GOVERNANCE_SCORE,
+      reasons: ['score_unavailable'],
+    });
+  });
+
+  it('passes through scores when role is undefined', () => {
+    expect(normalizeGovernanceScoreForRole(undefined, 55)).toBe(55);
   });
 });

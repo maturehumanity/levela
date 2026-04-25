@@ -13,6 +13,10 @@ import {
   formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel,
   type GovernancePublicAuditVerifierFederationPackage,
   type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
+  type GovernancePublicAuditVerifierFederationExchangeAttestationRow,
+  type GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   type GovernancePublicAuditVerifierFederationPackageHistoryRow,
   type GovernancePublicAuditVerifierFederationPackageSignatureRow,
   type GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow,
@@ -37,6 +41,10 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   capturingFederationPackage: boolean;
   signingFederationPackage: boolean;
   verifyingFederationDistribution: boolean;
+  recordingFederationExchangeAttestation: boolean;
+  verifyingFederationExchangeReceipt: boolean;
+  savingFederationExchangeReceiptPolicy: boolean;
+  rollingBackFederationExchangeReceiptPolicyEventId: string | null;
   savingFederationOpsRequirement: boolean;
   registeringFederationOperator: boolean;
   submittingOnboardingRequest: boolean;
@@ -55,6 +63,10 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   federationPackageDistributionSummary: GovernancePublicAuditVerifierFederationPackageDistributionSummary | null;
   federationPackageSignatures: GovernancePublicAuditVerifierFederationPackageSignatureRow[];
   federationPackageHistory: GovernancePublicAuditVerifierFederationPackageHistoryRow[];
+  federationExchangeAttestationSummary: GovernancePublicAuditVerifierFederationExchangeAttestationSummary | null;
+  federationExchangeAttestations: GovernancePublicAuditVerifierFederationExchangeAttestationRow[];
+  federationExchangeReceiptPolicySummary: GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary | null;
+  federationExchangeReceiptPolicyEvents: GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow[];
   signerGovernanceSummary: GovernancePublicAuditVerifierMirrorSignerGovernanceSummary | null;
   discoverySources: GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow[];
   discoveredCandidates: GovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRow[];
@@ -62,6 +74,7 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   federationAlertBoard: GovernancePublicAuditVerifierMirrorFederationAlertBoardRow[];
   federationWorkerRuns: GovernancePublicAuditVerifierMirrorFederationWorkerRunRow[];
   federationDistributionEscalationOpenPageCount: number;
+  federationExchangeReceiptEscalationOpenPageCount: number;
   signerGovernanceBoard: GovernancePublicAuditVerifierMirrorSignerGovernanceBoardRow[];
   formatTimestamp: (value: string | null) => string;
   registerDiscoverySource: (draft: {
@@ -111,6 +124,35 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
     distributionChannel: string;
   }) => Promise<void> | void;
   runFederationDistributionVerification: (staleAfterHours: string) => Promise<void> | void;
+  recordFederationExchangeAttestation: (draft: {
+    packageId: string;
+    operatorLabel: string;
+    operatorIdentityUri: string;
+    operatorTrustDomain: string;
+    operatorJurisdictionCountryCode: string;
+    exchangeChannel: string;
+    attestationVerdict: string;
+    attestationNotes: string;
+    receiptPayloadText: string;
+    receiptSignature: string;
+    receiptSignerKey: string;
+    receiptSignatureAlgorithm: string;
+  }) => Promise<void> | void;
+  verifyFederationExchangeReceipt: (draft: {
+    attestationId: string;
+    receiptVerified: boolean;
+    receiptVerificationNotes: string;
+  }) => Promise<void> | void;
+  saveFederationExchangeReceiptPolicy: (draft: {
+    lookbackHours: string;
+    warningPendingThreshold: string;
+    criticalPendingThreshold: string;
+    escalationEnabled: boolean;
+    oncallChannel: string;
+    receiptMaxVerificationAgeHours: string;
+    criticalStaleReceiptCountThreshold: string;
+  }) => Promise<void> | void;
+  rollbackFederationExchangeReceiptPolicyToEvent: (eventId: string) => Promise<void> | void;
   saveFederationOpsRequirement: (draft: {
     requireFederationOpsReadiness: boolean;
     maxOpenCriticalAlerts: string;
@@ -189,6 +231,10 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   capturingFederationPackage,
   signingFederationPackage,
   verifyingFederationDistribution,
+  recordingFederationExchangeAttestation,
+  verifyingFederationExchangeReceipt,
+  savingFederationExchangeReceiptPolicy,
+  rollingBackFederationExchangeReceiptPolicyEventId,
   savingFederationOpsRequirement,
   registeringFederationOperator,
   submittingOnboardingRequest,
@@ -207,6 +253,10 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   federationPackageDistributionSummary,
   federationPackageSignatures,
   federationPackageHistory,
+  federationExchangeAttestationSummary,
+  federationExchangeAttestations,
+  federationExchangeReceiptPolicySummary,
+  federationExchangeReceiptPolicyEvents,
   signerGovernanceSummary,
   discoverySources,
   discoveredCandidates,
@@ -214,6 +264,7 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   federationAlertBoard,
   federationWorkerRuns,
   federationDistributionEscalationOpenPageCount,
+  federationExchangeReceiptEscalationOpenPageCount,
   signerGovernanceBoard,
   formatTimestamp,
   registerDiscoverySource,
@@ -224,6 +275,10 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   captureFederationPackage,
   signFederationPackage,
   runFederationDistributionVerification,
+  recordFederationExchangeAttestation,
+  verifyFederationExchangeReceipt,
+  saveFederationExchangeReceiptPolicy,
+  rollbackFederationExchangeReceiptPolicyToEvent,
   saveFederationOpsRequirement,
   registerFederationOperator,
   submitFederationOnboardingRequest,
@@ -321,13 +376,25 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         federationPackageDistributionSummary={federationPackageDistributionSummary}
         federationPackageSignatures={federationPackageSignatures}
         federationPackageHistory={federationPackageHistory}
+        federationExchangeAttestationSummary={federationExchangeAttestationSummary}
+        federationExchangeAttestations={federationExchangeAttestations}
+        federationExchangeReceiptPolicySummary={federationExchangeReceiptPolicySummary}
+        federationExchangeReceiptPolicyEvents={federationExchangeReceiptPolicyEvents}
         federationOperationsSummary={federationOperationsSummary}
         capturingFederationPackage={capturingFederationPackage}
         signingFederationPackage={signingFederationPackage}
         verifyingFederationDistribution={verifyingFederationDistribution}
+        recordingFederationExchangeAttestation={recordingFederationExchangeAttestation}
+        verifyingFederationExchangeReceipt={verifyingFederationExchangeReceipt}
+        savingFederationExchangeReceiptPolicy={savingFederationExchangeReceiptPolicy}
+        rollingBackFederationExchangeReceiptPolicyEventId={rollingBackFederationExchangeReceiptPolicyEventId}
         captureFederationPackage={captureFederationPackage}
         signFederationPackage={signFederationPackage}
         runFederationDistributionVerification={runFederationDistributionVerification}
+        recordFederationExchangeAttestation={recordFederationExchangeAttestation}
+        verifyFederationExchangeReceipt={verifyFederationExchangeReceipt}
+        saveFederationExchangeReceiptPolicy={saveFederationExchangeReceiptPolicy}
+        rollbackFederationExchangeReceiptPolicyToEvent={rollbackFederationExchangeReceiptPolicyToEvent}
         formatTimestamp={formatTimestamp}
       />
       <GovernancePublicAuditVerifierMirrorSignerGovernanceControls
@@ -369,6 +436,11 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
       {federationDistributionEscalationOpenPageCount > 0 && (
         <p className="text-xs text-amber-800 dark:text-amber-200">
           Open on-call pages for federation distribution verification: {federationDistributionEscalationOpenPageCount}. Resolve them under Immutable anchoring automation (on-call page board).
+        </p>
+      )}
+      {federationExchangeReceiptEscalationOpenPageCount > 0 && (
+        <p className="text-xs text-amber-800 dark:text-amber-200">
+          Open on-call pages for federation exchange receipt verification backlog: {federationExchangeReceiptEscalationOpenPageCount}. Resolve evidence verification under federation distribution stewardship.
         </p>
       )}
       {federationWorkerRuns.length > 0 && (

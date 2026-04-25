@@ -342,7 +342,7 @@ export function UserPageMenu() {
           setLinkedError(t('home.accountSwitchLoadFailed'));
           setLinkedAccounts([]);
         } else {
-          setLinkedAccounts((data || []) as LinkedAccountRow[]);
+          setLinkedAccounts(data ?? []);
         }
       })
       .finally(() => {

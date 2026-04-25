@@ -19,6 +19,7 @@ export const baseTranslations = {
     "contribute": "Contribute",
     "messaging": "Messaging",
     "market": "Market",
+    "agreements": "Agreements",
     "home": "Home",
     "endorse": "Endorse",
     "signOut": "Sign out",
@@ -164,11 +165,7 @@ export const baseTranslations = {
   },
   "appUpdate": {
     "title": "Update available",
-    "description": "Levela {latestVersion} is available. You are currently using {currentVersion}.",
-    "body": "Install the latest Android build to get the newest fixes, versioned releases, and update-check support.",
-    "currentVersion": "Installed version",
-    "latestVersion": "Available version",
-    "releaseNotes": "Included in this release",
+    "description": "A newer build is available ({latestVersion}). This device: {currentVersion}.",
     "updateNow": "Update now",
     "later": "Later"
   },
@@ -234,6 +231,25 @@ export const baseTranslations = {
     "messagingOperatorCardTitle": "Operator note",
     "messagingOperatorCardBody":
       "You have settings management access. Relay limits here are end-user declarations. Scheduled deletion jobs should honor them together with moderation holds.",
+    "messagingReportsTitle": "Messaging reports",
+    "messagingReportsSubtitle": "Review and resolve user-submitted contact reports.",
+    "messagingReportsEmpty": "No reports yet.",
+    "messagingReportsLoadFailed": "Could not load reports.",
+    "messagingReportsSaveFailed": "Could not save report changes.",
+    "messagingReportsSaved": "Report updated.",
+    "messagingReportsReporterLabel": "Reporter",
+    "messagingReportsReportedLabel": "Reported user",
+    "messagingReportsStatusLabel": "Status",
+    "messagingReportsSearchPlaceholder": "Search reports by user, reason, or message context",
+    "messagingReportsFilteredEmpty": "No reports match the selected filters.",
+    "messagingReportsMessageContextLabel": "Message report context",
+    "messagingReportsOpenInConversation": "Open in conversation",
+    "messagingReportsQuickReviewLabel": "Quick review {current}/{total}",
+    "messagingReportsPrevious": "Previous",
+    "messagingReportsNext": "Next",
+    "messagingReportsOpenCurrent": "Open current",
+    "messagingReportsNotesLabel": "Moderator notes",
+    "messagingReportsSaveAction": "Save review",
     "messagingSecurityBack": "Back to messaging settings",
     "messagingSecurityTitle": "Messaging and calls security",
     "messagingSecuritySubtitle": "Private chats, keys on this device, and voice or video protection.",
@@ -304,7 +320,6 @@ export const baseTranslations = {
     "lumaMintAmountInvalid": "Enter a valid amount greater than zero.",
     "signOut": "Sign out",
     "appInfoTitle": "Application version",
-    "appInfoDescription": "Check which mobile release and build are currently installed on this device.",
     "currentVersionLabel": "Version",
     "currentBuildLabel": "Build",
     "appInfoLine2": "Build your trust and contribution profile"
@@ -351,8 +366,18 @@ export const baseTranslations = {
     "signInToSell": "Sign in to list items and open your wallet.",
     "searchPlaceholder": "Search listings by title or description",
     "filterAll": "All",
+    "filterPeople": "People",
+    "filterCompanies": "Companies",
     "filterProducts": "Products",
     "filterServices": "Services",
+    "directoryLoading": "Loading directory…",
+    "directoryError": "Directory could not be loaded.",
+    "peopleEmpty": "No people match this search yet.",
+    "companiesEmpty": "No companies match this search yet.",
+    "member": "Member",
+    "company": "Company",
+    "businessAccount": "Business account",
+    "view": "View",
     "listingsNoMatch": "No listings match your search or filters. Try different words or show all categories.",
     "kindProduct": "Product",
     "kindService": "Service",
@@ -437,7 +462,66 @@ export const baseTranslations = {
     "activityFilterPurchases": "Purchases",
     "activityFilterSends": "Sends",
     "activityFilterCredits": "Credits",
-    "activityFilteredEmpty": "Nothing in this category yet."
+    "activityFilteredEmpty": "Nothing in this category yet.",
+    "specialists": {
+      "title": "Specialist Services",
+      "description": "Market is the place for transactional specialist help (paid sessions, projects, and deliverables).",
+      "cta": "Find specialist services",
+      "availableDomains": "Examples currently suited for market listings: {domains}."
+    },
+    "agreementButton": "Agreement"
+  },
+  "agreements": {
+    "listTitle": "Agreements",
+    "listSubtitle": "Draft and sign digital agreements with other members. Start from a marketplace listing or open an existing record here.",
+    "backToMarket": "Market",
+    "backToList": "All agreements",
+    "listEmpty": "You have no agreements yet. Open Market on a listing and tap Agreement to start one as the buyer.",
+    "listRowTemplate": "Template: {key}",
+    "backendUnavailable": "Agreement records are not available in this environment yet. Apply the latest database migration and refresh.",
+    "notFound": "This agreement could not be found or you do not have access.",
+    "metaPrice": "Listed price: {price}",
+    "metaTemplate": "Template: {key}",
+    "roleBuyer": "Buyer",
+    "roleSeller": "Seller",
+    "partyUnknown": "Member",
+    "linkedListing": "Started from a marketplace listing.",
+    "viewMarket": "Browse Market",
+    "signedSnapshotTitle": "Signed record (immutable snapshot)",
+    "bodyLabel": "Agreement text",
+    "saveBody": "Save changes",
+    "savingBody": "Saving…",
+    "saveBodySuccess": "Agreement text updated.",
+    "saveBodyError": "Could not save the agreement text.",
+    "signProgress": "Signatures",
+    "signBuyer": "Buyer signed",
+    "signSeller": "Seller signed",
+    "signedYes": "Yes",
+    "signedNo": "Not yet",
+    "signAction": "Sign digitally",
+    "signWorking": "Signing…",
+    "signSuccess": "Your signature was recorded.",
+    "signError": "Could not record your signature.",
+    "waitingOtherParty": "Waiting for the other party to sign.",
+    "readOnlyVisitor": "You are not a party to this agreement.",
+    "cancelAction": "Cancel agreement",
+    "cancelWorking": "Cancelling…",
+    "cancelSuccess": "Agreement cancelled.",
+    "cancelError": "Could not cancel this agreement.",
+    "createError": "Could not create the agreement.",
+    "createdToast": "Agreement created.",
+    "startDialogTitle": "Start an agreement",
+    "startDialogDescription": "Choose a template for your agreement with the seller for: {title}",
+    "templateLabel": "Template",
+    "template.core": "Core (general)",
+    "template.product": "Product",
+    "template.service": "Service",
+    "startConfirm": "Create draft",
+    "startWorking": "Creating…",
+    "status.draft": "Draft",
+    "status.pending_counterparty": "Pending counterparty",
+    "status.signed": "Signed",
+    "status.cancelled": "Cancelled"
   },
   "governance": {
     "title": "Governance Policies",
@@ -609,6 +693,48 @@ export const baseTranslations = {
         "unknown": "Status updating"
       }
     },
+    "voteHistory": {
+      "title": "Your recent votes",
+      "subtitle": "A short audit trail of how you participated once proposals were open for voting.",
+      "empty": "You have not cast a governance vote yet. When you vote on a proposal, it will show up here.",
+      "proposalStatusLine": "Proposal status: {status}",
+      "weightLine": "Recorded vote weight: {weight}"
+    },
+    "executionTasks": {
+      "title": "Your execution tasks",
+      "subtitle": "Approved proposals assigned to your governance units that still need follow-through.",
+      "empty": "No execution tasks are assigned to your active units right now.",
+      "unitLabel": "Unit: {unit}",
+      "assignedLabel": "Assigned: {at}",
+      "openProposal": "Open proposal"
+    },
+    "inbox": {
+      "title": "Your governance inbox",
+      "subtitle": "Start with the highest-impact actions so governance does not stall.",
+      "needsVote": "Needs your vote",
+      "myExecutionTasks": "Execution tasks for your units",
+      "openProposalsCount": "Open proposals",
+      "openProposals": "Review proposals",
+      "openExecutionQueue": "Review execution queue",
+      "createProposal": "Create proposal"
+    },
+    "filters": {
+      "all": "All",
+      "open": "Open",
+      "needsMyVote": "Needs my vote",
+      "approved": "Approved",
+      "executionQueue": "Execution queue",
+      "mineExecutable": "Mine to execute",
+      "empty": "No proposals match this filter yet."
+    },
+    "sort": {
+      "closingSoon": "Closing soon",
+      "recentlyCreated": "Recently created",
+      "mostSupport": "Most support"
+    },
+    "weightedTallyTitle": "Weighted voting momentum",
+    "quorumProgress": "Quorum progress",
+    "proposalDetailsToggle": "View full proposal details",
     "createTitle": "Create proposal",
     "createDescription": "Eligible citizens can submit proposals here. When you are the only eligible citizen, bootstrap mode can approve immediately without waiting.",
     "createAction": "Create proposal",
@@ -642,14 +768,25 @@ export const baseTranslations = {
     "federationOpsGateSlaBreaches": "Some open federation alerts are older than the steward ageing window; resolve or acknowledge them.",
     "federationOpsGateStaleVerification": "Federation distribution verification has not completed recently within the lookback window; run distribution verification and review worker output.",
     "federationOpsGateDistributionAlerts": "Open distribution verification alerts: {count}. Clear stale package, bad signature, or policy mismatch alerts after investigation.",
+    "federationOpsGateWorkerRunNotOk": "The latest federation worker run did not finish cleanly (status: {status}); review worker logs and rerun verification.",
     "federationDistributionEscalationBannerTitle": "Open on-call pages for verifier federation distribution",
     "federationDistributionEscalationBannerBody": "There are {count} open or acknowledged external execution pages tied to verifier federation distribution verification. Resolve them under Public audit, Verifier mirror production, then Immutable anchoring automation using the on-call page board.",
     "governanceStewardshipToolsLink": "Open governance stewardship tools",
     "governanceActivationStewardshipLink": "Open activation stewardship tools",
+    "guardianRelayExecutionGateBannerTitle": "Guardian relay distribution is not ready for automated execution",
+    "guardianRelayDistributionGateBannerBody": "The active relay policy requires a distribution-ready guardian relay client verification package for the proposal. Capture and sign the package under Public audit → Guardian relays before running approved auto-executions.",
+    "guardianRelayOpsGateIntro": "Guardian relay operations checks are still red. Use Public audit → Guardian relays to address whichever items apply:",
+    "guardianRelayOpsGateTrustMinimized": "Guardian relay trust-minimized quorum is not satisfied yet.",
+    "guardianRelayOpsGateCriticalAlerts": "Open critical guardian relay alerts: {open}. The policy allows at most {max} before execution pauses.",
+    "guardianRelayOpsGateStaleSigners": "Stale guardian relay signers detected: {count}. Refresh attestations or investigate relay health.",
+    "guardianRelayOpsGateWorkerRunNotOk": "The latest guardian relay worker run did not finish cleanly (status: {status}); review worker logs and rerun.",
     "activationDemographicFeedEscalationBannerTitle": "Open on-call pages for activation demographic feed",
     "activationDemographicFeedEscalationBannerBody": "There are {count} open or acknowledged external execution pages tied to the activation demographic feed worker. Resolve them under governance stewardship, Activation stewardship, then Immutable anchoring automation using the on-call page board.",
     "guardianRelayEscalationBannerTitle": "Open on-call pages for guardian relay escalations",
     "guardianRelayEscalationBannerBody": "There are {count} open or acknowledged external execution pages tied to guardian relay (proof distribution or critical escalations). Resolve them under Public audit, Guardian relays, then Immutable anchoring automation using the on-call page board.",
+    "emergencyAccessOpsEscalationBannerTitle": "Open on-call pages for emergency access operations",
+    "emergencyAccessOpsEscalationBannerBody": "There are {count} open or acknowledged external execution pages tied to emergency access operations risk (stale pending requests or near-expiry approvals). Review and resolve them under Users admin emergency access stewardship.",
+    "governanceEmergencyAccessStewardshipLink": "Open emergency access stewardship",
     "bootstrapApprovalNote": "Bootstrap auto-approval because only one eligible citizen exists.",
     "proposeBlockedBySanction": "Proposal creation is blocked while your governance sanction is active.",
     "voteBlockedBySanction": "Voting is blocked while your governance sanction is active.",
@@ -1068,6 +1205,7 @@ export const baseTranslations = {
       "contribute": "Contribute",
       "home": "Home",
       "features": "Study",
+      "study": "Study hub",
       "downloads": "Download",
       "law": "Law",
       "login": "Login",
@@ -1075,6 +1213,7 @@ export const baseTranslations = {
       "search": "Search",
       "endorse": "Endorse",
       "market": "Market",
+      "agreements": "Agreements",
       "profile": "Profile",
       "editProfile": "Edit Profile",
       "settings": "Settings",
@@ -1331,11 +1470,40 @@ export const baseTranslations = {
           "It should stay aligned with product changes as the source of truth evolves."
         ]
       },
+      "studyNestedHub": {
+        "title": "Study hub with nested sections",
+        "summary": "Study is organized into dedicated routes under `/study` so civic learning, specialists, courses, schedules, materials, and tests stay separated.",
+        "workflow": [
+          "Open Study from the bottom navigation.",
+          "Use the section tabs to switch between Civic Learning Center, Specialists, Courses, Schedules, Materials, and Tests.",
+          "Deep links such as `/study/courses` keep bookmarks and support links stable."
+        ],
+        "details": [
+          "The default Study index remains the Civic Learning Center experience.",
+          "Each section can evolve independently without turning a single page into a catch-all.",
+          "Mobile navigation highlights Study whenever any `/study` child route is active."
+        ]
+      },
+      "studyCoursesLearnerTracks": {
+        "title": "Courses with learner tracks",
+        "summary": "Courses are grouped for school students, university students, and self-paced citizens, each linking forward to schedules, materials, and tests.",
+        "workflow": [
+          "Open Study and move to the Courses tab.",
+          "Choose School, University, or General to see the starter catalog for that track.",
+          "Open Schedule, Materials, or Tests from a course card to follow the guided path."
+        ],
+        "details": [
+          "Tracks are a presentation layer; the same civic core can be tuned for different reading depth.",
+          "Course metadata references material keys and test ids for future automation.",
+          "Interactive tests are stubbed until the assessment engine ships."
+        ]
+      },
       "studyLearningCenter": {
         "title": "Open the Study learning center",
         "summary": "Use Study as the citizen-facing knowledge hub for constitutional, legal, civic, and economic learning paths.",
         "workflow": [
-          "Open Study from the bottom navigation.",
+          "Open Study from the bottom navigation (Civic Learning Center is the default index).",
+          "Use section tabs when you need specialists, courses, schedules, materials, or tests.",
           "Select a foundation domain such as Constitution, Laws, Citizenship, or Economy.",
           "Track progress and continue through recommended materials."
         ],
@@ -1343,6 +1511,20 @@ export const baseTranslations = {
           "Study is structured for civic learning rather than internal system tooling.",
           "The first phase focuses on four foundational domains, with additional domains staged next.",
           "Progress indicators make long-form civic reading easier to sustain."
+        ]
+      },
+      "specialistGuidanceHub": {
+        "title": "Route specialists between Study and Market",
+        "summary": "Specialists are anchored in Study for trusted guidance and routed to Market when help becomes transactional.",
+        "workflow": [
+          "Open Study and go to `/study/specialists` for mode-based guidance (Study, Improve, Resolve Issues).",
+          "Review domain-focused specialists and identify the right guidance path.",
+          "Use the Market handoff when you need paid specialist sessions or service delivery."
+        ],
+        "details": [
+          "Study is the default trust and knowledge entry point for specialist support.",
+          "Market handles transactional specialist work such as paid consultations and services.",
+          "This split keeps governance-sensitive guidance separate from commerce while preserving a clear handoff."
         ]
       },
       "identifierLogin": {
@@ -1509,6 +1691,20 @@ export const baseTranslations = {
           "Future releases can add photos, messaging, and delivery tools without changing the core Luma settlement model."
         ]
       },
+      "digitalAgreements": {
+        "title": "Digital agreements",
+        "summary": "Members can open agreement drafts from marketplace listings, edit shared terms while in draft, and apply two-party digital signatures with an immutable snapshot when complete.",
+        "workflow": [
+          "From Market, tap Agreement on a listing you can buy to pick a template and create a draft.",
+          "Edit the agreement body together while the record is still in draft with no signatures.",
+          "Each party signs when ready; when both have signed, the agreement becomes final with a stored snapshot."
+        ],
+        "details": [
+          "Agreement rows link back to the originating listing when created from Market.",
+          "Server-side functions enforce who can create, edit, sign, or cancel so clients cannot bypass party checks.",
+          "The Agreements page lists every record where you are buyer or seller."
+        ]
+      },
       "phoneFirstSignup": {
         "title": "Sign up with phone-first identity",
         "summary": "Signup now prioritizes phone-based registration while still allowing email as the single alternate contact method.",
@@ -1614,6 +1810,118 @@ export const baseTranslations = {
     }
   },
   "study": {
+    "layoutTitle": "Study",
+    "layoutSubtitle": "Civic learning, structured courses, specialists, schedules, materials, and tests in one organized hub.",
+    "sectionNavAria": "Study sections",
+    "civicLearningMoreTitle": "More in Study",
+    "civicLearningMoreDescription": "Foundations live here. Open other sections for specialists, courses, weekly plans, curated materials, and assessments.",
+    "sections": {
+      "civicLearning": {
+        "label": "Civic Learning Center",
+        "description": "Constitution, law, citizenship, and economy foundations."
+      },
+      "specialists": {
+        "label": "Specialists",
+        "description": "Domain experts for Study, Improve, and Resolve Issues."
+      },
+      "courses": {
+        "label": "Courses",
+        "description": "Tracks for school, university, and self-paced citizens."
+      },
+      "schedules": {
+        "label": "Schedules",
+        "description": "Weekly rhythm and pacing for your courses."
+      },
+      "materials": {
+        "label": "Materials",
+        "description": "Reading packs linked to each course."
+      },
+      "tests": {
+        "label": "Tests",
+        "description": "Automated checks for what you learned."
+      }
+    },
+    "specialistsPage": {
+      "title": "Specialists",
+      "description": "Choose a domain-aligned specialist for guidance. Paid sessions and deliverables stay in Market.",
+      "modesIntro": "Each specialist supports these modes:",
+      "marketEligible": "May also list paid services in Market.",
+      "guidanceOnly": "Guidance-first domain: listings stay moderated and non-transactional by default."
+    },
+    "courses": {
+      "intro": "Pick a learner track, then open a course to link schedules, materials, and tests.",
+      "weeksLabel": "{weeks} wk plan",
+      "openSchedule": "Schedule",
+      "openMaterials": "Materials",
+      "openTests": "Tests",
+      "tracks": {
+        "school": {
+          "label": "School",
+          "description": "Age-appropriate pacing with shorter sessions and more scaffolding."
+        },
+        "university": {
+          "label": "University",
+          "description": "Semester-style depth with policy and systems literacy."
+        },
+        "citizen": {
+          "label": "General",
+          "description": "Self-paced civic literacy for busy adults."
+        }
+      },
+      "items": {
+        "civicFoundationsSchool": {
+          "title": "Civic Foundations (School)",
+          "summary": "Constitution stories, citizenship basics, and respectful debate practice."
+        },
+        "civicFoundationsUniversity": {
+          "title": "Civic Foundations (University)",
+          "summary": "Constitutional mechanics, law reading, and monetary policy literacy."
+        },
+        "selfPacedCitizen": {
+          "title": "Self-paced Civic Literacy",
+          "summary": "Summaries, citizen guides, and economy primers you can finish on your own cadence."
+        }
+      }
+    },
+    "schedules": {
+      "intro": "Build a weekly rhythm. Link a course to pre-fill recommended focus blocks.",
+      "linkedCourse": "Schedule is linked to this course.",
+      "noCourse": "No course selected. Open a course from Courses and tap Schedule, or stay on a general weekly template.",
+      "templateTitle": "Weekly template",
+      "templateHint": "Concrete calendar sync and reminders will plug into this template in a later release.",
+      "slotPlaceholder": "Study block",
+      "backCourses": "Back to Courses",
+      "weekdays": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      }
+    },
+    "materialsPage": {
+      "intro": "Curated readings and guides. When you open a course, this list narrows to that course pack.",
+      "backCourses": "Back to Courses"
+    },
+    "tests": {
+      "intro": "Automated checks tied to courses. Interactive grading arrives in the next milestone.",
+      "filteredByCourse": "Showing tests mapped to this course.",
+      "questionCount": "{count} questions",
+      "startSoon": "Start test (coming soon)",
+      "backCourses": "Back to Courses",
+      "items": {
+        "civicBasics": {
+          "title": "Civic Basics Check",
+          "summary": "Vocabulary, branches of governance, and citizen duties."
+        },
+        "governanceLiteracy": {
+          "title": "Governance Literacy Check",
+          "summary": "Policy tradeoffs, transparency signals, and monetary guardrails."
+        }
+      }
+    },
     "badge": "Civic Learning Center",
     "title": "Study",
     "subtitle": "Access foundational civic materials in a structured learning path.",
@@ -1764,6 +2072,10 @@ export const baseTranslations = {
       "economyCitizenGuide": {
         "title": "Economy & Luma Citizen Guide",
         "summary": "Practical guide to understand supply changes, policy controls, and approval pathways."
+      },
+      "economyConstitutionalTokenomicsGovernance": {
+        "title": "Constitutional Tokenomics & Governance Model",
+        "summary": "Foundational draft defining Luma tokenomics, treasury governance, civic incentives, and anti-capture safeguards."
       }
     },
     "proposals": {
@@ -1778,6 +2090,16 @@ export const baseTranslations = {
       "citizenshipPathway": {
         "title": "Citizenship Advancement Baseline",
         "summary": "Clarifies baseline progression criteria for participation and civic standing."
+      }
+    },
+    "specialists": {
+      "title": "Specialists Hub",
+      "description": "Study is the primary home for specialist guidance. Start here for trusted learning, improvement plans, and issue-resolution direction.",
+      "marketCta": "Open specialist services in Market",
+      "modes": {
+        "study": "Study",
+        "improve": "Improve",
+        "resolveIssues": "Resolve Issues"
       }
     }
   },
@@ -1833,6 +2155,8 @@ export const baseTranslations = {
     "viewDetails": "View details",
     "findPeople": "Find people",
     "discoverEndorse": "Discover and endorse",
+    "discoverPeopleInMarket": "Discover people and companies in Market",
+    "openSearch": "Open search",
     "endorse": "Endorse",
     "recognizeSomeone": "Recognize someone",
     "governanceHub": "Governance hub",
@@ -1872,13 +2196,29 @@ export const baseTranslations = {
     "feedPlaceholder": "No posts yet. Share what's on your mind to start your feed."
   },
   "search": {
-    "title": "Find people",
+    "title": "Search",
     "placeholder": "Search by name or username...",
+    "placeholderUnified": "Search people, companies, products, or services...",
     "searching": "Searching...",
     "noUsersFound": "No users found",
+    "noResultsFound": "No results found",
     "tryDifferent": "Try a different search term",
     "startTyping": "Start typing to search",
-    "description": "Find people to endorse and connect with."
+    "description": "Find people to endorse and connect with.",
+    "startTypingUnified": "Start typing to search across Levela",
+    "descriptionUnified": "Find people, business accounts, products, and services from one search screen.",
+    "tabAll": "All",
+    "tabPeople": "People",
+    "tabCompanies": "Companies",
+    "tabProducts": "Products",
+    "tabServices": "Services",
+    "viewProfile": "View profile",
+    "openInMarket": "Open in Market",
+    "sellerFallback": "Seller",
+    "businessAccount": "Business account",
+    "companyFallback": "Company",
+    "noDescription": "No description available.",
+    "directoryError": "Some directory results could not be loaded."
   },
   "endorseSelect": {
     "title": "Choose someone to endorse",
@@ -2029,6 +2369,14 @@ export const baseTranslations = {
     "emptyTitle": "No messages yet",
     "emptySubtitle": "Start the conversation! Messages will appear here instantly.",
     "placeholder": "Type a message...",
+    "composer": {
+      "emoji": "Emoji",
+      "attachFile": "Attach file",
+      "takePhoto": "Take photo",
+      "recordVoice": "Voice message",
+      "stopRecording": "Stop recording",
+      "send": "Send"
+    },
     "retry": "Retry",
     "anonymous": "Anonymous",
     "tabs": {
@@ -2054,7 +2402,28 @@ export const baseTranslations = {
       "deleteSelected": "Delete",
       "deleteSelectedNone": "Select one or more messages to delete.",
       "deleteFailed": "Could not delete those messages.",
-      "deleteFailedWithReason": "Could not delete messages: {reason}"
+      "deleteFailedWithReason": "Could not delete messages: {reason}",
+      "menu": {
+        "threadActions": "Chat options",
+        "muteThread": "Mute notifications",
+        "unmuteThread": "Unmute notifications",
+        "muteDone": "This chat is muted on this device.",
+        "unmuteDone": "This chat is unmuted on this device.",
+        "exportChat": "Export chat",
+        "exportEmpty": "There is nothing to export in this chat yet.",
+        "exportNeedsThread": "Open a chat first.",
+        "exportDone": "Chat exported as a JSON file.",
+        "clearChat": "Clear chat",
+        "clearChatTitle": "Clear this chat?",
+        "clearChatDescription":
+          "Messages you are allowed to remove will be deleted from Levela. In a direct chat, the other person's messages stay until they delete them. This cannot be undone for the messages that are removed.",
+        "clearChatCancel": "Cancel",
+        "clearChatConfirm": "Clear",
+        "clearChatDone": "Chat cleared.",
+        "clearChatPartial": "Your messages were removed. Some messages from the other person may still appear.",
+        "clearChatFailed": "Could not clear this chat.",
+        "clearChatFailedWithReason": "Could not clear this chat: {reason}"
+      }
     },
     "contacts": {
       "searchPlaceholder": "Search people by name or username",
@@ -2081,7 +2450,61 @@ export const baseTranslations = {
       "sendFailedWithReason": "Your message could not be sent: {reason}",
       "agentReplyFailed": "Your message was saved, but Nela could not reply right now. Try again in a moment.",
       "agentReplyFailedWithReason": "Nela could not reply: {reason}",
+      "editMessage": "Edit",
+      "star": "Star",
+      "editingMessage": "Editing message",
+      "edited": "edited",
+      "editWindowExpired": "This message can no longer be edited.",
+      "editFailed": "Could not save your edit.",
+      "searchPlaceholder": "Search in this chat",
+      "searchNoResults": "No messages matched your search.",
+      "starredOnly": "Starred",
+      "openProfile": "Open chat profile",
+      "profile": {
+        "title": "Contact info",
+        "subtitle": "WhatsApp-style thread profile",
+        "searchHint": "Search in conversation",
+        "viewStarred": "Starred messages ({count})",
+        "starredMessages": "Starred messages",
+        "block": "Block contact",
+        "unblock": "Unblock contact",
+        "blockDone": "Contact blocked.",
+        "unblockDone": "Contact unblocked.",
+        "blockedComposerHint": "You blocked this contact. Unblock to send messages.",
+        "blockActionFailed": "Could not update block state.",
+        "disappearingTitle": "Disappearing messages",
+        "disappearOff": "Off",
+        "disappearHours": "{hours}h",
+        "disappearDays": "{days}d",
+        "wallpaperTitle": "Chat wallpaper",
+        "wallpaperDefault": "Default",
+        "wallpaperMesh": "Mesh",
+        "wallpaperAurora": "Aurora",
+        "wallpaperPaper": "Paper",
+        "report": "Report contact",
+        "reportTitle": "Report contact",
+        "reportDescription": "Explain what happened. Your report is visible to moderators with report-review access.",
+        "reportReasonPlaceholder": "Describe the issue and context...",
+        "reportSubmit": "Submit report",
+        "reportMessage": "Report message",
+        "reportMessageDescription": "You are reporting a specific message in this conversation.",
+        "reportReasonTooShort": "Please provide a bit more detail before submitting.",
+        "reportSubmitFailed": "Could not submit report.",
+        "reportSubmitted": "Report submitted.",
+        "mediaLinksDocs": "Media, links, and docs",
+        "photos": "Photos",
+        "links": "Links",
+        "docs": "Docs",
+        "encrypted": "end-to-end encrypted",
+        "standard": "standard messaging",
+        "endToEndStatus": "Chat security: {status}"
+      },
       "sendingRequiresThread": "Pick a chat before sending a message.",
+      "attachmentSignInRequired": "Sign in to send files, photos, or voice messages.",
+      "attachmentsBlockedE2ee": "Files and voice notes are not available in this end-to-end encrypted chat yet.",
+      "attachmentTooLarge": "That file is too large (max 12 MB).",
+      "attachmentUploadFailed": "Could not upload that attachment. Please try again.",
+      "micPermissionDenied": "Microphone access was denied. Allow the mic in your browser settings to record voice messages.",
       "encryptedPreview": "Encrypted message",
       "e2eeUndecryptable": "This message could not be decrypted on this device.",
       "directE2eeOnHint":

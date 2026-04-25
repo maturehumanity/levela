@@ -20,7 +20,12 @@ export function MobileNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass safe-bottom">
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive =
+            item.path === '/messaging'
+              ? location.pathname === '/messaging' || location.pathname.startsWith('/messaging/')
+              : item.path === '/study'
+                ? location.pathname === '/study' || location.pathname.startsWith('/study/')
+                : location.pathname === item.path;
           const Icon = item.icon;
           const labelKey =
             item.label === 'Home'

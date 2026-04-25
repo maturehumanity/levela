@@ -114,5 +114,53 @@ describe('governance-guardian-external-signoff', () => {
         signatureInput: '',
       }),
     ).rejects.toThrow('Signed message and signature must both be provided');
+
+    await expect(
+      prepareExternalGuardianSignoffPayload({
+        signer,
+        payloadHashInput: '',
+        signedMessageInput: '',
+        signatureInput: 'only-signature',
+      }),
+    ).rejects.toThrow('Signed message and signature must both be provided');
+  });
+
+  it('rejects a client payload hash that disagrees with the signed message digest', async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      true,
+      ['sign', 'verify'],
+    );
+    const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    const signer: GuardianExternalSignerRow = {
+      activated_at: new Date().toISOString(),
+      added_by: null,
+      created_at: new Date().toISOString(),
+      custody_provider: null,
+      deactivated_at: null,
+      id: 'signer-id',
+      is_active: true,
+      key_algorithm: 'ECDSA_P256_SHA256_V1',
+      metadata: {},
+      signer_key: toBase64Url(new Uint8Array(spki)),
+      signer_label: 'Test signer',
+      updated_at: new Date().toISOString(),
+    };
+
+    const message = 'proposal:xyz|decision:approve';
+    const signature = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      keyPair.privateKey,
+      new TextEncoder().encode(message),
+    );
+
+    await expect(
+      prepareExternalGuardianSignoffPayload({
+        signer,
+        payloadHashInput: 'wrong-hash-but-non-empty',
+        signedMessageInput: message,
+        signatureInput: toBase64Url(new Uint8Array(signature)),
+      }),
+    ).rejects.toThrow('Payload hash does not match the signed message digest.');
   });
 });

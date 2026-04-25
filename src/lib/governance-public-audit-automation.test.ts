@@ -7,6 +7,7 @@ import {
   readGovernancePublicAuditAnchorExecutionJobBoardRows,
   readGovernancePublicAuditClaimedExecutionJobs,
   readGovernancePublicAuditExternalExecutionCycleResult,
+  readGovernancePublicAuditExternalExecutionAutomationStatus,
   readGovernancePublicAuditExternalExecutionPageBoardRows,
   readGovernancePublicAuditExternalExecutionPagingSummary,
   readGovernancePublicAuditExternalExecutionPolicySummary,
@@ -62,6 +63,20 @@ describe('governance-public-audit-automation helpers', () => {
       verifierSlaMet: false,
       overallSlaMet: false,
     });
+  });
+
+  it('returns null when operations SLA summary RPC rows are absent or lack a batch id', () => {
+    expect(readGovernancePublicAuditOperationsSlaSummary(null)).toBeNull();
+    expect(readGovernancePublicAuditOperationsSlaSummary([])).toBeNull();
+    expect(
+      readGovernancePublicAuditOperationsSlaSummary([
+        {
+          batch_id: null,
+          pending_sla_hours: 4,
+          lookback_hours: 24,
+        },
+      ]),
+    ).toBeNull();
   });
 
   it('parses anchor execution job board rows', () => {
@@ -188,6 +203,61 @@ describe('governance-public-audit-automation helpers', () => {
     });
   });
 
+  it('parses external execution automation status rows', () => {
+    const status = readGovernancePublicAuditExternalExecutionAutomationStatus([
+      {
+        cron_schema_available: true,
+        cron_job_registered: true,
+        cron_job_active: true,
+        cron_job_schedule: '35 * * * *',
+        cron_job_command: 'SELECT public.gpav_external_execution_cycle_tick();',
+        latest_batch_id: 'batch-9',
+        latest_cycle_anchor_jobs_scheduled: 4,
+        latest_cycle_verifier_jobs_scheduled: 5,
+        latest_cycle_evaluated_at: '2026-05-01T08:35:00.000Z',
+        latest_anchor_job_scheduled_at: '2026-05-01T08:35:01.000Z',
+        latest_verifier_job_scheduled_at: '2026-05-01T08:35:02.000Z',
+        latest_external_execution_page_opened_at: '2026-05-01T08:36:00.000Z',
+      },
+    ]);
+
+    expect(status).toEqual({
+      cronSchemaAvailable: true,
+      cronJobRegistered: true,
+      cronJobActive: true,
+      cronJobSchedule: '35 * * * *',
+      cronJobCommand: 'SELECT public.gpav_external_execution_cycle_tick();',
+      latestBatchId: 'batch-9',
+      latestCycleAnchorJobsScheduled: 4,
+      latestCycleVerifierJobsScheduled: 5,
+      latestCycleEvaluatedAt: '2026-05-01T08:35:00.000Z',
+      latestAnchorJobScheduledAt: '2026-05-01T08:35:01.000Z',
+      latestVerifierJobScheduledAt: '2026-05-01T08:35:02.000Z',
+      latestExternalExecutionPageOpenedAt: '2026-05-01T08:36:00.000Z',
+    });
+  });
+
+  it('returns null when external execution summary RPC payloads are empty or lack policy_key', () => {
+    expect(readGovernancePublicAuditExternalExecutionCycleResult(null)).toBeNull();
+    expect(readGovernancePublicAuditExternalExecutionCycleResult([])).toBeNull();
+
+    expect(readGovernancePublicAuditExternalExecutionPagingSummary(null)).toBeNull();
+    expect(readGovernancePublicAuditExternalExecutionPagingSummary([])).toBeNull();
+    expect(readGovernancePublicAuditExternalExecutionAutomationStatus(null)).toBeNull();
+    expect(readGovernancePublicAuditExternalExecutionAutomationStatus([])).toBeNull();
+
+    expect(readGovernancePublicAuditExternalExecutionPolicySummary(null)).toBeNull();
+    expect(readGovernancePublicAuditExternalExecutionPolicySummary([])).toBeNull();
+    expect(
+      readGovernancePublicAuditExternalExecutionPolicySummary([
+        {
+          policy_key: null,
+          policy_name: 'Orphan row',
+        },
+      ]),
+    ).toBeNull();
+  });
+
   it('parses external execution page board rows', () => {
     const pages = readGovernancePublicAuditExternalExecutionPageBoardRows([
       {
@@ -219,6 +289,12 @@ describe('governance-public-audit-automation helpers', () => {
       openedAt: '2026-04-21T02:00:00.000Z',
       resolvedAt: null,
     });
+  });
+
+  it('returns empty lists for non-array automation board payloads', () => {
+    expect(readGovernancePublicAuditExternalExecutionPageBoardRows(null)).toEqual([]);
+    expect(readGovernancePublicAuditAnchorExecutionJobBoardRows({})).toEqual([]);
+    expect(readGovernancePublicAuditClaimedExecutionJobs(undefined)).toEqual([]);
   });
 
   it('parses claimed execution jobs', () => {
@@ -294,6 +370,24 @@ describe('governance-public-audit-automation helpers', () => {
       },
     ];
     expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'verifier_federation_distribution')).toBe(1);
+  });
+
+  it('returns zero when the page key substring is empty after trimming', () => {
+    const pages = [
+      {
+        pageId: 'p1',
+        batchId: 'b1',
+        pageKey: 'verifier_federation_distribution_escalation',
+        severity: 'critical' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Open',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T00:00:00.000Z',
+        resolvedAt: null,
+      },
+    ];
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, '')).toBe(0);
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, '   ')).toBe(0);
   });
 
   it('counts open guardian relay external execution pages by page key substring', () => {

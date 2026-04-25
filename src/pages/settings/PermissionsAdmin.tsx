@@ -23,13 +23,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-type RolePermissionRow = {
-  role: AppRole;
-  permission: AppPermission;
-};
-
 const sectionOrder: SectionId[] = ['home', 'discovery', 'knowledge', 'identity', 'contribution', 'marketplace', 'preferences', 'administration'];
-const pageOrder: PageId[] = ['home', 'messaging', 'features', 'law', 'profile', 'editProfile', 'endorse', 'market', 'settings', 'admin', 'adminRoles', 'adminUsers', 'adminPermissions'];
+const pageOrder: PageId[] = ['home', 'messaging', 'study', 'features', 'law', 'profile', 'editProfile', 'endorse', 'market', 'settings', 'admin', 'adminRoles', 'adminUsers', 'adminPermissions'];
 function getPageLabel(pageId: PageId, t: (key: string, params?: Record<string, string | number>) => string) {
   if (pageId === 'editProfile') return t('settings.editProfile');
   if (pageId === 'admin') return t('features.pages.admin');
@@ -74,7 +69,7 @@ export default function PermissionsAdmin() {
         Object.fromEntries(
           APP_ROLES.map((role) => [
             role,
-            ((data || []) as RolePermissionRow[])
+            (data ?? [])
               .filter((entry) => entry.role === role)
               .map((entry) => entry.permission),
           ]),

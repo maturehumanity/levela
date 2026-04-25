@@ -12,6 +12,32 @@ This project keeps source code in GitHub, but APK files only on the local machin
   - `VITE_DISTRIBUTION_CHANNEL=play-store` for Google Play builds
   - `VITE_DISTRIBUTION_CHANNEL=app-store` for iOS App Store builds
 
+## Android update policy (testing first, then production)
+
+1. **Ship new work to testing first**  
+   After bumping `src/lib/app-release.ts`, publish **only the testing channel** (or use the default `both` only when you intentionally want production to jump in the same step):
+
+   ```bash
+   LEVELA_UPDATE_CHANNEL=testing npm run update:application
+   ```
+
+   Deploy `public/updates/android-testing.json`, `android-testing.js`, and the matching testing APK under `public/downloads/` to the live site so sideload testers pick it up.
+
+2. **Soak and verify**  
+   Keep the build on the **Testing** track until you are satisfied there are **no bug reports** (or other release blockers) on that testing version.
+
+3. **Promote the same tested build to production**  
+   When the testing build is approved, copy it to the **release** manifest and APK name (same bytes, production URLs):
+
+   ```bash
+   npm run promote:android-testing-to-release
+   ```
+
+   Then deploy the updated `android-release.json`, `android-release.js`, `android.json`, `android.js`, and the new `levela-debug-release-*.apk` next to the testing APK.
+
+4. **App behavior**  
+   On native Android sideload builds, the app loads **only the manifest for the track** the user chose in **Settings** (Production vs Testing). Switching tracks triggers an immediate check against the server for that track’s latest version.
+
 ## Release Flow
 
 1. Bump the release version.

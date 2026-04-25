@@ -384,4 +384,20 @@ describe('governance-public-audit verifier bundle parser', () => {
       },
     });
   });
+
+  it('returns null when verifier bundle RPC rows are missing or incomplete', () => {
+    expect(readGovernancePublicAuditClientVerifierBundle(null)).toBeNull();
+    expect(readGovernancePublicAuditClientVerifierBundle([])).toBeNull();
+    expect(
+      readGovernancePublicAuditClientVerifierBundle([
+        {
+          bundle_version: 'public_audit_client_verifier_bundle_v1',
+          bundle_hash: '',
+          bundle_payload: { generated_at: '2026-04-21T04:00:00.000Z' },
+          healthy_mirror_count: 0,
+          quorum_met: false,
+        },
+      ]),
+    ).toBeNull();
+  });
 });

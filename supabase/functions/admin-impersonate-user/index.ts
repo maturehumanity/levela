@@ -6,8 +6,7 @@ const corsHeaders = {
 };
 
 type ImpersonatePayload = {
-  profileId?: string;
-  userId?: string;
+  requestId?: string;
 };
 
 Deno.serve(async (request) => {
@@ -19,7 +18,17 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const allowAdminImpersonation = (Deno.env.get('ALLOW_ADMIN_IMPERSONATION') ?? '').trim().toLowerCase() === 'true';
     const authHeader = request.headers.get('Authorization') ?? '';
+
+    if (!allowAdminImpersonation) {
+      return new Response(JSON.stringify({
+        error: 'Admin impersonation is disabled. Set ALLOW_ADMIN_IMPERSONATION=true only for audited emergency workflows.',
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -57,36 +66,42 @@ Deno.serve(async (request) => {
     }
 
     const payload = (await request.json()) as ImpersonatePayload;
-    const targetProfileId = payload.profileId?.trim();
-    const targetUserIdFromPayload = payload.userId?.trim();
+    const requestId = payload.requestId?.trim();
 
-    if (!targetProfileId && !targetUserIdFromPayload) {
-      return new Response(JSON.stringify({ error: 'Missing profileId or userId.' }), {
+    if (!requestId) {
+      return new Response(JSON.stringify({ error: 'Missing emergency access requestId.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const { data: claimedTargetProfileId, error: claimError } = await userClient.rpc(
+      'claim_governance_emergency_access_request_for_impersonation',
+      { target_request_id: requestId },
+    );
 
-    let targetUserId = targetUserIdFromPayload ?? '';
-
-    if (!targetUserId && targetProfileId) {
-      const { data: targetProfile, error: targetProfileError } = await adminClient
-        .from('profiles')
-        .select('user_id')
-        .eq('id', targetProfileId)
-        .single();
-
-      if (targetProfileError || !targetProfile?.user_id) {
-        return new Response(JSON.stringify({ error: 'Target profile not found.' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      targetUserId = targetProfile.user_id;
+    if (claimError || typeof claimedTargetProfileId !== 'string' || !claimedTargetProfileId.trim()) {
+      return new Response(JSON.stringify({ error: claimError?.message || 'Emergency request must be approved, valid, and unconsumed.' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    const { data: targetProfile, error: targetProfileError } = await adminClient
+      .from('profiles')
+      .select('user_id')
+      .eq('id', claimedTargetProfileId)
+      .single();
+
+    if (targetProfileError || !targetProfile?.user_id) {
+      return new Response(JSON.stringify({ error: 'Target profile not found.' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const targetUserId = targetProfile.user_id;
 
     const { data: targetUser, error: targetUserError } = await adminClient.auth.admin.getUserById(targetUserId);
 

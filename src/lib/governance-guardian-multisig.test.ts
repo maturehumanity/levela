@@ -46,6 +46,14 @@ describe('governance guardian multisig helpers', () => {
         message: 'random error',
       }),
     ).toBe(false);
+
+    expect(
+      isMissingGuardianMultisigBackend({
+        code: 'PGRST205',
+        message: 'Could not find the table public.governance_proposal_guardian_external_signatures in the schema cache',
+        details: null,
+      }),
+    ).toBe(true);
   });
 
   it('normalizes external multisig summary rows', () => {
@@ -72,5 +80,10 @@ describe('governance guardian multisig helpers', () => {
       policyNetwork: 'ethereum-mainnet',
       policyContractReference: 'safe://chain/0xabc',
     });
+  });
+
+  it('returns null when the multisig summary RPC yields no rows', () => {
+    expect(readGovernanceProposalExternalMultisigSummary(null)).toBeNull();
+    expect(readGovernanceProposalExternalMultisigSummary([])).toBeNull();
   });
 });

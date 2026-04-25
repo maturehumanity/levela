@@ -5,12 +5,13 @@
       "label": "Start Levela Dev Server",
       "type": "process",
       "command": "/bin/bash",
-      "args": ["-c", "npm run dev"],
+      "args": ["-c", "npm run dev:auto"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
       "runOptions": {
-        "runOn": "folderOpen"
+        "runOn": "folderOpen",
+        "instanceLimit": 1
       },
       "presentation": {
         "reveal": "always",

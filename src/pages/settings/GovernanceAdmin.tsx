@@ -38,7 +38,7 @@ import {
   evaluatePolicySignals,
   type MonetaryPolicy,
 } from '@/lib/monetary';
-import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
+import { calculateLevelaScore } from '@/lib/scoring';
 import type { PillarId } from '@/lib/constants';
 import { GovernanceEligibilityCard } from '@/components/governance/GovernanceEligibilityCard';
 import { GovernanceKeyManagerCard } from '@/components/governance/GovernanceKeyManagerCard';
@@ -354,7 +354,7 @@ export default function GovernanceAdmin() {
         return;
       }
 
-      const typedEndorsements = ((data || []) as Endorsement[]).map((item) => ({
+      const typedEndorsements = (data ?? []).map((item) => ({
         ...item,
         pillar: item.pillar as PillarId,
       }));

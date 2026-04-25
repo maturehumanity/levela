@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildStudyAiExplanation,
+  createFoundationProgressMap,
   deriveFoundationCertificationStatus,
   filterStudyDocumentsByQuery,
   getFoundationMaterialsForDomain,
@@ -38,6 +39,14 @@ describe('study module', () => {
       }),
     ).toBe(true);
 
+    expect(
+      isMissingStudyBackend({
+        code: null,
+        message: 'relation "study_bookmarks" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
     expect(isMissingStudyBackend(null)).toBe(false);
 
     expect(
@@ -61,6 +70,39 @@ describe('study module', () => {
     expect(metrics.total).toBe(FOUNDATION_STUDY_DOCUMENT_KEYS.length);
     expect(metrics.percent).toBe(75);
     expect(metrics.isComplete).toBe(false);
+  });
+
+  it('builds a default foundation progress map with optional overrides', () => {
+    const baseline = createFoundationProgressMap();
+    expect(baseline).toEqual({
+      constitution: 0,
+      laws: 0,
+      citizenship: 0,
+      economy: 0,
+    });
+
+    expect(
+      createFoundationProgressMap({
+        constitution: 40,
+        economy: 100,
+      }),
+    ).toEqual({
+      constitution: 40,
+      laws: 0,
+      citizenship: 0,
+      economy: 100,
+    });
+  });
+
+  it('returns all study documents when the search query is empty', () => {
+    expect(
+      filterStudyDocumentsByQuery(
+        STUDY_DOCUMENTS,
+        '   ',
+        (document) => document.titleKey,
+        (document) => document.summaryKey,
+      ),
+    ).toEqual(STUDY_DOCUMENTS);
   });
 
   it('derives certification status with earned state treated as sticky', () => {

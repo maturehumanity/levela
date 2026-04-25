@@ -24,16 +24,23 @@ const Contribute = lazy(() => import('@/pages/Contribute'));
 const Messaging = lazy(() => import('@/pages/Messaging'));
 const DownloadPage = lazy(() => import('@/pages/Download'));
 const Features = lazy(() => import('@/pages/Features'));
-const Study = lazy(() => import('@/pages/Study'));
+const StudyLayout = lazy(() => import('@/pages/StudyLayout'));
+const StudyCivicLearning = lazy(() => import('@/pages/study/StudyCivicLearning'));
+const StudySpecialists = lazy(() => import('@/pages/study/StudySpecialists'));
+const StudyCourses = lazy(() => import('@/pages/study/StudyCourses'));
+const StudySchedules = lazy(() => import('@/pages/study/StudySchedules'));
+const StudyMaterials = lazy(() => import('@/pages/study/StudyMaterials'));
+const StudyTests = lazy(() => import('@/pages/study/StudyTests'));
 const Governance = lazy(() => import('@/pages/Governance'));
 const Home = lazy(() => import('@/pages/Home'));
 const Law = lazy(() => import('@/pages/Law'));
 const Market = lazy(() => import('@/pages/Market'));
+const Agreements = lazy(() => import('@/pages/Agreements'));
+const AgreementDetail = lazy(() => import('@/pages/AgreementDetail'));
 const TermsOfUse = lazy(() => import('@/pages/TermsOfUse'));
 const Search = lazy(() => import('@/pages/Search'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const UserProfile = lazy(() => import('@/pages/UserProfile'));
-const EndorseSelect = lazy(() => import('@/pages/EndorseSelect'));
 const EndorseFlow = lazy(() => import('@/pages/EndorseFlow'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const EditProfile = lazy(() => import('@/pages/settings/EditProfile'));
@@ -45,6 +52,8 @@ const PermissionsAdmin = lazy(() => import('@/pages/settings/PermissionsAdmin'))
 const GovernanceAdmin = lazy(() => import('@/pages/settings/GovernanceAdmin'));
 const LumaCreditsAdmin = lazy(() => import('@/pages/settings/LumaCreditsAdmin'));
 const LumaWallet = lazy(() => import('@/pages/settings/LumaWallet'));
+const MessagingSettingsPage = lazy(() => import('@/pages/settings/MessagingSettings'));
+const MessagingSecurity = lazy(() => import('@/pages/settings/MessagingSecurity'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient();
@@ -191,8 +200,17 @@ const App = () => (
                   {/* Protected routes */}
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/contribute" element={<ProtectedRoute><Contribute /></ProtectedRoute>} />
+                  <Route path="/messaging/:conversationId" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
                   <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
-                  <Route path="/study" element={<ProtectedRoute><Study /></ProtectedRoute>} />
+                  <Route path="/messagin" element={<ProtectedRoute><Navigate to="/messaging" replace /></ProtectedRoute>} />
+                  <Route path="/study" element={<ProtectedRoute><StudyLayout /></ProtectedRoute>}>
+                    <Route index element={<StudyCivicLearning />} />
+                    <Route path="specialists" element={<StudySpecialists />} />
+                    <Route path="courses" element={<StudyCourses />} />
+                    <Route path="schedules" element={<StudySchedules />} />
+                    <Route path="materials" element={<StudyMaterials />} />
+                    <Route path="tests" element={<StudyTests />} />
+                  </Route>
                   <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
                   <Route path="/features" element={<ProtectedRoute><Navigate to="/study" replace /></ProtectedRoute>} />
                   <Route
@@ -212,6 +230,8 @@ const App = () => (
                     }
                   />
                   <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
+                  <Route path="/agreements/:agreementId" element={<ProtectedRoute><AgreementDetail /></ProtectedRoute>} />
+                  <Route path="/agreements" element={<ProtectedRoute><Agreements /></ProtectedRoute>} />
                   <Route
                     path="/profile"
                     element={
@@ -232,7 +252,7 @@ const App = () => (
                     path="/endorse"
                     element={
                       <ProtectedRoute requiredPermissions={['endorsement.create']}>
-                        <EndorseSelect />
+                        <Navigate to="/search?tab=people" replace />
                       </ProtectedRoute>
                     }
                   />
@@ -246,6 +266,22 @@ const App = () => (
                   />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/settings/luma-wallet" element={<ProtectedRoute><LumaWallet /></ProtectedRoute>} />
+                  <Route
+                    path="/settings/messaging"
+                    element={
+                      <ProtectedRoute requiredPermissions={['message.create']}>
+                        <MessagingSettingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings/messaging-security"
+                    element={
+                      <ProtectedRoute requiredPermissions={['message.create']}>
+                        <MessagingSecurity />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/settings/legal" element={<ProtectedRoute><TermsOfUse /></ProtectedRoute>} />
                   <Route
                     path="/settings/profile"

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import Settings from '@/pages/Settings';
 import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
-import { APP_UPDATE_CHANNEL_KEY, getAppUpdateChannel } from '@/lib/update-channel';
+import { APP_UPDATE_CHANNEL_KEY } from '@/lib/update-channel';
 
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
@@ -33,11 +33,20 @@ vi.mock('@/components/ui/select', () => ({
   SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+const authProfileState: {
+  profile: { effective_permissions: string[]; role: string } | null;
+} = {
+  profile: {
+    effective_permissions: [],
+    role: 'member',
+  },
+};
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     signOut: async () => {},
-    profile: {
-      effective_permissions: [],
+    get profile() {
+      return authProfileState.profile;
     },
   }),
 }));
@@ -58,7 +67,33 @@ vi.mock('@/contexts/LanguageContext', async () => {
 });
 
 describe('Settings page', () => {
+  it('shows a civic governance hub entry for signed-in non-guest members', () => {
+    authProfileState.profile = { effective_permissions: [], role: 'member' };
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Settings />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Civic governance')).toBeInTheDocument();
+    expect(screen.getByText('Governance hub')).toBeInTheDocument();
+  });
+
+  it('hides the civic governance hub entry for guest profiles', () => {
+    authProfileState.profile = { effective_permissions: [], role: 'guest' };
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Settings />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('Governance hub')).not.toBeInTheDocument();
+  });
+
   it('shows the installed app version and build', () => {
+    authProfileState.profile = { effective_permissions: [], role: 'member' };
     window.localStorage.removeItem(APP_UPDATE_CHANNEL_KEY);
 
     render(
@@ -67,11 +102,7 @@ describe('Settings page', () => {
       </MemoryRouter>,
     );
 
-    const expectedLabel = getAppUpdateChannel() === 'testing'
-      ? `Testing ${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`
-      : `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
-
     expect(screen.getByText('Application version')).toBeInTheDocument();
-    expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+    expect(screen.getByText(`${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`)).toBeInTheDocument();
   });
 });

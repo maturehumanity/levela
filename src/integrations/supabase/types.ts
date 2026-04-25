@@ -194,9 +194,15 @@ export type Database = {
           is_admin: boolean | null
           is_active_citizen: boolean
           is_governance_eligible: boolean
+          is_system_agent: boolean
           is_verified: boolean | null
           language_code: string | null
           last_active_at: string | null
+          messaging_backup_note: string | null
+          messaging_backup_provider: string | null
+          messaging_server_retention_days: number | null
+          messaging_server_retention_max_kb: number | null
+          messaging_x25519_public_key: string | null
           official_id: string
           place_of_birth: string | null
           phone_country_code: string | null
@@ -206,7 +212,7 @@ export type Database = {
           sex: string | null
           social_security_number: string
           updated_at: string
-          user_id: string
+          user_id: string | null
           username: string | null
           username_last_changed_at: string | null
         }
@@ -239,9 +245,15 @@ export type Database = {
           is_admin?: boolean | null
           is_active_citizen?: boolean
           is_governance_eligible?: boolean
+          is_system_agent?: boolean
           is_verified?: boolean | null
           language_code?: string | null
           last_active_at?: string | null
+          messaging_backup_note?: string | null
+          messaging_backup_provider?: string | null
+          messaging_server_retention_days?: number | null
+          messaging_server_retention_max_kb?: number | null
+          messaging_x25519_public_key?: string | null
           official_id?: string
           place_of_birth?: string | null
           phone_country_code?: string | null
@@ -251,7 +263,7 @@ export type Database = {
           sex?: string | null
           social_security_number?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           username?: string | null
           username_last_changed_at?: string | null
         }
@@ -284,9 +296,15 @@ export type Database = {
           is_admin?: boolean | null
           is_active_citizen?: boolean
           is_governance_eligible?: boolean
+          is_system_agent?: boolean
           is_verified?: boolean | null
           language_code?: string | null
           last_active_at?: string | null
+          messaging_backup_note?: string | null
+          messaging_backup_provider?: string | null
+          messaging_server_retention_days?: number | null
+          messaging_server_retention_max_kb?: number | null
+          messaging_x25519_public_key?: string | null
           official_id?: string
           place_of_birth?: string | null
           phone_country_code?: string | null
@@ -296,7 +314,7 @@ export type Database = {
           sex?: string | null
           social_security_number?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           username?: string | null
           username_last_changed_at?: string | null
         }
@@ -341,6 +359,182 @@ export type Database = {
           {
             foreignKeyName: "linked_accounts_owner_profile_id_fkey"
             columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreements: {
+        Row: {
+          body_markdown: string
+          buyer_profile_id: string
+          buyer_signed_at: string | null
+          created_at: string
+          id: string
+          initiator_profile_id: string
+          listing_kind_snapshot: string
+          listing_price_lumens_snapshot: number
+          listing_title_snapshot: string
+          market_listing_id: string | null
+          seller_profile_id: string
+          seller_signed_at: string | null
+          signed_at: string | null
+          signed_snapshot: Json | null
+          status: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          body_markdown: string
+          buyer_profile_id: string
+          buyer_signed_at?: string | null
+          created_at?: string
+          id?: string
+          initiator_profile_id: string
+          listing_kind_snapshot?: string
+          listing_price_lumens_snapshot: number
+          listing_title_snapshot: string
+          market_listing_id?: string | null
+          seller_profile_id: string
+          seller_signed_at?: string | null
+          signed_at?: string | null
+          signed_snapshot?: Json | null
+          status?: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          body_markdown?: string
+          buyer_profile_id?: string
+          buyer_signed_at?: string | null
+          created_at?: string
+          id?: string
+          initiator_profile_id?: string
+          listing_kind_snapshot?: string
+          listing_price_lumens_snapshot?: number
+          listing_title_snapshot?: string
+          market_listing_id?: string | null
+          seller_profile_id?: string
+          seller_signed_at?: string | null
+          signed_at?: string | null
+          signed_snapshot?: Json | null
+          status?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreements_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_initiator_profile_id_fkey"
+            columns: ["initiator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_market_listing_id_fkey"
+            columns: ["market_listing_id"]
+            isOneToOne: false
+            referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_seller_profile_id_fkey"
+            columns: ["seller_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      luma_wallet_balances: {
+        Row: {
+          balance_lumens: number
+          currency_code: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance_lumens?: number
+          currency_code?: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance_lumens?: number
+          currency_code?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "luma_wallet_balances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      luma_ledger_entries: {
+        Row: {
+          amount_lumens: number
+          created_at: string
+          entry_kind: string
+          from_profile_id: string | null
+          id: string
+          idempotency_key: string
+          market_listing_id: string | null
+          memo: string | null
+          to_profile_id: string
+        }
+        Insert: {
+          amount_lumens: number
+          created_at?: string
+          entry_kind: string
+          from_profile_id?: string | null
+          id?: string
+          idempotency_key: string
+          market_listing_id?: string | null
+          memo?: string | null
+          to_profile_id: string
+        }
+        Update: {
+          amount_lumens?: number
+          created_at?: string
+          entry_kind?: string
+          from_profile_id?: string | null
+          id?: string
+          idempotency_key?: string
+          market_listing_id?: string | null
+          memo?: string | null
+          to_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "luma_ledger_entries_from_profile_id_fkey"
+            columns: ["from_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "luma_ledger_entries_market_listing_id_fkey"
+            columns: ["market_listing_id"]
+            isOneToOne: false
+            referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "luma_ledger_entries_to_profile_id_fkey"
+            columns: ["to_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1295,6 +1489,7 @@ export type Database = {
           endorsement_id: string | null
           id: string
           reason: string
+          report_context: Json | null
           reported_user_id: string | null
           reporter_id: string
           resolved_at: string | null
@@ -1306,6 +1501,7 @@ export type Database = {
           endorsement_id?: string | null
           id?: string
           reason: string
+          report_context?: Json | null
           reported_user_id?: string | null
           reporter_id: string
           resolved_at?: string | null
@@ -1317,6 +1513,7 @@ export type Database = {
           endorsement_id?: string | null
           id?: string
           reason?: string
+          report_context?: Json | null
           reported_user_id?: string | null
           reporter_id?: string
           resolved_at?: string | null
@@ -1581,6 +1778,161 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      private_conversation_members: {
+        Row: {
+          conversation_id: string
+          joined_at: string
+          profile_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string
+          profile_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "private_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_conversation_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      private_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          kind: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      private_messages: {
+        Row: {
+          cipher_nonce: string | null
+          cipher_text: string | null
+          content: string | null
+          conversation_id: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          is_edited: boolean | null
+          message_kind: string
+          sender_id: string
+        }
+        Insert: {
+          cipher_nonce?: string | null
+          cipher_text?: string | null
+          content?: string | null
+          conversation_id: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_edited?: boolean | null
+          message_kind?: string
+          sender_id: string
+        }
+        Update: {
+          cipher_nonce?: string | null
+          cipher_text?: string | null
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_edited?: boolean | null
+          message_kind?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "private_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_listings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          listing_kind: string
+          price_lumens: number
+          remaining_quantity: number
+          seller_profile_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          listing_kind?: string
+          price_lumens: number
+          remaining_quantity?: number
+          seller_profile_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          listing_kind?: string
+          price_lumens?: number
+          remaining_quantity?: number
+          seller_profile_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_listings_seller_profile_id_fkey"
+            columns: ["seller_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -5755,6 +6107,64 @@ export type Database = {
           signature_metadata?: Json
         }
         Returns: string
+      }
+      mint_luma_to_profile: {
+        Args: {
+          p_amount_lumens: number
+          p_idempotency_key: string
+          p_memo?: string | null
+          p_target_profile_id: string
+        }
+        Returns: string
+      }
+      private_get_or_create_agent_conversation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      private_get_or_create_direct_conversation: {
+        Args: { p_other_profile_id: string }
+        Returns: string
+      }
+      private_list_my_conversations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          conversation_id: string
+          kind: string
+          peer_profile_id: string
+          peer_username: string | null
+          peer_full_name: string | null
+          peer_avatar_url: string | null
+          last_content: string | null
+          last_at: string | null
+          last_is_e2ee: boolean
+        }[]
+      }
+      cancel_agreement: {
+        Args: { p_agreement_id: string }
+        Returns: undefined
+      }
+      create_agreement_from_listing: {
+        Args: { p_market_listing_id: string; p_template_key?: string }
+        Returns: string
+      }
+      sign_agreement: {
+        Args: { p_agreement_id: string }
+        Returns: undefined
+      }
+      transfer_luma_between_profiles: {
+        Args: {
+          p_amount_lumens: number
+          p_from_profile_id: string
+          p_idempotency_key: string
+          p_market_listing_id?: string | null
+          p_memo?: string | null
+          p_to_profile_id: string
+        }
+        Returns: string
+      }
+      update_agreement_body: {
+        Args: { p_agreement_id: string; p_body_markdown: string }
+        Returns: undefined
       }
       verify_governance_public_audit_chain: {
         Args: { max_batches?: number }

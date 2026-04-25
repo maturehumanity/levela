@@ -79,7 +79,7 @@ export default function Professions() {
       return;
     }
 
-    const nextAssignments = ((assignmentsData || []) as ProfileProfessionRow[]).reduce<Record<string, ProfileProfessionRow>>(
+    const nextAssignments = (assignmentsData ?? []).reduce<Record<string, ProfileProfessionRow>>(
       (accumulator, assignment) => {
         accumulator[assignment.profession_id] = assignment;
         return accumulator;
@@ -87,7 +87,7 @@ export default function Professions() {
       {},
     );
 
-    const nextDrafts = ((professionsData || []) as ProfessionRow[]).reduce<Record<string, ProfessionDraft>>((accumulator, profession) => {
+    const nextDrafts = (professionsData ?? []).reduce<Record<string, ProfessionDraft>>((accumulator, profession) => {
       const assignment = nextAssignments[profession.id];
       accumulator[profession.id] = assignment
         ? {
@@ -98,7 +98,7 @@ export default function Professions() {
       return accumulator;
     }, {});
 
-    setProfessions((professionsData || []) as ProfessionRow[]);
+    setProfessions(professionsData ?? []);
     setAssignments(nextAssignments);
     setDrafts(nextDrafts);
     setLoading(false);

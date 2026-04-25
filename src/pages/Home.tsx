@@ -10,11 +10,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
 import { type PillarId } from '@/lib/constants';
 import { useNavigate } from 'react-router-dom';
-import { Award, BadgeCheck, BadgeX, MessageCircle, Star, ThumbsUp, TrendingUp, Users } from 'lucide-react';
+import { BadgeCheck, BadgeX, MessageCircle, Search, Star, ThumbsUp, TrendingUp, Vote } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { UnifiedSearchBlock } from '@/components/search/UnifiedSearchBlock';
 const UserPageMenu = lazy(() => import('@/components/layout/UserPageMenu').then((module) => ({ default: module.UserPageMenu })));
 
 interface RecentEndorsement {
@@ -96,6 +97,7 @@ export default function Home() {
   const [feedBackendUnavailable, setFeedBackendUnavailable] = useState(false);
   const [optimisticLikeStates, setOptimisticLikeStates] = useState<Record<string, boolean>>({});
   const [isComposerFocused, setIsComposerFocused] = useState(false);
+  const [isInlineSearchOpen, setIsInlineSearchOpen] = useState(false);
   const postTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canPost = postContent.trim().length > 0;
   useEffect(() => {
@@ -380,6 +382,7 @@ export default function Home() {
   };
 
   const score = calculateLevelaScore(endorsements);
+  const showHomeGovernanceHub = Boolean(profile && profile.role !== 'guest');
 
   const getInitials = (name?: string | null) => {
     if (!name) return '?';
@@ -765,7 +768,18 @@ export default function Home() {
               </TooltipProvider>
             </div>
           </div>
-          <Suspense fallback={<div className="h-10 w-10 rounded-full border border-border/60 bg-card/60" />}><UserPageMenu /></Suspense>
+          <div className="flex items-center gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-10 w-10 rounded-full border border-border/60 bg-card/60"
+              onClick={() => setIsInlineSearchOpen((prev) => !prev)}
+              aria-label={t('home.openSearch')}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Suspense fallback={<div className="h-10 w-10 rounded-full border border-border/60 bg-card/60" />}><UserPageMenu /></Suspense>
+          </div>
         </motion.div>
 
         {/* Score Card */}
@@ -856,30 +870,36 @@ export default function Home() {
           </Card>
         </motion.div>
 
+        {isInlineSearchOpen ? (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            <Card className="border-border/70 bg-card/95 p-4 shadow-sm sm:p-5">
+              <UnifiedSearchBlock showTitle={false} syncUrlParams={false} />
+            </Card>
+          </motion.div>
+        ) : null}
+
         {/* Quick Actions */}
-        <motion.div
-          className="grid grid-cols-2 gap-3"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card
-            className="cursor-pointer border-border/70 bg-card/95 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md"
-            onClick={() => navigate('/search')}
+        {showHomeGovernanceHub ? (
+          <motion.div
+            className={cn('grid gap-3', 'grid-cols-1')}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <Users className="mb-2 w-8 h-8 text-primary" />
-            <h3 className="font-semibold text-foreground">{t('home.findPeople')}</h3>
-            <p className="text-xs text-muted-foreground">{t('home.discoverEndorse')}</p>
-          </Card>
-          <Card
-            className="cursor-pointer border-border/70 bg-card/95 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md"
-            onClick={() => navigate('/endorse')}
-          >
-            <Award className="mb-2 w-8 h-8 text-accent" />
-            <h3 className="font-semibold text-foreground">{t('home.endorse')}</h3>
-            <p className="text-xs text-muted-foreground">{t('home.recognizeSomeone')}</p>
-          </Card>
-        </motion.div>
+            <Card
+              className="cursor-pointer border-border/70 bg-card/95 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md"
+              onClick={() => navigate('/governance')}
+            >
+              <Vote className="mb-2 w-8 h-8 text-primary" />
+              <h3 className="font-semibold text-foreground">{t('home.governanceHub')}</h3>
+              <p className="text-xs text-muted-foreground">{t('home.governanceHubDescription')}</p>
+            </Card>
+          </motion.div>
+        ) : null}
 
         {/* User Posts Feed */}
         <motion.div

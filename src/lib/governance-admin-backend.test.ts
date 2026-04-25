@@ -28,6 +28,22 @@ describe('governance-admin-backend', () => {
           details: null,
         }),
       ).toBe(true);
+
+      expect(
+        isMissingGovernanceBackend({
+          code: 'PGRST202',
+          message: 'Could not find the function public.monetary_policy_profile_digest',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingGovernanceBackend({
+          code: null,
+          message: null,
+          details: 'FK violation on monetary_policy_profiles(id)',
+        }),
+      ).toBe(true);
     });
 
     it('returns false for null or unrelated errors', () => {
@@ -64,6 +80,30 @@ describe('governance-admin-backend', () => {
         isMissingMaturityBackend({
           code: null,
           message: 'error in view governance_domain_maturity_transitions',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingMaturityBackend({
+          code: 'PGRST205',
+          message: 'Could not find the table public.governance_domain_maturity_snapshots in the schema cache',
+          details: null,
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingMaturityBackend({
+          code: null,
+          message: '',
+          details: 'scheduled job governance_domain_maturity_snapshots failed',
+        }),
+      ).toBe(true);
+
+      expect(
+        isMissingMaturityBackend({
+          code: 'PGRST202',
+          message: 'unrelated RPC missing',
           details: null,
         }),
       ).toBe(true);

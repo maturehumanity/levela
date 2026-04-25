@@ -9,6 +9,10 @@ import {
   readGovernancePublicAuditExternalExecutionPageBoardRows,
 } from '@/lib/governance-public-audit-automation';
 import {
+  readGovernancePublicAuditVerifierFederationExchangeAttestationRows,
+  readGovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRows,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   isMissingPublicAuditVerifierBackend,
   readGovernancePublicAuditVerifierFederationPackage,
   readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
@@ -23,6 +27,10 @@ import {
   readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows,
   readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary,
   type GovernancePublicAuditVerifierFederationPackage,
+  type GovernancePublicAuditVerifierFederationExchangeAttestationRow,
+  type GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   type GovernancePublicAuditVerifierFederationPackageHistoryRow,
   type GovernancePublicAuditVerifierFederationPackageSignatureRow,
@@ -56,6 +64,7 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
   const [federationWorkerRuns, setFederationWorkerRuns] =
     useState<GovernancePublicAuditVerifierMirrorFederationWorkerRunRow[]>([]);
   const [federationDistributionEscalationOpenPageCount, setFederationDistributionEscalationOpenPageCount] = useState(0);
+  const [federationExchangeReceiptEscalationOpenPageCount, setFederationExchangeReceiptEscalationOpenPageCount] = useState(0);
   const [federationPackage, setFederationPackage] = useState<GovernancePublicAuditVerifierFederationPackage | null>(null);
   const [federationPackageDistributionSummary, setFederationPackageDistributionSummary] =
     useState<GovernancePublicAuditVerifierFederationPackageDistributionSummary | null>(null);
@@ -63,6 +72,14 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
     useState<GovernancePublicAuditVerifierFederationPackageSignatureRow[]>([]);
   const [federationPackageHistory, setFederationPackageHistory] =
     useState<GovernancePublicAuditVerifierFederationPackageHistoryRow[]>([]);
+  const [federationExchangeAttestationSummary, setFederationExchangeAttestationSummary] =
+    useState<GovernancePublicAuditVerifierFederationExchangeAttestationSummary | null>(null);
+  const [federationExchangeAttestations, setFederationExchangeAttestations] =
+    useState<GovernancePublicAuditVerifierFederationExchangeAttestationRow[]>([]);
+  const [federationExchangeReceiptPolicySummary, setFederationExchangeReceiptPolicySummary] =
+    useState<GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary | null>(null);
+  const [federationExchangeReceiptPolicyEvents, setFederationExchangeReceiptPolicyEvents] =
+    useState<GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow[]>([]);
 
   const loadFederationData = useCallback(async () => {
     setLoadingFederationData(true);
@@ -80,6 +97,10 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
       packageDistributionSummaryResponse,
       packageSignatureBoardResponse,
       packageHistoryResponse,
+      exchangeAttestationSummaryResponse,
+      exchangeAttestationBoardResponse,
+      exchangeReceiptPolicySummaryResponse,
+      exchangeReceiptPolicyEventsResponse,
       workerRunsResponse,
       executionPageBoardResponse,
     ] = await Promise.all([
@@ -127,6 +148,23 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
         target_batch_id: args.latestBatchId,
         max_entries: 40,
       }),
+      supabase.rpc('governance_public_audit_verifier_federation_exchange_summary', {
+        target_batch_id: args.latestBatchId,
+        requested_lookback_hours: 336,
+      }),
+      supabase.rpc('governance_public_audit_verifier_federation_exchange_board', {
+        target_batch_id: args.latestBatchId,
+        target_package_id: null,
+        max_entries: 80,
+      }),
+      supabase.rpc('gpav_fed_exchange_receipt_policy_summary', {
+        requested_policy_key: 'default',
+      }),
+      supabase.rpc('gpav_fed_exchange_receipt_policy_event_history', {
+        requested_policy_key: 'default',
+        requested_lookback_hours: 336,
+        max_events: 120,
+      }),
       supabase
         .from('governance_public_audit_verifier_mirror_federation_worker_runs')
         .select(
@@ -152,11 +190,16 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
       || packageDistributionSummaryResponse.error
       || packageSignatureBoardResponse.error
       || packageHistoryResponse.error
+      || exchangeAttestationSummaryResponse.error
+      || exchangeAttestationBoardResponse.error
+      || exchangeReceiptPolicySummaryResponse.error
+      || exchangeReceiptPolicyEventsResponse.error
       || workerRunsResponse.error;
 
     if (isMissingPublicAuditVerifierBackend(sharedError)) {
       setFederationBackendUnavailable(true);
       setFederationDistributionEscalationOpenPageCount(0);
+      setFederationExchangeReceiptEscalationOpenPageCount(0);
       setLoadingFederationData(false);
       return;
     }
@@ -175,10 +218,15 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
         packageDistributionSummaryError: packageDistributionSummaryResponse.error,
         packageSignatureBoardError: packageSignatureBoardResponse.error,
         packageHistoryError: packageHistoryResponse.error,
+        exchangeAttestationSummaryError: exchangeAttestationSummaryResponse.error,
+        exchangeAttestationBoardError: exchangeAttestationBoardResponse.error,
+        exchangeReceiptPolicySummaryError: exchangeReceiptPolicySummaryResponse.error,
+        exchangeReceiptPolicyEventsError: exchangeReceiptPolicyEventsResponse.error,
         workerRunsError: workerRunsResponse.error,
       });
       toast.error('Could not load verifier mirror federation data.');
       setFederationDistributionEscalationOpenPageCount(0);
+      setFederationExchangeReceiptEscalationOpenPageCount(0);
       setLoadingFederationData(false);
       return;
     }
@@ -197,6 +245,18 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
     );
     setFederationPackageSignatures(readGovernancePublicAuditVerifierFederationPackageSignatureRows(packageSignatureBoardResponse.data));
     setFederationPackageHistory(readGovernancePublicAuditVerifierFederationPackageHistoryRows(packageHistoryResponse.data));
+    setFederationExchangeAttestationSummary(
+      readGovernancePublicAuditVerifierFederationExchangeAttestationSummary(exchangeAttestationSummaryResponse.data),
+    );
+    setFederationExchangeAttestations(
+      readGovernancePublicAuditVerifierFederationExchangeAttestationRows(exchangeAttestationBoardResponse.data),
+    );
+    setFederationExchangeReceiptPolicySummary(
+      readGovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary(exchangeReceiptPolicySummaryResponse.data),
+    );
+    setFederationExchangeReceiptPolicyEvents(
+      readGovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRows(exchangeReceiptPolicyEventsResponse.data),
+    );
     setFederationWorkerRuns(readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows(workerRunsResponse.data));
 
     if (!executionPageBoardResponse.error) {
@@ -207,11 +267,19 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
           'verifier_federation_distribution',
         ),
       );
+      setFederationExchangeReceiptEscalationOpenPageCount(
+        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(
+          executionPages,
+          'verifier_federation_exchange_receipt',
+        ),
+      );
     } else if (isMissingPublicAuditAutomationBackend(executionPageBoardResponse.error)) {
       setFederationDistributionEscalationOpenPageCount(0);
+      setFederationExchangeReceiptEscalationOpenPageCount(0);
     } else {
       console.warn('Could not load external execution page board for federation escalation summary:', executionPageBoardResponse.error);
       setFederationDistributionEscalationOpenPageCount(0);
+      setFederationExchangeReceiptEscalationOpenPageCount(0);
     }
 
     setFederationBackendUnavailable(false);
@@ -242,10 +310,15 @@ export function useGovernancePublicAuditVerifierMirrorFederation(args: { latestB
     federationAlertBoard,
     federationWorkerRuns,
     federationDistributionEscalationOpenPageCount,
+    federationExchangeReceiptEscalationOpenPageCount,
     federationPackage,
     federationPackageDistributionSummary,
     federationPackageSignatures,
     federationPackageHistory,
+    federationExchangeAttestationSummary,
+    federationExchangeAttestations,
+    federationExchangeReceiptPolicySummary,
+    federationExchangeReceiptPolicyEvents,
     loadFederationData,
     ...actions,
   };

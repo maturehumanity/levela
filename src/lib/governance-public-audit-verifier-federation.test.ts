@@ -422,4 +422,38 @@ describe('governance-public-audit-verifier-federation helpers', () => {
     expect(formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel('suspended')).toBe('Suspended');
     expect(formatGovernancePublicAuditVerifierMirrorSignerGovernanceStatusLabel('unknown')).toBe('Unknown status');
   });
+
+  it('returns null for empty or invalid policy ratification RPC payloads', () => {
+    expect(readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary(null)).toBeNull();
+    expect(readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary([])).toBeNull();
+    expect(
+      readGovernancePublicAuditVerifierMirrorPolicyRatificationSummary([
+        { policy_key: 'default', policy_hash: '' },
+      ]),
+    ).toBeNull();
+  });
+
+  it('returns null when discovery summary RPC rows are absent', () => {
+    expect(readGovernancePublicAuditVerifierMirrorDiscoverySummary(null)).toBeNull();
+    expect(readGovernancePublicAuditVerifierMirrorDiscoverySummary([])).toBeNull();
+  });
+
+  it('returns null when federation operations summary rows are empty or lack policy_key', () => {
+    expect(readGovernancePublicAuditVerifierMirrorFederationOperationsSummary(null)).toBeNull();
+    expect(readGovernancePublicAuditVerifierMirrorFederationOperationsSummary([])).toBeNull();
+    expect(
+      readGovernancePublicAuditVerifierMirrorFederationOperationsSummary([
+        { policy_key: '', require_federation_ops_readiness: false },
+      ]),
+    ).toBeNull();
+  });
+
+  it('returns empty federation board lists for non-array RPC payloads', () => {
+    expect(readGovernancePublicAuditVerifierMirrorDiscoverySourceBoardRows(null)).toEqual([]);
+    expect(readGovernancePublicAuditVerifierMirrorDiscoveredCandidateBoardRows({})).toEqual([]);
+    expect(readGovernancePublicAuditVerifierMirrorFederationAlertBoardRows(undefined)).toEqual([]);
+    expect(readGovernancePublicAuditVerifierMirrorFederationOnboardingBoardRows(null)).toEqual([]);
+    expect(readGovernancePublicAuditVerifierMirrorFederationWorkerRunRows(undefined)).toEqual([]);
+    expect(readGovernancePublicAuditVerifierMirrorSignerGovernanceBoardRows({})).toEqual([]);
+  });
 });

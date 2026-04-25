@@ -55,6 +55,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     capturingFederationPackage,
     signingFederationPackage,
     verifyingFederationDistribution,
+    recordingFederationExchangeAttestation,
+    verifyingFederationExchangeReceipt,
+    savingFederationExchangeReceiptPolicy,
+    rollingBackFederationExchangeReceiptPolicyEventId,
     savingFederationOpsRequirement,
     registeringFederationOperator,
     submittingOnboardingRequest,
@@ -70,12 +74,17 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     federationPackageDistributionSummary,
     federationPackageSignatures,
     federationPackageHistory,
+    federationExchangeAttestationSummary,
+    federationExchangeAttestations,
+    federationExchangeReceiptPolicySummary,
+    federationExchangeReceiptPolicyEvents,
     discoverySources,
     discoveredCandidates,
     federationOnboardingBoard,
     federationAlertBoard,
     federationWorkerRuns,
     federationDistributionEscalationOpenPageCount,
+    federationExchangeReceiptEscalationOpenPageCount,
     loadFederationData,
     registerDiscoverySource,
     recordDiscoveryRun,
@@ -85,6 +94,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     captureFederationPackage,
     signFederationPackage,
     runFederationDistributionVerification,
+    recordFederationExchangeAttestation,
+    verifyFederationExchangeReceipt,
+    saveFederationExchangeReceiptPolicy,
+    rollbackFederationExchangeReceiptPolicyToEvent,
     saveFederationOpsRequirement,
     registerFederationOperator,
     submitFederationOnboardingRequest,
@@ -261,6 +274,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           capturingFederationPackage={capturingFederationPackage}
           signingFederationPackage={signingFederationPackage}
           verifyingFederationDistribution={verifyingFederationDistribution}
+          recordingFederationExchangeAttestation={recordingFederationExchangeAttestation}
+          verifyingFederationExchangeReceipt={verifyingFederationExchangeReceipt}
+          savingFederationExchangeReceiptPolicy={savingFederationExchangeReceiptPolicy}
+          rollingBackFederationExchangeReceiptPolicyEventId={rollingBackFederationExchangeReceiptPolicyEventId}
           savingFederationOpsRequirement={savingFederationOpsRequirement}
           registeringFederationOperator={registeringFederationOperator}
           submittingOnboardingRequest={submittingOnboardingRequest}
@@ -279,6 +296,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           federationPackageDistributionSummary={federationPackageDistributionSummary}
           federationPackageSignatures={federationPackageSignatures}
           federationPackageHistory={federationPackageHistory}
+          federationExchangeAttestationSummary={federationExchangeAttestationSummary}
+          federationExchangeAttestations={federationExchangeAttestations}
+          federationExchangeReceiptPolicySummary={federationExchangeReceiptPolicySummary}
+          federationExchangeReceiptPolicyEvents={federationExchangeReceiptPolicyEvents}
           signerGovernanceSummary={signerGovernanceSummary}
           discoverySources={discoverySources}
           discoveredCandidates={discoveredCandidates}
@@ -286,6 +307,7 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           federationAlertBoard={federationAlertBoard}
           federationWorkerRuns={federationWorkerRuns}
           federationDistributionEscalationOpenPageCount={federationDistributionEscalationOpenPageCount}
+          federationExchangeReceiptEscalationOpenPageCount={federationExchangeReceiptEscalationOpenPageCount}
           signerGovernanceBoard={signerGovernanceBoard}
           formatTimestamp={formatTimestamp}
           registerDiscoverySource={registerDiscoverySource}
@@ -296,6 +318,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           captureFederationPackage={captureFederationPackage}
           signFederationPackage={signFederationPackage}
           runFederationDistributionVerification={runFederationDistributionVerification}
+          recordFederationExchangeAttestation={recordFederationExchangeAttestation}
+          verifyFederationExchangeReceipt={verifyFederationExchangeReceipt}
+          saveFederationExchangeReceiptPolicy={saveFederationExchangeReceiptPolicy}
+          rollbackFederationExchangeReceiptPolicyToEvent={rollbackFederationExchangeReceiptPolicyToEvent}
           saveFederationOpsRequirement={saveFederationOpsRequirement}
           registerFederationOperator={registerFederationOperator}
           submitFederationOnboardingRequest={submitFederationOnboardingRequest}

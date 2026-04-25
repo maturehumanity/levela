@@ -17,4 +17,9 @@ describe('appendUniqueById', () => {
       { id: 'c' },
     ]);
   });
+
+  it('dedupes within the incoming page when starting from an empty list', () => {
+    const incoming = [{ id: 'x', n: 1 }, { id: 'x', n: 2 }, { id: 'y', n: 3 }];
+    expect(appendUniqueById([], incoming)).toEqual([{ id: 'x', n: 1 }, { id: 'y', n: 3 }]);
+  });
 });

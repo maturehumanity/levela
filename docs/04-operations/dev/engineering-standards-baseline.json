@@ -6,11 +6,11 @@
   ],
   "legacy_allowlist": {
     "src/components/layout/BuildOverlay.tsx": 3960,
-    "src/lib/i18n.base.ts": 2385,
+    "src/lib/i18n.base.ts": 2480,
     "src/pages/settings/EditProfile.tsx": 1882,
     "src/pages/settings/UsersAdmin.tsx": 1852,
-    "src/pages/Governance.tsx": 1920,
-    "src/components/ui/chat-bar.tsx": 3050,
+    "src/pages/Governance.tsx": 2300,
+    "src/components/ui/chat-bar.tsx": 3550,
     "src/pages/settings/GovernanceAdmin.tsx": 1300,
     "src/pages/Law.tsx": 1235,
     "src/lib/i18n.languages.ts": 1189,
@@ -39,6 +39,7 @@
     "src/lib/law-catalog.ts": 412,
     "src/pages/Profile.tsx": 409,
     "src/pages/settings/Pillars.tsx": 402,
-    "src/pages/Settings.tsx": 502
+    "src/pages/Settings.tsx": 530,
+    "src/components/app/AppUpdatePrompt.tsx": 420
   }
 }

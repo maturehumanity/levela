@@ -44,6 +44,11 @@ describe('governance-public-audit-verifiers helpers', () => {
     });
   });
 
+  it('returns null when verifier summary RPC rows are absent', () => {
+    expect(readGovernancePublicAuditVerifierSummary(null)).toBeNull();
+    expect(readGovernancePublicAuditVerifierSummary([])).toBeNull();
+  });
+
   it('parses mirror health rows', () => {
     const rows = readGovernancePublicAuditVerifierMirrorHealthRows([
       {
@@ -88,6 +93,11 @@ describe('governance-public-audit-verifiers helpers', () => {
         healthStatus: 'healthy',
       },
     ]);
+  });
+
+  it('returns an empty mirror health list for non-array inputs', () => {
+    expect(readGovernancePublicAuditVerifierMirrorHealthRows(null)).toEqual([]);
+    expect(readGovernancePublicAuditVerifierMirrorHealthRows({})).toEqual([]);
   });
 
   it('parses mirror failover policy summary row', () => {
@@ -277,19 +287,26 @@ describe('governance-public-audit-verifiers helpers', () => {
   });
 
   it('formats probe job lifecycle status labels for stewards', () => {
+    expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('pending')).toBe('Pending');
     expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('running')).toBe('Running');
+    expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('completed')).toBe('Completed');
+    expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('failed')).toBe('Failed');
     expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('cancelled')).toBe('Cancelled');
+    expect(formatGovernancePublicAuditVerifierMirrorProbeJobLifecycleStatusLabel('queued' as never)).toBe('Unknown status');
   });
 
   it('formats verifier mirror aggregate health status labels for stewards', () => {
     expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('healthy')).toBe('Healthy');
+    expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('degraded')).toBe('Degraded');
     expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('critical')).toBe('Critical');
+    expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('inactive')).toBe('Inactive');
     expect(formatGovernancePublicAuditVerifierMirrorHealthStatusLabel('unknown')).toBe('Unknown');
   });
 
   it('formats batch verification result labels for stewards', () => {
     expect(formatGovernancePublicAuditBatchVerificationResultLabel('verified')).toBe('Verified');
     expect(formatGovernancePublicAuditBatchVerificationResultLabel('MISMATCH')).toBe('Mismatch');
+    expect(formatGovernancePublicAuditBatchVerificationResultLabel('unreachable')).toBe('Unreachable');
     expect(formatGovernancePublicAuditBatchVerificationResultLabel('other')).toBe('Unknown result');
   });
 
@@ -335,5 +352,13 @@ describe('governance-public-audit-verifiers helpers', () => {
         message: 'random failure',
       }),
     ).toBe(false);
+
+    expect(
+      isMissingPublicAuditVerifierBackend({
+        code: 'PGRST205',
+        message: 'Could not find the table public.governance_public_audit_network_proofs in the schema cache',
+        details: null,
+      }),
+    ).toBe(true);
   });
 });

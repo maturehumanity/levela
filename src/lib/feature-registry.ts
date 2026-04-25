@@ -8,6 +8,7 @@ import {
   Download,
   BadgeCheck,
   Edit3,
+  FileSignature,
   FileText,
   Globe,
   GraduationCap,
@@ -57,6 +58,7 @@ export type SectionId =
 export type PageId =
   | 'contribute'
   | 'home'
+  | 'study'
   | 'features'
   | 'downloads'
   | 'law'
@@ -64,6 +66,7 @@ export type PageId =
   | 'search'
   | 'endorse'
   | 'market'
+  | 'agreements'
   | 'profile'
   | 'editProfile'
   | 'settings'
@@ -79,6 +82,8 @@ export type PageId =
   | 'adminModules';
 
 export type FeatureId =
+  | 'studyNestedHub'
+  | 'studyCoursesLearnerTracks'
   | 'accessControl'
   | 'adminUsers'
   | 'adminRoles'
@@ -103,6 +108,7 @@ export type FeatureId =
   | 'lumaTreasuryMintAndActivity'
   | 'lumaNativeCurrency'
   | 'marketListingsLuma'
+  | 'digitalAgreements'
   | 'marketPreview'
   | 'phoneFirstSignup'
   | 'profileEditing'
@@ -113,6 +119,7 @@ export type FeatureId =
   | 'userVerification'
   | 'termsUse'
   | 'studyLearningCenter'
+  | 'specialistGuidanceHub'
   | 'governancePolicies'
   | 'adminSystemModules';
 
@@ -147,6 +154,7 @@ export const sectionRegistry: Record<SectionId, RegistryEntry<SectionId>> = {
 export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   contribute: { id: 'contribute', icon: PlusCircle, labelKey: 'features.pages.contribute' },
   home: { id: 'home', icon: LayoutGrid, labelKey: 'features.pages.home' },
+  study: { id: 'study', icon: BookOpen, labelKey: 'features.pages.study' },
   features: { id: 'features', icon: BookOpen, labelKey: 'features.pages.features' },
   downloads: { id: 'downloads', icon: Download, labelKey: 'features.pages.downloads' },
   law: { id: 'law', icon: Scale, labelKey: 'features.pages.law' },
@@ -154,6 +162,7 @@ export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
   search: { id: 'search', icon: Search, labelKey: 'features.pages.search' },
   endorse: { id: 'endorse', icon: Award, labelKey: 'features.pages.endorse' },
   market: { id: 'market', icon: Store, labelKey: 'features.pages.market' },
+  agreements: { id: 'agreements', icon: FileSignature, labelKey: 'features.pages.agreements' },
   profile: { id: 'profile', icon: UserRound, labelKey: 'features.pages.profile' },
   editProfile: { id: 'editProfile', icon: Edit3, labelKey: 'features.pages.editProfile' },
   settings: { id: 'settings', icon: Settings2, labelKey: 'features.pages.settings' },
@@ -170,6 +179,26 @@ export const pageRegistry: Record<PageId, RegistryEntry<PageId>> = {
 };
 
 export const featureRegistry: FeatureEntry[] = [
+  {
+    id: 'studyNestedHub',
+    icon: BookOpen,
+    titleKey: 'features.catalog.studyNestedHub.title',
+    summaryKey: 'features.catalog.studyNestedHub.summary',
+    workflowKey: 'features.catalog.studyNestedHub.workflow',
+    detailsKey: 'features.catalog.studyNestedHub.details',
+    section: 'knowledge',
+    page: 'study',
+  },
+  {
+    id: 'studyCoursesLearnerTracks',
+    icon: GraduationCap,
+    titleKey: 'features.catalog.studyCoursesLearnerTracks.title',
+    summaryKey: 'features.catalog.studyCoursesLearnerTracks.summary',
+    workflowKey: 'features.catalog.studyCoursesLearnerTracks.workflow',
+    detailsKey: 'features.catalog.studyCoursesLearnerTracks.details',
+    section: 'knowledge',
+    page: 'study',
+  },
   {
     id: 'accessControl',
     icon: Shield,
@@ -338,7 +367,17 @@ export const featureRegistry: FeatureEntry[] = [
     workflowKey: 'features.catalog.studyLearningCenter.workflow',
     detailsKey: 'features.catalog.studyLearningCenter.details',
     section: 'knowledge',
-    page: 'features',
+    page: 'study',
+  },
+  {
+    id: 'specialistGuidanceHub',
+    icon: GraduationCap,
+    titleKey: 'features.catalog.specialistGuidanceHub.title',
+    summaryKey: 'features.catalog.specialistGuidanceHub.summary',
+    workflowKey: 'features.catalog.specialistGuidanceHub.workflow',
+    detailsKey: 'features.catalog.specialistGuidanceHub.details',
+    section: 'knowledge',
+    page: 'study',
   },
   {
     id: 'identifierLogin',
@@ -449,6 +488,16 @@ export const featureRegistry: FeatureEntry[] = [
     detailsKey: 'features.catalog.marketPreview.details',
     section: 'marketplace',
     page: 'market',
+  },
+  {
+    id: 'digitalAgreements',
+    icon: FileSignature,
+    titleKey: 'features.catalog.digitalAgreements.title',
+    summaryKey: 'features.catalog.digitalAgreements.summary',
+    workflowKey: 'features.catalog.digitalAgreements.workflow',
+    detailsKey: 'features.catalog.digitalAgreements.details',
+    section: 'marketplace',
+    page: 'agreements',
   },
   {
     id: 'governancePolicies',

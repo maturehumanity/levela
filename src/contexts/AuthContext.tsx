@@ -3,7 +3,14 @@ import { User, Session } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { loadSupabaseClient } from '@/integrations/supabase/load-client';
 import { type LanguageCode } from '@/lib/i18n';
-import { resolveEffectivePermissions, rolePermissionMap, type AppPermission, type AppRole } from '@/lib/access-control';
+import {
+  permissionListHasAny,
+  resolveEffectivePermissions,
+  rolePermissionMap,
+  type AppPermission,
+  type AppRole,
+} from '@/lib/access-control';
+import { ensureDefaultMessagingEncryption } from '@/lib/messaging-e2ee';
 import {
   ACCOUNT_SESSION_MAP_KEY,
   ACCOUNT_SWITCH_STACK_KEY,
@@ -341,6 +348,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextRefresh = (async () => {
       const profileData = await fetchProfile(userId);
       if (profileData) {
+        if (permissionListHasAny(profileData.effective_permissions || [], ['message.create'])) {
+          try {
+            const sb = await getSupabase();
+            await ensureDefaultMessagingEncryption(sb, profileData.id);
+          } catch (e) {
+            const err = e instanceof Error ? e : null;
+            if (err && !isAbortLikeError({ message: err.message, details: null })) {
+              console.warn('ensureDefaultMessagingEncryption failed', e);
+            }
+          }
+        }
         setProfile(profileData);
       }
       return profileData;
@@ -354,7 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileRefreshInFlightRef.current = null;
       }
     }
-  }, [fetchProfile]);
+  }, [fetchProfile, getSupabase]);
 
   const refreshProfile = useCallback(async () => {
     if (user) {

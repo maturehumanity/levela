@@ -11,7 +11,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { loadLanguageOptions, type LanguageCode, type LanguageOption } from '@/lib/i18n.runtime';
 import { permissionListHasAny, type AppPermission } from '@/lib/access-control';
 import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
-import { getAppUpdateChannel, onAppUpdateChannelChange, setAppUpdateChannel, toggleAppUpdateChannel } from '@/lib/update-channel';
 import {
   User,
   Shield,
@@ -31,6 +30,10 @@ import {
   Landmark,
   LayoutGrid,
   Award,
+  Coins,
+  Wallet,
+  MessageCircle,
+  Vote,
 } from 'lucide-react';
 
 const settingsItems = [
@@ -40,6 +43,12 @@ const settingsItems = [
     descriptionKey: 'settings.editProfileDescription',
     path: '/settings/profile',
     requiredPermissions: ['profile.update_self'] as AppPermission[],
+  },
+  {
+    icon: Wallet,
+    labelKey: 'settings.lumaWallet',
+    descriptionKey: 'settings.lumaWalletDescription',
+    path: '/settings/luma-wallet',
   },
   {
     icon: Bell,
@@ -52,6 +61,13 @@ const settingsItems = [
     labelKey: 'settings.privacy',
     descriptionKey: 'settings.privacyDescription',
     path: '/settings/privacy',
+  },
+  {
+    icon: MessageCircle,
+    labelKey: 'settings.messaging',
+    descriptionKey: 'settings.messagingDescription',
+    path: '/settings/messaging',
+    requiredPermissions: ['message.create'] as AppPermission[],
   },
   {
     icon: Shield,
@@ -91,14 +107,38 @@ export default function Settings() {
   const { signOut, profile } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [languageOptions, setLanguageOptions] = useState<readonly LanguageOption[]>([]);
-  const [appUpdateChannel, setLocalAppUpdateChannel] = useState(getAppUpdateChannel);
   const installedReleaseLabel = `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
-  const channelReleaseLabel = appUpdateChannel === 'testing'
-    ? `Testing ${installedReleaseLabel}`
-    : installedReleaseLabel;
   const canAccessAdmin = profile
     ? permissionListHasAny(profile.effective_permissions || [], ['role.assign', 'settings.manage'])
     : false;
+
+  const canManageMarket = Boolean(
+    profile && permissionListHasAny(profile.effective_permissions || [], ['market.manage']),
+  );
+
+  const showCivicGovernanceHub = Boolean(profile && profile.role !== 'guest');
+
+  const civicGovernanceItems = showCivicGovernanceHub
+    ? [
+        {
+          icon: Vote,
+          labelKey: 'settings.governanceHub',
+          descriptionKey: 'settings.governanceHubDescription',
+          path: '/governance',
+        },
+      ]
+    : [];
+
+  const marketOpsItems = canManageMarket
+    ? [
+        {
+          icon: Coins,
+          labelKey: 'settings.lumaCreditsCardTitle',
+          descriptionKey: 'settings.lumaCreditsCardDescription',
+          path: '/settings/market/luma-credits',
+        },
+      ]
+    : [];
 
   const visibleSettingsItems = settingsItems.filter(
     (item) =>
@@ -149,14 +189,6 @@ export default function Settings() {
   const handleLanguageChange = async (nextLanguage: string) => {
     await setLanguage(nextLanguage as LanguageCode);
   };
-
-  const handleToggleUpdateChannel = () => {
-    const nextChannel = toggleAppUpdateChannel(appUpdateChannel);
-    setLocalAppUpdateChannel(nextChannel);
-    setAppUpdateChannel(nextChannel);
-  };
-
-  useEffect(() => onAppUpdateChannelChange(setLocalAppUpdateChannel), []);
 
   useEffect(() => {
     let active = true;
@@ -267,6 +299,90 @@ export default function Settings() {
           ))}
         </div>
 
+        {civicGovernanceItems.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.38 }}
+            className="flex flex-col gap-3"
+          >
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                {t('settings.civicGovernanceTitle')}
+              </h2>
+              <p className="text-sm text-muted-foreground">{t('settings.civicGovernanceDescription')}</p>
+            </div>
+            <div className="flex flex-col gap-4">
+              {civicGovernanceItems.map((item, index) => (
+                <motion.div
+                  key={item.path}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.05 }}
+                >
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-elevated transition-shadow"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <item.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{t(item.labelKey)}</h3>
+                        <p className="text-sm text-muted-foreground">{t(item.descriptionKey)}</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {marketOpsItems.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.42 }}
+            className="flex flex-col gap-3"
+          >
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                {t('settings.marketToolsTitle')}
+              </h2>
+              <p className="text-sm text-muted-foreground">{t('settings.marketToolsDescription')}</p>
+            </div>
+            <div className="flex flex-col gap-4">
+              {marketOpsItems.map((item, index) => (
+                <motion.div
+                  key={item.path}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.44 + index * 0.05 }}
+                >
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-elevated transition-shadow"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <item.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{t(item.labelKey)}</h3>
+                        <p className="text-sm text-muted-foreground">{t(item.descriptionKey)}</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {canAccessAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -314,7 +430,10 @@ export default function Settings() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: canAccessAdmin ? 0.65 : 0.55 }}
+          transition={{
+            delay:
+              canAccessAdmin || marketOpsItems.length > 0 || civicGovernanceItems.length > 0 ? 0.65 : 0.55,
+          }}
         >
           <Button
             variant="destructive"
@@ -330,27 +449,16 @@ export default function Settings() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: canAccessAdmin ? 0.75 : 0.65 }}
+          transition={{ delay: canAccessAdmin || marketOpsItems.length > 0 ? 0.75 : 0.65 }}
         >
           <Card className="p-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
                 <ShieldCheck className="w-5 h-5 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-foreground">{t('settings.appInfoTitle')}</h3>
-                  <button
-                    type="button"
-                    onClick={handleToggleUpdateChannel}
-                    className={appUpdateChannel === 'testing' ? 'text-sm font-semibold text-emerald-400' : 'text-sm font-medium text-muted-foreground'}
-                    aria-label="Toggle app update channel"
-                    title="Tap to switch Release/Testing channel"
-                  >
-                    {channelReleaseLabel}
-                  </button>
-                </div>
-                <p className="text-sm text-muted-foreground">{t('settings.appInfoDescription')}</p>
+              <div className="flex-1 min-w-0 space-y-2">
+                <h3 className="font-semibold text-foreground">{t('settings.appInfoTitle')}</h3>
+                <p className="text-sm font-medium text-foreground">{installedReleaseLabel}</p>
               </div>
             </div>
           </Card>
@@ -359,7 +467,7 @@ export default function Settings() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: canAccessAdmin ? 0.8 : 0.7 }}
+          transition={{ delay: canAccessAdmin || marketOpsItems.length > 0 ? 0.8 : 0.7 }}
           className="text-center text-sm text-muted-foreground"
         >
           <p>{t('settings.appInfoLine2')}</p>

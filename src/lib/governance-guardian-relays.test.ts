@@ -262,6 +262,25 @@ describe('governance-guardian-relays helpers', () => {
     ]);
   });
 
+  it('returns an empty list for non-array inputs or malformed manifest rows', () => {
+    expect(readGovernanceProposalGuardianRelayRecentClientManifestRows(null)).toEqual([]);
+    expect(readGovernanceProposalGuardianRelayRecentClientManifestRows({})).toEqual([]);
+    expect(
+      readGovernanceProposalGuardianRelayRecentClientManifestRows([
+        {
+          manifest_id: '',
+          captured_at: '2026-04-21T01:10:00.000Z',
+          manifest_version: 'v1',
+          manifest_hash: 'h',
+          trust_minimized_quorum_met: false,
+          relay_quorum_met: false,
+          chain_proof_match_met: false,
+          manifest_notes: null,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
   it('parses relay operations summary, alerts, and worker-run rows', () => {
     const operationsSummary = readGovernanceProposalGuardianRelayOperationsSummary([
       {
@@ -374,6 +393,22 @@ describe('governance-guardian-relays helpers', () => {
       isMissingGuardianRelayBackend({
         code: '42P01',
         message: 'relation "governance_guardian_relay_policies" does not exist',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingGuardianRelayBackend({
+        code: 'PGRST205',
+        message: 'Could not find the table public.governance_proposal_guardian_relay_attestations in the schema cache',
+        details: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isMissingGuardianRelayBackend({
+        code: null,
+        message: 'error loading governance_proposal_guardian_relay_summary',
         details: null,
       }),
     ).toBe(true);

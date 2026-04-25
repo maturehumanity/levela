@@ -41,6 +41,7 @@ This file stores project-specific notes for future AI agent work.
   - avoiding unrelated files or side effects
   - limiting scope to the exact requested area
 - Never make unrequested changes. If a requested feature needs adjacent adjustments, keep them minimal and directly necessary, and say so clearly.
+- **Concurrent page ownership:** When the user is actively developing **Market** (market routes under `src/pages/` and closely related market components) or **Messaging** (`/messaging` and messaging pages/components), **avoid** unsolicited edits in those areas unless the task explicitly requires them. Prefer governance work in `src/lib/governance-*`, governance and admin settings pages, `Home.tsx` only when the change is clearly outside market/messaging, migrations, and `docs/04-operations/dev/`. If a change must touch shared layout or the router, keep the diff minimal and expect possible merge coordination with the user’s branch.
 - Never use code-like or translation-key-like text on user-facing screens. Replace it with short, human-friendly labels that clearly describe the element.
 - When the user asks for **continuous decentralization work** (for example “keep moving on” or equivalent), **chain the next bounded slice after each progress report** without waiting for another prompt—**prefer the same assistant reply** when the next slice is still small and unblocked—until you need product or technical clarification, hit a hard environment limit, or the user changes direction.
 - When the session topic is **Levela decentralization** (verifier mirror / federation rollout, roadmap §14–§17, or related governance ops), end each assistant report with **two** progress figures: **(1) Overall decentralization** — use `docs/04-operations/dev/verifier-federation/rollout-plan-v0.1.md` §9 row **Roadmap §17** (full product decentralization success condition; currently **~30–38%**). **(2) Active component** — the §9 table row that matches the work in that turn (for example **Roadmap §14 slice ~66–73%** for minimized-trusted-backend / federation exchange items, or **~100%** for the verifier-federation rollout plan §4 **implementation** row when that artifact is the scope; **§10 field rehearsal** remains a separate non-percentage gate). If both apply, state both component figures briefly. §9 percentages are **not calculated**; update the doc when a substantive milestone warrants it; **do not** bump figures for copy-only or cosmetic-only changes.
@@ -51,7 +52,19 @@ This file stores project-specific notes for future AI agent work.
 - When tightening Build mode / Layers coverage on a page, audit earlier existing elements on that same page too, not just newly added elements, so older text/value nodes do not get left behind as group-only targets.
 - Do not wait for the user to name missed sub-elements one by one. When a composite field is touched, audit and register its obvious inner parts in the same pass.
 - Proactively enforce all standing instructions and notes in this file on future work. Do not wait for the user to repeat them when they clearly apply.
-- When the user asks to `update the application`, carry the update through to the actual distributable app artifact and website download path when the project supports it, not just the source code.
+- When the user asks to **`update the application`**, follow a **testing-first continuity policy**:
+  - Keep **Production** on the last known-good build.
+  - Publish the **newly built version to Testing**.
+  - Only move a Testing build to Production after there are no reported blockers for that Testing release.
+  - Goal: users must always have a stable fallback build available.
+- Standard release sequence for continuity:
+  1. If the current Testing build has no reported bugs, promote that exact tested build to Production with `npm run promote:android-testing-to-release`.
+  2. Bump release metadata (`npm run release:bump -- patch` unless instructed otherwise).
+  3. Build and publish the new **Testing** build (`LEVELA_UPDATE_CHANNEL=testing npm run update:application`).
+  4. Rebuild `dist/` if needed so deploy payload contains the latest manifests/download links.
+  5. **Same-session VPS deploy:** deploy `dist/` to `/www/wwwroot/levela`.
+  6. Verify live `/updates/android-testing.json` and `/updates/android-release.json` (or `.js`) match expected versions/channels.
+- **Stop condition:** do not report “application updated” until VPS publish + live endpoint verification are complete, unless SSH/sudo is definitively unavailable (state that explicitly).
 - Do not commit or push APK binaries to GitHub for this project. APKs should exist only as local build artifacts on this machine and as deployed download files on the VPS.
 - For Study/Constitution UI changes, preserve all existing user-visible labels/structure unless the user explicitly asks to modify that exact element. Do not remove, rename, or restyle article/sub-article labels when the request is about behavior only (for example open/close interactions).
 - When the user asks to update/publish the application for testing, always perform a real release bump first (new `APP_VERSION`, `ANDROID_VERSION_CODE`, and `APP_RELEASE_ID`) before running the update/deploy flow, so installed clients can detect and prompt for the new update.
@@ -69,6 +82,7 @@ This file stores project-specific notes for future AI agent work.
 - **Headless / Cursor agents / remote DB scripts** use a separate host alias **`soc-yeremyan-net-agent`** with **`~/.ssh/levela_cursor_agent_ed25519`** (passphrase-less; public key must be in `ubuntu`’s `authorized_keys` on the VPS). See `docs/04-operations/dev/ssh-and-vps/VPS_CURSOR_AGENT_SSH.md`. Prefer **`REMOTE_DB_HOST=soc-yeremyan-net-agent`** in `.env.local` for migrations from agents.
 - The human key (`soc-yeremyan-net`) is passphrase-protected; **non-interactive** SSH to that alias still requires **`ssh-agent`**. Dev machines can use the **stable agent socket** in `docs/04-operations/dev/REMOTE_DB_ACCESS.md` for interactive workflows.
 - Existing history confirms the VPS also hosts a Supabase stack at `~/supabase-stack/supabase/docker`.
+- Nela (**Edge Function `messaging-agent-reply`**): set **`GEMINI_API_KEY`** (and optional **`GEMINI_MODEL`**, **`NELA_LLM_PROVIDER`**) in `~/supabase-stack/supabase/docker/.env`. Self-hosted Edge only sees variables listed under the **`functions`** service in `docker-compose.yml`—**`GEMINI_*` / `NELA_*` must be passed through that `environment:` block** (not only Studio). Default model in code is **`gemini-2.5-flash-lite`** (some accounts get **0 free quota** on `gemini-2.0-flash` → **429**). **`OPENAI_API_KEY`** remains optional for paid OpenAI. After changing `.env` or compose, recreate the **`functions`** container.
 - Live web traffic for `levela.yeremyan.net` is served by the Docker container `caddy-supabase` (`caddy:2.9.1-alpine`).
 - The container mounts the actual host web root from `/www/wwwroot/levela` into the container as `/srv/levela` read-only.
 - The Caddyfile source on the VPS is `/home/ubuntu/supabase-stack/caddy/Caddyfile`.
@@ -184,3 +198,15 @@ This file stores project-specific notes for future AI agent work.
   - do not report completion until deploy + commit + push + live verification are all done
 - Communication rule:
   - do not ask whether to perform commit/push/update once a fix is confirmed; execute this flow automatically
+
+## 12. Testing Build Boot Safety
+
+- Failure pattern: a newly installed Testing APK fails to start, leaving users stuck.
+- Mandatory runtime safety requirements:
+  - show an explicit startup failure notice when boot times out or the app crashes before boot is ready
+  - provide a one-tap fallback path to install the stable Production APK from the live release manifest
+  - preserve an immediate retry action (reload) in the same failure screen
+- Release validation check:
+  - confirm boot-failure fallback UI appears in failure scenarios and the stable-download action points to the Production manifest/APK
+- Stop condition:
+  - do not ship startup/bootstrap changes that remove or regress the fallback-to-stable path for Testing users
