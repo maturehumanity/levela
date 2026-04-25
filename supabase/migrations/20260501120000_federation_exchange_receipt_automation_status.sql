@@ -1,6 +1,9 @@
 -- Roadmap §14 verifier federation hardening: expose receipt backlog automation health
 -- so stewardship can verify pg_cron registration and latest backlog evaluation outcomes.
 
+-- Return type OUT list evolved; Postgres cannot OR REPLACE across incompatible row types.
+DROP FUNCTION IF EXISTS public.gpav_fed_exchange_receipt_automation_status();
+
 CREATE OR REPLACE FUNCTION public.gpav_fed_exchange_receipt_automation_status()
 RETURNS TABLE (
   cron_schema_available boolean,
