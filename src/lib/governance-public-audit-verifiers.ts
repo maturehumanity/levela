@@ -13,6 +13,9 @@ import {
 import {
   readGovernancePublicAuditVerifierFederationExchangeAttestationRows,
   readGovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRows,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   readGovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRows,
   readGovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
@@ -24,6 +27,9 @@ import {
   type GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
   type GovernancePublicAuditVerifierFederationExchangeAttestationRow,
   type GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   type GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
   type GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   type GovernancePublicAuditVerifierFederationPackage,
@@ -68,6 +74,9 @@ export type { GovernancePublicAuditVerifierMirrorProbeJobSummary };
 export type { GovernancePublicAuditVerifierFederationDistributionGateSnapshot };
 export type { GovernancePublicAuditVerifierFederationExchangeAttestationRow };
 export type { GovernancePublicAuditVerifierFederationExchangeAttestationSummary };
+export type { GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow };
+export type { GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow };
+export type { GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus };
 export type { GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow };
 export type { GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary };
 export type { GovernancePublicAuditVerifierFederationPackage };
@@ -98,6 +107,9 @@ export {
   formatGovernancePublicAuditVerifierFederationOpsReadinessIssue,
   readGovernancePublicAuditVerifierFederationExchangeAttestationRows,
   readGovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRows,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   readGovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRows,
   readGovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   readGovernancePublicAuditVerifierFederationDistributionReadinessIssues,
@@ -379,6 +391,7 @@ export function isMissingPublicAuditVerifierBackend(error: { code?: string | nul
     || message.includes('governance_public_audit_verifier_federation_pkg_digest_text')
     || message.includes('governance_public_audit_verifier_federation_dist_pkg_history')
     || message.includes('governance_public_audit_verifier_federation_distribution_gate')
+    || message.includes('gpav_fed_exchange_receipt_automation_status')
     || message.includes('register_governance_public_audit_verifier_node')
     || message.includes('record_governance_public_audit_batch_verification')
     || message.includes('record_governance_public_audit_network_proof')

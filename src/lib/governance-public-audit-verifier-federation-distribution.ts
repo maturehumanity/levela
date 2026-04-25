@@ -1,4 +1,7 @@
 import type {
+  GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
   GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   GovernancePublicAuditVerifierFederationExchangeAttestationRow,
@@ -13,6 +16,9 @@ import type {
 } from '@/lib/governance-public-audit-verifier-federation.types';
 
 export type {
+  GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
   GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   GovernancePublicAuditVerifierFederationExchangeAttestationRow,
@@ -57,6 +63,15 @@ function asBoolean(value: unknown, fallback = false) {
   return fallback;
 }
 
+function asNullableNonNegativeInteger(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.floor(value));
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) return Math.max(0, parsed);
+  }
+  return null;
+}
+
 function asAttestationVerdict(
   value: unknown,
 ): GovernancePublicAuditVerifierFederationExchangeAttestationRow['attestationVerdict'] {
@@ -70,6 +85,22 @@ function asPolicyEventType(
 ): GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow['eventType'] {
   const normalized = asString(value).trim().toLowerCase();
   if (normalized === 'created' || normalized === 'updated' || normalized === 'rollback') return normalized;
+  return 'unknown';
+}
+
+function asEscalationSeverity(
+  value: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow['severity'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'info' || normalized === 'warning' || normalized === 'critical') return normalized;
+  return 'unknown';
+}
+
+function asEscalationStatus(
+  value: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow['pageStatus'] {
+  const normalized = asString(value).trim().toLowerCase();
+  if (normalized === 'open' || normalized === 'acknowledged' || normalized === 'resolved') return normalized;
   return 'unknown';
 }
 
@@ -160,6 +191,85 @@ export function readGovernancePublicAuditVerifierFederationExchangeReceiptPolicy
     updatedBy: asNullableString(row.updated_by),
     updatedByName: asNullableString(row.updated_by_name),
   };
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const row = asRecord(rows[0]);
+  if (!row) return null;
+
+  return {
+    cronSchemaAvailable: asBoolean(row.cron_schema_available, false),
+    cronJobRegistered: asBoolean(row.cron_job_registered, false),
+    cronJobActive: asBoolean(row.cron_job_active, false),
+    cronJobSchedule: asNullableString(row.cron_job_schedule),
+    cronJobCommand: asNullableString(row.cron_job_command),
+    latestCronRunStartedAt: asNullableString(row.latest_cron_run_started_at),
+    latestCronRunFinishedAt: asNullableString(row.latest_cron_run_finished_at),
+    latestCronRunStatus: asNullableString(row.latest_cron_run_status),
+    latestCronRunDetails: asNullableString(row.latest_cron_run_details),
+    latestPendingReceiptAttestedAt: asNullableString(row.latest_pending_receipt_attested_at),
+    latestVerifiedReceiptAt: asNullableString(row.latest_verified_receipt_at),
+    latestEscalationPageOpenedAt: asNullableString(row.latest_escalation_page_opened_at),
+    latestEscalationPageStatus: asNullableString(row.latest_escalation_page_status),
+    latestAutomationRunStartedAt: asNullableString(row.latest_automation_run_started_at),
+    latestAutomationRunFinishedAt: asNullableString(row.latest_automation_run_finished_at),
+    latestAutomationRunStatus: asNullableString(row.latest_automation_run_status),
+    latestAutomationRunMessage: asNullableString(row.latest_automation_run_message),
+    latestAutomationRunTriggerSource: asNullableString(row.latest_automation_run_trigger_source),
+  };
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      runId: asString(entry.run_id),
+      triggeredBy: asNullableString(entry.triggered_by),
+      triggeredByName: asNullableString(entry.triggered_by_name),
+      triggerSource: asString(entry.trigger_source, 'unknown'),
+      requestedLookbackHours: asNullableNonNegativeInteger(entry.requested_lookback_hours),
+      runStartedAt: asNullableString(entry.run_started_at),
+      runFinishedAt: asNullableString(entry.run_finished_at),
+      runStatus: asString(entry.run_status, 'unknown'),
+      runMessage: asNullableString(entry.run_message),
+      receiptPendingCount: asNonNegativeInteger(entry.receipt_pending_count),
+      staleReceiptCount: asNonNegativeInteger(entry.stale_receipt_count),
+      criticalBacklog: asBoolean(entry.critical_backlog, false),
+      openOrAckPageCount: asNonNegativeInteger(entry.open_or_ack_page_count),
+    }))
+    .filter((entry) => entry.runId.length > 0);
+}
+
+export function readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows(
+  rows: unknown,
+): GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow[] {
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .map((entry) => ({
+      pageId: asString(entry.page_id),
+      batchId: asNullableString(entry.batch_id),
+      pageKey: asString(entry.page_key),
+      severity: asEscalationSeverity(entry.severity),
+      pageStatus: asEscalationStatus(entry.page_status),
+      pageMessage: asString(entry.page_message),
+      oncallChannel: asString(entry.oncall_channel, 'public_audit_ops'),
+      openedAt: asNullableString(entry.opened_at),
+      acknowledgedAt: asNullableString(entry.acknowledged_at),
+      resolvedAt: asNullableString(entry.resolved_at),
+      updatedAt: asNullableString(entry.updated_at),
+    }))
+    .filter((entry) => entry.pageId.length > 0);
 }
 
 export function readGovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRows(

@@ -4,7 +4,7 @@ status: draft
 owners:
   - governance engineering
   - public audit operations
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # 1. Purpose
@@ -142,6 +142,10 @@ Step 5 is considered started when:
 - **Phase C.21 (exchange receipt backlog autonomous escalation)** — `maybe_escalate_verifier_fed_exchange_receipt_page` opens/resolves `verifier_federation_exchange_receipt_escalation` external execution pages from receipt pending-verification backlog metrics, and optional hourly `gpav_fed_exchange_receipt_tick` (minute **55**) keeps this signal fresh without steward browser sessions (`20260501100000_…sql`).
 - **Phase C.22 (receipt escalation policy governance + rollback)** — federation receipt backlog escalation is now policy-driven (`gpav_fed_exchange_receipt_policies`) with steward-managed thresholds/channel/enablement (`set_gpav_fed_exchange_receipt_policy`), append-only policy event history (`gpav_fed_exchange_receipt_policy_events` / `gpav_fed_exchange_receipt_policy_event_history`), and rollback safety (`rollback_gpav_fed_exchange_receipt_policy_to_event`); distribution controls now expose policy editing + policy timeline rollback controls (`20260501110000_…sql`).
 - **Phase C.23 (receipt age-SLO escalation hardening)** — policy now governs max receipt verification age and stale-backlog critical threshold (`receipt_max_verification_age_hours`, `critical_stale_receipt_count_threshold`); age-bucket analytics (`gpav_fed_exchange_receipt_backlog_age_summary`) feed page severity decisions so stale verification debt can escalate even when raw pending counts are below generic thresholds (`20260501113000_…sql`).
+- **Phase C.24 (receipt escalation automation telemetry)** — `gpav_fed_exchange_receipt_automation_status` reports pg_cron registration/activity for `verifier_federation_exchange_receipt_tick`, latest cron run outcome, latest pending/verified receipt timestamps, and latest receipt-escalation page status; federation distribution stewardship UI now surfaces this status block beside receipt escalation policy controls so operators can verify autonomous backlog checks without direct `cron.*` queries (`20260501120000_…sql`).
+- **Phase C.25 (receipt automation run ledger + steward trigger)** — receipt escalation automation now writes append-only run records (`gpav_fed_exchange_receipt_automation_runs`) via `run_gpav_fed_exchange_receipt_automation_check`, including lookback, pending/stale counts, critical-backlog flag, and open/ack page count; `gpav_fed_exchange_receipt_tick` now delegates through this run path so cron and manual checks share the same audit trail; stewardship UI exposes a “Run receipt automation check now” action and recent run history for on-call incident reconstruction (`20260501123000_…sql`).
+- **Phase C.26 (receipt escalation page incident ops in federation panel)** — federation steward load now carries full `verifier_federation_exchange_receipt` external execution page rows (not only count), and federation distribution controls support in-place acknowledge/resolve actions for open/acknowledged pages so on-call lifecycle can be handled without leaving verifier-federation stewardship (`20260501123000_…sql` UI follow-up).
+- **Phase C.27 (receipt escalation incident history analytics)** — federation steward load now queries `governance_public_audit_external_execution_page_history('verifier_federation_exchange_receipt', …)` and federation distribution controls surface 24h open/resolve flow plus unresolved/average-resolution analytics so on-call can detect incident churn and closure regressions without leaving federation controls.
 
 ## Phase D (governance handoff)
 

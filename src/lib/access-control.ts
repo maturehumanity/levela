@@ -219,7 +219,8 @@ export const rolePermissionMap: Record<AppRole, AppPermission[]> = {
     'like.create',
     'like.delete_self',
   ],
-  founder: [...FOUNDER_BASE_PERMISSIONS],
+  // Founder retains full access during the bootstrap decentralization stage.
+  founder: [...APP_PERMISSIONS],
   admin: [...APP_PERMISSIONS],
   system: [...APP_PERMISSIONS],
 };

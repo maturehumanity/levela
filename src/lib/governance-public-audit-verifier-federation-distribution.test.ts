@@ -5,6 +5,8 @@ import {
   formatGovernancePublicAuditVerifierFederationOpsReadinessIssue,
   readGovernancePublicAuditVerifierFederationDistributionReadinessIssues,
   readGovernancePublicAuditVerifierFederationDistributionGateSnapshot,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRows,
+  readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   readGovernancePublicAuditVerifierFederationOpsReadinessIssues,
   readGovernancePublicAuditVerifierFederationPackage,
   readGovernancePublicAuditVerifierFederationPackageDistributionSummary,
@@ -409,5 +411,94 @@ describe('governance-public-audit-verifier-federation-distribution helpers', () 
   it('formats readiness issue labels for stewardship panels', () => {
     expect(formatGovernancePublicAuditVerifierFederationOpsReadinessIssue('worker_run_not_ok')).toContain('worker run');
     expect(formatGovernancePublicAuditVerifierFederationDistributionReadinessIssue('distribution_gate_not_ready')).toContain('gate');
+  });
+
+  it('parses federation exchange receipt automation status rows', () => {
+    const status = readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus([
+      {
+        cron_schema_available: true,
+        cron_job_registered: true,
+        cron_job_active: true,
+        cron_job_schedule: '55 * * * *',
+        cron_job_command: 'SELECT public.gpav_fed_exchange_receipt_tick();',
+        latest_cron_run_started_at: '2026-04-25T18:55:00.000Z',
+        latest_cron_run_finished_at: '2026-04-25T18:55:01.500Z',
+        latest_cron_run_status: 'succeeded',
+        latest_cron_run_details: '1 row',
+        latest_pending_receipt_attested_at: '2026-04-25T18:40:00.000Z',
+        latest_verified_receipt_at: '2026-04-25T18:20:00.000Z',
+        latest_escalation_page_opened_at: '2026-04-25T18:56:00.000Z',
+        latest_escalation_page_status: 'open',
+        latest_automation_run_started_at: '2026-04-25T18:55:00.000Z',
+        latest_automation_run_finished_at: '2026-04-25T18:55:02.000Z',
+        latest_automation_run_status: 'succeeded',
+        latest_automation_run_message: 'pg_cron tick',
+        latest_automation_run_trigger_source: 'cron',
+      },
+    ]);
+
+    expect(status).toEqual({
+      cronSchemaAvailable: true,
+      cronJobRegistered: true,
+      cronJobActive: true,
+      cronJobSchedule: '55 * * * *',
+      cronJobCommand: 'SELECT public.gpav_fed_exchange_receipt_tick();',
+      latestCronRunStartedAt: '2026-04-25T18:55:00.000Z',
+      latestCronRunFinishedAt: '2026-04-25T18:55:01.500Z',
+      latestCronRunStatus: 'succeeded',
+      latestCronRunDetails: '1 row',
+      latestPendingReceiptAttestedAt: '2026-04-25T18:40:00.000Z',
+      latestVerifiedReceiptAt: '2026-04-25T18:20:00.000Z',
+      latestEscalationPageOpenedAt: '2026-04-25T18:56:00.000Z',
+      latestEscalationPageStatus: 'open',
+      latestAutomationRunStartedAt: '2026-04-25T18:55:00.000Z',
+      latestAutomationRunFinishedAt: '2026-04-25T18:55:02.000Z',
+      latestAutomationRunStatus: 'succeeded',
+      latestAutomationRunMessage: 'pg_cron tick',
+      latestAutomationRunTriggerSource: 'cron',
+    });
+  });
+
+  it('returns null for empty receipt automation status payloads', () => {
+    expect(readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus(null)).toBeNull();
+    expect(readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus([])).toBeNull();
+  });
+
+  it('parses receipt automation run history rows', () => {
+    const rows = readGovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRows([
+      {
+        run_id: 'run-1',
+        triggered_by: 'profile-1',
+        triggered_by_name: 'Steward One',
+        trigger_source: 'steward_manual',
+        requested_lookback_hours: 336,
+        run_started_at: '2026-04-25T19:00:00.000Z',
+        run_finished_at: '2026-04-25T19:00:01.000Z',
+        run_status: 'succeeded',
+        run_message: 'manual sweep',
+        receipt_pending_count: 2,
+        stale_receipt_count: 1,
+        critical_backlog: true,
+        open_or_ack_page_count: 1,
+      },
+    ]);
+
+    expect(rows).toEqual([
+      {
+        runId: 'run-1',
+        triggeredBy: 'profile-1',
+        triggeredByName: 'Steward One',
+        triggerSource: 'steward_manual',
+        requestedLookbackHours: 336,
+        runStartedAt: '2026-04-25T19:00:00.000Z',
+        runFinishedAt: '2026-04-25T19:00:01.000Z',
+        runStatus: 'succeeded',
+        runMessage: 'manual sweep',
+        receiptPendingCount: 2,
+        staleReceiptCount: 1,
+        criticalBacklog: true,
+        openOrAckPageCount: 1,
+      },
+    ]);
   });
 });

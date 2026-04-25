@@ -24,6 +24,7 @@
     "test:watch": "vitest",
     "test-users:sync": "node scripts/sync-test-users.mjs",
     "test-users:cleanup-random": "node scripts/cleanup-random-test-users.mjs",
+    "stories:backfill": "node scripts/backfill-development-stories.mjs",
     "db:apply-remote-migration": "bash scripts/db/apply-remote-migration.sh",
     "db:apply-remote:federation-distribution": "bash scripts/db/apply-remote-federation-distribution-migrations.sh",
     "db:vps-install-agent-key": "bash scripts/db/vps-install-agent-ssh-key.sh"

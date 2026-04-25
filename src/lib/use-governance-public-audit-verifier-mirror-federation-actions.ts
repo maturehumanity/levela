@@ -24,6 +24,9 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
   const [upsertingDiscoveredCandidate, setUpsertingDiscoveredCandidate] = useState(false);
   const [promotingDiscoveredCandidate, setPromotingDiscoveredCandidate] = useState(false);
   const [savingPolicyRatification, setSavingPolicyRatification] = useState(false);
+  const [runningFederationExchangeReceiptAutomationCheck, setRunningFederationExchangeReceiptAutomationCheck] = useState(false);
+  const [acknowledgingFederationExchangeReceiptEscalationPageId, setAcknowledgingFederationExchangeReceiptEscalationPageId] = useState<string | null>(null);
+  const [resolvingFederationExchangeReceiptEscalationPageId, setResolvingFederationExchangeReceiptEscalationPageId] = useState<string | null>(null);
 
   const opsActions = useGovernancePublicAuditVerifierMirrorFederationOpsActions({
     canManageMirrorFederation,
@@ -229,12 +232,83 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     await loadFederationData();
   }, [canManageMirrorFederation, federationBackendUnavailable, loadFederationData]);
 
+  const runFederationExchangeReceiptAutomationCheck = useCallback(async (draft: {
+    lookbackHours: string;
+    runMessage: string;
+  }) => {
+    if (federationBackendUnavailable || !canManageMirrorFederation) return;
+    setRunningFederationExchangeReceiptAutomationCheck(true);
+
+    const lookbackParsed = asIntegerOrNull(draft.lookbackHours);
+    const { error } = await supabase.rpc('run_gpav_fed_exchange_receipt_automation_check', {
+      requested_lookback_hours: lookbackParsed ?? null,
+      trigger_source: 'steward_manual',
+      run_message: draft.runMessage.trim() || null,
+      metadata: { source: 'governance_public_audit_verifier_panel' },
+    });
+
+    if (error) {
+      const detail = [error.message, error.details, error.hint].filter(Boolean).join(' ');
+      console.error('Failed to run federation exchange receipt automation check:', error);
+      toast.error(detail || 'Could not run receipt automation check.');
+      setRunningFederationExchangeReceiptAutomationCheck(false);
+      return;
+    }
+
+    toast.success('Receipt automation check completed.');
+    setRunningFederationExchangeReceiptAutomationCheck(false);
+    await loadFederationData();
+  }, [canManageMirrorFederation, federationBackendUnavailable, loadFederationData]);
+
+  const acknowledgeFederationExchangeReceiptEscalationPage = useCallback(async (pageId: string) => {
+    if (federationBackendUnavailable || !canManageMirrorFederation) return;
+    if (!pageId) return;
+    setAcknowledgingFederationExchangeReceiptEscalationPageId(pageId);
+    const notes = window.prompt('Optional acknowledgement notes for this federation exchange receipt escalation page:', '');
+    const { error } = await supabase.rpc('acknowledge_governance_public_audit_external_execution_page', {
+      target_page_id: pageId,
+      acknowledgement_notes: notes?.trim() || null,
+    });
+    if (error) {
+      console.error('Failed to acknowledge federation exchange receipt escalation page:', error);
+      toast.error('Could not acknowledge receipt escalation page.');
+      setAcknowledgingFederationExchangeReceiptEscalationPageId(null);
+      return;
+    }
+    toast.success('Receipt escalation page acknowledged.');
+    setAcknowledgingFederationExchangeReceiptEscalationPageId(null);
+    await loadFederationData();
+  }, [canManageMirrorFederation, federationBackendUnavailable, loadFederationData]);
+
+  const resolveFederationExchangeReceiptEscalationPage = useCallback(async (pageId: string) => {
+    if (federationBackendUnavailable || !canManageMirrorFederation) return;
+    if (!pageId) return;
+    setResolvingFederationExchangeReceiptEscalationPageId(pageId);
+    const notes = window.prompt('Optional resolution notes for this federation exchange receipt escalation page:', '');
+    const { error } = await supabase.rpc('resolve_governance_public_audit_external_execution_page', {
+      target_page_id: pageId,
+      resolution_notes: notes?.trim() || null,
+    });
+    if (error) {
+      console.error('Failed to resolve federation exchange receipt escalation page:', error);
+      toast.error('Could not resolve receipt escalation page.');
+      setResolvingFederationExchangeReceiptEscalationPageId(null);
+      return;
+    }
+    toast.success('Receipt escalation page resolved.');
+    setResolvingFederationExchangeReceiptEscalationPageId(null);
+    await loadFederationData();
+  }, [canManageMirrorFederation, federationBackendUnavailable, loadFederationData]);
+
   return {
     registeringDiscoverySource,
     recordingDiscoveryRun,
     upsertingDiscoveredCandidate,
     promotingDiscoveredCandidate,
     savingPolicyRatification,
+    runningFederationExchangeReceiptAutomationCheck,
+    acknowledgingFederationExchangeReceiptEscalationPageId,
+    resolvingFederationExchangeReceiptEscalationPageId,
     capturingFederationPackage: distributionActions.capturingFederationPackage,
     signingFederationPackage: distributionActions.signingFederationPackage,
     verifyingFederationDistribution: distributionActions.verifyingFederationDistribution,
@@ -255,6 +329,9 @@ export function useGovernancePublicAuditVerifierMirrorFederationActions({
     upsertDiscoveredCandidate,
     promoteDiscoveredCandidate,
     recordPolicyRatification,
+    runFederationExchangeReceiptAutomationCheck,
+    acknowledgeFederationExchangeReceiptEscalationPage,
+    resolveFederationExchangeReceiptEscalationPage,
     captureFederationPackage: distributionActions.captureFederationPackage,
     signFederationPackage: distributionActions.signFederationPackage,
     runFederationDistributionVerification: distributionActions.runFederationDistributionVerification,

@@ -4,9 +4,13 @@ import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import type { GovernancePublicAuditExternalExecutionPageBoardRow } from '@/lib/governance-public-audit-automation';
 import type {
   GovernancePublicAuditVerifierFederationExchangeAttestationRow,
   GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow,
+  GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
   GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   GovernancePublicAuditVerifierFederationDistributionGateSnapshot,
@@ -34,6 +38,10 @@ interface GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps
   federationExchangeAttestationSummary: GovernancePublicAuditVerifierFederationExchangeAttestationSummary | null;
   federationExchangeAttestations: GovernancePublicAuditVerifierFederationExchangeAttestationRow[];
   federationExchangeReceiptPolicySummary: GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary | null;
+  federationExchangeReceiptAutomationStatus: GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus | null;
+  federationExchangeReceiptAutomationRuns: GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow[];
+  federationExchangeReceiptEscalationHistory: GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow[];
+  federationExchangeReceiptEscalationPages: GovernancePublicAuditExternalExecutionPageBoardRow[];
   federationExchangeReceiptPolicyEvents: GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow[];
   federationOperationsSummary: GovernancePublicAuditVerifierMirrorFederationOperationsSummary | null;
   capturingFederationPackage: boolean;
@@ -42,6 +50,9 @@ interface GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps
   recordingFederationExchangeAttestation: boolean;
   verifyingFederationExchangeReceipt: boolean;
   savingFederationExchangeReceiptPolicy: boolean;
+  runningFederationExchangeReceiptAutomationCheck: boolean;
+  acknowledgingFederationExchangeReceiptEscalationPageId: string | null;
+  resolvingFederationExchangeReceiptEscalationPageId: string | null;
   rollingBackFederationExchangeReceiptPolicyEventId: string | null;
   captureFederationPackage: (packageNotes: string) => Promise<void> | void;
   signFederationPackage: (draft: {
@@ -83,6 +94,12 @@ interface GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps
     receiptMaxVerificationAgeHours: string;
     criticalStaleReceiptCountThreshold: string;
   }) => Promise<void> | void;
+  runFederationExchangeReceiptAutomationCheck: (draft: {
+    lookbackHours: string;
+    runMessage: string;
+  }) => Promise<void> | void;
+  acknowledgeFederationExchangeReceiptEscalationPage: (pageId: string) => Promise<void> | void;
+  resolveFederationExchangeReceiptEscalationPage: (pageId: string) => Promise<void> | void;
   rollbackFederationExchangeReceiptPolicyToEvent: (eventId: string) => Promise<void> | void;
   formatTimestamp: (value: string | null) => string;
 }
@@ -91,6 +108,37 @@ function previewHash(value: string) {
   if (!value) return 'n/a';
   if (value.length <= 24) return value;
   return `${value.slice(0, 12)}...${value.slice(-8)}`;
+}
+
+function normalizeAutomationRunStatus(value: string | null) {
+  return (value || '').trim().toLowerCase();
+}
+
+function describeReceiptAutomationHealth(args: {
+  cronSchemaAvailable: boolean;
+  cronJobRegistered: boolean;
+  cronJobActive: boolean;
+  latestCronRunStartedAt: string | null;
+  latestCronRunStatus: string | null;
+}) {
+  const { cronSchemaAvailable, cronJobRegistered, cronJobActive, latestCronRunStartedAt, latestCronRunStatus } = args;
+  const normalizedRunStatus = normalizeAutomationRunStatus(latestCronRunStatus);
+  if (!cronSchemaAvailable) {
+    return { label: 'pg_cron unavailable', healthy: false };
+  }
+  if (!cronJobRegistered) {
+    return { label: 'Receipt cron not registered', healthy: false };
+  }
+  if (!cronJobActive) {
+    return { label: 'Receipt cron paused', healthy: false };
+  }
+  if (!latestCronRunStartedAt) {
+    return { label: 'No receipt cron run recorded', healthy: false };
+  }
+  if (normalizedRunStatus === 'failed' || normalizedRunStatus === 'failure') {
+    return { label: 'Latest receipt cron run failed', healthy: false };
+  }
+  return { label: 'Receipt automation healthy', healthy: true };
 }
 
 export function GovernancePublicAuditVerifierMirrorFederationDistributionControls({
@@ -102,6 +150,10 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
   federationExchangeAttestationSummary,
   federationExchangeAttestations,
   federationExchangeReceiptPolicySummary,
+  federationExchangeReceiptAutomationStatus,
+  federationExchangeReceiptAutomationRuns,
+  federationExchangeReceiptEscalationHistory,
+  federationExchangeReceiptEscalationPages,
   federationExchangeReceiptPolicyEvents,
   federationOperationsSummary,
   capturingFederationPackage,
@@ -110,6 +162,9 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
   recordingFederationExchangeAttestation,
   verifyingFederationExchangeReceipt,
   savingFederationExchangeReceiptPolicy,
+  runningFederationExchangeReceiptAutomationCheck,
+  acknowledgingFederationExchangeReceiptEscalationPageId,
+  resolvingFederationExchangeReceiptEscalationPageId,
   rollingBackFederationExchangeReceiptPolicyEventId,
   captureFederationPackage,
   signFederationPackage,
@@ -117,6 +172,9 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
   recordFederationExchangeAttestation,
   verifyFederationExchangeReceipt,
   saveFederationExchangeReceiptPolicy,
+  runFederationExchangeReceiptAutomationCheck,
+  acknowledgeFederationExchangeReceiptEscalationPage,
+  resolveFederationExchangeReceiptEscalationPage,
   rollbackFederationExchangeReceiptPolicyToEvent,
   formatTimestamp,
 }: GovernancePublicAuditVerifierMirrorFederationDistributionControlsProps) {
@@ -159,6 +217,10 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
     receiptMaxVerificationAgeHours: '72',
     criticalStaleReceiptCountThreshold: '3',
   });
+  const [receiptAutomationRunDraft, setReceiptAutomationRunDraft] = useState({
+    lookbackHours: '336',
+    runMessage: '',
+  });
 
   const signingTargetPackageId = useMemo(
     () => federationPackageDistributionSummary?.packageId || '',
@@ -198,6 +260,46 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
     () => readGovernancePublicAuditVerifierFederationOpsReadinessIssues(federationOperationsSummary),
     [federationOperationsSummary],
   );
+  const receiptAutomationHealth = useMemo(() => {
+    if (!federationExchangeReceiptAutomationStatus) return null;
+    return describeReceiptAutomationHealth({
+      cronSchemaAvailable: federationExchangeReceiptAutomationStatus.cronSchemaAvailable,
+      cronJobRegistered: federationExchangeReceiptAutomationStatus.cronJobRegistered,
+      cronJobActive: federationExchangeReceiptAutomationStatus.cronJobActive,
+      latestCronRunStartedAt: federationExchangeReceiptAutomationStatus.latestCronRunStartedAt,
+      latestCronRunStatus: federationExchangeReceiptAutomationStatus.latestCronRunStatus,
+    });
+  }, [federationExchangeReceiptAutomationStatus]);
+  const receiptEscalationHistoryAnalytics = useMemo(() => {
+    const nowMs = Date.now();
+    const lookback24hMs = 24 * 60 * 60 * 1000;
+    let opened24h = 0;
+    let resolved24h = 0;
+    let unresolved = 0;
+    const resolutionDurationsHours: number[] = [];
+
+    federationExchangeReceiptEscalationHistory.forEach((row) => {
+      const openedMs = row.openedAt ? Date.parse(row.openedAt) : Number.NaN;
+      const resolvedMs = row.resolvedAt ? Date.parse(row.resolvedAt) : Number.NaN;
+      if (Number.isFinite(openedMs) && nowMs - openedMs <= lookback24hMs) opened24h += 1;
+      if (Number.isFinite(resolvedMs) && nowMs - resolvedMs <= lookback24hMs) resolved24h += 1;
+      if (row.pageStatus !== 'resolved') unresolved += 1;
+      if (Number.isFinite(openedMs) && Number.isFinite(resolvedMs) && resolvedMs >= openedMs) {
+        resolutionDurationsHours.push((resolvedMs - openedMs) / (60 * 60 * 1000));
+      }
+    });
+
+    const averageResolutionHours = resolutionDurationsHours.length
+      ? resolutionDurationsHours.reduce((sum, value) => sum + value, 0) / resolutionDurationsHours.length
+      : null;
+
+    return {
+      opened24h,
+      resolved24h,
+      unresolved,
+      averageResolutionHours,
+    };
+  }, [federationExchangeReceiptEscalationHistory]);
 
   useEffect(() => {
     if (!federationOperationsSummary) return;
@@ -220,6 +322,10 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
       receiptMaxVerificationAgeHours: String(federationExchangeReceiptPolicySummary.receiptMaxVerificationAgeHours),
       criticalStaleReceiptCountThreshold: String(federationExchangeReceiptPolicySummary.criticalStaleReceiptCountThreshold),
     });
+    setReceiptAutomationRunDraft((current) => ({
+      ...current,
+      lookbackHours: String(federationExchangeReceiptPolicySummary.lookbackHours),
+    }));
   }, [federationExchangeReceiptPolicySummary]);
 
   const runSortedKeyHashPreview = useCallback(async () => {
@@ -380,6 +486,57 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
       {federationExchangeReceiptPolicySummary && (
         <div className="rounded-md border border-border/60 bg-card p-2 text-xs">
           <p className="font-medium text-foreground">Receipt escalation policy</p>
+          {federationExchangeReceiptAutomationStatus && (
+            <div className="mt-2 rounded border border-border/60 bg-background/70 p-2 text-[11px] text-muted-foreground">
+              <p className="font-medium text-foreground">Receipt escalation automation status</p>
+              {receiptAutomationHealth && (
+                <Badge
+                  variant="outline"
+                  className={
+                    receiptAutomationHealth.healthy
+                      ? 'mt-2 border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                      : 'mt-2 border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  }
+                >
+                  {receiptAutomationHealth.label}
+                </Badge>
+              )}
+              <p className="mt-1">
+                pg_cron: {
+                  federationExchangeReceiptAutomationStatus.cronSchemaAvailable
+                    ? (federationExchangeReceiptAutomationStatus.cronJobRegistered
+                        ? (federationExchangeReceiptAutomationStatus.cronJobActive ? 'registered and active' : 'registered but paused')
+                        : 'available but not registered')
+                    : 'unavailable'
+                }
+              </p>
+              <p>
+                Schedule: {federationExchangeReceiptAutomationStatus.cronJobSchedule || 'n/a'}
+                {' • '}
+                Command: {federationExchangeReceiptAutomationStatus.cronJobCommand || 'n/a'}
+              </p>
+              <p>
+                Latest cron run: {formatTimestamp(federationExchangeReceiptAutomationStatus.latestCronRunStartedAt)}
+                {federationExchangeReceiptAutomationStatus.latestCronRunStatus
+                  ? ` • ${federationExchangeReceiptAutomationStatus.latestCronRunStatus}`
+                  : ''}
+                {federationExchangeReceiptAutomationStatus.latestCronRunDetails
+                  ? ` • ${federationExchangeReceiptAutomationStatus.latestCronRunDetails}`
+                  : ''}
+              </p>
+              <p>
+                Latest pending receipt attested: {formatTimestamp(federationExchangeReceiptAutomationStatus.latestPendingReceiptAttestedAt)}
+                {' • '}
+                Latest verified receipt: {formatTimestamp(federationExchangeReceiptAutomationStatus.latestVerifiedReceiptAt)}
+              </p>
+              <p>
+                Latest escalation page: {formatTimestamp(federationExchangeReceiptAutomationStatus.latestEscalationPageOpenedAt)}
+                {federationExchangeReceiptAutomationStatus.latestEscalationPageStatus
+                  ? ` • ${federationExchangeReceiptAutomationStatus.latestEscalationPageStatus}`
+                  : ''}
+              </p>
+            </div>
+          )}
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <Input
               value={receiptPolicyDraft.lookbackHours}
@@ -439,6 +596,30 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
               {savingFederationExchangeReceiptPolicy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save receipt escalation policy
             </Button>
+            <Input
+              value={receiptAutomationRunDraft.lookbackHours}
+              onChange={(event) => setReceiptAutomationRunDraft((current) => ({ ...current, lookbackHours: event.target.value }))}
+              placeholder="Manual run lookback (hours)"
+            />
+            <Input
+              value={receiptAutomationRunDraft.runMessage}
+              onChange={(event) => setReceiptAutomationRunDraft((current) => ({ ...current, runMessage: event.target.value }))}
+              placeholder="Manual run note (optional)"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2 sm:col-span-2"
+              disabled={runningFederationExchangeReceiptAutomationCheck}
+              onClick={() => void runFederationExchangeReceiptAutomationCheck({
+                lookbackHours: receiptAutomationRunDraft.lookbackHours,
+                runMessage: receiptAutomationRunDraft.runMessage,
+              })}
+            >
+              {runningFederationExchangeReceiptAutomationCheck ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Run receipt automation check now
+            </Button>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
             Updated {formatTimestamp(federationExchangeReceiptPolicySummary.updatedAt)}
@@ -472,6 +653,95 @@ export function GovernancePublicAuditVerifierMirrorFederationDistributionControl
                         </Button>
                       </div>
                     ) : null}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          {federationExchangeReceiptAutomationRuns.length > 0 && (
+            <details className="mt-2 rounded border border-border/60 bg-background/70 p-2">
+              <summary className="cursor-pointer text-[11px] font-medium text-foreground">
+                Receipt automation run history
+              </summary>
+              <div className="mt-2 space-y-2">
+                {federationExchangeReceiptAutomationRuns.slice(0, 20).map((run) => (
+                  <div key={run.runId} className="rounded border border-border/50 bg-background/60 p-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">
+                        {run.runStatus.toUpperCase()} • {run.triggerSource.replaceAll('_', ' ')}
+                      </p>
+                      <p>{formatTimestamp(run.runStartedAt)}</p>
+                    </div>
+                    <p className="mt-1">
+                      Pending {run.receiptPendingCount} • Stale {run.staleReceiptCount} • Open/Ack pages {run.openOrAckPageCount}
+                    </p>
+                    <p className="mt-1">
+                      Critical backlog {run.criticalBacklog ? 'yes' : 'no'}
+                      {run.requestedLookbackHours !== null ? ` • lookback ${run.requestedLookbackHours}h` : ''}
+                    </p>
+                    {run.triggeredByName ? <p className="mt-1 text-[11px]">Triggered by {run.triggeredByName}</p> : null}
+                    {run.runMessage ? <p className="mt-1 text-[11px]">{run.runMessage}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          {federationExchangeReceiptEscalationPages.length > 0 && (
+            <details className="mt-2 rounded border border-border/60 bg-background/70 p-2">
+              <summary className="cursor-pointer text-[11px] font-medium text-foreground">
+                Receipt escalation on-call pages
+              </summary>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="rounded border border-border/50 bg-background/60 p-2 text-[11px]">
+                  <p className="font-medium text-foreground">24h incident flow</p>
+                  <p className="mt-1">Opened (24h): {receiptEscalationHistoryAnalytics.opened24h}</p>
+                  <p>Resolved (24h): {receiptEscalationHistoryAnalytics.resolved24h}</p>
+                </div>
+                <div className="rounded border border-border/50 bg-background/60 p-2 text-[11px]">
+                  <p className="font-medium text-foreground">Resolution quality</p>
+                  <p className="mt-1">Unresolved pages: {receiptEscalationHistoryAnalytics.unresolved}</p>
+                  <p>
+                    Average resolution:
+                    {' '}
+                    {receiptEscalationHistoryAnalytics.averageResolutionHours === null
+                      ? 'n/a'
+                      : `${receiptEscalationHistoryAnalytics.averageResolutionHours.toFixed(2)}h`}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 space-y-2">
+                {federationExchangeReceiptEscalationPages.map((page) => (
+                  <div key={page.pageId} className="rounded border border-border/50 bg-background/60 p-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{page.pageStatus.toUpperCase()} • {page.severity.toUpperCase()}</p>
+                      <p>{formatTimestamp(page.openedAt)}</p>
+                    </div>
+                    <p className="mt-1">{page.pageMessage}</p>
+                    <p className="mt-1 text-[11px]">On-call channel: {page.oncallChannel}</p>
+                    {canManageMirrorFederation && page.pageStatus !== 'resolved' && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          disabled={acknowledgingFederationExchangeReceiptEscalationPageId === page.pageId}
+                          onClick={() => void acknowledgeFederationExchangeReceiptEscalationPage(page.pageId)}
+                        >
+                          {acknowledgingFederationExchangeReceiptEscalationPageId === page.pageId ? 'Acknowledging...' : 'Acknowledge page'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          disabled={resolvingFederationExchangeReceiptEscalationPageId === page.pageId}
+                          onClick={() => void resolveFederationExchangeReceiptEscalationPage(page.pageId)}
+                        >
+                          {resolvingFederationExchangeReceiptEscalationPageId === page.pageId ? 'Resolving...' : 'Resolve page'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

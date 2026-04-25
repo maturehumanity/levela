@@ -58,6 +58,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     recordingFederationExchangeAttestation,
     verifyingFederationExchangeReceipt,
     savingFederationExchangeReceiptPolicy,
+    runningFederationExchangeReceiptAutomationCheck,
+    acknowledgingFederationExchangeReceiptEscalationPageId,
+    resolvingFederationExchangeReceiptEscalationPageId,
     rollingBackFederationExchangeReceiptPolicyEventId,
     savingFederationOpsRequirement,
     registeringFederationOperator,
@@ -77,6 +80,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     federationExchangeAttestationSummary,
     federationExchangeAttestations,
     federationExchangeReceiptPolicySummary,
+    federationExchangeReceiptAutomationStatus,
+    federationExchangeReceiptAutomationRuns,
+    federationExchangeReceiptEscalationHistory,
+    federationExchangeReceiptEscalationPages,
     federationExchangeReceiptPolicyEvents,
     discoverySources,
     discoveredCandidates,
@@ -97,6 +104,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
     recordFederationExchangeAttestation,
     verifyFederationExchangeReceipt,
     saveFederationExchangeReceiptPolicy,
+    runFederationExchangeReceiptAutomationCheck,
+    acknowledgeFederationExchangeReceiptEscalationPage,
+    resolveFederationExchangeReceiptEscalationPage,
     rollbackFederationExchangeReceiptPolicyToEvent,
     saveFederationOpsRequirement,
     registerFederationOperator,
@@ -277,6 +287,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           recordingFederationExchangeAttestation={recordingFederationExchangeAttestation}
           verifyingFederationExchangeReceipt={verifyingFederationExchangeReceipt}
           savingFederationExchangeReceiptPolicy={savingFederationExchangeReceiptPolicy}
+          runningFederationExchangeReceiptAutomationCheck={runningFederationExchangeReceiptAutomationCheck}
+          acknowledgingFederationExchangeReceiptEscalationPageId={acknowledgingFederationExchangeReceiptEscalationPageId}
+          resolvingFederationExchangeReceiptEscalationPageId={resolvingFederationExchangeReceiptEscalationPageId}
           rollingBackFederationExchangeReceiptPolicyEventId={rollingBackFederationExchangeReceiptPolicyEventId}
           savingFederationOpsRequirement={savingFederationOpsRequirement}
           registeringFederationOperator={registeringFederationOperator}
@@ -299,6 +312,10 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           federationExchangeAttestationSummary={federationExchangeAttestationSummary}
           federationExchangeAttestations={federationExchangeAttestations}
           federationExchangeReceiptPolicySummary={federationExchangeReceiptPolicySummary}
+          federationExchangeReceiptAutomationStatus={federationExchangeReceiptAutomationStatus}
+          federationExchangeReceiptAutomationRuns={federationExchangeReceiptAutomationRuns}
+          federationExchangeReceiptEscalationHistory={federationExchangeReceiptEscalationHistory}
+          federationExchangeReceiptEscalationPages={federationExchangeReceiptEscalationPages}
           federationExchangeReceiptPolicyEvents={federationExchangeReceiptPolicyEvents}
           signerGovernanceSummary={signerGovernanceSummary}
           discoverySources={discoverySources}
@@ -321,6 +338,9 @@ export function GovernancePublicAuditVerifierMirrorProductionSection({
           recordFederationExchangeAttestation={recordFederationExchangeAttestation}
           verifyFederationExchangeReceipt={verifyFederationExchangeReceipt}
           saveFederationExchangeReceiptPolicy={saveFederationExchangeReceiptPolicy}
+          runFederationExchangeReceiptAutomationCheck={runFederationExchangeReceiptAutomationCheck}
+          acknowledgeFederationExchangeReceiptEscalationPage={acknowledgeFederationExchangeReceiptEscalationPage}
+          resolveFederationExchangeReceiptEscalationPage={resolveFederationExchangeReceiptEscalationPage}
           rollbackFederationExchangeReceiptPolicyToEvent={rollbackFederationExchangeReceiptPolicyToEvent}
           saveFederationOpsRequirement={saveFederationOpsRequirement}
           registerFederationOperator={registerFederationOperator}

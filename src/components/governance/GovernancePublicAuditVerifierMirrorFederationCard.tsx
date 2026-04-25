@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import type { GovernancePublicAuditExternalExecutionPageBoardRow } from '@/lib/governance-public-audit-automation';
 import { GovernancePublicAuditVerifierMirrorFederationControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationControls';
 import { GovernancePublicAuditVerifierMirrorFederationDistributionControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorFederationDistributionControls';
 import { GovernancePublicAuditVerifierMirrorSignerGovernanceControls } from '@/components/governance/GovernancePublicAuditVerifierMirrorSignerGovernanceControls';
@@ -15,6 +16,9 @@ import {
   type GovernancePublicAuditVerifierFederationPackageDistributionSummary,
   type GovernancePublicAuditVerifierFederationExchangeAttestationRow,
   type GovernancePublicAuditVerifierFederationExchangeAttestationSummary,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow,
+  type GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus,
   type GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow,
   type GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary,
   type GovernancePublicAuditVerifierFederationPackageHistoryRow,
@@ -44,6 +48,9 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   recordingFederationExchangeAttestation: boolean;
   verifyingFederationExchangeReceipt: boolean;
   savingFederationExchangeReceiptPolicy: boolean;
+  runningFederationExchangeReceiptAutomationCheck: boolean;
+  acknowledgingFederationExchangeReceiptEscalationPageId: string | null;
+  resolvingFederationExchangeReceiptEscalationPageId: string | null;
   rollingBackFederationExchangeReceiptPolicyEventId: string | null;
   savingFederationOpsRequirement: boolean;
   registeringFederationOperator: boolean;
@@ -66,6 +73,10 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
   federationExchangeAttestationSummary: GovernancePublicAuditVerifierFederationExchangeAttestationSummary | null;
   federationExchangeAttestations: GovernancePublicAuditVerifierFederationExchangeAttestationRow[];
   federationExchangeReceiptPolicySummary: GovernancePublicAuditVerifierFederationExchangeReceiptPolicySummary | null;
+  federationExchangeReceiptAutomationStatus: GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus | null;
+  federationExchangeReceiptAutomationRuns: GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow[];
+  federationExchangeReceiptEscalationHistory: GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow[];
+  federationExchangeReceiptEscalationPages: GovernancePublicAuditExternalExecutionPageBoardRow[];
   federationExchangeReceiptPolicyEvents: GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow[];
   signerGovernanceSummary: GovernancePublicAuditVerifierMirrorSignerGovernanceSummary | null;
   discoverySources: GovernancePublicAuditVerifierMirrorDiscoverySourceBoardRow[];
@@ -152,6 +163,12 @@ interface GovernancePublicAuditVerifierMirrorFederationCardProps {
     receiptMaxVerificationAgeHours: string;
     criticalStaleReceiptCountThreshold: string;
   }) => Promise<void> | void;
+  runFederationExchangeReceiptAutomationCheck: (draft: {
+    lookbackHours: string;
+    runMessage: string;
+  }) => Promise<void> | void;
+  acknowledgeFederationExchangeReceiptEscalationPage: (pageId: string) => Promise<void> | void;
+  resolveFederationExchangeReceiptEscalationPage: (pageId: string) => Promise<void> | void;
   rollbackFederationExchangeReceiptPolicyToEvent: (eventId: string) => Promise<void> | void;
   saveFederationOpsRequirement: (draft: {
     requireFederationOpsReadiness: boolean;
@@ -221,6 +238,24 @@ function previewHash(value: string) {
   return `${value.slice(0, 12)}...${value.slice(-8)}`;
 }
 
+function isReceiptAutomationHealthy(args: {
+  cronSchemaAvailable: boolean;
+  cronJobRegistered: boolean;
+  cronJobActive: boolean;
+  latestCronRunStartedAt: string | null;
+  latestCronRunStatus: string | null;
+}) {
+  const status = (args.latestCronRunStatus || '').trim().toLowerCase();
+  return (
+    args.cronSchemaAvailable
+    && args.cronJobRegistered
+    && args.cronJobActive
+    && Boolean(args.latestCronRunStartedAt)
+    && status !== 'failed'
+    && status !== 'failure'
+  );
+}
+
 export function GovernancePublicAuditVerifierMirrorFederationCard({
   canManageMirrorFederation,
   registeringDiscoverySource,
@@ -234,6 +269,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   recordingFederationExchangeAttestation,
   verifyingFederationExchangeReceipt,
   savingFederationExchangeReceiptPolicy,
+  runningFederationExchangeReceiptAutomationCheck,
+  acknowledgingFederationExchangeReceiptEscalationPageId,
+  resolvingFederationExchangeReceiptEscalationPageId,
   rollingBackFederationExchangeReceiptPolicyEventId,
   savingFederationOpsRequirement,
   registeringFederationOperator,
@@ -256,6 +294,10 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   federationExchangeAttestationSummary,
   federationExchangeAttestations,
   federationExchangeReceiptPolicySummary,
+  federationExchangeReceiptAutomationStatus,
+  federationExchangeReceiptAutomationRuns,
+  federationExchangeReceiptEscalationHistory,
+  federationExchangeReceiptEscalationPages,
   federationExchangeReceiptPolicyEvents,
   signerGovernanceSummary,
   discoverySources,
@@ -278,6 +320,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
   recordFederationExchangeAttestation,
   verifyFederationExchangeReceipt,
   saveFederationExchangeReceiptPolicy,
+  runFederationExchangeReceiptAutomationCheck,
+  acknowledgeFederationExchangeReceiptEscalationPage,
+  resolveFederationExchangeReceiptEscalationPage,
   rollbackFederationExchangeReceiptPolicyToEvent,
   saveFederationOpsRequirement,
   registerFederationOperator,
@@ -334,6 +379,29 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
             Federation ops {federationOperationsSummary.federationOpsReady ? 'ready' : 'pending'}
           </Badge>
         )}
+        {federationExchangeReceiptAutomationStatus && (
+          (() => {
+            const healthy = isReceiptAutomationHealthy({
+              cronSchemaAvailable: federationExchangeReceiptAutomationStatus.cronSchemaAvailable,
+              cronJobRegistered: federationExchangeReceiptAutomationStatus.cronJobRegistered,
+              cronJobActive: federationExchangeReceiptAutomationStatus.cronJobActive,
+              latestCronRunStartedAt: federationExchangeReceiptAutomationStatus.latestCronRunStartedAt,
+              latestCronRunStatus: federationExchangeReceiptAutomationStatus.latestCronRunStatus,
+            });
+            return (
+          <Badge
+            variant="outline"
+            className={
+              healthy
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+            }
+          >
+            Receipt automation {healthy ? 'healthy' : 'attention'}
+          </Badge>
+            );
+          })()
+        )}
       </div>
 
       <GovernancePublicAuditVerifierMirrorFederationControls
@@ -379,6 +447,10 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         federationExchangeAttestationSummary={federationExchangeAttestationSummary}
         federationExchangeAttestations={federationExchangeAttestations}
         federationExchangeReceiptPolicySummary={federationExchangeReceiptPolicySummary}
+        federationExchangeReceiptAutomationStatus={federationExchangeReceiptAutomationStatus}
+        federationExchangeReceiptAutomationRuns={federationExchangeReceiptAutomationRuns}
+        federationExchangeReceiptEscalationHistory={federationExchangeReceiptEscalationHistory}
+        federationExchangeReceiptEscalationPages={federationExchangeReceiptEscalationPages}
         federationExchangeReceiptPolicyEvents={federationExchangeReceiptPolicyEvents}
         federationOperationsSummary={federationOperationsSummary}
         capturingFederationPackage={capturingFederationPackage}
@@ -387,6 +459,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         recordingFederationExchangeAttestation={recordingFederationExchangeAttestation}
         verifyingFederationExchangeReceipt={verifyingFederationExchangeReceipt}
         savingFederationExchangeReceiptPolicy={savingFederationExchangeReceiptPolicy}
+        runningFederationExchangeReceiptAutomationCheck={runningFederationExchangeReceiptAutomationCheck}
+        acknowledgingFederationExchangeReceiptEscalationPageId={acknowledgingFederationExchangeReceiptEscalationPageId}
+        resolvingFederationExchangeReceiptEscalationPageId={resolvingFederationExchangeReceiptEscalationPageId}
         rollingBackFederationExchangeReceiptPolicyEventId={rollingBackFederationExchangeReceiptPolicyEventId}
         captureFederationPackage={captureFederationPackage}
         signFederationPackage={signFederationPackage}
@@ -394,6 +469,9 @@ export function GovernancePublicAuditVerifierMirrorFederationCard({
         recordFederationExchangeAttestation={recordFederationExchangeAttestation}
         verifyFederationExchangeReceipt={verifyFederationExchangeReceipt}
         saveFederationExchangeReceiptPolicy={saveFederationExchangeReceiptPolicy}
+        runFederationExchangeReceiptAutomationCheck={runFederationExchangeReceiptAutomationCheck}
+        acknowledgeFederationExchangeReceiptEscalationPage={acknowledgeFederationExchangeReceiptEscalationPage}
+        resolveFederationExchangeReceiptEscalationPage={resolveFederationExchangeReceiptEscalationPage}
         rollbackFederationExchangeReceiptPolicyToEvent={rollbackFederationExchangeReceiptPolicyToEvent}
         formatTimestamp={formatTimestamp}
       />

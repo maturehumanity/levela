@@ -293,6 +293,57 @@ export interface GovernancePublicAuditVerifierFederationExchangeReceiptPolicySum
   updatedByName: string | null;
 }
 
+export interface GovernancePublicAuditVerifierFederationExchangeReceiptAutomationStatus {
+  cronSchemaAvailable: boolean;
+  cronJobRegistered: boolean;
+  cronJobActive: boolean;
+  cronJobSchedule: string | null;
+  cronJobCommand: string | null;
+  latestCronRunStartedAt: string | null;
+  latestCronRunFinishedAt: string | null;
+  latestCronRunStatus: string | null;
+  latestCronRunDetails: string | null;
+  latestPendingReceiptAttestedAt: string | null;
+  latestVerifiedReceiptAt: string | null;
+  latestEscalationPageOpenedAt: string | null;
+  latestEscalationPageStatus: string | null;
+  latestAutomationRunStartedAt: string | null;
+  latestAutomationRunFinishedAt: string | null;
+  latestAutomationRunStatus: string | null;
+  latestAutomationRunMessage: string | null;
+  latestAutomationRunTriggerSource: string | null;
+}
+
+export interface GovernancePublicAuditVerifierFederationExchangeReceiptAutomationRunRow {
+  runId: string;
+  triggeredBy: string | null;
+  triggeredByName: string | null;
+  triggerSource: string;
+  requestedLookbackHours: number | null;
+  runStartedAt: string | null;
+  runFinishedAt: string | null;
+  runStatus: string;
+  runMessage: string | null;
+  receiptPendingCount: number;
+  staleReceiptCount: number;
+  criticalBacklog: boolean;
+  openOrAckPageCount: number;
+}
+
+export interface GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow {
+  pageId: string;
+  batchId: string | null;
+  pageKey: string;
+  severity: 'info' | 'warning' | 'critical' | 'unknown';
+  pageStatus: 'open' | 'acknowledged' | 'resolved' | 'unknown';
+  pageMessage: string;
+  oncallChannel: string;
+  openedAt: string | null;
+  acknowledgedAt: string | null;
+  resolvedAt: string | null;
+  updatedAt: string | null;
+}
+
 export interface GovernancePublicAuditVerifierFederationExchangeReceiptPolicyEventRow {
   eventId: string;
   policyKey: string;

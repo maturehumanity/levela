@@ -4296,6 +4296,104 @@ export type Database = {
           },
         ]
       }
+      development_stories: {
+        Row: {
+          area: string
+          author_id: string
+          chat_id: string | null
+          commit_sha: string | null
+          confidence_score: number | null
+          created_at: string
+          created_features: string[]
+          expected_behavior: string
+          id: string
+          metadata: Json
+          original_instruction: string
+          pr_number: number | null
+          published_at: string | null
+          rephrased_description: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          section: string
+          source_id: string | null
+          source_type: string
+          source_url: string | null
+          source: string
+          source_story_key: string | null
+          status: string
+          story_kind: string
+          title: string
+          visibility: string
+        }
+        Insert: {
+          area: string
+          author_id: string
+          chat_id?: string | null
+          commit_sha?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          created_features?: string[]
+          expected_behavior: string
+          id?: string
+          metadata?: Json
+          original_instruction: string
+          pr_number?: number | null
+          published_at?: string | null
+          rephrased_description: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          section: string
+          source_id?: string | null
+          source_type?: string
+          source_url?: string | null
+          source?: string
+          source_story_key?: string | null
+          status?: string
+          story_kind?: string
+          title: string
+          visibility?: string
+        }
+        Update: {
+          area?: string
+          author_id?: string
+          chat_id?: string | null
+          commit_sha?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          created_features?: string[]
+          expected_behavior?: string
+          id?: string
+          metadata?: Json
+          original_instruction?: string
+          pr_number?: number | null
+          published_at?: string | null
+          rephrased_description?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          section?: string
+          source_id?: string | null
+          source_type?: string
+          source_url?: string | null
+          source?: string
+          source_story_key?: string | null
+          status?: string
+          story_kind?: string
+          title?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_stories_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string
