@@ -64,6 +64,8 @@ export interface GovernancePublicAuditExternalExecutionPolicySummary {
   pagingStalePendingMinutes: number;
   pagingFailureSharePercent: number;
   oncallChannel: string;
+  /** HTTPS URL from policy metadata `oncall_webhook_url` when set (optional paging dispatch). */
+  oncallWebhookUrl: string | null;
   updatedAt: string | null;
 }
 
@@ -274,6 +276,7 @@ export function readGovernancePublicAuditExternalExecutionPolicySummary(rows: un
     pagingStalePendingMinutes: Math.max(1, asNonNegativeInteger(row.paging_stale_pending_minutes, 30)),
     pagingFailureSharePercent: Math.max(0, asNullableNumber(row.paging_failure_share_percent) ?? 25),
     oncallChannel: asString(row.oncall_channel, 'public_audit_ops'),
+    oncallWebhookUrl: asNullableString(row.oncall_webhook_url),
     updatedAt: asNullableString(row.updated_at),
   };
 }

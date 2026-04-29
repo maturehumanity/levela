@@ -148,6 +148,7 @@ describe('governance-public-audit-automation helpers', () => {
         paging_stale_pending_minutes: 45,
         paging_failure_share_percent: '22.5',
         oncall_channel: 'gov_ops',
+        oncall_webhook_url: 'https://example.com/hooks/public-audit',
         updated_at: '2026-04-21T01:00:00.000Z',
       },
     ]);
@@ -165,6 +166,7 @@ describe('governance-public-audit-automation helpers', () => {
       pagingStalePendingMinutes: 45,
       pagingFailureSharePercent: 22.5,
       oncallChannel: 'gov_ops',
+      oncallWebhookUrl: 'https://example.com/hooks/public-audit',
       updatedAt: '2026-04-21T01:00:00.000Z',
     });
   });

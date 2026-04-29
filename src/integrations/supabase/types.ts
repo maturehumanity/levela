@@ -5334,6 +5334,7 @@ export type Database = {
           paging_stale_pending_minutes: number
           paging_failure_share_percent: number
           oncall_channel: string
+          oncall_webhook_url: string | null
           updated_at: string
         }[]
       }

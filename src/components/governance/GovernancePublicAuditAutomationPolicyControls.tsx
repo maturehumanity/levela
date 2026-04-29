@@ -24,6 +24,7 @@ interface GovernancePublicAuditAutomationPolicyControlsProps {
     pagingStalePendingMinutes: string;
     pagingFailureSharePercent: string;
     oncallChannel: string;
+    oncallWebhookUrl: string;
   }) => Promise<void> | void;
   onResolveExternalExecutionPage: (targetPageId: string, resolutionNotes: string) => Promise<void> | void;
 }
@@ -47,6 +48,7 @@ export function GovernancePublicAuditAutomationPolicyControls({
     pagingStalePendingMinutes: '30',
     pagingFailureSharePercent: '25',
     oncallChannel: 'public_audit_ops',
+    oncallWebhookUrl: '',
   });
   const [pageResolutionNotes, setPageResolutionNotes] = useState('');
 
@@ -62,6 +64,7 @@ export function GovernancePublicAuditAutomationPolicyControls({
       pagingStalePendingMinutes: String(externalExecutionPolicy.pagingStalePendingMinutes),
       pagingFailureSharePercent: String(externalExecutionPolicy.pagingFailureSharePercent),
       oncallChannel: externalExecutionPolicy.oncallChannel,
+      oncallWebhookUrl: externalExecutionPolicy.oncallWebhookUrl ?? '',
     });
   }, [externalExecutionPolicy]);
 
@@ -77,6 +80,21 @@ export function GovernancePublicAuditAutomationPolicyControls({
         <Input value={policyDraft.pagingStalePendingMinutes} onChange={(event) => setPolicyDraft((current) => ({ ...current, pagingStalePendingMinutes: event.target.value }))} placeholder="Paging stale pending minutes" />
         <Input value={policyDraft.pagingFailureSharePercent} onChange={(event) => setPolicyDraft((current) => ({ ...current, pagingFailureSharePercent: event.target.value }))} placeholder="Paging failure share percent" />
         <Input value={policyDraft.oncallChannel} onChange={(event) => setPolicyDraft((current) => ({ ...current, oncallChannel: event.target.value }))} placeholder="On-call channel" />
+        <div
+          className="space-y-1"
+          data-build-key="governancePublicAuditAutomationPagingWebhookField"
+          data-build-label="Optional HTTPS paging webhook URL"
+        >
+          <p className="text-xs text-muted-foreground">
+            Optional HTTPS URL for automatic POST when an on-call execution page opens (requires pg_net on the database). Leave blank to disable.
+          </p>
+          <Input
+            value={policyDraft.oncallWebhookUrl}
+            onChange={(event) => setPolicyDraft((current) => ({ ...current, oncallWebhookUrl: event.target.value }))}
+            placeholder="https://example.com/your-webhook"
+            autoComplete="off"
+          />
+        </div>
         <Button type="button" size="sm" variant={policyDraft.pagingEnabled ? 'default' : 'outline'} className="w-full" onClick={() => setPolicyDraft((current) => ({ ...current, pagingEnabled: !current.pagingEnabled }))}>
           Paging {policyDraft.pagingEnabled ? 'enabled' : 'disabled'}
         </Button>

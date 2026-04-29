@@ -199,8 +199,15 @@ export function useGovernancePublicAuditAutomationActions({
     pagingStalePendingMinutes: string;
     pagingFailureSharePercent: string;
     oncallChannel: string;
+    oncallWebhookUrl: string;
   }) => {
     if (!canManageAutomation || automationBackendUnavailable) return;
+
+    const webhookTrimmed = draft.oncallWebhookUrl.trim();
+    if (webhookTrimmed && !webhookTrimmed.toLowerCase().startsWith('https://')) {
+      toast.error('Paging webhook URL must use https://');
+      return;
+    }
 
     setSavingExternalExecutionPolicy(true);
     const parsedFailureShare = Number.parseFloat(draft.pagingFailureSharePercent);
@@ -217,7 +224,10 @@ export function useGovernancePublicAuditAutomationActions({
       requested_paging_stale_pending_minutes: parsePositiveInteger(draft.pagingStalePendingMinutes, 30),
       requested_paging_failure_share_percent: Number.isFinite(parsedFailureShare) ? parsedFailureShare : 25,
       requested_oncall_channel: draft.oncallChannel.trim() || 'public_audit_ops',
-      metadata: { source: 'governance_public_audit_automation_panel' },
+      metadata: {
+        source: 'governance_public_audit_automation_panel',
+        oncall_webhook_url: webhookTrimmed,
+      },
     });
 
     if (error) {
