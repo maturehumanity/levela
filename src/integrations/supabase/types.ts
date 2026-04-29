@@ -4700,6 +4700,9 @@ export type Database = {
           latest_automation_run_status: string | null
           latest_automation_run_message: string | null
           latest_automation_run_trigger_source: string | null
+          worker_escalation_open_or_ack_page_count: number
+          worker_escalation_latest_opened_at: string | null
+          worker_escalation_latest_page_severity: string | null
         }[]
       }
       activation_scope_is_declared: {

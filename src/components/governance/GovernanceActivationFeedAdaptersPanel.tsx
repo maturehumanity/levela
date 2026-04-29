@@ -605,6 +605,32 @@ export function GovernanceActivationFeedAdaptersPanel({
                 ? ` Last schedule enqueue observed ${formatTimestamp(feedWorkerScheduleAutomationStatus.latest_scheduled_enqueue_at)}.`
                 : ' No schedule-based enqueue has been observed yet.'}
             </p>
+          ) : null}
+          {feedWorkerScheduleAutomationStatus ? (
+            <p
+              className="mt-1 text-[11px] text-muted-foreground"
+              data-build-key="governanceActivationFeedSchedulerEscalationSignals"
+              data-build-label="Feed worker on-call escalation snapshot for latest batch"
+            >
+              <span className="font-medium text-foreground/80">On-call escalation (latest batch):</span>{' '}
+              {(feedWorkerScheduleAutomationStatus.worker_escalation_open_or_ack_page_count ?? 0) > 0 ? (
+                <>
+                  <span className="text-amber-800 dark:text-amber-200">
+                    {feedWorkerScheduleAutomationStatus.worker_escalation_open_or_ack_page_count} open or acknowledged
+                    {' '}
+                    {(feedWorkerScheduleAutomationStatus.worker_escalation_open_or_ack_page_count ?? 0) === 1 ? 'page' : 'pages'}
+                  </span>
+                  {feedWorkerScheduleAutomationStatus.worker_escalation_latest_page_severity
+                    ? ` · highest severity ${feedWorkerScheduleAutomationStatus.worker_escalation_latest_page_severity}`
+                    : ''}
+                  {feedWorkerScheduleAutomationStatus.worker_escalation_latest_opened_at
+                    ? ` · latest opened ${formatTimestamp(feedWorkerScheduleAutomationStatus.worker_escalation_latest_opened_at)}`
+                    : ''}
+                </>
+              ) : (
+                <span className="text-muted-foreground">none open or acknowledged.</span>
+              )}
+            </p>
           ) : (
             <p
               data-build-key="governanceActivationFeedSchedulerAutomationStatusUnavailable"
