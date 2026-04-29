@@ -7,6 +7,7 @@ import {
   isMissingActivationDemographicFeedScheduleRunHistoryRpc,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
+  isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc,
 } from '@/lib/governance-activation-demographic-feeds';
 
 describe('isFeedDataAutoReloadThrottled', () => {
@@ -150,6 +151,17 @@ describe('isMissingActivationDemographicFeedWorkerBackend + scheduler RPC', () =
     expect(isMissingActivationDemographicFeedScheduleRunHistoryRpc(error)).toBe(true);
     expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
   });
+
+  it('does not treat missing feed worker escalation page history RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.activation_demographic_feed_worker_escalation_page_history',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
 });
 
 describe('isMissingActivationDemographicFeedScheduleRunHistoryRpc', () => {
@@ -163,6 +175,23 @@ describe('isMissingActivationDemographicFeedScheduleRunHistoryRpc', () => {
         code: 'PGRST202',
         message:
           'Could not find the function public.activation_feed_worker_schedule_automation_run_history',
+        details: null,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe('isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc', () => {
+  it('returns false when error is null', () => {
+    expect(isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(null)).toBe(false);
+  });
+
+  it('returns true for PGRST202 when the message references the escalation page history RPC', () => {
+    expect(
+      isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc({
+        code: 'PGRST202',
+        message:
+          'Could not find the function public.activation_demographic_feed_worker_escalation_page_history',
         details: null,
       }),
     ).toBe(true);

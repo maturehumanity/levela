@@ -16,6 +16,7 @@ import {
   isMissingActivationDemographicFeedScheduleRunHistoryRpc,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
+  isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc,
   type ActivationDemographicFeedAdapterRow,
   type ActivationDemographicFeedAlertType,
   type ActivationDemographicFeedIngestionRow,
@@ -23,6 +24,8 @@ import {
   type ActivationDemographicFeedWorkerOutboxRow,
   type ActivationDemographicFeedWorkerRunRow,
 } from '@/lib/governance-activation-demographic-feeds';
+import { readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows } from '@/lib/governance-public-audit-verifier-federation-distribution';
+import type { GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow } from '@/lib/governance-public-audit-verifier-federation.types';
 import {
   hashActivationDemographicPayload,
   verifyActivationDemographicPayloadSignature,
@@ -37,6 +40,9 @@ export type ActivationDemographicFeedWorkerScheduleAutomationStatusRow =
 
 export type ActivationDemographicFeedWorkerScheduleAutomationRunHistoryRow =
   Database['public']['Functions']['activation_feed_worker_schedule_automation_run_history']['Returns'][number];
+
+export type ActivationDemographicFeedWorkerEscalationHistoryRow =
+  GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow;
 
 /** First page size for steward ingestion history (matches prior single-query limit). */
 const FEED_INGESTIONS_FIRST_PAGE = 120;
@@ -85,6 +91,8 @@ export function useGovernanceActivationDemographicFeeds() {
     useState<ActivationDemographicFeedWorkerScheduleAutomationStatusRow | null>(null);
   const [feedWorkerScheduleAutomationRunHistory, setFeedWorkerScheduleAutomationRunHistory] =
     useState<ActivationDemographicFeedWorkerScheduleAutomationRunHistoryRow[]>([]);
+  const [feedWorkerEscalationPageHistory, setFeedWorkerEscalationPageHistory] =
+    useState<ActivationDemographicFeedWorkerEscalationHistoryRow[]>([]);
   const lastFeedDataAutoReloadAtRef = useRef(Date.now());
   const loadFeedDataInFlightRef = useRef(false);
 
@@ -150,6 +158,7 @@ export function useGovernanceActivationDemographicFeeds() {
       schedulePolicyResponse,
       scheduleAutomationStatusResponse,
       scheduleAutomationRunHistoryResponse,
+      feedWorkerEscalationPageHistoryResponse,
     ] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
@@ -203,6 +212,10 @@ export function useGovernanceActivationDemographicFeeds() {
       supabase.rpc('activation_feed_worker_schedule_automation_run_history', {
         p_requested_lookback_hours: 336,
         p_max_runs: 25,
+      }),
+      supabase.rpc('activation_demographic_feed_worker_escalation_page_history', {
+        requested_lookback_hours: 336,
+        max_pages: 120,
       }),
     ]);
 
@@ -349,6 +362,25 @@ export function useGovernanceActivationDemographicFeeds() {
       }
     } else {
       setFeedWorkerScheduleAutomationRunHistory(scheduleAutomationRunHistoryResponse.data ?? []);
+    }
+
+    if (feedWorkerEscalationPageHistoryResponse?.error) {
+      const ehError = feedWorkerEscalationPageHistoryResponse.error;
+      if (isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(ehError)) {
+        setFeedWorkerEscalationPageHistory([]);
+      } else if (isMissingActivationDemographicFeedWorkerBackend(ehError)) {
+        setFeedWorkerBackendUnavailable(true);
+        setFeedWorkerEscalationPageHistory([]);
+      } else {
+        console.warn('Could not load activation feed worker escalation page history; continuing without analytics:', ehError);
+        setFeedWorkerEscalationPageHistory([]);
+      }
+    } else {
+      setFeedWorkerEscalationPageHistory(
+        readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows(
+          feedWorkerEscalationPageHistoryResponse.data,
+        ),
+      );
     }
 
     setLoadingFeedData(false);
@@ -988,6 +1020,7 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerSchedulePolicy,
     feedWorkerScheduleAutomationStatus,
     feedWorkerScheduleAutomationRunHistory,
+    feedWorkerEscalationPageHistory,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,

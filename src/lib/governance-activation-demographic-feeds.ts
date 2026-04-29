@@ -84,6 +84,20 @@ export function isMissingActivationDemographicFeedScheduleRunHistoryRpc(
   );
 }
 
+/** PostgREST “function not found” for optional feed-worker escalation page history RPC (older DB). */
+export function isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) {
+    return false;
+  }
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('activation_demographic_feed_worker_escalation_page_history')
+  );
+}
+
 export function isMissingActivationDemographicFeedBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
@@ -101,6 +115,9 @@ export function isMissingActivationDemographicFeedWorkerBackend(error: { code?: 
     return false;
   }
   if (isMissingActivationDemographicFeedScheduleRunHistoryRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(error)) {
     return false;
   }
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();

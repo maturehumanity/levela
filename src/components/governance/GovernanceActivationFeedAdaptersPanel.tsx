@@ -162,6 +162,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedWorkerSchedulePolicy,
     feedWorkerScheduleAutomationStatus,
     feedWorkerScheduleAutomationRunHistory,
+    feedWorkerEscalationPageHistory,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
@@ -198,6 +199,37 @@ export function GovernanceActivationFeedAdaptersPanel({
   const [forceRescheduleSweepOpen, setForceRescheduleSweepOpen] = useState(false);
   const [recentClosedSweepJobsOpen, setRecentClosedSweepJobsOpen] = useState(false);
   const [visibleFeedWorkerAlertsCount, setVisibleFeedWorkerAlertsCount] = useState(FEED_WORKER_ALERTS_FIRST_PAGE);
+
+  const feedWorkerEscalationHistoryAnalytics = useMemo(() => {
+    const nowMs = Date.now();
+    const lookback24hMs = 24 * 60 * 60 * 1000;
+    let opened24h = 0;
+    let resolved24h = 0;
+    let unresolved = 0;
+    const resolutionDurationsHours: number[] = [];
+
+    feedWorkerEscalationPageHistory.forEach((row) => {
+      const openedMs = row.openedAt ? Date.parse(row.openedAt) : Number.NaN;
+      const resolvedMs = row.resolvedAt ? Date.parse(row.resolvedAt) : Number.NaN;
+      if (Number.isFinite(openedMs) && nowMs - openedMs <= lookback24hMs) opened24h += 1;
+      if (Number.isFinite(resolvedMs) && nowMs - resolvedMs <= lookback24hMs) resolved24h += 1;
+      if (row.pageStatus !== 'resolved') unresolved += 1;
+      if (Number.isFinite(openedMs) && Number.isFinite(resolvedMs) && resolvedMs >= openedMs) {
+        resolutionDurationsHours.push((resolvedMs - openedMs) / (60 * 60 * 1000));
+      }
+    });
+
+    const averageResolutionHours = resolutionDurationsHours.length
+      ? resolutionDurationsHours.reduce((sum, value) => sum + value, 0) / resolutionDurationsHours.length
+      : null;
+
+    return {
+      opened24h,
+      resolved24h,
+      unresolved,
+      averageResolutionHours,
+    };
+  }, [feedWorkerEscalationPageHistory]);
 
   const activeAdapters = useMemo(
     () => feedAdapters.filter((adapter) => adapter.is_active),
@@ -1103,6 +1135,58 @@ export function GovernanceActivationFeedAdaptersPanel({
               <Copy className="h-4 w-4" />
               Copy on-call page key
             </Button>
+          </div>
+          <div
+            className="mt-3 rounded-md border border-border/40 bg-muted/15 px-2 py-2"
+            data-build-key="governanceActivationFeedEscalationHistoryAnalytics"
+            data-build-label="Feed worker on-call escalation incident history summary"
+          >
+            <p className="text-[11px] font-semibold text-foreground/90">On-call page history (14-day lookback)</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 text-[11px] text-muted-foreground">
+              <div>
+                <p className="font-medium text-foreground/90">24-hour incident flow</p>
+                <p className="mt-1">Opened (24h): {feedWorkerEscalationHistoryAnalytics.opened24h}</p>
+                <p>Resolved (24h): {feedWorkerEscalationHistoryAnalytics.resolved24h}</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground/90">Resolution quality</p>
+                <p className="mt-1">Unresolved pages: {feedWorkerEscalationHistoryAnalytics.unresolved}</p>
+                <p>
+                  Average resolution:
+                  {' '}
+                  {feedWorkerEscalationHistoryAnalytics.averageResolutionHours === null
+                    ? 'n/a'
+                    : `${feedWorkerEscalationHistoryAnalytics.averageResolutionHours.toFixed(2)}h`}
+                </p>
+              </div>
+            </div>
+            {feedWorkerEscalationPageHistory.length > 0 ? (
+              <details className="mt-2 rounded border border-border/50 bg-background/50 p-2">
+                <summary className="cursor-pointer text-[11px] font-medium text-foreground">
+                  Recent on-call pages ({feedWorkerEscalationPageHistory.length} in window)
+                </summary>
+                <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto">
+                  {feedWorkerEscalationPageHistory.slice(0, 12).map((page) => (
+                    <li
+                      key={page.pageId}
+                      className="rounded border border-border/40 bg-background/60 px-2 py-1.5 text-[11px]"
+                      data-build-key={`governanceActivationFeedEscalationHistoryRow:${page.pageId}`}
+                      data-build-label={`Feed worker escalation page ${formatShortId(page.pageId) ?? page.pageId}`}
+                    >
+                      <span className="font-medium text-foreground/90">
+                        {page.pageStatus.toUpperCase()}
+                        {' · '}
+                        {page.severity.toUpperCase()}
+                      </span>
+                      {' · '}
+                      {formatTimestamp(page.openedAt)}
+                      {page.resolvedAt ? ` → resolved ${formatTimestamp(page.resolvedAt)}` : ''}
+                      <p className="mt-1 text-muted-foreground">{formatTruncatedGovernanceNote(page.pageMessage)}</p>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
           </div>
         </div>
       ) : null}

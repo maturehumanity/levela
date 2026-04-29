@@ -4626,6 +4626,22 @@ export type Database = {
           latest_run_at: string | null
         }[]
       }
+      activation_demographic_feed_worker_escalation_page_history: {
+        Args: { requested_lookback_hours?: number; max_pages?: number }
+        Returns: {
+          page_id: string
+          batch_id: string | null
+          page_key: string
+          severity: string
+          page_status: string
+          page_message: string
+          oncall_channel: string
+          opened_at: string | null
+          acknowledged_at: string | null
+          resolved_at: string | null
+          updated_at: string | null
+        }[]
+      }
       activation_feed_worker_schedule_automation_run_history: {
         Args: { p_requested_lookback_hours?: number; p_max_runs?: number }
         Returns: {
