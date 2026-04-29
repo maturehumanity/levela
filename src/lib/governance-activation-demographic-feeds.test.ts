@@ -4,6 +4,7 @@ import {
   ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS,
   isFeedDataAutoReloadThrottled,
   isMissingActivationDemographicFeedBackend,
+  isMissingActivationDemographicFeedScheduleRunHistoryRpc,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
 } from '@/lib/governance-activation-demographic-feeds';
@@ -137,5 +138,33 @@ describe('isMissingActivationDemographicFeedWorkerBackend + scheduler RPC', () =
     };
     expect(isMissingActivationDemographicFeedSchedulerStatusRpc(error)).toBe(false);
     expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(true);
+  });
+
+  it('does not treat missing schedule automation run history RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.activation_feed_worker_schedule_automation_run_history',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedScheduleRunHistoryRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+});
+
+describe('isMissingActivationDemographicFeedScheduleRunHistoryRpc', () => {
+  it('returns false when error is null', () => {
+    expect(isMissingActivationDemographicFeedScheduleRunHistoryRpc(null)).toBe(false);
+  });
+
+  it('returns true for PGRST202 when the message references the run history RPC', () => {
+    expect(
+      isMissingActivationDemographicFeedScheduleRunHistoryRpc({
+        code: 'PGRST202',
+        message:
+          'Could not find the function public.activation_feed_worker_schedule_automation_run_history',
+        details: null,
+      }),
+    ).toBe(true);
   });
 });

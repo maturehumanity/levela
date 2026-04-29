@@ -64,6 +64,23 @@ function formatShortId(value: string | null) {
   return trimmed.length > 14 ? `${trimmed.slice(0, 8)}…${trimmed.slice(-4)}` : trimmed;
 }
 
+function formatScheduleAutomationTriggerLabel(value: string | null) {
+  if (!value?.trim()) {
+    return 'Unknown';
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'cron') {
+    return 'Database cron';
+  }
+  if (normalized === 'steward_manual') {
+    return 'Operator console';
+  }
+  if (normalized === 'system') {
+    return 'System';
+  }
+  return value.trim();
+}
+
 function formatCronRunStatusLabel(value: string | null) {
   if (!value?.trim()) {
     return 'Unknown';
@@ -144,6 +161,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     loadingMoreFeedWorkerRuns,
     feedWorkerSchedulePolicy,
     feedWorkerScheduleAutomationStatus,
+    feedWorkerScheduleAutomationRunHistory,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
@@ -590,6 +608,55 @@ export function GovernanceActivationFeedAdaptersPanel({
                 ? ` • ${formatTruncatedGovernanceNote(feedWorkerScheduleAutomationStatus.latest_cron_run_details, 120)}`
                 : ''}
             </p>
+          ) : null}
+          {feedWorkerScheduleAutomationStatus?.latest_automation_run_started_at ? (
+            <p
+              data-build-key="governanceActivationFeedSchedulerLatestAutomationLedgerRun"
+              data-build-label="Latest recorded scheduler automation run from audit ledger"
+            >
+              <span className="font-medium text-foreground/80">Latest automation run (ledger):</span>{' '}
+              {formatCronRunStatusLabel(feedWorkerScheduleAutomationStatus.latest_automation_run_status)} —{' '}
+              {formatScheduleAutomationTriggerLabel(feedWorkerScheduleAutomationStatus.latest_automation_run_trigger_source)}
+              {' · '}
+              started {formatTimestamp(feedWorkerScheduleAutomationStatus.latest_automation_run_started_at)}
+              {feedWorkerScheduleAutomationStatus.latest_automation_run_finished_at
+                ? ` • finished ${formatTimestamp(feedWorkerScheduleAutomationStatus.latest_automation_run_finished_at)}`
+                : ''}
+              {feedWorkerScheduleAutomationStatus.latest_automation_run_message
+                ? ` • ${formatTruncatedGovernanceNote(feedWorkerScheduleAutomationStatus.latest_automation_run_message, 160)}`
+                : ''}
+            </p>
+          ) : null}
+          {feedWorkerScheduleAutomationRunHistory.length > 0 ? (
+            <div
+              className="mt-2 space-y-1 rounded-md border border-border/40 bg-muted/20 px-2 py-2"
+              data-build-key="governanceActivationFeedSchedulerAutomationRunHistory"
+              data-build-label="Recent scheduler automation run history"
+            >
+              <p className="text-xs font-semibold text-muted-foreground">Recent automation runs</p>
+              <ul className="max-h-40 space-y-1.5 overflow-y-auto text-xs text-muted-foreground">
+                {feedWorkerScheduleAutomationRunHistory.map((row) => (
+                  <li
+                    key={row.run_id}
+                    data-build-key={`governanceActivationFeedSchedulerAutomationRunRow:${row.run_id}`}
+                    data-build-label={`Automation run ${formatShortId(row.run_id) ?? row.run_id}`}
+                  >
+                    <span className="font-medium text-foreground/90">
+                      {formatTimestamp(row.run_started_at)}
+                    </span>
+                    {' · '}
+                    {formatCronRunStatusLabel(row.run_status)}
+                    {' · '}
+                    {formatScheduleAutomationTriggerLabel(row.trigger_source)}
+                    {row.force_reschedule_applied ? ' · force reschedule' : ''}
+                    {' · '}
+                    jobs {row.jobs_enqueued_count}, adapter issues {row.adapter_issue_count}, open pages{' '}
+                    {row.open_or_ack_page_count}
+                    {row.triggered_by_name ? ` · ${row.triggered_by_name}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           {feedSchedulerRunHealth ? (
             <Badge

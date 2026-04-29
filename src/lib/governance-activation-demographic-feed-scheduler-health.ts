@@ -9,6 +9,11 @@ export type ActivationFeedSchedulerAutomationStatusLike = {
   latest_cron_run_started_at: string | null;
   latest_cron_run_status: string | null;
   latest_scheduled_enqueue_at: string | null;
+  latest_automation_run_started_at?: string | null;
+  latest_automation_run_finished_at?: string | null;
+  latest_automation_run_status?: string | null;
+  latest_automation_run_message?: string | null;
+  latest_automation_run_trigger_source?: string | null;
 };
 
 /** Derive stale windows from the configured per-adapter sweep cadence (minutes). */

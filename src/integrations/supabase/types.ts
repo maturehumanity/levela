@@ -1039,6 +1039,62 @@ export type Database = {
           },
         ]
       }
+      activation_demographic_feed_worker_schedule_automation_runs: {
+        Row: {
+          adapter_issue_count: number
+          created_at: string
+          force_reschedule_applied: boolean
+          id: string
+          jobs_enqueued_count: number
+          metadata: Json
+          open_or_ack_page_count: number
+          run_finished_at: string | null
+          run_message: string | null
+          run_started_at: string
+          run_status: string
+          trigger_source: string
+          triggered_by: string | null
+        }
+        Insert: {
+          adapter_issue_count?: number
+          created_at?: string
+          force_reschedule_applied?: boolean
+          id?: string
+          jobs_enqueued_count?: number
+          metadata?: Json
+          open_or_ack_page_count?: number
+          run_finished_at?: string | null
+          run_message?: string | null
+          run_started_at?: string
+          run_status: string
+          trigger_source: string
+          triggered_by?: string | null
+        }
+        Update: {
+          adapter_issue_count?: number
+          created_at?: string
+          force_reschedule_applied?: boolean
+          id?: string
+          jobs_enqueued_count?: number
+          metadata?: Json
+          open_or_ack_page_count?: number
+          run_finished_at?: string | null
+          run_message?: string | null
+          run_started_at?: string
+          run_status?: string
+          trigger_source?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_worker_schedule_automation_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activation_demographic_feed_worker_schedule_policies: {
         Row: {
           claim_ttl_minutes: number
@@ -4570,6 +4626,23 @@ export type Database = {
           latest_run_at: string | null
         }[]
       }
+      activation_feed_worker_schedule_automation_run_history: {
+        Args: { p_requested_lookback_hours?: number; p_max_runs?: number }
+        Returns: {
+          run_id: string
+          triggered_by: string | null
+          triggered_by_name: string | null
+          trigger_source: string
+          force_reschedule_applied: boolean
+          run_started_at: string
+          run_finished_at: string | null
+          run_status: string
+          run_message: string | null
+          jobs_enqueued_count: number
+          adapter_issue_count: number
+          open_or_ack_page_count: number
+        }[]
+      }
       activation_demographic_feed_worker_schedule_automation_status: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4584,6 +4657,11 @@ export type Database = {
           latest_cron_run_finished_at: string | null
           latest_cron_run_status: string | null
           latest_cron_run_details: string | null
+          latest_automation_run_started_at: string | null
+          latest_automation_run_finished_at: string | null
+          latest_automation_run_status: string | null
+          latest_automation_run_message: string | null
+          latest_automation_run_trigger_source: string | null
         }[]
       }
       activation_scope_is_declared: {
@@ -4641,6 +4719,22 @@ export type Database = {
           target_alert_type?: Database["public"]["Enums"]["activation_demographic_feed_alert_type"] | null
         }
         Returns: number
+      }
+      run_activation_feed_worker_schedule_automation_check: {
+        Args: {
+          force_reschedule?: boolean
+          trigger_source?: string
+          run_message?: string | null
+          metadata?: Json
+        }
+        Returns: {
+          run_id: string
+          run_status: string
+          jobs_enqueued_count: number
+          adapter_issue_count: number
+          open_or_ack_page_count: number
+          evaluated_at: string
+        }[]
       }
       schedule_activation_demographic_feed_worker_jobs: {
         Args: { force_reschedule?: boolean }

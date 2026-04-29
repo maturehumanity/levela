@@ -13,6 +13,7 @@ import {
   ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS,
   isFeedDataAutoReloadThrottled,
   isMissingActivationDemographicFeedBackend,
+  isMissingActivationDemographicFeedScheduleRunHistoryRpc,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
   type ActivationDemographicFeedAdapterRow,
@@ -33,6 +34,9 @@ export type ActivationDemographicFeedWorkerSchedulePolicyRow =
 
 export type ActivationDemographicFeedWorkerScheduleAutomationStatusRow =
   Database['public']['Functions']['activation_demographic_feed_worker_schedule_automation_status']['Returns'][number];
+
+export type ActivationDemographicFeedWorkerScheduleAutomationRunHistoryRow =
+  Database['public']['Functions']['activation_feed_worker_schedule_automation_run_history']['Returns'][number];
 
 /** First page size for steward ingestion history (matches prior single-query limit). */
 const FEED_INGESTIONS_FIRST_PAGE = 120;
@@ -79,6 +83,8 @@ export function useGovernanceActivationDemographicFeeds() {
     useState<ActivationDemographicFeedWorkerSchedulePolicyRow | null>(null);
   const [feedWorkerScheduleAutomationStatus, setFeedWorkerScheduleAutomationStatus] =
     useState<ActivationDemographicFeedWorkerScheduleAutomationStatusRow | null>(null);
+  const [feedWorkerScheduleAutomationRunHistory, setFeedWorkerScheduleAutomationRunHistory] =
+    useState<ActivationDemographicFeedWorkerScheduleAutomationRunHistoryRow[]>([]);
   const lastFeedDataAutoReloadAtRef = useRef(Date.now());
   const loadFeedDataInFlightRef = useRef(false);
 
@@ -143,6 +149,7 @@ export function useGovernanceActivationDemographicFeeds() {
       workerRunsResponse,
       schedulePolicyResponse,
       scheduleAutomationStatusResponse,
+      scheduleAutomationRunHistoryResponse,
     ] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
@@ -193,6 +200,10 @@ export function useGovernanceActivationDemographicFeeds() {
         .eq('policy_key', 'default')
         .maybeSingle(),
       supabase.rpc('activation_demographic_feed_worker_schedule_automation_status'),
+      supabase.rpc('activation_feed_worker_schedule_automation_run_history', {
+        p_requested_lookback_hours: 336,
+        p_max_runs: 25,
+      }),
     ]);
 
     const sharedError = adapterResponse.error || ingestionResponse.error || permissionResponse.error;
@@ -323,6 +334,21 @@ export function useGovernanceActivationDemographicFeeds() {
     } else {
       const statusRows = scheduleAutomationStatusResponse.data ?? [];
       setFeedWorkerScheduleAutomationStatus(statusRows[0] ?? null);
+    }
+
+    if (scheduleAutomationRunHistoryResponse?.error) {
+      const rhError = scheduleAutomationRunHistoryResponse.error;
+      if (isMissingActivationDemographicFeedScheduleRunHistoryRpc(rhError)) {
+        setFeedWorkerScheduleAutomationRunHistory([]);
+      } else if (isMissingActivationDemographicFeedWorkerBackend(rhError)) {
+        setFeedWorkerBackendUnavailable(true);
+        setFeedWorkerScheduleAutomationRunHistory([]);
+      } else {
+        console.warn('Could not load activation feed worker schedule automation run history; continuing without ledger rows:', rhError);
+        setFeedWorkerScheduleAutomationRunHistory([]);
+      }
+    } else {
+      setFeedWorkerScheduleAutomationRunHistory(scheduleAutomationRunHistoryResponse.data ?? []);
     }
 
     setLoadingFeedData(false);
@@ -961,6 +987,7 @@ export function useGovernanceActivationDemographicFeeds() {
     loadingMoreFeedWorkerRuns,
     feedWorkerSchedulePolicy,
     feedWorkerScheduleAutomationStatus,
+    feedWorkerScheduleAutomationRunHistory,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,

@@ -70,6 +70,20 @@ export function isMissingActivationDemographicFeedSchedulerStatusRpc(
   );
 }
 
+/** PostgREST “function not found” for optional schedule automation run history RPC (older DB). */
+export function isMissingActivationDemographicFeedScheduleRunHistoryRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) {
+    return false;
+  }
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('activation_feed_worker_schedule_automation_run_history')
+  );
+}
+
 export function isMissingActivationDemographicFeedBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
@@ -84,6 +98,9 @@ export function isMissingActivationDemographicFeedBackend(error: { code?: string
 export function isMissingActivationDemographicFeedWorkerBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   if (isMissingActivationDemographicFeedSchedulerStatusRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedScheduleRunHistoryRpc(error)) {
     return false;
   }
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
