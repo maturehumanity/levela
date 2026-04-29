@@ -169,6 +169,7 @@ Step 5 is considered started when:
 ## 8b. Related roadmap §14.1 (signed demographic feeds)
 
 - **Activation feed worker schedule tick escalation** — `schedule_activation_demographic_feed_worker_jobs_impl` ends each enqueue pass with `maybe_escalate_activation_feed_worker_exec_page` (payload `source: schedule_activation_demographic_feed_worker_jobs_impl`, default 24h freshness window) so **pg_cron** and steward-driven scheduling refresh `activation_demographic_feed_worker_escalation` external execution paging when alert summaries remain red. Superuser database sessions may run that escalation path and open that page key only (narrow automation carve-out; `20260423100000_…sql`).
+- **Activation feed worker escalation auto-resolve** — When the alert summary has no qualifying issues, `maybe_escalate_activation_feed_worker_exec_page` resolves an open or acknowledged `activation_demographic_feed_worker_escalation` page for the batch via `resolve_governance_public_audit_external_execution_page`; resolve failures are non-fatal `NOTICE`s so enqueue passes still complete (`20260502120000_…sql`).
 
 ## 9. Approximate decentralization progress (indicative)
 
