@@ -7,7 +7,10 @@ import {
   isMissingActivationDemographicFeedScheduleRunHistoryRpc,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
+  isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc,
   isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc,
+  isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc,
 } from '@/lib/governance-activation-demographic-feeds';
 
 describe('isFeedDataAutoReloadThrottled', () => {
@@ -160,6 +163,39 @@ describe('isMissingActivationDemographicFeedWorkerBackend + scheduler RPC', () =
       details: null,
     };
     expect(isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+
+  it('does not treat missing feed worker escalation page board RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.activation_demographic_feed_worker_escalation_page_board',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+
+  it('does not treat missing feed worker escalation acknowledge RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.acknowledge_activation_demographic_feed_worker_escalation_page',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+
+  it('does not treat missing feed worker escalation resolve RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.resolve_activation_demographic_feed_worker_escalation_page',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc(error)).toBe(true);
     expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
   });
 });

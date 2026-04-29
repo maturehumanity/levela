@@ -293,6 +293,24 @@ describe('governance-public-audit-automation helpers', () => {
     });
   });
 
+  it('parses external execution page board rows when page_message is empty', () => {
+    const pages = readGovernancePublicAuditExternalExecutionPageBoardRows([
+      {
+        page_id: 'page-empty-msg',
+        batch_id: 'batch-1',
+        page_key: 'activation_demographic_feed_worker_escalation',
+        severity: 'warning',
+        page_status: 'open',
+        page_message: '',
+        oncall_channel: 'public_audit_ops',
+        opened_at: '2026-04-21T03:00:00.000Z',
+        resolved_at: null,
+      },
+    ]);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]?.pageMessage).toBe('');
+  });
+
   it('returns empty lists for non-array automation board payloads', () => {
     expect(readGovernancePublicAuditExternalExecutionPageBoardRows(null)).toEqual([]);
     expect(readGovernancePublicAuditAnchorExecutionJobBoardRows({})).toEqual([]);

@@ -163,6 +163,12 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedWorkerScheduleAutomationStatus,
     feedWorkerScheduleAutomationRunHistory,
     feedWorkerEscalationPageHistory,
+    feedWorkerEscalationBoardPages,
+    feedWorkerEscalationOpenOrAckPageCount,
+    acknowledgingFeedWorkerEscalationPageId,
+    resolvingFeedWorkerEscalationPageId,
+    acknowledgeFeedWorkerEscalationPage,
+    resolveFeedWorkerEscalationPage,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
@@ -1106,7 +1112,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             data-build-key="governanceActivationFeedOnCallEscalationGuidance"
             data-build-label="Feed worker on-call escalation guidance"
           >
-            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Resolve open pages under Public audit, then Immutable anchoring automation, using the on-call page board. Use copy below if you need the exact page identifier when searching the board.
+            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). You can acknowledge or resolve open pages below without leaving this console; verifier stewards can still use Public audit → Immutable anchoring automation. Use copy below if you need the exact page identifier when searching the global board.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
@@ -1135,6 +1141,81 @@ export function GovernanceActivationFeedAdaptersPanel({
               <Copy className="h-4 w-4" />
               Copy on-call page key
             </Button>
+          </div>
+          <div
+            className="mt-3 rounded-md border border-border/40 bg-background/50 px-2 py-2"
+            data-build-key="governanceActivationFeedEscalationBoardActions"
+            data-build-label="Feed worker escalation pages for current batch"
+          >
+            <p className="text-[11px] font-semibold text-foreground/90">Current batch on-call pages</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Open or acknowledged:
+              {' '}
+              <span className="font-semibold text-foreground/90">{feedWorkerEscalationOpenOrAckPageCount}</span>
+            </p>
+            {feedWorkerEscalationBoardPages.filter((p) => p.pageStatus === 'open' || p.pageStatus === 'acknowledged').length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {feedWorkerEscalationBoardPages
+                  .filter((page) => page.pageStatus === 'open' || page.pageStatus === 'acknowledged')
+                  .map((page) => (
+                    <div
+                      key={page.pageId}
+                      className="rounded border border-border/50 bg-background/60 px-2 py-2 text-[11px]"
+                      data-build-key={`governanceActivationFeedEscalationBoardRow:${page.pageId}`}
+                      data-build-label={`Feed worker batch escalation ${formatShortId(page.pageId) ?? page.pageId}`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-foreground/90">
+                          {page.pageStatus.toUpperCase()}
+                          {' · '}
+                          {page.severity.toUpperCase()}
+                        </p>
+                        <p className="text-muted-foreground">{formatTimestamp(page.openedAt)}</p>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">{formatTruncatedGovernanceNote(page.pageMessage)}</p>
+                      <p className="mt-1 text-muted-foreground">Channel: {page.oncallChannel}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          disabled={acknowledgingFeedWorkerEscalationPageId === page.pageId}
+                          aria-busy={acknowledgingFeedWorkerEscalationPageId === page.pageId}
+                          onClick={() => void acknowledgeFeedWorkerEscalationPage(page.pageId)}
+                          data-build-key={`governanceActivationFeedAckEscalation:${page.pageId}`}
+                          data-build-label="Acknowledge feed worker escalation page"
+                        >
+                          {acknowledgingFeedWorkerEscalationPageId === page.pageId ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                          Acknowledge page
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          disabled={resolvingFeedWorkerEscalationPageId === page.pageId}
+                          aria-busy={resolvingFeedWorkerEscalationPageId === page.pageId}
+                          onClick={() => void resolveFeedWorkerEscalationPage(page.pageId)}
+                          data-build-key={`governanceActivationFeedResolveEscalation:${page.pageId}`}
+                          data-build-label="Resolve feed worker escalation page"
+                        >
+                          {resolvingFeedWorkerEscalationPageId === page.pageId ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                          Resolve page
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                No open or acknowledged escalation pages on the current batch.
+              </p>
+            )}
           </div>
           <div
             className="mt-3 rounded-md border border-border/40 bg-muted/15 px-2 py-2"

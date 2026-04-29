@@ -4642,6 +4642,28 @@ export type Database = {
           updated_at: string | null
         }[]
       }
+      activation_demographic_feed_worker_escalation_page_board: {
+        Args: { requested_batch_id?: string | null; max_pages?: number }
+        Returns: {
+          page_id: string
+          batch_id: string
+          page_key: string
+          severity: string
+          page_status: string
+          page_message: string
+          oncall_channel: string
+          opened_at: string
+          resolved_at: string | null
+        }[]
+      }
+      acknowledge_activation_demographic_feed_worker_escalation_page: {
+        Args: { acknowledgement_notes?: string | null; target_page_id: string }
+        Returns: string
+      }
+      resolve_activation_demographic_feed_worker_escalation_page: {
+        Args: { resolution_notes?: string | null; target_page_id: string }
+        Returns: string
+      }
       activation_feed_worker_schedule_automation_run_history: {
         Args: { p_requested_lookback_hours?: number; p_max_runs?: number }
         Returns: {

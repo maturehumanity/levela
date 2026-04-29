@@ -340,7 +340,7 @@ export function readGovernancePublicAuditExternalExecutionPageBoardRows(rows: un
       openedAt: asString(entry.opened_at),
       resolvedAt: asNullableString(entry.resolved_at),
     }))
-    .filter((entry) => entry.pageId.length > 0 && entry.pageKey.length > 0 && entry.pageMessage.length > 0);
+    .filter((entry) => entry.pageId.length > 0 && entry.pageKey.length > 0);
 }
 
 export function countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(

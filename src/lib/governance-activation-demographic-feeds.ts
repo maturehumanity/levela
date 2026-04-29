@@ -98,6 +98,42 @@ export function isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc
   );
 }
 
+/** PostgREST “function not found” for optional feed-worker escalation page board RPC (older DB). */
+export function isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) {
+    return false;
+  }
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('activation_demographic_feed_worker_escalation_page_board')
+  );
+}
+
+export function isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('acknowledge_activation_demographic_feed_worker_escalation_page')
+  );
+}
+
+export function isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('resolve_activation_demographic_feed_worker_escalation_page')
+  );
+}
+
 export function isMissingActivationDemographicFeedBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
@@ -118,6 +154,15 @@ export function isMissingActivationDemographicFeedWorkerBackend(error: { code?: 
     return false;
   }
   if (isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc(error)) {
     return false;
   }
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();

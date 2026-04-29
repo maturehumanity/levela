@@ -16,7 +16,10 @@ import {
   isMissingActivationDemographicFeedScheduleRunHistoryRpc,
   isMissingActivationDemographicFeedSchedulerStatusRpc,
   isMissingActivationDemographicFeedWorkerBackend,
+  isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc,
   isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc,
+  isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc,
   type ActivationDemographicFeedAdapterRow,
   type ActivationDemographicFeedAlertType,
   type ActivationDemographicFeedIngestionRow,
@@ -24,6 +27,12 @@ import {
   type ActivationDemographicFeedWorkerOutboxRow,
   type ActivationDemographicFeedWorkerRunRow,
 } from '@/lib/governance-activation-demographic-feeds';
+import {
+  GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
+  countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
+  readGovernancePublicAuditExternalExecutionPageBoardRows,
+  type GovernancePublicAuditExternalExecutionPageBoardRow,
+} from '@/lib/governance-public-audit-automation';
 import { readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows } from '@/lib/governance-public-audit-verifier-federation-distribution';
 import type { GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow } from '@/lib/governance-public-audit-verifier-federation.types';
 import {
@@ -93,6 +102,10 @@ export function useGovernanceActivationDemographicFeeds() {
     useState<ActivationDemographicFeedWorkerScheduleAutomationRunHistoryRow[]>([]);
   const [feedWorkerEscalationPageHistory, setFeedWorkerEscalationPageHistory] =
     useState<ActivationDemographicFeedWorkerEscalationHistoryRow[]>([]);
+  const [feedWorkerEscalationBoardPages, setFeedWorkerEscalationBoardPages] =
+    useState<GovernancePublicAuditExternalExecutionPageBoardRow[]>([]);
+  const [acknowledgingFeedWorkerEscalationPageId, setAcknowledgingFeedWorkerEscalationPageId] = useState<string | null>(null);
+  const [resolvingFeedWorkerEscalationPageId, setResolvingFeedWorkerEscalationPageId] = useState<string | null>(null);
   const lastFeedDataAutoReloadAtRef = useRef(Date.now());
   const loadFeedDataInFlightRef = useRef(false);
 
@@ -103,6 +116,14 @@ export function useGovernanceActivationDemographicFeeds() {
       + alert.connectivity_failure_count
       + alert.payload_failure_count, 0),
     [feedWorkerAlerts],
+  );
+
+  const feedWorkerEscalationOpenOrAckPageCount = useMemo(
+    () => countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(
+      feedWorkerEscalationBoardPages,
+      'activation_demographic_feed_worker_escalation',
+    ),
+    [feedWorkerEscalationBoardPages],
   );
 
   const recordFeedWorkerRun = useCallback(async (draft: RecordFeedWorkerRunDraft) => {
@@ -159,6 +180,7 @@ export function useGovernanceActivationDemographicFeeds() {
       scheduleAutomationStatusResponse,
       scheduleAutomationRunHistoryResponse,
       feedWorkerEscalationPageHistoryResponse,
+      feedWorkerEscalationPageBoardResponse,
     ] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
@@ -216,6 +238,10 @@ export function useGovernanceActivationDemographicFeeds() {
       supabase.rpc('activation_demographic_feed_worker_escalation_page_history', {
         requested_lookback_hours: 336,
         max_pages: 120,
+      }),
+      supabase.rpc('activation_demographic_feed_worker_escalation_page_board', {
+        requested_batch_id: null,
+        max_pages: GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
       }),
     ]);
 
@@ -380,6 +406,23 @@ export function useGovernanceActivationDemographicFeeds() {
         readGovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRows(
           feedWorkerEscalationPageHistoryResponse.data,
         ),
+      );
+    }
+
+    if (feedWorkerEscalationPageBoardResponse?.error) {
+      const boardError = feedWorkerEscalationPageBoardResponse.error;
+      if (isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc(boardError)) {
+        setFeedWorkerEscalationBoardPages([]);
+      } else if (isMissingActivationDemographicFeedWorkerBackend(boardError)) {
+        setFeedWorkerBackendUnavailable(true);
+        setFeedWorkerEscalationBoardPages([]);
+      } else {
+        console.warn('Could not load activation feed worker escalation page board; continuing without open pages:', boardError);
+        setFeedWorkerEscalationBoardPages([]);
+      }
+    } else {
+      setFeedWorkerEscalationBoardPages(
+        readGovernancePublicAuditExternalExecutionPageBoardRows(feedWorkerEscalationPageBoardResponse.data),
       );
     }
 
@@ -959,6 +1002,60 @@ export function useGovernanceActivationDemographicFeeds() {
     await loadFeedData();
   }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
 
+  const acknowledgeFeedWorkerEscalationPage = useCallback(async (pageId: string) => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable || !pageId) return;
+    setAcknowledgingFeedWorkerEscalationPageId(pageId);
+    const notes = typeof window !== 'undefined'
+      ? window.prompt('Optional acknowledgement notes for this feed worker escalation page:', '')
+      : '';
+    const { error } = await supabase.rpc('acknowledge_activation_demographic_feed_worker_escalation_page', {
+      target_page_id: pageId,
+      acknowledgement_notes: notes?.trim() || null,
+    });
+    if (error) {
+      if (isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc(error)) {
+        toast.error('Acknowledge action is not available on this database revision yet.');
+      } else if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to acknowledge activation feed worker escalation page:', error);
+        toast.error('Could not acknowledge feed worker escalation page.');
+      }
+      setAcknowledgingFeedWorkerEscalationPageId(null);
+      return;
+    }
+    toast.success('Feed worker escalation page acknowledged.');
+    setAcknowledgingFeedWorkerEscalationPageId(null);
+    await loadFeedData();
+  }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
+
+  const resolveFeedWorkerEscalationPage = useCallback(async (pageId: string) => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable || !pageId) return;
+    setResolvingFeedWorkerEscalationPageId(pageId);
+    const notes = typeof window !== 'undefined'
+      ? window.prompt('Optional resolution notes for this feed worker escalation page:', '')
+      : '';
+    const { error } = await supabase.rpc('resolve_activation_demographic_feed_worker_escalation_page', {
+      target_page_id: pageId,
+      resolution_notes: notes?.trim() || null,
+    });
+    if (error) {
+      if (isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc(error)) {
+        toast.error('Resolve action is not available on this database revision yet.');
+      } else if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to resolve activation feed worker escalation page:', error);
+        toast.error('Could not resolve feed worker escalation page.');
+      }
+      setResolvingFeedWorkerEscalationPageId(null);
+      return;
+    }
+    toast.success('Feed worker escalation page resolved.');
+    setResolvingFeedWorkerEscalationPageId(null);
+    await loadFeedData();
+  }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
+
   const resolveFeedAlert = useCallback(async (adapterId: string, alertType: ActivationDemographicFeedAlertType | null = null) => {
     if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
 
@@ -1021,6 +1118,12 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerScheduleAutomationStatus,
     feedWorkerScheduleAutomationRunHistory,
     feedWorkerEscalationPageHistory,
+    feedWorkerEscalationBoardPages,
+    feedWorkerEscalationOpenOrAckPageCount,
+    acknowledgingFeedWorkerEscalationPageId,
+    resolvingFeedWorkerEscalationPageId,
+    acknowledgeFeedWorkerEscalationPage,
+    resolveFeedWorkerEscalationPage,
     loadFeedData,
     loadMoreFeedIngestions,
     loadMoreFeedWorkerRuns,
