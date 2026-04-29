@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS } from '@/lib/governance-activation-demographic-feeds';
+import { GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY } from '@/lib/governance-public-audit-automation';
 import {
   formatActivationDemographicFeedOutboxClosedStatusLabel,
   formatActivationDemographicFeedScopeLabel,
@@ -112,13 +113,12 @@ function countFeedWorkerAlerts(alert: {
   );
 }
 
-const ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY = 'activation_demographic_feed_worker_escalation';
 const FEED_WORKER_ALERTS_FIRST_PAGE = 8;
 const FEED_WORKER_ALERTS_APPEND_PAGE = 8;
 
 async function copyActivationFeedWorkerEscalationPageKey() {
   try {
-    await navigator.clipboard.writeText(ACTIVATION_FEED_WORKER_ESCALATION_PAGE_KEY);
+    await navigator.clipboard.writeText(GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY);
     toast.success('On-call page key copied to the clipboard.');
   } catch {
     toast.error('Could not copy to the clipboard.');

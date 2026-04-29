@@ -28,6 +28,7 @@ import {
   type ActivationDemographicFeedWorkerRunRow,
 } from '@/lib/governance-activation-demographic-feeds';
 import {
+  GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY,
   GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
   countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
   readGovernancePublicAuditExternalExecutionPageBoardRows,
@@ -121,7 +122,7 @@ export function useGovernanceActivationDemographicFeeds() {
   const feedWorkerEscalationOpenOrAckPageCount = useMemo(
     () => countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(
       feedWorkerEscalationBoardPages,
-      'activation_demographic_feed_worker_escalation',
+      GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY,
     ),
     [feedWorkerEscalationBoardPages],
   );

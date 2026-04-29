@@ -92,6 +92,7 @@ import {
 } from '@/lib/governance-implementation';
 import {
   countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
+  GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY,
   GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
   isMissingPublicAuditAutomationBackend,
   readGovernancePublicAuditExternalExecutionPageBoardRows,
@@ -947,7 +948,10 @@ export default function Governance() {
         countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'verifier_federation_distribution'),
       );
       setActivationDemographicFeedEscalationOpenPageCount(
-        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'activation_demographic_feed'),
+        countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(
+          executionPages,
+          GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY,
+        ),
       );
       setGuardianRelayEscalationOpenPageCount(
         countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(executionPages, 'guardian_relay'),

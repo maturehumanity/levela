@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY,
   countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring,
   formatGovernancePublicAuditQueueJobStatusLabel,
   isMissingPublicAuditAutomationBackend,
@@ -467,7 +468,7 @@ describe('governance-public-audit-automation helpers', () => {
     expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'guardian_relay')).toBe(1);
   });
 
-  it('counts open activation demographic feed worker external execution pages by substring', () => {
+  it('counts open activation demographic feed worker external execution pages by exact page key', () => {
     const pages = [
       {
         pageId: 'a1',
@@ -491,8 +492,25 @@ describe('governance-public-audit-automation helpers', () => {
         openedAt: '2026-04-21T01:00:00.000Z',
         resolvedAt: '2026-04-21T02:00:00.000Z',
       },
+      {
+        pageId: 'a3',
+        batchId: 'b1',
+        pageKey: 'activation_demographic_feed_hypothetical_future_page',
+        severity: 'warning' as const,
+        pageStatus: 'open' as const,
+        pageMessage: 'Other feed-related paging',
+        oncallChannel: 'ops',
+        openedAt: '2026-04-21T03:00:00.000Z',
+        resolvedAt: null,
+      },
     ];
-    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'activation_demographic_feed')).toBe(1);
+    expect(
+      countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(
+        pages,
+        GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY,
+      ),
+    ).toBe(1);
+    expect(countOpenGovernancePublicAuditExternalExecutionPagesForPageKeySubstring(pages, 'activation_demographic_feed')).toBe(2);
   });
 
   it('formats queue job status labels for stewards', () => {

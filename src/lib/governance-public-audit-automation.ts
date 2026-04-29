@@ -8,6 +8,10 @@ export type GovernancePublicAuditAnchorExecutionJobStatus = 'pending' | 'complet
 /** Page size for `governance_public_audit_external_execution_page_board` (automation, federation steward load, Governance hub). */
 export const GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES = 120;
 
+/** `page_key` for signed demographic feed worker on-call escalation (`governance_public_audit_external_execution_pages`). */
+export const GOVERNANCE_ACTIVATION_DEMOGRAPHIC_FEED_WORKER_ESCALATION_PAGE_KEY =
+  'activation_demographic_feed_worker_escalation';
+
 export interface GovernancePublicAuditOperationsSlaSummary {
   batchId: string;
   pendingSlaHours: number;
