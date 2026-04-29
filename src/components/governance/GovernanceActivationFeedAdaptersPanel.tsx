@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -165,6 +166,9 @@ export function GovernanceActivationFeedAdaptersPanel({
     feedWorkerEscalationPageHistory,
     feedWorkerEscalationBoardPages,
     feedWorkerEscalationOpenOrAckPageCount,
+    feedWorkerEscalationPolicySummary,
+    feedWorkerEscalationPolicyEventRows,
+    savingFeedWorkerEscalationPolicy,
     acknowledgingFeedWorkerEscalationPageId,
     resolvingFeedWorkerEscalationPageId,
     acknowledgeFeedWorkerEscalationPage,
@@ -181,6 +185,7 @@ export function GovernanceActivationFeedAdaptersPanel({
     releaseStaleFeedWorkerClaims,
     runFeedWorkerSweep,
     escalateFeedWorkerAlertsToPublicExecution,
+    saveFeedWorkerEscalationPolicy,
     resolveFeedAlert,
   } = useGovernanceActivationDemographicFeeds();
 
@@ -205,6 +210,27 @@ export function GovernanceActivationFeedAdaptersPanel({
   const [forceRescheduleSweepOpen, setForceRescheduleSweepOpen] = useState(false);
   const [recentClosedSweepJobsOpen, setRecentClosedSweepJobsOpen] = useState(false);
   const [visibleFeedWorkerAlertsCount, setVisibleFeedWorkerAlertsCount] = useState(FEED_WORKER_ALERTS_FIRST_PAGE);
+  const [feedEscPolicyEventsOpen, setFeedEscPolicyEventsOpen] = useState(false);
+  const [feedEscPolicyDraft, setFeedEscPolicyDraft] = useState({
+    policyName: 'Default activation feed worker escalation policy',
+    escalationEnabled: true,
+    freshnessHours: 24,
+    minimumAdapterIssuesForEscalation: 1,
+    escalationSeverity: 'critical' as 'warning' | 'critical',
+  });
+
+  useEffect(() => {
+    if (!feedWorkerEscalationPolicySummary) {
+      return;
+    }
+    setFeedEscPolicyDraft({
+      policyName: feedWorkerEscalationPolicySummary.policy_name,
+      escalationEnabled: feedWorkerEscalationPolicySummary.escalation_enabled,
+      freshnessHours: feedWorkerEscalationPolicySummary.freshness_hours,
+      minimumAdapterIssuesForEscalation: feedWorkerEscalationPolicySummary.minimum_adapter_issues_for_escalation,
+      escalationSeverity: feedWorkerEscalationPolicySummary.escalation_severity === 'warning' ? 'warning' : 'critical',
+    });
+  }, [feedWorkerEscalationPolicySummary]);
 
   const feedWorkerEscalationHistoryAnalytics = useMemo(() => {
     const nowMs = Date.now();
@@ -1131,6 +1157,187 @@ export function GovernanceActivationFeedAdaptersPanel({
       {canManageFeeds && !feedWorkerBackendUnavailable ? (
         <div
           className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground"
+          data-build-key="governanceActivationFeedEscalationPolicyCard"
+          data-build-label="Feed worker escalation policy controls"
+        >
+          <p className="font-medium text-foreground/80">On-call escalation policy</p>
+          <p className="mt-1 text-[11px] leading-relaxed">
+            Cron and queue scheduling evaluate the same policy for freshness hours, minimum qualifying adapter issues, severity, and whether autonomous escalation is enabled. Steward manual refresh below can still open or refresh the on-call page when you need visibility even if automation is paused.
+          </p>
+          {!feedWorkerEscalationPolicySummary && !loadingFeedData ? (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Policy controls are not available on this database revision yet (missing RPCs or insufficient permissions).
+            </p>
+          ) : null}
+          {feedWorkerEscalationPolicySummary ? (
+            <div className="mt-3 space-y-3 text-[11px] text-foreground/90">
+              <div className="space-y-1">
+                <Label htmlFor="feed-esc-policy-name" className="text-[11px] text-muted-foreground">
+                  Policy label
+                </Label>
+                <Input
+                  id="feed-esc-policy-name"
+                  value={feedEscPolicyDraft.policyName}
+                  onChange={(e) => setFeedEscPolicyDraft((d) => ({ ...d, policyName: e.target.value }))}
+                  className="h-8 text-xs"
+                  data-build-key="governanceActivationFeedEscalationPolicyNameInput"
+                  data-build-label="Feed worker escalation policy name"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-background/50 px-2 py-2">
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-foreground/90">Automatic escalation</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    When off, scheduled enqueue passes skip opening pages unless a steward forces a refresh.
+                  </p>
+                </div>
+                <Switch
+                  checked={feedEscPolicyDraft.escalationEnabled}
+                  onCheckedChange={(checked) => setFeedEscPolicyDraft((d) => ({ ...d, escalationEnabled: Boolean(checked) }))}
+                  aria-label="Toggle automatic feed worker on-call escalation"
+                  data-build-key="governanceActivationFeedEscalationPolicyEnabledSwitch"
+                  data-build-label="Toggle automatic feed worker escalation"
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="feed-esc-freshness" className="text-[11px] text-muted-foreground">
+                    Freshness window (hours)
+                  </Label>
+                  <Input
+                    id="feed-esc-freshness"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={feedEscPolicyDraft.freshnessHours}
+                    onChange={(e) => {
+                      const next = Number.parseInt(e.target.value, 10);
+                      setFeedEscPolicyDraft((d) => ({
+                        ...d,
+                        freshnessHours: Number.isFinite(next) ? Math.max(1, next) : d.freshnessHours,
+                      }));
+                    }}
+                    className="h-8 text-xs"
+                    data-build-key="governanceActivationFeedEscalationPolicyFreshnessInput"
+                    data-build-label="Feed worker escalation policy freshness hours"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="feed-esc-min-issues" className="text-[11px] text-muted-foreground">
+                    Minimum adapter issues
+                  </Label>
+                  <Input
+                    id="feed-esc-min-issues"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={feedEscPolicyDraft.minimumAdapterIssuesForEscalation}
+                    onChange={(e) => {
+                      const next = Number.parseInt(e.target.value, 10);
+                      setFeedEscPolicyDraft((d) => ({
+                        ...d,
+                        minimumAdapterIssuesForEscalation: Number.isFinite(next) ? Math.max(1, next) : d.minimumAdapterIssuesForEscalation,
+                      }));
+                    }}
+                    className="h-8 text-xs"
+                    data-build-key="governanceActivationFeedEscalationPolicyMinIssuesInput"
+                    data-build-label="Feed worker escalation policy minimum adapter issues"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">Page severity</Label>
+                <Select
+                  value={feedEscPolicyDraft.escalationSeverity}
+                  onValueChange={(value: 'warning' | 'critical') => setFeedEscPolicyDraft((d) => ({ ...d, escalationSeverity: value }))}
+                >
+                  <SelectTrigger
+                    className="h-8 text-xs"
+                    data-build-key="governanceActivationFeedEscalationPolicySeveritySelect"
+                    data-build-label="Feed worker escalation policy severity"
+                  >
+                    <SelectValue placeholder="Severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="warning">Warning</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 gap-2 text-xs"
+                  disabled={savingFeedWorkerEscalationPolicy}
+                  aria-busy={savingFeedWorkerEscalationPolicy}
+                  onClick={() => void saveFeedWorkerEscalationPolicy({
+                    policyName: feedEscPolicyDraft.policyName,
+                    escalationEnabled: feedEscPolicyDraft.escalationEnabled,
+                    freshnessHours: feedEscPolicyDraft.freshnessHours,
+                    minimumAdapterIssuesForEscalation: feedEscPolicyDraft.minimumAdapterIssuesForEscalation,
+                    escalationSeverity: feedEscPolicyDraft.escalationSeverity,
+                  })}
+                  data-build-key="governanceActivationFeedEscalationPolicySave"
+                  data-build-label="Save feed worker escalation policy"
+                >
+                  {savingFeedWorkerEscalationPolicy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  Save policy
+                </Button>
+                {feedWorkerEscalationPolicySummary.updated_at ? (
+                  <span className="text-[10px] text-muted-foreground">
+                    Last updated {formatTimestamp(feedWorkerEscalationPolicySummary.updated_at)}
+                    {feedWorkerEscalationPolicySummary.updated_by_name
+                      ? ` · ${feedWorkerEscalationPolicySummary.updated_by_name}`
+                      : ''}
+                  </span>
+                ) : null}
+              </div>
+              {feedWorkerEscalationPolicyEventRows.length > 0 ? (
+                <Collapsible open={feedEscPolicyEventsOpen} onOpenChange={setFeedEscPolicyEventsOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
+                      data-build-key="governanceActivationFeedEscalationPolicyEventsToggle"
+                      data-build-label="Toggle feed worker escalation policy event history"
+                    >
+                      {feedEscPolicyEventsOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                      Recent policy changes ({feedWorkerEscalationPolicyEventRows.length})
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 space-y-2 rounded-md border border-border/40 bg-background/50 p-2">
+                    {feedWorkerEscalationPolicyEventRows.slice(0, 20).map((evt) => (
+                      <div
+                        key={evt.event_id}
+                        className="border-b border-border/30 pb-2 last:border-b-0 last:pb-0"
+                        data-build-key={`governanceActivationFeedEscalationPolicyEvent:${evt.event_id}`}
+                        data-build-label="Feed worker escalation policy audit event"
+                      >
+                        <p className="font-medium text-foreground/90">
+                          {evt.event_type}
+                          {evt.actor_name ? ` · ${evt.actor_name}` : ''}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          {evt.created_at ? formatTimestamp(evt.created_at) : 'Unknown time'}
+                        </p>
+                        <p className="mt-1 text-[11px] text-foreground/85">{evt.event_message}</p>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {canManageFeeds && !feedWorkerBackendUnavailable ? (
+        <div
+          className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs text-muted-foreground"
           data-build-key="governanceActivationFeedOnCallEscalationCard"
           data-build-label="Feed worker on-call escalation"
         >
@@ -1138,7 +1345,7 @@ export function GovernanceActivationFeedAdaptersPanel({
             data-build-key="governanceActivationFeedOnCallEscalationGuidance"
             data-build-label="Feed worker on-call escalation guidance"
           >
-            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). You can acknowledge or resolve open pages below without leaving this console; verifier stewards can still use Public audit → Immutable anchoring automation. Use copy below if you need the exact page identifier when searching the global board.
+            If adapters stay unhealthy, you can open or refresh the public audit on-call page for feed workers (same flow as queue and cron ticks). Steward refresh uses the configured freshness window and bypasses the minimum-issue gate so operators can page even when only a single adapter is red. You can acknowledge or resolve open pages below without leaving this console; verifier stewards can still use Public audit → Immutable anchoring automation. Use copy below if you need the exact page identifier when searching the global board.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button

@@ -134,6 +134,42 @@ export function isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc
   );
 }
 
+/** PostgREST “function not found” for optional feed-worker → public audit escalation policy summary RPC (older DB). */
+export function isMissingActivationDemographicFeedWorkerEscalationPolicySummaryRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('activation_demographic_feed_worker_escalation_policy_summary')
+  );
+}
+
+/** PostgREST “function not found” for optional feed-worker escalation policy update RPC (older DB). */
+export function isMissingActivationDemographicFeedWorkerEscalationPolicySetRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('set_activation_demographic_feed_worker_escalation_policy')
+  );
+}
+
+/** PostgREST “function not found” for optional feed-worker escalation policy event history RPC (older DB). */
+export function isMissingActivationDemographicFeedWorkerEscalationPolicyEventHistoryRpc(
+  error: { code?: string | null; message?: string | null; details?: string | null } | null,
+) {
+  if (!error) return false;
+  const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return (
+    error.code === 'PGRST202'
+    && message.includes('act_feed_worker_esc_pol_evt_hist')
+  );
+}
+
 export function isMissingActivationDemographicFeedBackend(error: { code?: string | null; message?: string | null; details?: string | null } | null) {
   if (!error) return false;
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
@@ -163,6 +199,15 @@ export function isMissingActivationDemographicFeedWorkerBackend(error: { code?: 
     return false;
   }
   if (isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationPolicySummaryRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationPolicySetRpc(error)) {
+    return false;
+  }
+  if (isMissingActivationDemographicFeedWorkerEscalationPolicyEventHistoryRpc(error)) {
     return false;
   }
   const message = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();

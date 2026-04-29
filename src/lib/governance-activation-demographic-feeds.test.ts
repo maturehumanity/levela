@@ -10,6 +10,9 @@ import {
   isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc,
   isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc,
   isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPolicyEventHistoryRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPolicySetRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPolicySummaryRpc,
   isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc,
 } from '@/lib/governance-activation-demographic-feeds';
 
@@ -196,6 +199,38 @@ describe('isMissingActivationDemographicFeedWorkerBackend + scheduler RPC', () =
       details: null,
     };
     expect(isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+
+  it('does not treat missing feed worker escalation policy summary RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.activation_demographic_feed_worker_escalation_policy_summary',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationPolicySummaryRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+
+  it('does not treat missing feed worker escalation policy set RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.set_activation_demographic_feed_worker_escalation_policy',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationPolicySetRpc(error)).toBe(true);
+    expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
+  });
+
+  it('does not treat missing feed worker escalation policy event history RPC alone as missing the whole worker backend', () => {
+    const error = {
+      code: 'PGRST202',
+      message: 'Could not find the function public.act_feed_worker_esc_pol_evt_hist',
+      details: null,
+    };
+    expect(isMissingActivationDemographicFeedWorkerEscalationPolicyEventHistoryRpc(error)).toBe(true);
     expect(isMissingActivationDemographicFeedWorkerBackend(error)).toBe(false);
   });
 });

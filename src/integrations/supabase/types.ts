@@ -1119,6 +1119,97 @@ export type Database = {
         }
         Relationships: []
       }
+      activation_demographic_feed_worker_escalation_policies: {
+        Row: {
+          created_at: string
+          escalation_enabled: boolean
+          escalation_severity: string
+          freshness_hours: number
+          id: string
+          metadata: Json
+          minimum_adapter_issues_for_escalation: number
+          policy_key: string
+          policy_name: string
+          policy_schema_version: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          escalation_enabled?: boolean
+          escalation_severity?: string
+          freshness_hours?: number
+          id?: string
+          metadata?: Json
+          minimum_adapter_issues_for_escalation?: number
+          policy_key: string
+          policy_name: string
+          policy_schema_version?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          escalation_enabled?: boolean
+          escalation_severity?: string
+          freshness_hours?: number
+          id?: string
+          metadata?: Json
+          minimum_adapter_issues_for_escalation?: number
+          policy_key?: string
+          policy_name?: string
+          policy_schema_version?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_worker_escalation_policies_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_demographic_feed_worker_escalation_policy_events: {
+        Row: {
+          actor_profile_id: string | null
+          created_at: string
+          event_message: string
+          event_type: string
+          id: string
+          metadata: Json
+          policy_key: string
+        }
+        Insert: {
+          actor_profile_id?: string | null
+          created_at?: string
+          event_message: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          policy_key: string
+        }
+        Update: {
+          actor_profile_id?: string | null
+          created_at?: string
+          event_message?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          policy_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_demographic_feed_worker_escalation_policy_events_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activation_evidence: {
         Row: {
           created_at: string
@@ -4607,6 +4698,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      act_feed_worker_esc_pol_evt_hist: {
+        Args: {
+          max_events?: number
+          requested_lookback_hours?: number
+          requested_policy_key?: string
+        }
+        Returns: {
+          actor_name: string | null
+          actor_profile_id: string | null
+          created_at: string | null
+          event_id: string
+          event_message: string
+          event_type: string
+          metadata: Json
+          policy_key: string
+        }[]
+      }
       activation_demographic_feed_worker_alert_summary: {
         Args: { requested_freshness_hours?: number }
         Returns: {
@@ -4624,6 +4732,22 @@ export type Database = {
           latest_run_status: Database["public"]["Enums"]["activation_demographic_feed_worker_status"] | null
           latest_run_message: string | null
           latest_run_at: string | null
+        }[]
+      }
+      activation_demographic_feed_worker_escalation_policy_summary: {
+        Args: { requested_policy_key?: string }
+        Returns: {
+          escalation_enabled: boolean
+          escalation_severity: string
+          freshness_hours: number
+          metadata: Json
+          minimum_adapter_issues_for_escalation: number
+          policy_key: string
+          policy_name: string
+          policy_schema_version: number
+          updated_at: string | null
+          updated_by: string | null
+          updated_by_name: string | null
         }[]
       }
       activation_demographic_feed_worker_escalation_page_history: {
@@ -4662,6 +4786,18 @@ export type Database = {
       }
       resolve_activation_demographic_feed_worker_escalation_page: {
         Args: { resolution_notes?: string | null; target_page_id: string }
+        Returns: string
+      }
+      set_activation_demographic_feed_worker_escalation_policy: {
+        Args: {
+          metadata?: Json
+          requested_escalation_enabled?: boolean
+          requested_escalation_severity?: string
+          requested_freshness_hours?: number
+          requested_minimum_adapter_issues_for_escalation?: number
+          requested_policy_key?: string
+          requested_policy_name?: string
+        }
         Returns: string
       }
       activation_feed_worker_schedule_automation_run_history: {
@@ -4730,7 +4866,7 @@ export type Database = {
       maybe_escalate_activation_feed_worker_exec_page: {
         Args: {
           target_batch_id?: string | null
-          requested_freshness_hours?: number
+          requested_freshness_hours?: number | null
           escalation_context?: Json
         }
         Returns: null

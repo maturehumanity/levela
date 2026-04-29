@@ -10,6 +10,12 @@ import {
   type RecordFeedWorkerRunDraft,
 } from '@/lib/governance-activation-demographic-feed-workers';
 import {
+  readActivationFeedWorkerEscalationPolicyEventRows,
+  readActivationFeedWorkerEscalationPolicySummary,
+  type ActivationFeedWorkerEscalationPolicyEventRow,
+  type ActivationFeedWorkerEscalationPolicySummaryRow,
+} from '@/lib/governance-activation-feed-worker-escalation-policy';
+import {
   ACTIVATION_FEED_DATA_AUTO_RELOAD_MIN_MS,
   isFeedDataAutoReloadThrottled,
   isMissingActivationDemographicFeedBackend,
@@ -19,6 +25,9 @@ import {
   isMissingActivationDemographicFeedWorkerEscalationAcknowledgePageRpc,
   isMissingActivationDemographicFeedWorkerEscalationPageBoardRpc,
   isMissingActivationDemographicFeedWorkerEscalationPageHistoryRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPolicyEventHistoryRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPolicySetRpc,
+  isMissingActivationDemographicFeedWorkerEscalationPolicySummaryRpc,
   isMissingActivationDemographicFeedWorkerEscalationResolvePageRpc,
   type ActivationDemographicFeedAdapterRow,
   type ActivationDemographicFeedAlertType,
@@ -53,6 +62,16 @@ export type ActivationDemographicFeedWorkerScheduleAutomationRunHistoryRow =
 
 export type ActivationDemographicFeedWorkerEscalationHistoryRow =
   GovernancePublicAuditVerifierFederationExchangeReceiptEscalationHistoryRow;
+
+export type { ActivationFeedWorkerEscalationPolicyEventRow, ActivationFeedWorkerEscalationPolicySummaryRow };
+
+export type SaveActivationFeedWorkerEscalationPolicyDraft = {
+  policyName: string;
+  escalationEnabled: boolean;
+  freshnessHours: number;
+  minimumAdapterIssuesForEscalation: number;
+  escalationSeverity: 'warning' | 'critical';
+};
 
 /** First page size for steward ingestion history (matches prior single-query limit). */
 const FEED_INGESTIONS_FIRST_PAGE = 120;
@@ -107,6 +126,11 @@ export function useGovernanceActivationDemographicFeeds() {
     useState<GovernancePublicAuditExternalExecutionPageBoardRow[]>([]);
   const [acknowledgingFeedWorkerEscalationPageId, setAcknowledgingFeedWorkerEscalationPageId] = useState<string | null>(null);
   const [resolvingFeedWorkerEscalationPageId, setResolvingFeedWorkerEscalationPageId] = useState<string | null>(null);
+  const [feedWorkerEscalationPolicySummary, setFeedWorkerEscalationPolicySummary] =
+    useState<ActivationFeedWorkerEscalationPolicySummaryRow | null>(null);
+  const [feedWorkerEscalationPolicyEventRows, setFeedWorkerEscalationPolicyEventRows] =
+    useState<ActivationFeedWorkerEscalationPolicyEventRow[]>([]);
+  const [savingFeedWorkerEscalationPolicy, setSavingFeedWorkerEscalationPolicy] = useState(false);
   const lastFeedDataAutoReloadAtRef = useRef(Date.now());
   const loadFeedDataInFlightRef = useRef(false);
 
@@ -182,6 +206,8 @@ export function useGovernanceActivationDemographicFeeds() {
       scheduleAutomationRunHistoryResponse,
       feedWorkerEscalationPageHistoryResponse,
       feedWorkerEscalationPageBoardResponse,
+      feedWorkerEscalationPolicySummaryResponse,
+      feedWorkerEscalationPolicyEventHistoryResponse,
     ] = await Promise.all([
       supabase
         .from('activation_demographic_feed_adapters')
@@ -243,6 +269,14 @@ export function useGovernanceActivationDemographicFeeds() {
       supabase.rpc('activation_demographic_feed_worker_escalation_page_board', {
         requested_batch_id: null,
         max_pages: GOVERNANCE_PUBLIC_AUDIT_EXTERNAL_EXECUTION_PAGE_BOARD_MAX_PAGES,
+      }),
+      supabase.rpc('activation_demographic_feed_worker_escalation_policy_summary', {
+        requested_policy_key: 'default',
+      }),
+      supabase.rpc('act_feed_worker_esc_pol_evt_hist', {
+        requested_policy_key: 'default',
+        requested_lookback_hours: 336,
+        max_events: 60,
       }),
     ]);
 
@@ -424,6 +458,40 @@ export function useGovernanceActivationDemographicFeeds() {
     } else {
       setFeedWorkerEscalationBoardPages(
         readGovernancePublicAuditExternalExecutionPageBoardRows(feedWorkerEscalationPageBoardResponse.data),
+      );
+    }
+
+    if (feedWorkerEscalationPolicySummaryResponse?.error) {
+      const polError = feedWorkerEscalationPolicySummaryResponse.error;
+      if (isMissingActivationDemographicFeedWorkerEscalationPolicySummaryRpc(polError)) {
+        setFeedWorkerEscalationPolicySummary(null);
+      } else if (isMissingActivationDemographicFeedWorkerBackend(polError)) {
+        setFeedWorkerBackendUnavailable(true);
+        setFeedWorkerEscalationPolicySummary(null);
+      } else {
+        console.warn('Could not load activation feed worker escalation policy summary; continuing without policy row:', polError);
+        setFeedWorkerEscalationPolicySummary(null);
+      }
+    } else {
+      setFeedWorkerEscalationPolicySummary(
+        readActivationFeedWorkerEscalationPolicySummary(feedWorkerEscalationPolicySummaryResponse.data),
+      );
+    }
+
+    if (feedWorkerEscalationPolicyEventHistoryResponse?.error) {
+      const evtError = feedWorkerEscalationPolicyEventHistoryResponse.error;
+      if (isMissingActivationDemographicFeedWorkerEscalationPolicyEventHistoryRpc(evtError)) {
+        setFeedWorkerEscalationPolicyEventRows([]);
+      } else if (isMissingActivationDemographicFeedWorkerBackend(evtError)) {
+        setFeedWorkerBackendUnavailable(true);
+        setFeedWorkerEscalationPolicyEventRows([]);
+      } else {
+        console.warn('Could not load activation feed worker escalation policy event history; continuing without audit trail:', evtError);
+        setFeedWorkerEscalationPolicyEventRows([]);
+      }
+    } else {
+      setFeedWorkerEscalationPolicyEventRows(
+        readActivationFeedWorkerEscalationPolicyEventRows(feedWorkerEscalationPolicyEventHistoryResponse.data),
       );
     }
 
@@ -981,9 +1049,10 @@ export function useGovernanceActivationDemographicFeeds() {
 
     const { error } = await supabase.rpc('maybe_escalate_activation_feed_worker_exec_page', {
       target_batch_id: null,
-      requested_freshness_hours: FEED_WORKER_DEFAULT_FRESHNESS_HOURS,
+      requested_freshness_hours: null,
       escalation_context: {
         source: 'governance_activation_feed_adapters_panel',
+        force_manual_escalation: true,
       },
     });
 
@@ -1000,6 +1069,40 @@ export function useGovernanceActivationDemographicFeeds() {
 
     toast.success('Public audit on-call page evaluated for activation feed worker alerts.');
     setEscalatingFeedWorkerPublicExecution(false);
+    await loadFeedData();
+  }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
+
+  const saveFeedWorkerEscalationPolicy = useCallback(async (draft: SaveActivationFeedWorkerEscalationPolicyDraft) => {
+    if (!canManageFeeds || feedBackendUnavailable || feedWorkerBackendUnavailable) return;
+
+    setSavingFeedWorkerEscalationPolicy(true);
+    const { error } = await supabase.rpc('set_activation_demographic_feed_worker_escalation_policy', {
+      requested_policy_key: 'default',
+      requested_policy_name: draft.policyName.trim() || 'Default activation feed worker escalation policy',
+      requested_escalation_enabled: draft.escalationEnabled,
+      requested_freshness_hours: draft.freshnessHours,
+      requested_minimum_adapter_issues_for_escalation: draft.minimumAdapterIssuesForEscalation,
+      requested_escalation_severity: draft.escalationSeverity,
+      metadata: {
+        source: 'governance_activation_feed_adapters_panel',
+      },
+    });
+
+    if (error) {
+      if (isMissingActivationDemographicFeedWorkerEscalationPolicySetRpc(error)) {
+        toast.error('Escalation policy updates are not available on this database revision yet.');
+      } else if (isMissingActivationDemographicFeedWorkerBackend(error)) {
+        setFeedWorkerBackendUnavailable(true);
+      } else {
+        console.error('Failed to save activation feed worker escalation policy:', error);
+        toast.error('Could not save escalation policy.');
+      }
+      setSavingFeedWorkerEscalationPolicy(false);
+      return;
+    }
+
+    toast.success('Escalation policy saved.');
+    setSavingFeedWorkerEscalationPolicy(false);
     await loadFeedData();
   }, [canManageFeeds, feedBackendUnavailable, feedWorkerBackendUnavailable, loadFeedData]);
 
@@ -1121,6 +1224,9 @@ export function useGovernanceActivationDemographicFeeds() {
     feedWorkerEscalationPageHistory,
     feedWorkerEscalationBoardPages,
     feedWorkerEscalationOpenOrAckPageCount,
+    feedWorkerEscalationPolicySummary,
+    feedWorkerEscalationPolicyEventRows,
+    savingFeedWorkerEscalationPolicy,
     acknowledgingFeedWorkerEscalationPageId,
     resolvingFeedWorkerEscalationPageId,
     acknowledgeFeedWorkerEscalationPage,
@@ -1137,6 +1243,7 @@ export function useGovernanceActivationDemographicFeeds() {
     releaseStaleFeedWorkerClaims,
     runFeedWorkerSweep,
     escalateFeedWorkerAlertsToPublicExecution,
+    saveFeedWorkerEscalationPolicy,
     resolveFeedAlert,
   };
 }
