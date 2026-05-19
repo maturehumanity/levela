@@ -12,6 +12,13 @@ import { loadLanguageOptions, type LanguageCode, type LanguageOption } from '@/l
 import { permissionListHasAny, type AppPermission } from '@/lib/access-control';
 import { APP_VERSION_TAG, ANDROID_VERSION_CODE } from '@/lib/app-release';
 import {
+  getAppUpdateChannel,
+  getAppUpdateChannelExpiresAt,
+  onAppUpdateChannelChange,
+  setAppUpdateChannel,
+  type AppUpdateChannel,
+} from '@/lib/update-channel';
+import {
   User,
   Shield,
   Bell,
@@ -34,6 +41,7 @@ import {
   Wallet,
   MessageCircle,
   Vote,
+  FlaskConical,
 } from 'lucide-react';
 
 const settingsItems = [
@@ -107,6 +115,8 @@ export default function Settings() {
   const { signOut, profile } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [languageOptions, setLanguageOptions] = useState<readonly LanguageOption[]>([]);
+  const [updateChannel, setUpdateChannelState] = useState<AppUpdateChannel>(() => getAppUpdateChannel());
+  const [testChannelExpiresAt, setTestChannelExpiresAt] = useState<number | null>(() => getAppUpdateChannelExpiresAt());
   const installedReleaseLabel = `${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`;
   const canAccessAdmin = profile
     ? permissionListHasAny(profile.effective_permissions || [], ['role.assign', 'settings.manage'])
@@ -190,6 +200,13 @@ export default function Settings() {
     await setLanguage(nextLanguage as LanguageCode);
   };
 
+  const handleUpdateChannelChange = (nextChannel: string) => {
+    const channel = nextChannel === 'testing' ? 'testing' : 'release';
+    setAppUpdateChannel(channel);
+    setUpdateChannelState(channel);
+    setTestChannelExpiresAt(getAppUpdateChannelExpiresAt());
+  };
+
   useEffect(() => {
     let active = true;
 
@@ -204,6 +221,32 @@ export default function Settings() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const refreshChannelState = () => {
+      setUpdateChannelState(getAppUpdateChannel());
+      setTestChannelExpiresAt(getAppUpdateChannelExpiresAt());
+    };
+
+    refreshChannelState();
+    const unsubscribe = onAppUpdateChannelChange(refreshChannelState);
+    const intervalId = window.setInterval(refreshChannelState, 60 * 1000);
+
+    return () => {
+      unsubscribe();
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  const testChannelReturnLabel =
+    updateChannel === 'testing' && testChannelExpiresAt
+      ? t('settings.updateChannelAutoReturn', {
+          time: new Date(testChannelExpiresAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        })
+      : t('settings.updateChannelLiveHint');
 
   return (
     <AppLayout>
@@ -267,6 +310,34 @@ export default function Settings() {
               <div className="flex-shrink-0">
                 <ThemeToggle />
               </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* App update channel */}
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <FlaskConical className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground">{t('settings.updateChannelTitle')}</h3>
+                <p className="text-sm text-muted-foreground">{testChannelReturnLabel}</p>
+              </div>
+              <Select value={updateChannel} onValueChange={handleUpdateChannelChange}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder={t('settings.updateChannelTitle')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="release">{t('settings.updateChannelRelease')}</SelectItem>
+                  <SelectItem value="testing">{t('settings.updateChannelTesting')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </Card>
         </motion.div>

@@ -1,0 +1,85 @@
+name: Android Channel Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Testing builds new APKs; production requires the protected production environment.
+        required: true
+        default: testing
+        type: choice
+        options:
+          - testing
+          - production
+      publish_github_release:
+        description: Publish the production APK to GitHub Releases.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ inputs.channel }} channel
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.channel }}
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      LEVELA_ALLOW_PRODUCTION_RELEASE_CHANGE: ${{ inputs.channel == 'production' && 'true' || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build testing channel
+        if: inputs.channel == 'testing'
+        run: npm run release:testing
+
+      - name: Promote production channel
+        if: inputs.channel == 'production'
+        run: LEVELA_UPDATE_CHANNEL=release npm run update:application
+
+      - name: Package APK checksums
+        run: |
+          mkdir -p release-artifacts
+          cp public/updates/android*.json release-artifacts/
+          cp public/downloads/levela-debug*.apk release-artifacts/
+          (cd release-artifacts && sha256sum *.apk > SHA256SUMS.txt)
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: levela-${{ inputs.channel }}-artifacts
+          path: release-artifacts/
+
+      - name: Publish GitHub Release mirror
+        if: inputs.channel == 'production' && inputs.publish_github_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          tag="v${version}"
+          gh release create "$tag" \
+            --title "Levela ${tag}" \
+            --notes "Production APK mirror for Levela ${tag}. The official update endpoint remains https://levela.yeremyan.net/updates/android.json." \
+            release-artifacts/levela-debug-release-*.apk \
+            release-artifacts/SHA256SUMS.txt

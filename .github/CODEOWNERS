@@ -1,0 +1,11 @@
+* @Gityer
+
+.github/ @Gityer
+scripts/ @Gityer
+supabase/ @Gityer
+src/integrations/supabase/ @Gityer
+src/lib/app-release.ts @Gityer
+src/lib/update-channel.ts @Gityer
+public/updates/ @Gityer
+docs/03-governance/ @Gityer
+docs/04-operations/ @Gityer

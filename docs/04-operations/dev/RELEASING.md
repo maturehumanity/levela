@@ -52,18 +52,21 @@ You can also use `minor`, `major`, or an explicit version such as:
 npm run release:bump -- 0.1.5
 ```
 
-2. Build and publish the application artifacts locally.
+2. Build and publish the testing application artifacts locally.
 
 ```bash
 npm run update:application
 ```
 
-By default this now publishes both channels. You can override with:
+By default this publishes the **Testing** channel only. Production is intentionally unchanged until an authorized promotion happens. You can override with:
 
 ```bash
 LEVELA_UPDATE_CHANNEL=testing npm run update:application
 LEVELA_UPDATE_CHANNEL=release npm run update:application
+LEVELA_UPDATE_CHANNEL=both npm run update:application
 ```
+
+Use `LEVELA_UPDATE_CHANNEL=both` only for an emergency release when maintainers have explicitly approved skipping the normal testing soak.
 
 For direct website APK distribution, run with:
 
@@ -77,8 +80,7 @@ This script:
 - syncs Capacitor Android assets
 - builds the Android APK
 - writes the versioned APK into `public/downloads/`
-- regenerates `public/updates/android.json`
-- regenerates `public/updates/android.js`
+- regenerates the selected channel manifests under `public/updates/`
 - rebuilds `dist/`
 
 3. Deploy `dist/` to the VPS host path.

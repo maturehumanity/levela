@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Release lifecycle guard
+        if: github.event_name == 'pull_request'
+        run: npm run release:guard
+
+      - name: Audit
+        run: npm audit --audit-level=low
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

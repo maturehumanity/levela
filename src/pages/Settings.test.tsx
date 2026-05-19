@@ -105,4 +105,20 @@ describe('Settings page', () => {
     expect(screen.getByText('Application version')).toBeInTheDocument();
     expect(screen.getByText(`${APP_VERSION_TAG} (${ANDROID_VERSION_CODE})`)).toBeInTheDocument();
   });
+
+  it('shows the live/test app channel selector', () => {
+    authProfileState.profile = { effective_permissions: [], role: 'member' };
+    window.localStorage.removeItem(APP_UPDATE_CHANNEL_KEY);
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Settings />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText('App channel').length).toBeGreaterThan(0);
+    expect(screen.getByText('Live channel is selected.')).toBeInTheDocument();
+    expect(screen.getByText('Live')).toBeInTheDocument();
+    expect(screen.getByText('Test')).toBeInTheDocument();
+  });
 });

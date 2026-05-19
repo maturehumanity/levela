@@ -60,6 +60,8 @@ This file stores project-specific notes for future AI agent work.
   - Publish the **newly built version to Testing**.
   - Only move a Testing build to Production after there are no reported blockers for that Testing release.
   - Goal: users must always have a stable fallback build available.
+- `npm run update:application` defaults to the Testing channel. Do not use `LEVELA_UPDATE_CHANNEL=release` or `LEVELA_UPDATE_CHANNEL=both` unless the user explicitly approves a Production promotion or emergency release.
+- Treat `docs/04-operations/dev/ENVIRONMENT_LIFECYCLE.md` as the canonical release/data-isolation policy.
 - Standard release sequence for continuity:
   1. If the current Testing build has no reported bugs, promote that exact tested build to Production with `npm run promote:android-testing-to-release`.
   2. Bump release metadata (`npm run release:bump -- patch` unless instructed otherwise).
