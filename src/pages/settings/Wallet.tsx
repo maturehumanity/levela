@@ -13,7 +13,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { formatLumaFromLumens } from '@/lib/monetary';
 import { useLumaWalletBalance } from '@/lib/use-luma-wallet-balance';
 
-export default function LumaWallet() {
+export default function WalletPage() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { profile, loading: authLoading } = useAuth();
@@ -41,9 +41,9 @@ export default function LumaWallet() {
     return (
       <AppLayout>
         <div className="px-4 py-6">
-          <p className="text-sm text-muted-foreground">{t('settings.lumaWalletSignIn')}</p>
+          <p className="text-sm text-muted-foreground">{t('settings.walletSignIn')}</p>
           <Button type="button" variant="link" className="mt-2 px-0" onClick={() => navigate('/settings')}>
-            {t('settings.lumaWalletBack')}
+            {t('settings.walletBack')}
           </Button>
         </div>
       </AppLayout>
@@ -52,7 +52,7 @@ export default function LumaWallet() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 px-4 py-6" data-build-key="lumaWalletPage" data-build-label="Luma wallet page">
+      <div className="space-y-6 px-4 py-6" data-build-key="walletPage" data-build-label="Wallet page">
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
           <Button
             type="button"
@@ -60,13 +60,13 @@ export default function LumaWallet() {
             size="icon"
             className="shrink-0"
             onClick={() => navigate('/settings')}
-            aria-label={t('settings.lumaWalletBack')}
+            aria-label={t('settings.walletBack')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0">
-            <h1 className="text-xl font-display font-bold text-foreground">{t('settings.lumaWalletPageTitle')}</h1>
-            <p className="text-sm text-muted-foreground">{t('settings.lumaWalletPageSubtitle')}</p>
+            <h1 className="text-xl font-display font-bold text-foreground">{t('settings.walletPageTitle')}</h1>
+            <p className="text-sm text-muted-foreground">{t('settings.walletPageSubtitle')}</p>
           </div>
         </motion.div>
 
@@ -74,8 +74,8 @@ export default function LumaWallet() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.04 }}
-          data-build-key="lumaWalletBalance"
-          data-build-label="Luma balance"
+          data-build-key="walletBalance"
+          data-build-label="Wallet balance"
         >
           <Card className="border-border/70 bg-card/95 p-5 shadow-sm">
             <div className="flex items-start gap-3">
@@ -106,11 +106,11 @@ export default function LumaWallet() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.06 }}
-          data-build-key="lumaWalletMarketLink"
+          data-build-key="walletMarketLink"
           data-build-label="Link to marketplace"
         >
           <Button type="button" variant="outline" className="w-full justify-center gap-2" asChild>
-            <Link to="/market">{t('settings.lumaWalletOpenMarket')}</Link>
+            <Link to="/market">{t('settings.walletOpenMarket')}</Link>
           </Button>
         </motion.div>
 
@@ -118,8 +118,8 @@ export default function LumaWallet() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
-          data-build-key="lumaWalletActivity"
-          data-build-label="Luma activity"
+          data-build-key="walletActivity"
+          data-build-label="Wallet activity"
         >
           <MarketLumaActivitySection
             key={`ledger-${profile.id}-${ledgerTick}`}
@@ -133,8 +133,8 @@ export default function LumaWallet() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          data-build-key="lumaWalletPaymentsInfo"
-          data-build-label="Luma payments help"
+          data-build-key="walletPaymentsInfo"
+          data-build-label="Wallet payments help"
         >
           <Card className="border-border/70 bg-card/95 p-5 shadow-sm">
             <div className="flex items-start gap-3">

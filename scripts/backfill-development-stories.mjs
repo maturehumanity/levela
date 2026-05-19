@@ -67,9 +67,121 @@ function parseUserQueryFromText(text) {
   return normalizeWhitespace(text);
 }
 
+/**
+ * Persisted story fields should reflect: main topic, summarized title, and
+ * reader-useful specs/behavior — not raw chat noise (acknowledgements, empty
+ * questions, meta tooling chatter).
+ */
+function stripChatNoiseForStorage(text) {
+  let t = normalizeWhitespace(text);
+  if (!t) return t;
+  t = t.replace(/^user-requested change captured from chat history:\s*/i, '');
+  while (true) {
+    const m = t.match(
+      /^what do you mean,?\s*(will you please give me examples of how\s+)?/i,
+    );
+    if (m?.[0]) {
+      t = t.slice(m[0].length).trim();
+      continue;
+    }
+    if (/^(ok|okay)\s*[,.-]?\s*implement\s*$/i.test(t)) return '';
+    if (/^(ok|okay)\s*[,.-]\s*/i.test(t) && t.length < 28) {
+      t = t.replace(/^(ok|okay)\s*[,.-]\s*/i, '').trim();
+      continue;
+    }
+    break;
+  }
+  return normalizeWhitespace(t);
+}
+
+function extractSpecsBody(instruction) {
+  let t = stripChatNoiseForStorage(instruction);
+  if (!t) return '';
+  if (/^what do you mean/i.test(t)) {
+    const how = t.match(/\bhow\s+(.+)/i);
+    if (how?.[1] && how[1].length > 24) {
+      t = how[1].replace(/^(the|a|an)\s+/i, '').trim();
+    }
+  }
+  return normalizeWhitespace(t).slice(0, 480);
+}
+
 function pickTitleFromInstruction(instruction) {
-  const singleLine = instruction.split('\n').map((line) => line.trim()).filter(Boolean)[0] || instruction;
-  return singleLine.slice(0, 120);
+  const cleaned = stripChatNoiseForStorage(instruction);
+  const base = cleaned || normalizeWhitespace(instruction);
+  const firstLine =
+    base
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.length >= 12) || base;
+  let candidate = firstLine;
+  if (/^what do you mean/i.test(candidate)) {
+    const how = candidate.match(/\bhow\s+(.+)/i);
+    if (how?.[1] && how[1].length > 20) {
+      candidate = how[1].replace(/^(the|a|an)\s+/i, '').trim();
+    }
+  }
+  if (!candidate || candidate.length < 8) candidate = base.slice(0, 120);
+  return normalizeWhitespace(candidate).slice(0, 120);
+}
+
+function buildRephrasedFromInstruction(instruction, section, area) {
+  const specs = extractSpecsBody(instruction);
+  if (!specs) return `${section} / ${area}: product change requested from chat export.`;
+  return `${section} / ${area}: ${specs}`;
+}
+
+function isAcknowledgementOnlyInstruction(instruction) {
+  const t = stripChatNoiseForStorage(instruction).toLowerCase();
+  if (!t) return true;
+  if (/^ok\b[,.\s-]*implement\.?$/.test(t)) return true;
+  if (t.length < 48 && !/\b(search|keyword|fix|add|remove|update|scroll|apk|policy|implement\s+\w|bug|error)\b/i.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+/** Skip ingest for “do the process” lines with no product signal (matches client-side meta filter). */
+function isProcessOnlyInstruction(instruction) {
+  const t = stripChatNoiseForStorage(instruction).toLowerCase();
+  if (!t) return false;
+  if (/\b(move on as per your recommendations)\b/.test(t) && !/\b(migration|ssh|vps|database|deploy)\b/.test(t)) {
+    return true;
+  }
+  if (/\b(commit,?\s*push,?\s*build and ship|build and ship the updated version)\b/.test(t)) {
+    return true;
+  }
+  if (/\b(divide\s+(the\s+)?plan\s+into)\b.*\b(chunk|chunks|slice|slices)\b/.test(t)) return true;
+  if (/\bmove\s+on\s*,?\s*with\s+(?:a\s+)?(?:much\s+)?larger\s+chunks?\b/.test(t)) return true;
+  if (
+    /\b(you\s+)?didn'?t\s+move\s+on\b/.test(t)
+    && !/\b(decentrali|migration|ssh|vps|search|schema|fix\s|bug\b|apk)\b/.test(t)
+  ) {
+    return true;
+  }
+  if (/\b(can we|could we)\s+move\s+on\s+to\s+the\s+next\s+slice\b/.test(t)) return true;
+  if (/\bso,?\s+can\s+we\s+move\s+on\b.*\b(next\s+slice|slice\s+now)\b/.test(t)) return true;
+  if (/\bmove\s+on\s+to\s+the\s+next\s+slice\b/.test(t) && !/\b(decentrali|migration|ssh|vps|fix|implement|preload)\b/.test(t)) {
+    return true;
+  }
+  if (/\b(if we'?re\s+done\s+with\s+the\s+previous\s+one)\b/.test(t)) return true;
+  if (/\bmove\s+on,?\s+and\s+at\s+the\s+end\s+of\s+every\s+(report|rerport|repport)\b/.test(t)) return true;
+  if (/\b(are you asking me|you'?re gonna bring)\b/.test(t) && t.length < 200) return true;
+  if (
+    /\b(i\s+just\s+restarted|restarted\s+the\s+application)\b/.test(t)
+    && /\b(failed to connect|couldn'?t connect)\b/.test(t)
+    && t.length < 260
+    && !/\b(please\s+fix|investigate|implement)\b/.test(t)
+  ) {
+    return true;
+  }
+  if (/\bdid\s+you\s+take\s+all\s+necessary\s+measures\b/.test(t) && !/\b(preload|prefetch)\b/.test(t)) {
+    return true;
+  }
+  if (/\bmove\s+on\s+with\s+larger\s+ch[uw]+/.test(t)) return true;
+  if (/\bchuncks\b/.test(t) || /\bchunds\b/.test(t)) return true;
+  if (/^\s*chore:\s*refresh\b/i.test(t) && /\bmanifest\b/.test(t)) return true;
+  return false;
 }
 
 async function listTranscriptFiles(rootDir) {
@@ -163,19 +275,22 @@ async function getTranscriptStories() {
       const combinedText = textParts.join('\n');
       const instruction = parseUserQueryFromText(combinedText);
       if (!instruction || instruction.length < 8) continue;
+      if (isAcknowledgementOnlyInstruction(instruction)) continue;
+      if (isProcessOnlyInstruction(instruction)) continue;
 
       const timestamp = parseTimestampFromText(combinedText);
       const { section, area } = classifyStory(instruction);
       const title = pickTitleFromInstruction(instruction);
+      const rephrasedDescription = buildRephrasedFromInstruction(instruction, section, area);
 
       stories.push({
         source_story_key: `chat:${chatId}:${idx + 1}`,
         title,
         original_instruction: instruction,
-        rephrased_description: `User-requested change captured from chat history: ${title}`,
+        rephrased_description: rephrasedDescription,
         section,
         area,
-        created_features: ['Backfilled from chat transcript'],
+        created_features: ['Source: Cursor agent chat export (topic + behavior summarized on ingest)'],
         expected_behavior: makeExpectedBehavior(title),
         requested_at: timestamp || new Date().toISOString(),
         source: 'chat',

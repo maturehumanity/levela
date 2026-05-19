@@ -34,9 +34,21 @@ If content can materially influence someone's legal rights, professional learnin
 
 ## Current Active Content
 
+- The public foundation document for the project is `02-moderated/policies/foundation/the-levela-charter.md`.
 - Constitutional study materials live under `02-moderated/academic-materials/constitutional-studies/universal-constitution/`.
 - Monetary policy and AI agent specifications live under `02-moderated/policies/monetary/`.
 - Developer and release operations live under `04-operations/dev/` (for example verifier federation plans under `04-operations/dev/verifier-federation/`, VPS and headless SSH notes under `04-operations/dev/ssh-and-vps/`).
+
+## Recommended Subject Areas
+
+The numbered folders are the canonical top-level hierarchy because they encode the publication and review lane. Subject areas should live inside those lanes:
+
+- Project foundation: `02-moderated/policies/foundation/`
+- Governance models: `03-governance/`
+- Legal and constitutional references: `02-moderated/legal/`
+- Economy and monetary policy: `02-moderated/policies/monetary/`
+- Education and learning material: `02-moderated/academic-materials/`
+- Technology architecture and operations: `04-operations/dev/`
 
 ## Collaboration Flow
 

@@ -46,9 +46,9 @@ const settingsItems = [
   },
   {
     icon: Wallet,
-    labelKey: 'settings.lumaWallet',
-    descriptionKey: 'settings.lumaWalletDescription',
-    path: '/settings/luma-wallet',
+    labelKey: 'settings.wallet',
+    descriptionKey: 'settings.walletDescription',
+    path: '/settings/wallet',
   },
   {
     icon: Bell,

@@ -51,7 +51,7 @@ const UsersAdmin = lazy(() => import('@/pages/settings/UsersAdmin'));
 const PermissionsAdmin = lazy(() => import('@/pages/settings/PermissionsAdmin'));
 const GovernanceAdmin = lazy(() => import('@/pages/settings/GovernanceAdmin'));
 const LumaCreditsAdmin = lazy(() => import('@/pages/settings/LumaCreditsAdmin'));
-const LumaWallet = lazy(() => import('@/pages/settings/LumaWallet'));
+const WalletPage = lazy(() => import('@/pages/settings/Wallet'));
 const MessagingSettingsPage = lazy(() => import('@/pages/settings/MessagingSettings'));
 const MessagingSecurity = lazy(() => import('@/pages/settings/MessagingSecurity'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -265,7 +265,8 @@ const App = () => (
                     }
                   />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="/settings/luma-wallet" element={<ProtectedRoute><LumaWallet /></ProtectedRoute>} />
+                  <Route path="/settings/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+                  <Route path="/settings/luma-wallet" element={<ProtectedRoute><Navigate to="/settings/wallet" replace /></ProtectedRoute>} />
                   <Route
                     path="/settings/messaging"
                     element={

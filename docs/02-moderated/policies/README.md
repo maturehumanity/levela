@@ -1,6 +1,6 @@
 # Policies
 
-Use this category for platform policy, governance policy, monetary policy, moderation policy, and operational rules that guide application behavior.
+Use this category for platform policy, governance policy, foundation documents, monetary policy, moderation policy, and operational rules that guide application behavior.
 
 Default metadata:
 
@@ -12,6 +12,7 @@ professional_domain: governance
 contribution_policy: staff_only
 ```
 
-Current draft policy documents:
+Current policy documents:
 
+- `foundation/the-levela-charter.md`
 - `citizenship_and_verification_policy_v0_1.md`

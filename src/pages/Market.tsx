@@ -232,7 +232,7 @@ export default function Market() {
                   </Link>
                 </Button>
                 <Button type="button" variant="ghost" size="sm" className="gap-1.5 px-2" asChild>
-                  <Link to="/settings/luma-wallet" data-build-key="marketWalletLink" data-build-label="Luma wallet link">
+                  <Link to="/settings/wallet" data-build-key="marketWalletLink" data-build-label="Wallet link">
                     <Wallet className="h-4 w-4" aria-hidden />
                     <span className="max-[380px]:sr-only">{t('market.walletShortcut')}</span>
                   </Link>

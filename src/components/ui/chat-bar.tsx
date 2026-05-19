@@ -249,10 +249,12 @@ function resolveConversationKind(
 }
 
 type MessagingTab = 'chats' | 'calls' | 'video';
-type InboxFilter = 'all' | 'unread' | 'favourites';
+type BaseInboxFilter = 'all' | 'unread' | 'favourites';
+type InboxFilter = BaseInboxFilter | `custom:${string}`;
 
 const SAVED_MESSAGING_CONTACTS_KEY = 'levela-messaging-saved-contacts-v1';
 const SAVED_CONTACTS_CAP = 40;
+const MESSAGING_CUSTOM_GROUPS_PREFIX = 'levela-messaging-custom-groups-v1:';
 
 type CallMode = 'voice' | 'video';
 type CallScope = 'direct' | 'group';
@@ -277,6 +279,43 @@ interface IncomingCall {
   scope: CallScope;
   hostId: string;
   targetProfileId: string | null;
+}
+
+interface CustomInboxGroup {
+  id: string;
+  name: string;
+}
+
+function loadCustomInboxGroups(profileId: string): CustomInboxGroup[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(`${MESSAGING_CUSTOM_GROUPS_PREFIX}${profileId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const id = (entry as { id?: unknown }).id;
+        const name = (entry as { name?: unknown }).name;
+        if (typeof id !== 'string' || typeof name !== 'string') return null;
+        const trimmedName = name.trim();
+        if (!trimmedName) return null;
+        return { id, name: trimmedName };
+      })
+      .filter((entry): entry is CustomInboxGroup => Boolean(entry));
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomInboxGroups(profileId: string, groups: CustomInboxGroup[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(`${MESSAGING_CUSTOM_GROUPS_PREFIX}${profileId}`, JSON.stringify(groups));
+  } catch {
+    /* ignore */
+  }
 }
 
 interface CallSignalPayload {
@@ -496,8 +535,13 @@ export function ChatBar({
   const isMessagingPage = variant === 'page';
   const isMessagingInbox = isMessagingPage && !routeConversationId;
   const isMessagingThread = isMessagingPage && Boolean(routeConversationId);
+  const customGroupsStorageOwner = profile?.id ?? 'guest';
 
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  const [customInboxGroups, setCustomInboxGroups] = useState<CustomInboxGroup[]>([]);
+  const [inboxSearchOpen, setInboxSearchOpen] = useState(false);
+  const [addGroupDialogOpen, setAddGroupDialogOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
   const [lastReadAtByConversation, setLastReadAtByConversation] = useState<Record<string, string>>({});
   const [favouriteConversationIds, setFavouriteConversationIds] = useState<Set<string>>(() => new Set());
   const [mutedConversationIds, setMutedConversationIds] = useState<Set<string>>(() => new Set());
@@ -558,6 +602,19 @@ export function ChatBar({
       setWallpaperByConversation({});
     }
   }, [profile?.id]);
+
+  useEffect(() => {
+    setCustomInboxGroups(loadCustomInboxGroups(customGroupsStorageOwner));
+  }, [customGroupsStorageOwner]);
+
+  useEffect(() => {
+    if (!isMessagingInbox) {
+      setInboxSearchOpen(false);
+      setContactQuery('');
+      return;
+    }
+    setInboxSearchOpen(false);
+  }, [isMessagingInbox]);
 
   useEffect(() => {
     if (!profile?.id) {
@@ -765,6 +822,17 @@ export function ChatBar({
   );
 
   const filteredDmRows = useMemo(() => {
+    if (inboxFilter.startsWith('custom:')) {
+      const group = customInboxGroups.find((entry) => `custom:${entry.id}` === inboxFilter);
+      if (!group) return dmRowsWithoutNela;
+      const q = group.name.trim().toLowerCase();
+      if (!q) return dmRowsWithoutNela;
+      return dmRowsWithoutNela.filter((row) =>
+        `${row.peer_full_name ?? ''} ${row.peer_username ?? ''} ${row.last_content ?? ''}`
+          .toLowerCase()
+          .includes(q),
+      );
+    }
     if (inboxFilter === 'favourites') {
       return dmRowsWithoutNela.filter((r) => favouriteConversationIds.has(r.conversation_id));
     }
@@ -777,7 +845,30 @@ export function ChatBar({
       });
     }
     return dmRowsWithoutNela;
-  }, [dmRowsWithoutNela, inboxFilter, favouriteConversationIds, lastReadAtByConversation]);
+  }, [dmRowsWithoutNela, inboxFilter, favouriteConversationIds, lastReadAtByConversation, customInboxGroups]);
+
+  const createCustomInboxGroup = useCallback(() => {
+    const name = newGroupName.trim();
+    if (!name) return;
+    setCustomInboxGroups((prev) => {
+      const lowered = name.toLowerCase();
+      const existing = prev.find((entry) => entry.name.toLowerCase() === lowered);
+      const next = existing
+        ? prev
+        : [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name }];
+      saveCustomInboxGroups(customGroupsStorageOwner, next);
+      const target = existing ?? next[next.length - 1];
+      if (target) setInboxFilter(`custom:${target.id}`);
+      setNewGroupName('');
+      setAddGroupDialogOpen(false);
+      if (existing) {
+        toast.info('Group already exists.');
+      } else {
+        toast.success('Group added.');
+      }
+      return next;
+    });
+  }, [customGroupsStorageOwner, newGroupName]);
 
   const showNelaPinnedInInbox = useMemo(() => {
     if (inboxFilter === 'all') return true;
@@ -3382,13 +3473,41 @@ export function ChatBar({
                             : t('chatBar.inbox.filterFavourites')}
                       </Button>
                     ))}
+                    {customInboxGroups.map((group) => {
+                      const filterKey: InboxFilter = `custom:${group.id}`;
+                      return (
+                        <Button
+                          key={group.id}
+                          type="button"
+                          variant={inboxFilter === filterKey ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-8 shrink-0 rounded-full px-3 text-xs"
+                          onClick={() => setInboxFilter(filterKey)}
+                        >
+                          {group.name}
+                        </Button>
+                      );
+                    })}
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       className="ml-auto h-8 w-8 shrink-0 rounded-full p-0"
-                      onClick={() => contactSearchInputRef.current?.focus()}
-                      aria-label={t('chatBar.inbox.newChat')}
+                      onClick={() => {
+                        setInboxSearchOpen((prev) => !prev);
+                        queueMicrotask(() => contactSearchInputRef.current?.focus());
+                      }}
+                      aria-label="Search chats"
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 shrink-0 rounded-full p-0"
+                      onClick={() => setAddGroupDialogOpen(true)}
+                      aria-label="Add group"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -3399,20 +3518,22 @@ export function ChatBar({
                       <p className="text-xs text-muted-foreground">{t('chatBar.contacts.signInToSearch')}</p>
                     ) : (
                       <>
-                        <div className="relative">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            ref={contactSearchInputRef}
-                            type="search"
-                            value={contactQuery}
-                            onChange={(event) => setContactQuery(event.target.value)}
-                            placeholder={t('chatBar.contacts.searchPlaceholder')}
-                            className="h-9 border-border bg-background pl-9"
-                            autoComplete="off"
-                            enterKeyHint="search"
-                          />
-                        </div>
-                        {contactQuery.trim().length >= 2 && (
+                        {inboxSearchOpen ? (
+                          <div className="relative">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              ref={contactSearchInputRef}
+                              type="search"
+                              value={contactQuery}
+                              onChange={(event) => setContactQuery(event.target.value)}
+                              placeholder={t('chatBar.contacts.searchPlaceholder')}
+                              className="h-9 border-border bg-background pl-9"
+                              autoComplete="off"
+                              enterKeyHint="search"
+                            />
+                          </div>
+                        ) : null}
+                        {inboxSearchOpen && contactQuery.trim().length >= 2 && (
                           <div className="max-h-36 overflow-y-auto rounded-md border border-border bg-background">
                             {contactSearchLoading ? (
                               <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
@@ -3469,7 +3590,7 @@ export function ChatBar({
                             )}
                           </div>
                         )}
-                        {contactQuery.trim().length < 2 && savedContacts.length > 0 && (
+                        {(!inboxSearchOpen || contactQuery.trim().length < 2) && savedContacts.length > 0 && (
                           <div className="space-y-1.5">
                             <p className="text-[11px] text-muted-foreground">{t('chatBar.contacts.savedHint')}</p>
                             <div className="flex flex-wrap gap-1.5">
@@ -4355,6 +4476,48 @@ export function ChatBar({
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={addGroupDialogOpen}
+        onOpenChange={(open) => {
+          setAddGroupDialogOpen(open);
+          if (!open) setNewGroupName('');
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Create a custom chat group tab next to Unread and Favourites.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={newGroupName}
+            onChange={(event) => setNewGroupName(event.target.value)}
+            placeholder="Group name"
+            maxLength={40}
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                createCustomInboxGroup();
+              }
+            }}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!newGroupName.trim()}
+              onClick={(event) => {
+                event.preventDefault();
+                createCustomInboxGroup();
+              }}
+            >
+              Add
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={clearChatConfirmOpen} onOpenChange={setClearChatConfirmOpen}>
         <AlertDialogContent>
