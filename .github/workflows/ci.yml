@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  VITE_SUPABASE_URL: https://invalid.supabase.local
+  VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-anon-key
+
 jobs:
   validate:
     name: validate
