@@ -391,3 +391,7 @@ export function getProtocolExecutor(): ProtocolExecutor {
   }
   return globalExecutor;
 }
+
+export function resetProtocolExecutor(): void {
+  globalExecutor = new ProtocolExecutor();
+}

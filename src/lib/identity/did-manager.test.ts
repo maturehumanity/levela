@@ -11,7 +11,6 @@ import {
   createIntegrityProof,
   verifyIntegrityProof,
 } from './did-manager';
-import * as crypto from 'crypto';
 
 describe('DID Manager', () => {
   describe('generateDID', () => {
@@ -66,13 +65,7 @@ describe('DID Manager', () => {
       const identity = generateDID();
       const message = 'Test message';
 
-      // Generate a key pair for signing
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
-      const signature = signMessage(message, privateKey as Uint8Array, identity.did);
+      const signature = signMessage(message, identity.privateKeyPkcs8, identity.did);
 
       expect(signature.signature).toBeDefined();
       expect(signature.did).toBe(identity.did);
@@ -106,12 +99,7 @@ describe('DID Manager', () => {
       const identity = generateDID();
       const message = 'Test message';
 
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
-      const signature = signMessage(message, privateKey as Uint8Array, identity.did);
+      const signature = signMessage(message, identity.privateKeyPkcs8, identity.did);
 
       const isValid = verifySignature(
         signature.signature,
@@ -128,15 +116,10 @@ describe('DID Manager', () => {
       const identity = generateDID();
       const username = 'alice';
 
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
       const claim = createRegistrationClaim(
         identity.did,
         username,
-        privateKey as Uint8Array
+        identity.privateKeyPkcs8
       );
 
       expect(claim.did).toBe(identity.did);
@@ -163,12 +146,7 @@ describe('DID Manager', () => {
     it('should create and verify an auth token', () => {
       const identity = generateDID();
 
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
-      const token = createAuthToken(identity.did, privateKey as Uint8Array);
+      const token = createAuthToken(identity.did, identity.privateKeyPkcs8);
 
       expect(token.did).toBe(identity.did);
       expect(token.signature).toBeDefined();
@@ -180,12 +158,7 @@ describe('DID Manager', () => {
     it('should reject expired auth tokens', () => {
       const identity = generateDID();
 
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
-      const token = createAuthToken(identity.did, privateKey as Uint8Array);
+      const token = createAuthToken(identity.did, identity.privateKeyPkcs8);
 
       // Manually set expiration to the past
       const tokenData = JSON.parse(token.message);
@@ -202,15 +175,10 @@ describe('DID Manager', () => {
       const identity = generateDID();
       const data = { name: 'Alice', score: 85 };
 
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
       const proof = createIntegrityProof(
         data,
         identity.did,
-        privateKey as Uint8Array
+        identity.privateKeyPkcs8
       );
 
       expect(proof.did).toBe(identity.did);
@@ -224,15 +192,10 @@ describe('DID Manager', () => {
       const identity = generateDID();
       const data = { name: 'Alice', score: 85 };
 
-      const { privateKey } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-
       const proof = createIntegrityProof(
         data,
         identity.did,
-        privateKey as Uint8Array
+        identity.privateKeyPkcs8
       );
 
       // Tamper with data

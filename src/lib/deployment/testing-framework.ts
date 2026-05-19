@@ -654,3 +654,7 @@ export function getTestingFramework(): TestingFramework {
   }
   return globalTestingFramework;
 }
+
+export function resetTestingFramework(): void {
+  globalTestingFramework = new TestingFramework();
+}

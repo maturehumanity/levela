@@ -1,5 +1,5 @@
 import { getEnvironmentManager } from './environment-manager';
-import { getTestingFramework } from './testing-framework';
+import { getTestingFramework, resetTestingFramework } from './testing-framework';
 import { getApprovalWorkflow } from './approval-workflow';
 
 describe('Deployment System Tests', () => {
@@ -90,6 +90,10 @@ describe('Deployment System Tests', () => {
   });
 
   describe('TestingFramework', () => {
+    beforeEach(() => {
+      resetTestingFramework();
+    });
+
     it('should register tester', () => {
       const framework = getTestingFramework();
 

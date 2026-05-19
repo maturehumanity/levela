@@ -312,3 +312,7 @@ export function getConsensusManager(): ConsensusManager {
   }
   return globalConsensusManager;
 }
+
+export function resetConsensusManager(): void {
+  globalConsensusManager = new ConsensusManager();
+}

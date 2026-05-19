@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { base58 } from 'multiformats/bases/base58';
+import { base58btc } from 'multiformats/bases/base58';
 import { CID } from 'multiformats/cid';
 
 /**
@@ -15,6 +15,7 @@ export interface LocalIdentity {
   did: string;                    // did:key:z6Mk...
   publicKey: string;              // Base58-encoded public key
   publicKeyMulticodec: Uint8Array; // Multicodec-encoded public key
+  privateKeyPkcs8: Uint8Array;     // PKCS#8 DER private key for local secure storage
   username: string;               // User-chosen identifier
   createdAt: number;              // Timestamp
   version: number;                // Identity version (for upgrades)
@@ -27,6 +28,27 @@ export interface IdentitySignature {
   message: string;                // Message that was signed
 }
 
+const ED25519_PUBLIC_KEY_DER_PREFIX = Buffer.from('302a300506032b6570032100', 'hex');
+const base58 = {
+  encode: (bytes: Uint8Array): string => base58btc.encode(new Uint8Array(bytes)).slice(1),
+  decode: (value: string): Uint8Array => base58btc.decode(`z${value}`),
+};
+
+function rawPublicKeyFromSpkiDer(publicKeyDer: Uint8Array): Uint8Array {
+  const der = Buffer.from(publicKeyDer);
+  if (!der.subarray(0, ED25519_PUBLIC_KEY_DER_PREFIX.length).equals(ED25519_PUBLIC_KEY_DER_PREFIX)) {
+    throw new Error('Unsupported Ed25519 public key encoding');
+  }
+  return new Uint8Array(der.subarray(ED25519_PUBLIC_KEY_DER_PREFIX.length));
+}
+
+function spkiDerFromRawPublicKey(publicKey: Uint8Array): Buffer {
+  if (publicKey.length !== 32) {
+    throw new Error('Ed25519 public key must be 32 bytes');
+  }
+  return Buffer.concat([ED25519_PUBLIC_KEY_DER_PREFIX, Buffer.from(publicKey)]);
+}
+
 /**
  * Generate a new DID using Ed25519 keys
  * 
@@ -36,25 +58,27 @@ export function generateDID(): LocalIdentity {
   // Generate Ed25519 key pair
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
     publicKeyEncoding: {
-      format: 'raw',
+      format: 'der',
       type: 'spki',
     },
     privateKeyEncoding: {
-      format: 'raw',
+      format: 'der',
       type: 'pkcs8',
     },
   });
+  const rawPublicKey = rawPublicKeyFromSpkiDer(publicKey);
 
-  // Encode public key with multicodec prefix (0x1200 for Ed25519)
-  const multicodecPublicKey = new Uint8Array([0x12, 0x20, ...publicKey]);
+  // Encode public key with did:key multicodec prefix (0xed01 for Ed25519).
+  const multicodecPublicKey = new Uint8Array([0xed, 0x01, ...rawPublicKey]);
 
   // Create DID from public key
   const did = `did:key:z${base58.encode(multicodecPublicKey)}`;
 
   return {
     did,
-    publicKey: base58.encode(publicKey),
+    publicKey: base58.encode(rawPublicKey),
     publicKeyMulticodec: multicodecPublicKey,
+    privateKeyPkcs8: new Uint8Array(privateKey),
     username: '',  // Will be set by user
     createdAt: Date.now(),
     version: 1,
@@ -75,11 +99,11 @@ export function signMessage(
   did: string
 ): IdentitySignature {
   const messageBuffer = Buffer.from(message, 'utf-8');
-  const signature = crypto.sign('sha256', messageBuffer, {
+  const signature = crypto.sign(null, messageBuffer, {
     key: crypto.createPrivateKey({
       key: privateKey,
-      format: 'raw',
-      type: 'ed25519',
+      format: 'der',
+      type: 'pkcs8',
     }),
   });
 
@@ -110,12 +134,12 @@ export function verifySignature(
     const messageBuffer = Buffer.from(message, 'utf-8');
 
     const publicKeyObject = crypto.createPublicKey({
-      key: publicKeyBuffer,
-      format: 'raw',
-      type: 'ed25519',
+      key: spkiDerFromRawPublicKey(publicKeyBuffer),
+      format: 'der',
+      type: 'spki',
     });
 
-    return crypto.verify('sha256', messageBuffer, publicKeyObject, signatureBuffer);
+    return crypto.verify(null, messageBuffer, publicKeyObject, signatureBuffer);
   } catch (error) {
     console.error('Signature verification failed:', error);
     return false;
@@ -139,8 +163,8 @@ export function isValidDID(did: string): boolean {
     const encodedKey = did.substring('did:key:z'.length);
     const decoded = base58.decode(encodedKey);
 
-    // Check multicodec prefix (0x1200 for Ed25519)
-    if (decoded[0] !== 0x12 || decoded[1] !== 0x20) {
+    // Check multicodec prefix (0xed01 for Ed25519)
+    if (decoded[0] !== 0xed || decoded[1] !== 0x01) {
       return false;
     }
 

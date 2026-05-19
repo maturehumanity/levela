@@ -541,3 +541,7 @@ export function getProtocolManager(): ProtocolManager {
   }
   return globalProtocolManager;
 }
+
+export function resetProtocolManager(): void {
+  globalProtocolManager = new ProtocolManager();
+}

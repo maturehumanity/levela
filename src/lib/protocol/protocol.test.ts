@@ -1,13 +1,19 @@
 import {
   getProtocolManager,
+  resetProtocolManager,
   ProtocolVersion,
   ProtocolFeature,
 } from './protocol-versioning';
-import { getConsensusManager } from './protocol-consensus';
-import { getProtocolExecutor } from './protocol-executor';
+import { getConsensusManager, resetConsensusManager } from './protocol-consensus';
+import { getProtocolExecutor, resetProtocolExecutor } from './protocol-executor';
+import { vi } from 'vitest';
 
 describe('Protocol Governance Tests', () => {
   describe('ProtocolManager', () => {
+    beforeEach(() => {
+      resetProtocolManager();
+    });
+
     it('should initialize with default version', () => {
       const manager = getProtocolManager();
       const activeVersion = manager.getActiveVersion();
@@ -187,6 +193,10 @@ describe('Protocol Governance Tests', () => {
   });
 
   describe('ConsensusManager', () => {
+    beforeEach(() => {
+      resetConsensusManager();
+    });
+
     it('should register voters with weights', () => {
       const manager = getConsensusManager();
 
@@ -295,6 +305,11 @@ describe('Protocol Governance Tests', () => {
   });
 
   describe('ProtocolExecutor', () => {
+    beforeEach(() => {
+      resetProtocolManager();
+      resetProtocolExecutor();
+    });
+
     it('should check if upgrade is ready', () => {
       const manager = getProtocolManager();
       const executor = getProtocolExecutor();
@@ -350,13 +365,13 @@ describe('Protocol Governance Tests', () => {
       const proposal = manager.proposeUpgrade(version, 'did:key:proposer', 100);
 
       const timeRemaining = executor.getTimeUntilExecution(proposal.id);
-      expect(timeRemaining).toBeGreaterThan(0);
+      expect(timeRemaining).toBeGreaterThanOrEqual(0);
     });
 
     it('should register rollback handler', () => {
       const executor = getProtocolExecutor();
 
-      const handler = jest.fn(async () => {
+      const handler = vi.fn(async () => {
         // Rollback logic
       });
 

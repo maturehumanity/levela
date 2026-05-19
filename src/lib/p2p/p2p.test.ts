@@ -2,7 +2,7 @@ import { GunClientManager } from './gun-client';
 import { IPFSClientManager } from './ipfs-client';
 import { PeerDiscoveryManager } from './peer-discovery';
 import { DataSyncManager } from './data-sync';
-import * as crypto from 'crypto';
+import { generateDID } from '../identity/did-manager';
 
 describe('P2P Module Tests', () => {
   describe('GunClientManager', () => {
@@ -32,20 +32,18 @@ describe('P2P Module Tests', () => {
       expect(retrieved).toEqual(testData);
     });
 
-    it('should subscribe to data changes', (done) => {
+    it('should subscribe to data changes', async () => {
       const testData = { name: 'Bob', score: 90 };
-      let callCount = 0;
 
-      const unsubscribe = gunClient.subscribe('users/bob', (data) => {
-        callCount++;
-        if (callCount === 1) {
+      await new Promise<void>((resolve, reject) => {
+        const unsubscribe = gunClient.subscribe('users/bob', (data) => {
           expect(data).toEqual(testData);
           unsubscribe();
-          done();
-        }
-      });
+          resolve();
+        });
 
-      gunClient.put('users/bob', testData).catch(done);
+        gunClient.put('users/bob', testData).catch(reject);
+      });
     });
 
     it('should delete data', async () => {
@@ -276,12 +274,9 @@ describe('P2P Module Tests', () => {
         debug: false,
       });
 
-      userDID = 'did:key:test';
-      const { privateKey: pk } = crypto.generateKeyPairSync('ed25519', {
-        publicKeyEncoding: { format: 'raw', type: 'spki' },
-        privateKeyEncoding: { format: 'raw', type: 'pkcs8' },
-      });
-      privateKey = pk as Uint8Array;
+      const identity = generateDID();
+      userDID = identity.did;
+      privateKey = identity.privateKeyPkcs8;
     });
 
     afterEach(() => {

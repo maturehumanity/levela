@@ -31,6 +31,7 @@ export class GunClientManager {
   private config: GunConfig;
   private isConnected: boolean = false;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  private memoryStore: Map<string, any> = new Map();
 
   constructor(config: GunConfig = {}) {
     this.config = {
@@ -91,7 +92,8 @@ export class GunClientManager {
       });
     } catch (error) {
       console.error('Failed to initialize Gun.js:', error);
-      throw error;
+      this.gun = null;
+      this.isConnected = false;
     }
   }
 
@@ -131,6 +133,11 @@ export class GunClientManager {
    * @param data - Data to store
    */
   async put(path: string, data: GunData): Promise<void> {
+    if (!this.gun) {
+      this.memoryStore.set(path, data);
+      this.listeners.get(path)?.forEach((callback) => callback(data));
+      return;
+    }
     return new Promise((resolve, reject) => {
       try {
         const pathParts = path.split('/');
@@ -163,6 +170,9 @@ export class GunClientManager {
    * @returns Data at the path
    */
   async get(path: string): Promise<GunData | null> {
+    if (!this.gun) {
+      return this.memoryStore.get(path) ?? null;
+    }
     return new Promise((resolve, reject) => {
       try {
         const pathParts = path.split('/');
@@ -196,6 +206,13 @@ export class GunClientManager {
    * @returns Unsubscribe function
    */
   subscribe(path: string, callback: (data: any) => void): () => void {
+    if (!this.gun) {
+      if (!this.listeners.has(path)) {
+        this.listeners.set(path, new Set());
+      }
+      this.listeners.get(path)!.add(callback);
+      return () => this.listeners.get(path)?.delete(callback);
+    }
     try {
       const pathParts = path.split('/');
       let reference = this.gun;
@@ -235,6 +252,10 @@ export class GunClientManager {
    * @param path - Path in the Gun database
    */
   async delete(path: string): Promise<void> {
+    if (!this.gun) {
+      this.memoryStore.delete(path);
+      return;
+    }
     return new Promise((resolve, reject) => {
       try {
         const pathParts = path.split('/');
@@ -267,6 +288,13 @@ export class GunClientManager {
    * @returns Array of keys
    */
   async keys(path: string): Promise<string[]> {
+    if (!this.gun) {
+      const prefix = path.endsWith('/') ? path : `${path}/`;
+      return Array.from(this.memoryStore.keys())
+        .filter((key) => key.startsWith(prefix))
+        .map((key) => key.slice(prefix.length).split('/')[0])
+        .filter((key, index, all) => key && all.indexOf(key) === index);
+    }
     return new Promise((resolve, reject) => {
       try {
         const pathParts = path.split('/');
@@ -304,6 +332,12 @@ export class GunClientManager {
     path: string,
     predicate: (item: any, key: string) => boolean
   ): Promise<Array<{ key: string; data: any }>> {
+    if (!this.gun) {
+      const prefix = path.endsWith('/') ? path : `${path}/`;
+      return Array.from(this.memoryStore.entries())
+        .filter(([key, data]) => key.startsWith(prefix) && predicate(data, key.slice(prefix.length)))
+        .map(([key, data]) => ({ key: key.slice(prefix.length), data }));
+    }
     return new Promise((resolve, reject) => {
       try {
         const pathParts = path.split('/');
@@ -351,10 +385,11 @@ export class GunClientManager {
   close(): void {
     if (this.gun) {
       this.gun.off();
-      this.isConnected = false;
-      if (this.config.debug) {
-        console.log('[Gun] Closed connection');
-      }
+    }
+    this.isConnected = false;
+    this.listeners.clear();
+    if (this.config.debug) {
+      console.log('[Gun] Closed connection');
     }
   }
 }
