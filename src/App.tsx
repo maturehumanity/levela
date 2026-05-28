@@ -5,6 +5,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import { PageSecondaryNavProvider } from "@/contexts/PageSecondaryNavContext";
 import { ThemeStorageSync } from "@/components/app/ThemeStorageSync";
 import { AppCrashBoundary } from "@/components/app/AppCrashBoundary";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -185,6 +186,7 @@ const App = () => (
               <DeferredGlobalFeedback />
               <DeferredAppUpdatePrompt />
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <PageSecondaryNavProvider>
                 <Suspense fallback={<RouteFallback />}>
                   <Routes>
                   {/* Public routes */}
@@ -362,6 +364,7 @@ const App = () => (
                   </Routes>
                 </Suspense>
                 <BuildOverlayLoader />
+                </PageSecondaryNavProvider>
               </BrowserRouter>
             </LanguageProvider>
           </AuthProvider>

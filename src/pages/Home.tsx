@@ -5,8 +5,8 @@ import { LevelaScore } from '@/components/ui/LevelaScore';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { usePageSecondaryNav } from '@/hooks/usePageSecondaryNav';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLevelaScore, type Endorsement } from '@/lib/scoring';
 import { type PillarId } from '@/lib/constants';
@@ -400,6 +400,37 @@ export default function Home() {
   };
 
   const score = calculateLevelaScore(endorsements);
+
+  const homeSecondaryNav = useMemo(
+    () => ({
+      items: [
+        { id: 'all', label: 'All' },
+        { id: 'favourite', label: 'Favourite' },
+        {
+          id: 'stories',
+          label: 'Stories',
+          title: 'Requests and implemented outcomes, documented for ecosystem transparency.',
+        },
+      ],
+      value: homeTab,
+      onChange: (value: string) => {
+        if (value === 'all' || value === 'favourite' || value === 'stories') {
+          setHomeTab(value);
+        }
+      },
+      fab:
+        homeTab === 'stories' && storyGroupTab === 'suggestions'
+          ? {
+              label: 'Add suggestion',
+              ariaLabel: 'Add a new suggestion story',
+              onClick: () => navigate('/governance'),
+            }
+          : null,
+    }),
+    [homeTab, storyGroupTab, navigate],
+  );
+  usePageSecondaryNav(homeSecondaryNav);
+
   const showHomeGovernanceHub = Boolean(profile && profile.role !== 'guest');
   const showScoreCard = homeTab === 'all' || homeTab === 'favourite';
   const showComposer = homeTab === 'all';
@@ -833,37 +864,6 @@ export default function Home() {
             <Suspense fallback={<div className="h-10 w-10 rounded-full border border-border/60 bg-card/60" />}><UserPageMenu /></Suspense>
           </div>
         </motion.div>
-
-        <Tabs
-          value={homeTab}
-          onValueChange={(value) => {
-            if (value === 'all' || value === 'favourite' || value === 'stories') {
-              setHomeTab(value);
-            }
-          }}
-        >
-          <TabsList className="grid w-full grid-cols-3 bg-muted/80 p-1">
-            <TabsTrigger
-              value="all"
-              className="rounded-xl text-base text-muted-foreground transition data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:font-semibold"
-            >
-              All
-            </TabsTrigger>
-            <TabsTrigger
-              value="favourite"
-              className="rounded-xl text-base text-muted-foreground transition data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:font-semibold"
-            >
-              Favourite
-            </TabsTrigger>
-            <TabsTrigger
-              value="stories"
-              title="Requests and implemented outcomes, documented for ecosystem transparency."
-              className="rounded-xl text-base text-muted-foreground transition data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:font-semibold"
-            >
-              Stories
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
 
         {/* Score Card */}
         {showScoreCard ? (

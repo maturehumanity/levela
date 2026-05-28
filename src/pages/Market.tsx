@@ -1,4 +1,4 @@
-import { FileSignature, Plus, Search, Wallet } from 'lucide-react';
+import { FileSignature, Search, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ import StudySpecialists from '@/pages/study/StudySpecialists';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePageSecondaryNav } from '@/hooks/usePageSecondaryNav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -20,8 +21,6 @@ import {
   useMarketPublishedListings,
 } from '@/lib/use-market-published-listings';
 import { specialistProfiles } from '@/lib/specialists';
-import { cn } from '@/lib/utils';
-
 type MarketTab = 'browse' | 'selling';
 type MarketEntity = 'people' | 'companies' | 'products' | 'services';
 
@@ -100,6 +99,34 @@ export default function Market() {
 
   const filteredPeople = people;
   const filteredCompanies = companies;
+
+  const marketSecondaryNav = useMemo(
+    () => ({
+      items: [
+        { id: 'browse', label: t('market.tabBrowse') },
+        {
+          id: 'selling',
+          label: t('market.tabSelling'),
+          disabled: !profile?.id,
+        },
+      ],
+      value: tab,
+      onChange: (value: string) => {
+        if (value === 'browse' || value === 'selling') {
+          setTab(value);
+        }
+      },
+      fab: profile?.id
+        ? {
+            label: t('market.sellFabLabel'),
+            ariaLabel: t('market.sellFabLabel'),
+            onClick: () => setPostOpen(true),
+          }
+        : null,
+    }),
+    [tab, profile?.id, t],
+  );
+  usePageSecondaryNav(marketSecondaryNav);
 
   useEffect(() => {
     const value = searchParams.get('entity');
@@ -262,27 +289,6 @@ export default function Market() {
           </div>
 
           <div className="mt-3 space-y-3 px-3">
-            <Tabs
-              value={tab}
-              onValueChange={(v) => {
-                if (v === 'browse' || v === 'selling') setTab(v);
-              }}
-              className="w-full"
-            >
-              <TabsList
-                className="grid h-11 w-full grid-cols-2 rounded-xl bg-muted/80 p-1"
-                data-build-key="marketTabs"
-                data-build-label="Browse or selling tabs"
-              >
-                <TabsTrigger value="browse" className="rounded-lg text-sm">
-                  {t('market.tabBrowse')}
-                </TabsTrigger>
-                <TabsTrigger value="selling" className="rounded-lg text-sm" disabled={!profile?.id}>
-                  {t('market.tabSelling')}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
             <Tabs value={entity} onValueChange={(value) => {
               if (value === 'people' || value === 'companies' || value === 'products' || value === 'services') {
                 setEntity(value);
@@ -466,21 +472,6 @@ export default function Market() {
 
       {profile?.id ? (
         <>
-          <Button
-            type="button"
-            size="icon"
-            className={cn(
-              'fixed z-[60] h-14 w-14 rounded-full shadow-lg',
-              'bottom-[calc(5rem+env(safe-area-inset-bottom,0px)+8px)] right-4 sm:right-6',
-            )}
-            onClick={() => setPostOpen(true)}
-            aria-label={t('market.sellFabLabel')}
-            data-build-key="marketSellFab"
-            data-build-label="Sell floating button"
-          >
-            <Plus className="h-7 w-7" aria-hidden />
-          </Button>
-
           <PostMarketListingDialog
             open={postOpen}
             onOpenChange={setPostOpen}

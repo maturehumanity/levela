@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BookOpen, Search } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { AppLayout } from '@/components/layout/AppLayout';
-import { StudySectionNav } from '@/components/study/StudySectionNav';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePageSecondaryNav } from '@/hooks/usePageSecondaryNav';
+import { studySectionRegistry } from '@/lib/study-sections';
 
 export type StudyLayoutOutletContext = {
   isSearchOpen: boolean;
@@ -18,6 +19,36 @@ export default function StudyLayout() {
   const isStudyIndex = location.pathname === '/study' || location.pathname === '/study/';
   const isStudyRoute = location.pathname === '/study' || location.pathname === '/study/' || location.pathname.startsWith('/study/');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const activeStudySectionId = useMemo(() => {
+    const match = studySectionRegistry.find((section) =>
+      section.path === '/study'
+        ? location.pathname === '/study' || location.pathname === '/study/'
+        : location.pathname === section.path || location.pathname.startsWith(`${section.path}/`),
+    );
+    return match?.id ?? 'civicLearning';
+  }, [location.pathname]);
+
+  const studySecondaryNav = useMemo(
+    () => ({
+      items: studySectionRegistry
+        .filter((section) => section.id !== 'specialists')
+        .map((section) => ({
+          id: section.id,
+          label: t(section.labelKey),
+          title: t(section.descriptionKey),
+        })),
+      value: activeStudySectionId,
+      onChange: (sectionId: string) => {
+        const section = studySectionRegistry.find((entry) => entry.id === sectionId);
+        if (section) {
+          navigate(section.path);
+        }
+      },
+    }),
+    [activeStudySectionId, navigate, t],
+  );
+  usePageSecondaryNav(studySecondaryNav);
 
   const handleToggleSearch = () => {
     if (!isStudyIndex) {
@@ -56,7 +87,6 @@ export default function StudyLayout() {
           </div>
           <p className="text-sm text-muted-foreground">{t('study.layoutSubtitle')}</p>
         </div>
-        <StudySectionNav />
         <Outlet context={{ isSearchOpen }} />
       </div>
     </AppLayout>

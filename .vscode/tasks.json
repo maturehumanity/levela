@@ -4,8 +4,7 @@
     {
       "label": "Start Levela Dev Server",
       "type": "process",
-      "command": "/bin/bash",
-      "args": ["-c", "npm run dev:auto"],
+      "command": "${workspaceFolder}/scripts/start-dev-server.sh",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -13,12 +12,24 @@
         "runOn": "folderOpen",
         "instanceLimit": 1
       },
+      "isBackground": true,
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "clear": true
+        "clear": false,
+        "focus": false
       },
-      "problemMatcher": []
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "(ready in \\d+ ms|Local:\\s+http)"
+        }
+      }
     }
   ]
 }
