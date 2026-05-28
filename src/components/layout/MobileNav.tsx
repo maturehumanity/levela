@@ -3,6 +3,7 @@ import { Home, BookOpen, Store, Settings, MessageCircle, Plus } from 'lucide-rea
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { NavSecondaryCarousel } from '@/components/layout/NavSecondaryCarousel';
+import { NavSecondaryStrip } from '@/components/layout/NavSecondaryStrip';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePageSecondaryNavContext } from '@/contexts/PageSecondaryNavContext';
 
@@ -20,6 +21,9 @@ function isNavItemActive(pathname: string, itemPath: string) {
   }
   if (itemPath === '/study') {
     return pathname === '/study' || pathname.startsWith('/study/');
+  }
+  if (itemPath === '/market') {
+    return pathname === '/market' || pathname.startsWith('/market/');
   }
   return pathname === itemPath;
 }
@@ -42,7 +46,7 @@ export function MobileNav() {
 
   return (
     <>
-      <NavSecondaryCarousel />
+      {config?.layout === 'strip' ? <NavSecondaryStrip /> : <NavSecondaryCarousel />}
       {config?.fab ? (
         <div
           className="pointer-events-none fixed inset-x-0 bottom-[calc(4.15rem+env(safe-area-inset-bottom,0px))] z-[70] flex justify-center"

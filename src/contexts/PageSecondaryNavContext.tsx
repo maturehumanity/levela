@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import {
   createContext,
   useCallback,
@@ -13,6 +14,7 @@ export type SecondaryNavItem = {
   label: string;
   disabled?: boolean;
   title?: string;
+  icon?: LucideIcon;
 };
 
 export type SecondaryNavFab = {
@@ -21,11 +23,17 @@ export type SecondaryNavFab = {
   onClick: () => void;
 };
 
+export type SecondaryNavLayout = 'arc' | 'strip';
+
 export type PageSecondaryNavConfig = {
   items: SecondaryNavItem[];
   value: string;
   onChange: (id: string) => void;
   fab?: SecondaryNavFab | null;
+  /** `strip` = horizontal scroll (market categories); `arc` = curved wheel (default). */
+  layout?: SecondaryNavLayout;
+  /** When true, the arc wheel wraps (last connects to first). */
+  loop?: boolean;
 };
 
 type Registration = PageSecondaryNavConfig & {
@@ -97,6 +105,8 @@ export function PageSecondaryNavProvider({ children }: { children: ReactNode }) 
       value: registration.value,
       onChange: registration.onChange,
       fab: registration.fab,
+      layout: registration.layout,
+      loop: registration.loop,
     };
   }, [registration]);
 

@@ -1,15 +1,24 @@
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { MarketCategoryIcon } from '@/components/market/MarketCategoryIcon';
 import { usePageSecondaryNavContext } from '@/contexts/PageSecondaryNavContext';
+import type { SecondaryNavItem } from '@/contexts/PageSecondaryNavContext';
 import { cn } from '@/lib/utils';
 
 const TAP_SLOP_PX = 8;
 const WHEEL_HEIGHT = 78;
+const WHEEL_HEIGHT_WITH_ICONS = 88;
 const SELECTED_Y = 60;
+const SELECTED_Y_WITH_ICONS = 64;
 const LABEL_EDGE_PADDING_PX = 44;
 /** Center gap width (px) — matches nav + button; used for arc spread on every page. */
 const CENTER_RESERVE_PX = 44;
+const PILL_WIDTH_PX = 74;
+const PILL_WIDTH_ICON_PX = 96;
+/** How many slots are visible on the arc at once (larger lists scroll through). */
+const VISIBLE_ARC_SLOTS = 7;
+const MAX_VISIBLE_OFFSET = 3.6;
 
 type WheelGeometry = {
   width: number;
@@ -44,27 +53,33 @@ function halfSpreadForItemCount(itemCount: number, safeWidth: number, centerX: n
   return Math.min(availableHalf, Math.max(minHalfSpread, widthBased));
 }
 
-function buildWheelGeometry(width: number, itemCount: number): WheelGeometry {
+function buildWheelGeometry(width: number, itemCount: number, hasIcons: boolean): WheelGeometry {
   const safeWidth = Math.max(width, 280);
   const centerX = safeWidth / 2;
-  const slots = Math.max(itemCount - 1, 1);
+  const pillWidth = hasIcons ? PILL_WIDTH_ICON_PX : PILL_WIDTH_PX;
 
   const sideDrop = Math.max(5, Math.min(7, safeWidth * 0.014));
-  const desiredHalfSpread = halfSpreadForItemCount(itemCount, safeWidth, centerX);
+  const desiredHalfSpread = halfSpreadForItemCount(
+    Math.min(itemCount, VISIBLE_ARC_SLOTS),
+    safeWidth,
+    centerX,
+  );
   const arcRadius = Math.max(
-    96,
+    108,
     (desiredHalfSpread * desiredHalfSpread + sideDrop * sideDrop) / (2 * sideDrop),
   );
-  const pivotY = SELECTED_Y + arcRadius;
-  const halfSpan = Math.asin(Math.min(0.999, desiredHalfSpread / arcRadius));
-  const arcSpan = halfSpan * 2;
-  const angleStep = slots > 0 ? arcSpan / slots : 0;
-  const pxPerSlot = Math.max(22, (desiredHalfSpread * 1.05) / Math.max(slots, 1));
+  const pivotY = (hasIcons ? SELECTED_Y_WITH_ICONS : SELECTED_Y) + arcRadius;
+
+  const minAngleStep = Math.max(0.11, (pillWidth * 1.08) / arcRadius);
+  const visibleSlots = Math.min(VISIBLE_ARC_SLOTS, Math.max(itemCount, 1));
+  const arcSpan = minAngleStep * Math.max(visibleSlots - 1, 1);
+  const angleStep = minAngleStep;
+  const pxPerSlot = Math.max(28, pillWidth * 0.92);
   const centerExclusionRad = Math.asin(Math.min(0.999, CENTER_RESERVE_PX / arcRadius));
 
   return {
     width: safeWidth,
-    wheelHeight: WHEEL_HEIGHT,
+    wheelHeight: hasIcons ? WHEEL_HEIGHT_WITH_ICONS : WHEEL_HEIGHT,
     pivotY,
     centerX,
     arcRadius,
@@ -75,17 +90,50 @@ function buildWheelGeometry(width: number, itemCount: number): WheelGeometry {
   };
 }
 
+const FOCUS_SNAP_DISTANCE = 0.42;
+
+function wheelOffset(index: number, position: number, length: number, loop: boolean) {
+  let offset = index - position;
+  if (!loop || length <= 1) return offset;
+  while (offset > length / 2) offset -= length;
+  while (offset < -length / 2) offset += length;
+  return offset;
+}
+
+function resolveSnapIndex(position: number, length: number) {
+  if (length <= 0) return 0;
+  return ((Math.round(position) % length) + length) % length;
+}
+
+function nearestWheelPositionForIndex(index: number, position: number, length: number) {
+  const candidates = [index, index + length, index - length, index + 2 * length, index - 2 * length];
+  return candidates.reduce((best, candidate) =>
+    (Math.abs(candidate - position) < Math.abs(best - position) ? candidate : best),
+  );
+}
+
 function itemAngle(
   index: number,
   wheelPosition: number,
   geometry: WheelGeometry,
   reserveCenter: boolean,
+  length: number,
+  loop: boolean,
 ) {
-  const offset = index - wheelPosition;
+  const offset = wheelOffset(index, wheelPosition, length, loop);
   let angle = -Math.PI / 2 + offset * geometry.angleStep;
 
-  // Keep the snapped item centered above the + button; only flank items move aside.
-  if (reserveCenter && Math.abs(offset) > 0.05) {
+  if (!reserveCenter) {
+    return angle;
+  }
+
+  // Focused item sits at the top of the arc (above the + button).
+  if (Math.abs(offset) < FOCUS_SNAP_DISTANCE) {
+    return -Math.PI / 2;
+  }
+
+  // Only push items that are clearly off-center — avoids a hard snap as neighbors approach focus.
+  if (Math.abs(offset) >= 1) {
     const distFromTop = angle + Math.PI / 2;
     if (Math.abs(distFromTop) < geometry.centerExclusionRad) {
       angle = -Math.PI / 2 + Math.sign(offset) * geometry.centerExclusionRad;
@@ -100,8 +148,10 @@ function itemPosition(
   wheelPosition: number,
   geometry: WheelGeometry,
   reserveCenter: boolean,
+  length: number,
+  loop: boolean,
 ) {
-  const angle = itemAngle(index, wheelPosition, geometry, reserveCenter);
+  const angle = itemAngle(index, wheelPosition, geometry, reserveCenter, length, loop);
   return {
     x: geometry.centerX + Math.cos(angle) * geometry.arcRadius,
     y: geometry.pivotY + Math.sin(angle) * geometry.arcRadius,
@@ -117,22 +167,99 @@ function arcGuidePaths(geometry: WheelGeometry): string[] {
   const leftEnd = mid - gap;
   const rightStart = mid + gap;
 
-  const arcSegment = (from: number, to: number) => {
-    const sx = geometry.centerX + Math.cos(from) * geometry.arcRadius;
-    const sy = geometry.pivotY + Math.sin(from) * geometry.arcRadius;
-    const ex = geometry.centerX + Math.cos(to) * geometry.arcRadius;
-    const ey = geometry.pivotY + Math.sin(to) * geometry.arcRadius;
-    return `M ${sx} ${sy} A ${geometry.arcRadius} ${geometry.arcRadius} 0 0 1 ${ex} ${ey}`;
-  };
-
   const paths: string[] = [];
   if (startAngle < leftEnd - 0.02) {
-    paths.push(arcSegment(startAngle, leftEnd));
+    paths.push(arcSegmentPath(geometry, startAngle, leftEnd));
   }
   if (rightStart < endAngle - 0.02) {
-    paths.push(arcSegment(rightStart, endAngle));
+    paths.push(arcSegmentPath(geometry, rightStart, endAngle));
   }
   return paths;
+}
+
+function arcSegmentPath(geometry: WheelGeometry, from: number, to: number) {
+  const sx = geometry.centerX + Math.cos(from) * geometry.arcRadius;
+  const sy = geometry.pivotY + Math.sin(from) * geometry.arcRadius;
+  const ex = geometry.centerX + Math.cos(to) * geometry.arcRadius;
+  const ey = geometry.pivotY + Math.sin(to) * geometry.arcRadius;
+  return `M ${sx} ${sy} A ${geometry.arcRadius} ${geometry.arcRadius} 0 0 1 ${ex} ${ey}`;
+}
+
+const LOOP_END_SLOT_OFFSET = 0.5;
+const LOOP_END_DASH_OFFSET = 0.14;
+
+type LoopEndGuideProps = {
+  geometry: WheelGeometry;
+  itemCount: number;
+  loop: boolean;
+  wheelPosition: ReturnType<typeof useMotionValue<number>>;
+  maxVisibleOffset: number;
+};
+
+type LoopEndMarkerProps = LoopEndGuideProps & {
+  slotIndex: number;
+  kind: 'dash' | 'dot';
+};
+
+function LoopEndMarker({
+  slotIndex,
+  kind,
+  wheelPosition,
+  geometry,
+  itemCount,
+  loop,
+  maxVisibleOffset,
+}: LoopEndMarkerProps) {
+  const wrapSlot = itemCount - LOOP_END_SLOT_OFFSET;
+
+  const transform = useTransform(wheelPosition, (pos) => {
+    const dist = Math.abs(wheelOffset(wrapSlot, pos, itemCount, loop));
+    if (dist > maxVisibleOffset) {
+      return 'translate3d(-9999px, -9999px, 0)';
+    }
+    const { x, y, angle } = itemPosition(slotIndex, pos, geometry, false, itemCount, loop);
+    const tangentDeg = ((angle + Math.PI / 2) * 180) / Math.PI;
+    const rotation = kind === 'dot' ? 0 : tangentDeg;
+    return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rotation}deg)`;
+  });
+
+  const opacity = useTransform(wheelPosition, (pos) => {
+    const dist = Math.abs(wheelOffset(wrapSlot, pos, itemCount, loop));
+    if (dist > maxVisibleOffset) return 0;
+    return Math.max(0.7, 1 - dist * 0.1);
+  });
+
+  if (kind === 'dot') {
+    return (
+      <motion.span
+        className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-primary/45"
+        style={{ transform, opacity }}
+        aria-hidden
+      />
+    );
+  }
+
+  return (
+    <motion.span
+      className="absolute left-0 top-0 block h-px w-3 rounded-full bg-primary/40"
+      style={{ transform, opacity }}
+      aria-hidden
+    />
+  );
+}
+
+/** − · − at the loop join (last category ↔ first), subdued primary green. */
+function LoopEndGuide({ geometry, itemCount, loop, wheelPosition, maxVisibleOffset }: LoopEndGuideProps) {
+  const wrapSlot = itemCount - LOOP_END_SLOT_OFFSET;
+  const shared = { geometry, itemCount, loop, wheelPosition, maxVisibleOffset };
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[15]" aria-hidden>
+      <LoopEndMarker slotIndex={wrapSlot - LOOP_END_DASH_OFFSET} kind="dash" {...shared} />
+      <LoopEndMarker slotIndex={wrapSlot} kind="dot" {...shared} />
+      <LoopEndMarker slotIndex={wrapSlot + LOOP_END_DASH_OFFSET} kind="dash" {...shared} />
+    </div>
+  );
 }
 
 export function NavSecondaryCarousel() {
@@ -145,6 +272,8 @@ export function NavSecondaryCarousel() {
 
   const items = useMemo(() => config?.items ?? [], [config?.items]);
   const hasFab = Boolean(config?.fab);
+  const loop = Boolean(config?.loop) && items.length > 1;
+  const hasIcons = useMemo(() => items.some((item) => Boolean(item.icon)), [items]);
   const activeIndex = useMemo(
     () => Math.max(0, items.findIndex((item) => item.id === config?.value)),
     [items, config?.value],
@@ -155,8 +284,8 @@ export function NavSecondaryCarousel() {
   const [containerWidth, setContainerWidth] = useState(360);
 
   const geometry = useMemo(
-    () => buildWheelGeometry(containerWidth, items.length),
-    [containerWidth, items.length],
+    () => buildWheelGeometry(containerWidth, items.length, hasIcons),
+    [containerWidth, hasIcons, items.length],
   );
 
   const arcPaths = useMemo(() => arcGuidePaths(geometry), [geometry]);
@@ -180,38 +309,51 @@ export function NavSecondaryCarousel() {
   }, [carouselVisible]);
 
   useEffect(() => {
-    animate(wheelPosition, activeIndex, {
+    const target = loop
+      ? nearestWheelPositionForIndex(activeIndex, wheelPosition.get(), items.length)
+      : activeIndex;
+    animate(wheelPosition, target, {
       type: 'spring',
       stiffness: 420,
       damping: 34,
     });
-  }, [activeIndex, wheelPosition]);
+  }, [activeIndex, items.length, loop, wheelPosition]);
 
   useEffect(() => {
     if (!carouselVisible) {
       dragRef.current.active = false;
-      animate(wheelPosition, activeIndex, { duration: 0.15 });
+      const target = loop
+        ? nearestWheelPositionForIndex(activeIndex, wheelPosition.get(), items.length)
+        : activeIndex;
+      animate(wheelPosition, target, { duration: 0.15 });
     } else {
-      wheelPosition.set(activeIndex);
+      wheelPosition.set(
+        loop ? nearestWheelPositionForIndex(activeIndex, activeIndex, items.length) : activeIndex,
+      );
     }
-  }, [activeIndex, carouselVisible, wheelPosition]);
+  }, [activeIndex, carouselVisible, items.length, loop, wheelPosition]);
 
   const snapToIndex = useCallback(
     (index: number, commit = true) => {
-      const clamped = clampIndex(index, items.length);
-      animate(wheelPosition, clamped, {
+      const length = items.length;
+      const normalized = loop ? resolveSnapIndex(index, length) : clampIndex(index, length);
+      const targetPosition = loop
+        ? nearestWheelPositionForIndex(normalized, wheelPosition.get(), length)
+        : normalized;
+
+      animate(wheelPosition, targetPosition, {
         type: 'spring',
         stiffness: 440,
         damping: 32,
       });
 
       if (!config || !commit) return;
-      const item = items[clamped];
+      const item = items[normalized];
       if (item && !item.disabled && item.id !== config.value) {
         config.onChange(item.id);
       }
     },
-    [config, items, wheelPosition],
+    [config, items, loop, wheelPosition],
   );
 
   const handlePointerDown = useCallback(
@@ -245,11 +387,15 @@ export function NavSecondaryCarousel() {
         dragRef.current.moved = true;
       }
       const next = dragRef.current.startPosition - deltaX / geometry.pxPerSlot;
-      const max = items.length - 1;
-      const rubberBand = next < 0 ? next * 0.35 : next > max ? max + (next - max) * 0.35 : next;
-      wheelPosition.set(rubberBand);
+      if (loop) {
+        wheelPosition.set(next);
+      } else {
+        const max = items.length - 1;
+        const rubberBand = next < 0 ? next * 0.35 : next > max ? max + (next - max) * 0.35 : next;
+        wheelPosition.set(rubberBand);
+      }
     },
-    [geometry.pxPerSlot, items.length, wheelPosition],
+    [geometry.pxPerSlot, items.length, loop, wheelPosition],
   );
 
   const finishPointer = useCallback(
@@ -268,7 +414,9 @@ export function NavSecondaryCarousel() {
       }
 
       const current = wheelPosition.get();
-      const targetIndex = clampIndex(Math.round(current), items.length);
+      const targetIndex = loop
+        ? resolveSnapIndex(current, items.length)
+        : clampIndex(Math.round(current), items.length);
 
       if (!dragRef.current.moved) {
         const rect = event.currentTarget.getBoundingClientRect();
@@ -278,7 +426,10 @@ export function NavSecondaryCarousel() {
         let hitIndex = targetIndex;
         let hitDistance = Number.POSITIVE_INFINITY;
         for (let i = 0; i < items.length; i += 1) {
-          const pos = itemPosition(i, current, geometry, hasFab);
+          if (loop && Math.abs(wheelOffset(i, current, items.length, true)) > MAX_VISIBLE_OFFSET) {
+            continue;
+          }
+          const pos = itemPosition(i, current, geometry, hasFab, items.length, loop);
           const dx = localX - pos.x;
           const dy = localY - pos.y;
           const dist = dx * dx + dy * dy;
@@ -289,12 +440,12 @@ export function NavSecondaryCarousel() {
         }
         snapToIndex(hitIndex);
       } else {
-        snapToIndex(targetIndex);
+        snapToIndex(loop ? current : targetIndex);
       }
 
       scheduleCarouselHide();
     },
-    [geometry, hasFab, items.length, scheduleCarouselHide, snapToIndex, wheelPosition],
+    [geometry, hasFab, items.length, loop, scheduleCarouselHide, snapToIndex, wheelPosition],
   );
 
   if (!config || items.length === 0) {
@@ -355,13 +506,25 @@ export function NavSecondaryCarousel() {
                 ))}
               </svg>
 
+              {loop ? (
+                <LoopEndGuide
+                  geometry={geometry}
+                  itemCount={items.length}
+                  loop={loop}
+                  wheelPosition={wheelPosition}
+                  maxVisibleOffset={MAX_VISIBLE_OFFSET}
+                />
+              ) : null}
+
               {items.slice(0, -1).map((_, separatorIndex) => (
-                <ArcSeparatorDot
+                <ArcSeparatorMarker
                   key={`sep-${separatorIndex}`}
-                  leftIndex={separatorIndex}
+                  slotIndex={separatorIndex + 0.5}
                   wheelPosition={wheelPosition}
                   geometry={geometry}
-                  hasFab={hasFab}
+                  itemCount={items.length}
+                  loop={loop}
+                  maxVisibleOffset={MAX_VISIBLE_OFFSET}
                 />
               ))}
 
@@ -373,7 +536,11 @@ export function NavSecondaryCarousel() {
                   wheelPosition={wheelPosition}
                   geometry={geometry}
                   hasFab={hasFab}
+                  hasIcons={hasIcons}
+                  itemCount={items.length}
+                  loop={loop}
                   selectedId={config.value}
+                  maxVisibleOffset={MAX_VISIBLE_OFFSET}
                 />
               ))}
             </div>
@@ -388,26 +555,30 @@ function clampIndex(index: number, length: number) {
   return Math.max(0, Math.min(length - 1, index));
 }
 
-type ArcSeparatorDotProps = {
-  leftIndex: number;
+type ArcSeparatorMarkerProps = {
+  slotIndex: number;
   wheelPosition: ReturnType<typeof useMotionValue<number>>;
   geometry: WheelGeometry;
-  hasFab: boolean;
+  itemCount: number;
+  loop: boolean;
+  maxVisibleOffset: number;
 };
 
-function ArcSeparatorDot({ leftIndex, wheelPosition, geometry, hasFab }: ArcSeparatorDotProps) {
+function ArcSeparatorMarker({
+  slotIndex,
+  wheelPosition,
+  geometry,
+  itemCount,
+  loop,
+  maxVisibleOffset,
+}: ArcSeparatorMarkerProps) {
   const transform = useTransform(wheelPosition, (pos) => {
-    const { x, y } = itemPosition(leftIndex + 0.5, pos, geometry, hasFab);
+    const { x, y } = itemPosition(slotIndex, pos, geometry, false, itemCount, loop);
     return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
   });
   const opacity = useTransform(wheelPosition, (pos) => {
-    if (hasFab) {
-      const angle = itemAngle(leftIndex + 0.5, pos, geometry, true);
-      if (Math.abs(angle + Math.PI / 2) < geometry.centerExclusionRad + 0.06) {
-        return 0;
-      }
-    }
-    const dist = Math.abs(leftIndex + 0.5 - pos);
+    const dist = Math.abs(wheelOffset(slotIndex, pos, itemCount, loop));
+    if (dist > maxVisibleOffset) return 0;
     return Math.max(0.45, 0.8 - dist * 0.18);
   });
 
@@ -421,12 +592,16 @@ function ArcSeparatorDot({ leftIndex, wheelPosition, geometry, hasFab }: ArcSepa
 }
 
 type CarouselArcItemProps = {
-  item: { id: string; label: string; disabled?: boolean; title?: string };
+  item: SecondaryNavItem;
   index: number;
   wheelPosition: ReturnType<typeof useMotionValue<number>>;
   geometry: WheelGeometry;
   hasFab: boolean;
+  hasIcons: boolean;
+  itemCount: number;
+  loop: boolean;
   selectedId: string;
+  maxVisibleOffset: number;
 };
 
 function CarouselArcItem({
@@ -435,27 +610,40 @@ function CarouselArcItem({
   wheelPosition,
   geometry,
   hasFab,
+  hasIcons,
+  itemCount,
+  loop,
   selectedId,
+  maxVisibleOffset,
 }: CarouselArcItemProps) {
+  const Icon = item.icon;
   const transform = useTransform(wheelPosition, (pos) => {
-    const { x, y, angle } = itemPosition(index, pos, geometry, hasFab);
-    const tangentDeg = ((angle + Math.PI / 2) * 180) / Math.PI;
+    const { x, y, angle } = itemPosition(index, pos, geometry, hasFab, itemCount, loop);
+    const dist = Math.abs(wheelOffset(index, pos, itemCount, loop));
+    const tangentDeg = dist < FOCUS_SNAP_DISTANCE ? 0 : ((angle + Math.PI / 2) * 180) / Math.PI;
     return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${tangentDeg}deg)`;
   });
   const opacity = useTransform(wheelPosition, (pos) => {
-    const dist = Math.abs(index - pos);
+    const dist = Math.abs(wheelOffset(index, pos, itemCount, loop));
+    if (dist > maxVisibleOffset) return 0;
     return Math.max(0.62, 1 - dist * 0.2);
   });
   const color = useTransform(wheelPosition, (pos) =>
-    Math.abs(index - pos) < 0.42 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.65)',
+    Math.abs(wheelOffset(index, pos, itemCount, loop)) < FOCUS_SNAP_DISTANCE
+      ? 'hsl(var(--primary))'
+      : 'hsl(var(--primary) / 0.65)',
   );
   const zIndex = useTransform(wheelPosition, (pos) => {
-    const dist = Math.abs(index - pos);
-    if (hasFab && dist < 0.42) {
-      return 8;
-    }
-    return dist < 0.42 ? 30 : 10 - dist;
+    const dist = Math.abs(wheelOffset(index, pos, itemCount, loop));
+    if (dist < FOCUS_SNAP_DISTANCE) return 40;
+    return 12 - dist;
   });
+  const focusAmount = useTransform(wheelPosition, (pos) => {
+    const dist = Math.abs(wheelOffset(index, pos, itemCount, loop));
+    if (dist >= FOCUS_SNAP_DISTANCE) return 0;
+    return 1 - dist / FOCUS_SNAP_DISTANCE;
+  });
+  const flankAmount = useTransform(focusAmount, (focus) => 1 - focus);
 
   const isCommitted = item.id === selectedId;
 
@@ -464,17 +652,20 @@ function CarouselArcItem({
       role="option"
       aria-selected={isCommitted}
       aria-disabled={item.disabled}
-      title={item.title}
+      title={item.title ?? item.label}
       className={cn(
-        'absolute left-0 top-0 w-[4.6rem] -translate-x-1/2',
-        'pointer-events-none whitespace-nowrap text-center',
+        'absolute left-0 top-0 -translate-x-1/2',
+        'pointer-events-none text-center',
+        hasIcons ? 'w-auto max-w-[min(100vw,14rem)]' : 'w-[4.6rem]',
+        'whitespace-nowrap',
         item.disabled && 'opacity-40',
       )}
       style={{ transform, opacity, zIndex }}
     >
       <motion.span
         className={cn(
-          'block rounded-full border px-2 py-1 text-center text-xs font-semibold leading-tight',
+          'relative inline-flex items-center justify-center rounded-full border px-2 py-1',
+          'text-center text-[11px] font-semibold leading-tight',
           '[text-shadow:0_1px_1px_rgba(0,0,0,0.05)]',
           'backdrop-blur-[2px]',
           isCommitted
@@ -483,7 +674,40 @@ function CarouselArcItem({
         )}
         style={{ color }}
       >
-        {item.label}
+        {hasIcons ? (
+          <>
+            <motion.span
+              className="inline-flex max-w-[4.25rem] items-center gap-1"
+              style={{ opacity: flankAmount }}
+              aria-hidden
+            >
+              {Icon ? (
+                <MarketCategoryIcon
+                  icon={Icon}
+                  className="h-5 w-5 bg-muted/90"
+                  iconClassName="h-3 w-3"
+                />
+              ) : null}
+              <span className="truncate">{item.label}</span>
+            </motion.span>
+            <motion.span
+              className="absolute inset-0 inline-flex items-center justify-center gap-1 px-1"
+              style={{ opacity: focusAmount }}
+              aria-hidden={!isCommitted}
+            >
+              {Icon ? (
+                <MarketCategoryIcon
+                  icon={Icon}
+                  className="h-5 w-5 bg-muted/90"
+                  iconClassName="h-3 w-3"
+                />
+              ) : null}
+              <span className="whitespace-nowrap">{item.label}</span>
+            </motion.span>
+          </>
+        ) : (
+          <span className="truncate">{item.label}</span>
+        )}
       </motion.span>
     </motion.div>
   );

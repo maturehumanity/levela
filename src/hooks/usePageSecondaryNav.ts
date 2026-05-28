@@ -28,6 +28,8 @@ export function usePageSecondaryNav(config: PageSecondaryNavConfig | null) {
       value: current.value,
       onChange: (id) => configRef.current?.onChange(id),
       fab: current.fab ?? null,
+      layout: current.layout,
+      loop: current.loop,
     });
     registrationIdRef.current = registrationId;
 
@@ -46,6 +48,8 @@ export function usePageSecondaryNav(config: PageSecondaryNavConfig | null) {
       value: current.value,
       onChange: (id) => configRef.current?.onChange(id),
       fab: current.fab ?? null,
+      layout: current.layout,
+      loop: current.loop,
     });
-  }, [itemIdsKey, config?.value, config?.fab?.label, config?.fab?.ariaLabel, updateConfig]);
+  }, [itemIdsKey, config?.value, config?.fab?.label, config?.fab?.ariaLabel, config?.layout, config?.loop, updateConfig]);
 }

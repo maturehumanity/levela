@@ -36,6 +36,7 @@ const Governance = lazy(() => import('@/pages/Governance'));
 const Home = lazy(() => import('@/pages/Home'));
 const Law = lazy(() => import('@/pages/Law'));
 const Market = lazy(() => import('@/pages/Market'));
+const MarketTaxonomy = lazy(() => import('@/pages/MarketTaxonomy'));
 const Agreements = lazy(() => import('@/pages/Agreements'));
 const AgreementDetail = lazy(() => import('@/pages/AgreementDetail'));
 const TermsOfUse = lazy(() => import('@/pages/TermsOfUse'));
@@ -53,6 +54,7 @@ const PermissionsAdmin = lazy(() => import('@/pages/settings/PermissionsAdmin'))
 const GovernanceAdmin = lazy(() => import('@/pages/settings/GovernanceAdmin'));
 const LumaCreditsAdmin = lazy(() => import('@/pages/settings/LumaCreditsAdmin'));
 const WalletPage = lazy(() => import('@/pages/settings/Wallet'));
+const TaxonomySettings = lazy(() => import('@/pages/settings/Taxonomy'));
 const MessagingSettingsPage = lazy(() => import('@/pages/settings/MessagingSettings'));
 const MessagingSecurity = lazy(() => import('@/pages/settings/MessagingSecurity'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -232,6 +234,7 @@ const App = () => (
                     }
                   />
                   <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
+                  <Route path="/market/taxonomy" element={<ProtectedRoute><MarketTaxonomy /></ProtectedRoute>} />
                   <Route path="/agreements/:agreementId" element={<ProtectedRoute><AgreementDetail /></ProtectedRoute>} />
                   <Route path="/agreements" element={<ProtectedRoute><Agreements /></ProtectedRoute>} />
                   <Route
@@ -268,6 +271,7 @@ const App = () => (
                   />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/settings/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+                  <Route path="/settings/taxonomy" element={<ProtectedRoute><TaxonomySettings /></ProtectedRoute>} />
                   <Route path="/settings/luma-wallet" element={<ProtectedRoute><Navigate to="/settings/wallet" replace /></ProtectedRoute>} />
                   <Route
                     path="/settings/messaging"

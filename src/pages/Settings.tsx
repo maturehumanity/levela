@@ -59,6 +59,12 @@ const settingsItems = [
     path: '/settings/wallet',
   },
   {
+    icon: LayoutGrid,
+    labelKey: 'settings.taxonomy',
+    descriptionKey: 'settings.taxonomyDescription',
+    path: '/settings/taxonomy',
+  },
+  {
     icon: Bell,
     labelKey: 'settings.notifications',
     descriptionKey: 'settings.notificationsDescription',
