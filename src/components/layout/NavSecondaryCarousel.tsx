@@ -16,6 +16,7 @@ const LABEL_EDGE_PADDING_PX = 44;
 const CENTER_RESERVE_PX = 44;
 const PILL_WIDTH_PX = 74;
 const PILL_WIDTH_ICON_PX = 96;
+const SEPARATOR_GAP_PX = 8;
 /** How many slots are visible on the arc at once (larger lists scroll through). */
 const VISIBLE_ARC_SLOTS = 7;
 const MAX_VISIBLE_OFFSET = 3.6;
@@ -30,6 +31,8 @@ type WheelGeometry = {
   arcSpan: number;
   pxPerSlot: number;
   centerExclusionRad: number;
+  labelWidths: number[];
+  usePairwisePitch: boolean;
 };
 
 function halfSpreadForItemCount(itemCount: number, safeWidth: number, centerX: number) {
@@ -53,10 +56,24 @@ function halfSpreadForItemCount(itemCount: number, safeWidth: number, centerX: n
   return Math.min(availableHalf, Math.max(minHalfSpread, widthBased));
 }
 
-function buildWheelGeometry(width: number, itemCount: number, hasIcons: boolean): WheelGeometry {
+function estimateTextPillWidth(label: string) {
+  return Math.min(220, Math.max(PILL_WIDTH_PX, Math.ceil(label.length * 5.2) + 24));
+}
+
+function buildWheelGeometry(
+  width: number,
+  itemCount: number,
+  hasIcons: boolean,
+  labels: string[] = [],
+): WheelGeometry {
   const safeWidth = Math.max(width, 280);
   const centerX = safeWidth / 2;
-  const pillWidth = hasIcons ? PILL_WIDTH_ICON_PX : PILL_WIDTH_PX;
+  const labelWidths = hasIcons
+    ? []
+    : labels.map((label) => estimateTextPillWidth(label));
+  const nominalPillWidth = hasIcons
+    ? PILL_WIDTH_ICON_PX
+    : labelWidths.reduce((max, pillWidth) => Math.max(max, pillWidth), PILL_WIDTH_PX);
 
   const sideDrop = Math.max(5, Math.min(7, safeWidth * 0.014));
   const desiredHalfSpread = halfSpreadForItemCount(
@@ -70,11 +87,25 @@ function buildWheelGeometry(width: number, itemCount: number, hasIcons: boolean)
   );
   const pivotY = (hasIcons ? SELECTED_Y_WITH_ICONS : SELECTED_Y) + arcRadius;
 
-  const minAngleStep = Math.max(0.11, (pillWidth * 1.08) / arcRadius);
+  const pairwiseSteps =
+    !hasIcons && labelWidths.length > 1
+      ? labelWidths.slice(0, -1).map((left, index) =>
+          pairwiseAngleStep(arcRadius, left, labelWidths[index + 1]),
+        )
+      : [];
+  const minAngleStep = Math.max(
+    0.11,
+    pairwiseSteps.length ? Math.max(...pairwiseSteps) : (nominalPillWidth * 1.08) / arcRadius,
+  );
   const visibleSlots = Math.min(VISIBLE_ARC_SLOTS, Math.max(itemCount, 1));
   const arcSpan = minAngleStep * Math.max(visibleSlots - 1, 1);
   const angleStep = minAngleStep;
-  const pxPerSlot = Math.max(28, pillWidth * 0.92);
+  const pxPerSlot = Math.max(
+    28,
+    pairwiseSteps.length
+      ? Math.max(...pairwiseSteps) * arcRadius
+      : nominalPillWidth * 0.92,
+  );
   const centerExclusionRad = Math.asin(Math.min(0.999, CENTER_RESERVE_PX / arcRadius));
 
   return {
@@ -87,7 +118,59 @@ function buildWheelGeometry(width: number, itemCount: number, hasIcons: boolean)
     arcSpan,
     pxPerSlot,
     centerExclusionRad,
+    labelWidths,
+    usePairwisePitch: !hasIcons && labelWidths.length > 0,
   };
+}
+
+function pairwiseAngleStep(arcRadius: number, widthA: number, widthB: number) {
+  const chord = widthA / 2 + widthB / 2 + SEPARATOR_GAP_PX;
+  return Math.asin(Math.min(0.999, chord / arcRadius));
+}
+
+function slotIndexFor(slot: number, length: number) {
+  return Math.min(length - 1, Math.max(0, Math.round(slot)));
+}
+
+/** Arc angle for a fractional slot relative to the wheel focus (pairwise pitch between neighbors). */
+function angleForSlot(
+  slot: number,
+  focusSlot: number,
+  geometry: WheelGeometry,
+  length: number,
+) {
+  const delta = slot - focusSlot;
+  if (Math.abs(delta) < 1e-6) return -Math.PI / 2;
+
+  const sign = Math.sign(delta);
+  const abs = Math.abs(delta);
+  const full = Math.floor(abs);
+  const frac = abs - full;
+  let angle = -Math.PI / 2;
+
+  for (let step = 0; step < full; step += 1) {
+    const from = focusSlot + sign * step;
+    const to = focusSlot + sign * (step + 1);
+    const fromIdx = slotIndexFor(from, length);
+    const toIdx = slotIndexFor(to, length);
+    angle += sign * pairwiseAngleStep(
+      geometry.arcRadius,
+      geometry.labelWidths[fromIdx] ?? PILL_WIDTH_PX,
+      geometry.labelWidths[toIdx] ?? PILL_WIDTH_PX,
+    );
+  }
+
+  if (frac > 1e-6) {
+    const fromIdx = slotIndexFor(focusSlot + sign * full, length);
+    const toIdx = slotIndexFor(focusSlot + sign * (full + 1), length);
+    angle += sign * frac * pairwiseAngleStep(
+      geometry.arcRadius,
+      geometry.labelWidths[fromIdx] ?? PILL_WIDTH_PX,
+      geometry.labelWidths[toIdx] ?? PILL_WIDTH_PX,
+    );
+  }
+
+  return angle;
 }
 
 const FOCUS_SNAP_DISTANCE = 0.42;
@@ -112,6 +195,27 @@ function nearestWheelPositionForIndex(index: number, position: number, length: n
   );
 }
 
+/** Place · midway between adjacent pill edges (not pill centers). */
+function separatorAngleBetween(
+  leftSlot: number,
+  rightSlot: number,
+  focusSlot: number,
+  geometry: WheelGeometry,
+  length: number,
+) {
+  if (!geometry.usePairwisePitch) {
+    return angleForSlot((leftSlot + rightSlot) / 2, focusSlot, geometry, length);
+  }
+
+  const leftAngle = angleForSlot(leftSlot, focusSlot, geometry, length);
+  const rightAngle = angleForSlot(rightSlot, focusSlot, geometry, length);
+  const leftIdx = slotIndexFor(leftSlot, length);
+  const rightIdx = slotIndexFor(rightSlot, length);
+  const leftHalfRad = (geometry.labelWidths[leftIdx] ?? PILL_WIDTH_PX) / 2 / geometry.arcRadius;
+  const rightHalfRad = (geometry.labelWidths[rightIdx] ?? PILL_WIDTH_PX) / 2 / geometry.arcRadius;
+  return (leftAngle + leftHalfRad + rightAngle - rightHalfRad) / 2;
+}
+
 function itemAngle(
   index: number,
   wheelPosition: number,
@@ -121,9 +225,11 @@ function itemAngle(
   loop: boolean,
 ) {
   const offset = wheelOffset(index, wheelPosition, length, loop);
-  let angle = -Math.PI / 2 + offset * geometry.angleStep;
+  let angle = geometry.usePairwisePitch
+    ? angleForSlot(index, wheelPosition, geometry, length)
+    : -Math.PI / 2 + offset * geometry.angleStep;
 
-  if (!reserveCenter) {
+  if (!reserveCenter || geometry.usePairwisePitch) {
     return angle;
   }
 
@@ -283,9 +389,10 @@ export function NavSecondaryCarousel() {
   const arcTrackRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(360);
 
+  const itemLabels = useMemo(() => items.map((item) => item.label), [items]);
   const geometry = useMemo(
-    () => buildWheelGeometry(containerWidth, items.length, hasIcons),
-    [containerWidth, hasIcons, items.length],
+    () => buildWheelGeometry(containerWidth, items.length, hasIcons, itemLabels),
+    [containerWidth, hasIcons, itemLabels, items.length],
   );
 
   const arcPaths = useMemo(() => arcGuidePaths(geometry), [geometry]);
@@ -522,6 +629,7 @@ export function NavSecondaryCarousel() {
                   slotIndex={separatorIndex + 0.5}
                   wheelPosition={wheelPosition}
                   geometry={geometry}
+                  hasFab={hasFab}
                   itemCount={items.length}
                   loop={loop}
                   maxVisibleOffset={MAX_VISIBLE_OFFSET}
@@ -559,6 +667,7 @@ type ArcSeparatorMarkerProps = {
   slotIndex: number;
   wheelPosition: ReturnType<typeof useMotionValue<number>>;
   geometry: WheelGeometry;
+  hasFab: boolean;
   itemCount: number;
   loop: boolean;
   maxVisibleOffset: number;
@@ -568,13 +677,21 @@ function ArcSeparatorMarker({
   slotIndex,
   wheelPosition,
   geometry,
+  hasFab,
   itemCount,
   loop,
   maxVisibleOffset,
 }: ArcSeparatorMarkerProps) {
   const transform = useTransform(wheelPosition, (pos) => {
-    const { x, y } = itemPosition(slotIndex, pos, geometry, false, itemCount, loop);
-    return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+    const leftSlot = Math.floor(slotIndex);
+    const rightSlot = Math.ceil(slotIndex);
+    const angle = geometry.usePairwisePitch
+      ? separatorAngleBetween(leftSlot, rightSlot, pos, geometry, itemCount)
+      : itemAngle(slotIndex, pos, geometry, hasFab, itemCount, loop);
+    const x = geometry.centerX + Math.cos(angle) * geometry.arcRadius;
+    const y = geometry.pivotY + Math.sin(angle) * geometry.arcRadius;
+    const tangentDeg = ((angle + Math.PI / 2) * 180) / Math.PI;
+    return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${tangentDeg}deg)`;
   });
   const opacity = useTransform(wheelPosition, (pos) => {
     const dist = Math.abs(wheelOffset(slotIndex, pos, itemCount, loop));
@@ -584,10 +701,12 @@ function ArcSeparatorMarker({
 
   return (
     <motion.span
-      className="absolute left-0 top-0 h-1 w-1 rounded-full bg-muted-foreground/70"
+      className="absolute left-0 top-0 px-0.5 text-[11px] font-bold leading-none text-muted-foreground/75"
       style={{ transform, opacity }}
       aria-hidden
-    />
+    >
+      ·
+    </motion.span>
   );
 }
 
@@ -620,7 +739,7 @@ function CarouselArcItem({
   const transform = useTransform(wheelPosition, (pos) => {
     const { x, y, angle } = itemPosition(index, pos, geometry, hasFab, itemCount, loop);
     const dist = Math.abs(wheelOffset(index, pos, itemCount, loop));
-    const tangentDeg = dist < FOCUS_SNAP_DISTANCE ? 0 : ((angle + Math.PI / 2) * 180) / Math.PI;
+    const tangentDeg = ((angle + Math.PI / 2) * 180) / Math.PI;
     return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${tangentDeg}deg)`;
   });
   const opacity = useTransform(wheelPosition, (pos) => {
@@ -656,7 +775,7 @@ function CarouselArcItem({
       className={cn(
         'absolute left-0 top-0 -translate-x-1/2',
         'pointer-events-none text-center',
-        hasIcons ? 'w-auto max-w-[min(100vw,14rem)]' : 'w-[4.6rem]',
+        'w-auto max-w-[min(100vw-2rem,16rem)]',
         'whitespace-nowrap',
         item.disabled && 'opacity-40',
       )}
@@ -706,7 +825,7 @@ function CarouselArcItem({
             </motion.span>
           </>
         ) : (
-          <span className="truncate">{item.label}</span>
+          <span className="whitespace-nowrap">{item.label}</span>
         )}
       </motion.span>
     </motion.div>

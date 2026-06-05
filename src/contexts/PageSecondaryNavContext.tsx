@@ -28,12 +28,16 @@ export type SecondaryNavLayout = 'arc' | 'strip';
 export type PageSecondaryNavConfig = {
   items: SecondaryNavItem[];
   value: string;
+  /** Double-tap the active bottom tab resets to this section (e.g. Market → For you). */
+  defaultValue?: string;
   onChange: (id: string) => void;
   fab?: SecondaryNavFab | null;
   /** `strip` = horizontal scroll (market categories); `arc` = curved wheel (default). */
   layout?: SecondaryNavLayout;
   /** When true, the arc wheel wraps (last connects to first). */
   loop?: boolean;
+  /** When true, arc/strip stays open on this page (no auto-hide). */
+  persistCarousel?: boolean;
 };
 
 type Registration = PageSecondaryNavConfig & {
@@ -69,21 +73,26 @@ export function PageSecondaryNavProvider({ children }: { children: ReactNode }) 
   }, []);
 
   const scheduleCarouselHide = useCallback(() => {
+    if (registration?.persistCarousel) return;
     cancelCarouselHide();
     hideTimerRef.current = setTimeout(() => {
       setCarouselVisible(false);
       hideTimerRef.current = null;
     }, AUTO_HIDE_MS);
-  }, [cancelCarouselHide]);
+  }, [cancelCarouselHide, registration?.persistCarousel]);
 
   const register = useCallback((config: PageSecondaryNavConfig) => {
     registrationCounter.current += 1;
     const registrationId = `secondary-nav-${registrationCounter.current}`;
     setRegistration({ ...config, registrationId });
     setCarouselVisible(true);
-    scheduleCarouselHide();
+    if (!config.persistCarousel) {
+      scheduleCarouselHide();
+    } else {
+      cancelCarouselHide();
+    }
     return registrationId;
-  }, [scheduleCarouselHide]);
+  }, [cancelCarouselHide, scheduleCarouselHide]);
 
   const updateConfig = useCallback((config: PageSecondaryNavConfig) => {
     setRegistration((current) => {
@@ -103,10 +112,12 @@ export function PageSecondaryNavProvider({ children }: { children: ReactNode }) 
     return {
       items: registration.items,
       value: registration.value,
+      defaultValue: registration.defaultValue,
       onChange: registration.onChange,
       fab: registration.fab,
       layout: registration.layout,
       loop: registration.loop,
+      persistCarousel: registration.persistCarousel,
     };
   }, [registration]);
 

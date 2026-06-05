@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Home, BookOpen, Store, Settings, MessageCircle, Plus } from 'lucide-react';
+import { useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { NavSecondaryCarousel } from '@/components/layout/NavSecondaryCarousel';
@@ -32,11 +33,19 @@ function matchesSecondaryNavRoute(pathname: string, itemPath: string) {
   return isNavItemActive(pathname, itemPath);
 }
 
+const ACTIVE_NAV_DOUBLE_TAP_MS = 400;
+
+function isSecondaryNavChromeTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('[data-secondary-nav-chrome]'));
+}
+
 export function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { config, setCarouselVisible, cancelCarouselHide } = usePageSecondaryNavContext();
+  const { config, setCarouselVisible, cancelCarouselHide, scheduleCarouselHide } =
+    usePageSecondaryNavContext();
+  const lastActiveNavTapRef = useRef<{ path: string; at: number } | null>(null);
 
   const revealCarouselForActiveItem = (itemPath: string) => {
     if (!config || !matchesSecondaryNavRoute(location.pathname, itemPath)) return;
@@ -44,12 +53,43 @@ export function MobileNav() {
     cancelCarouselHide();
   };
 
+  const handleChromePointerLeave = (event: React.PointerEvent) => {
+    if (isSecondaryNavChromeTarget(event.relatedTarget)) return;
+    if (config?.persistCarousel) return;
+    scheduleCarouselHide();
+  };
+
+  const handleNavItemPress = (itemPath: string, isActive: boolean, hasSecondaryNav: boolean) => {
+    if (isActive && hasSecondaryNav) {
+      const now = Date.now();
+      const lastTap = lastActiveNavTapRef.current;
+      if (
+        lastTap?.path === itemPath &&
+        now - lastTap.at < ACTIVE_NAV_DOUBLE_TAP_MS &&
+        config?.defaultValue
+      ) {
+        lastActiveNavTapRef.current = null;
+        config.onChange(config.defaultValue);
+        revealCarouselForActiveItem(itemPath);
+        return;
+      }
+      lastActiveNavTapRef.current = { path: itemPath, at: now };
+      revealCarouselForActiveItem(itemPath);
+      return;
+    }
+    lastActiveNavTapRef.current = null;
+    navigate(itemPath);
+  };
+
   return (
     <>
       {config?.layout === 'strip' ? <NavSecondaryStrip /> : <NavSecondaryCarousel />}
       {config?.fab ? (
         <div
+          data-secondary-nav-chrome
           className="pointer-events-none fixed inset-x-0 bottom-[calc(4.15rem+env(safe-area-inset-bottom,0px))] z-[70] flex justify-center"
+          onPointerEnter={cancelCarouselHide}
+          onPointerLeave={handleChromePointerLeave}
         >
           <button
             type="button"
@@ -65,7 +105,10 @@ export function MobileNav() {
         </div>
       ) : null}
       <nav
+        data-secondary-nav-chrome
         className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/80 backdrop-blur-xl${config?.fab ? ' overflow-visible border-t-0' : ''}`}
+        onPointerEnter={cancelCarouselHide}
+        onPointerLeave={handleChromePointerLeave}
       >
         {config?.fab ? (
           <svg
@@ -102,7 +145,7 @@ export function MobileNav() {
             return (
               <motion.button
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => handleNavItemPress(item.path, isActive, hasSecondaryNav)}
                 onPointerEnter={() => {
                   if (isActive && hasSecondaryNav) {
                     revealCarouselForActiveItem(item.path);

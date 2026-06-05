@@ -403,6 +403,7 @@ export default function Home() {
 
   const homeSecondaryNav = useMemo(
     () => ({
+      defaultValue: 'all',
       items: [
         { id: 'all', label: 'All' },
         { id: 'favourite', label: 'Favourite' },

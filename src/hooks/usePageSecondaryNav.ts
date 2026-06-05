@@ -26,10 +26,12 @@ export function usePageSecondaryNav(config: PageSecondaryNavConfig | null) {
     const registrationId = register({
       items: current.items,
       value: current.value,
+      defaultValue: current.defaultValue,
       onChange: (id) => configRef.current?.onChange(id),
       fab: current.fab ?? null,
       layout: current.layout,
       loop: current.loop,
+      persistCarousel: current.persistCarousel,
     });
     registrationIdRef.current = registrationId;
 
@@ -46,10 +48,22 @@ export function usePageSecondaryNav(config: PageSecondaryNavConfig | null) {
     updateConfig({
       items: current.items,
       value: current.value,
+      defaultValue: current.defaultValue,
       onChange: (id) => configRef.current?.onChange(id),
       fab: current.fab ?? null,
       layout: current.layout,
       loop: current.loop,
+      persistCarousel: current.persistCarousel,
     });
-  }, [itemIdsKey, config?.value, config?.fab?.label, config?.fab?.ariaLabel, config?.layout, config?.loop, updateConfig]);
+  }, [
+    itemIdsKey,
+    config?.value,
+    config?.defaultValue,
+    config?.fab?.label,
+    config?.fab?.ariaLabel,
+    config?.layout,
+    config?.loop,
+    config?.persistCarousel,
+    updateConfig,
+  ]);
 }

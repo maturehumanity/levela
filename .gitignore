@@ -9,6 +9,8 @@ lerna-debug.log*
 
 node_modules
 .cache/
+.verify-*.png
+.debug-*.png
 dist
 dist-ssr
 test-results/

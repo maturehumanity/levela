@@ -2,6 +2,21 @@
 
 This file stores project-specific notes for future AI agent work.
 
+## 0. Mandatory context loading (every session, every UI task)
+
+Before planning or editing, agents **must read**:
+
+1. `memory-bank/activeContext.md`
+2. This file (`docs/04-operations/dev/AGENTS.md`)
+3. When work touches secondary nav, Market bottom menu, or `NavSecondaryCarousel`:
+   **`docs/04-operations/dev/nav-secondary-carousel.md`** (canonical UX + geometry)
+
+Cursor enforces the same list via `.cursor/rules/levela-project.mdc` (`alwaysApply: true`).
+
+After substantive changes, update the spec and `memory-bank/activeContext.md` in the same session.
+
+Run `npm run verify:agent-context` to confirm these files and cross-links exist.
+
 ## 1. Front Card Layout Preservation
 
 - Treat the user-approved `/settings/profile` World Citizen front card layout as a fixed baseline unless the user explicitly asks to restructure it.
@@ -149,9 +164,55 @@ This file stores project-specific notes for future AI agent work.
 - Do not rely on memory alone for repeated-release safeguards; encode them as explicit written rules.
 - **2026-04 correction — migration handoffs:** Failure pattern: closing with “apply this migration on the VPS” without having run `scripts/db/apply-remote-migration.sh`. Mandatory check: after adding or changing `supabase/migrations/*.sql`, run the apply script from the workspace when agent SSH is configured; confirm success or paste the script’s stderr. Stop condition: do not ask the developer to run that script unless the agent environment truly cannot reach the VPS after the script’s documented recovery paths.
 - **2026-04 correction — avoid unnecessary user command delegation:** Failure pattern: asking the user to run operational commands (migrations, backfills, verification queries) even though this environment can run them. Root cause: the agent assumed missing credentials/permissions too early and delegated before performing environment preflight checks. Mandatory preflight: before asking the user to run any command, the agent must check available local scripts, `.env`/`.env.local` values, SSH host access, and remote container environment for required variables/keys when reachable. Stop condition: do not delegate command execution to the user until at least one direct execution attempt has failed with explicit blocker output that cannot be resolved by the agent in-session.
+- **2026-05 correction — arc UX vs scripts:** Failure pattern: declaring arc work done when `verify:arc-carousel-visible` passed with only 3 pills and steep ~70° rotation, while the approved mock shows a wide shallow arc with **Sell · For you · Local · Jobs**. Mandatory check: read `docs/04-operations/dev/nav-secondary-carousel.md` before edits; run `npm run verify:post-dev` (includes `verify:agent-context`); compare screenshot to spec. Stop condition: do not report arc complete unless layout script passes **390px ≥4-offset geometry** and visible script shows **Jobs** without >12% bbox overlap with **Local**.
 - **2026-04 correction — mandatory self-remediation loop:** When the agent performs an incorrect action, shows inactivity, or does work outside requested scope, it must immediately (1) identify root cause, (2) implement corrective action **in the same session** (code, migrations, scripts, verification—not deferred), (3) make prevention **project-wide** by updating durable instructions in `AGENTS.md` and, when applicable, tests, scripts, or defaults so the same class of mistake is harder to repeat later, and (4) only then resume normal work. “In-session” is a timing floor, not a scope cap. The agent must not continue normal implementation flow until this loop is completed or a hard external blocker is stated.
 
-## 8. Local Dev Port Policy
+## 8. Post-development verification (mandatory after every fix or UI change)
+
+Run this **full sequence** before telling the user a front-end task is done. Do not skip steps because a build passed.
+
+```bash
+npm run verify:post-dev
+```
+
+That runs:
+
+0. **`verify:agent-context`** — memory-bank, arc spec, and `.cursor/rules` exist; AGENTS cross-links present.
+1. **`verify:dev-load`** — dev server up, `/market` reachable, critical Vite modules non-empty and exporting symbols.
+2. **`verify:arc-carousel-layout`** — arc geometry at 360–480px: no stacked slots; ≥4 visible offsets on 390px Market layout; flank rotation in approved band; horizontal clearance.
+3. **`verify:arc-carousel-visible`** — Playwright on `/market?section=for-you`: **Sell**, **For you**, **Local**, and **Jobs** visible (opacity &gt; 0.4); no bounding-box overlap; flank rotation checks.
+
+If `verify:dev-load` fails with “empty or stale”:
+
+- `rm -rf node_modules/.vite`
+- restart dev on port **8080** (reuse existing task when possible)
+- run `npm run verify:post-dev` again
+
+Optional after scripts pass: open `http://localhost:8080/market` and compare to **`docs/04-operations/dev/nav-secondary-carousel.md`** and the approved reference screenshot (wide shallow arc, ≥4 pills).
+
+### Arc carousel regression guards
+
+- **Spec:** behavior and layout must match `docs/04-operations/dev/nav-secondary-carousel.md`, not only script thresholds.
+
+- **Missing items:** do not cap `maxVisibleOffset` to ~`FOCUS_SLOT_SNAP` only. Visibility must allow at least center + one flank per side when the arc has capacity (`arcFlankCapacity`).
+- **Overlapping items:** do not shrink `angleStep` with `Math.min(pitchRad, distributed)` to cram extra slots onto a phone arc — that produces ~40px gaps while pills are ~92px wide. Use **`arcPitchAngleStep`** (full pitch spacing) and hide offsets that do not fit.
+- **Hidden flank items:** on a bottom-pivot arc, pitch spacing drops flank pills **below** the wheel track and behind the bottom nav (`z-40` &lt; nav `z-50`). Cap vertical drop with **`maxFlankDropPx`**, compute **`wheelHeight`** from placements, and keep carousel chrome at **`z-[56]`** (below FAB `z-[70]`).
+- **Stacking:** do not clamp multiple offsets to the same `arcEndpointAngle`.
+
+### Recurring agent reminder (local loop)
+
+After arming a dev session or finishing UI work, run a background check every **10 minutes**:
+
+```bash
+while true; do
+  sleep 600
+  echo 'AGENT_LOOP_TICK_POST_DEV {"prompt":"Run npm run verify:post-dev (dev-load + arc-carousel-layout + arc-carousel-visible). If verify:dev-load fails, clear node_modules/.vite, restart dev on port 8080, and retry. If arc checks fail, fix nav-secondary-carousel geometry/visibility. Report only when blocked."}'
+done
+```
+
+- Do not start a second identical `AGENT_LOOP_TICK_POST_DEV` loop if one is already running in the terminals folder.
+
+## 9. Local Dev Port Policy
 
 - Default local development URL for this project is `http://localhost:8080`.
 - Reuse port `8080` by default; do not open new Vite dev ports (such as `8081`, `8082`, etc.) for routine work.
@@ -165,7 +226,7 @@ This file stores project-specific notes for future AI agent work.
   - verify the relevant page URL responds (for example with `curl -I`)
   - do not declare the fix complete until runtime is confirmed
 
-## 9. VPS Deploy Method Guard
+## 10. VPS Deploy Method Guard
 
 - Failure pattern: deploying with plain user write operations to `/www/wwwroot/levela` can fail with permission errors, and `rsync` may not exist on the VPS.
 - Mandatory preflight before deploy:
@@ -180,7 +241,7 @@ This file stores project-specific notes for future AI agent work.
 - Stop condition:
   - if passwordless `sudo` is unavailable, stop and do not attempt partial writes to `/www/wwwroot/levela`
 
-## 10. Profile Mismatch Triage
+## 11. Profile Mismatch Triage
 
 - Failure pattern: web and phone show different Edit Profile identity data (role/photo/place) even after app update.
 - Mandatory production check:
@@ -191,7 +252,7 @@ This file stores project-specific notes for future AI agent work.
 - Stop condition:
   - do not ship another UI-only fix for profile-card mismatch until the production profile rows are verified against the reported username/account
 
-## 11. Mandatory Post-Fix Release + Git Sync
+## 12. Mandatory Post-Fix Release + Git Sync
 
 - Failure pattern: a fix is confirmed locally, but release/update propagation and/or Git sync is left incomplete.
 - Mandatory sequence after every confirmed fix (no user reminder required):
@@ -206,7 +267,7 @@ This file stores project-specific notes for future AI agent work.
 - Communication rule:
   - do not ask whether to perform commit/push/update once a fix is confirmed; execute this flow automatically
 
-## 12. Testing Build Boot Safety
+## 13. Testing Build Boot Safety
 
 - Failure pattern: a newly installed Testing APK fails to start, leaving users stuck.
 - Mandatory runtime safety requirements:

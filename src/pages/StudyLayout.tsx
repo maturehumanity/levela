@@ -31,6 +31,7 @@ export default function StudyLayout() {
 
   const studySecondaryNav = useMemo(
     () => ({
+      defaultValue: 'civicLearning',
       items: studySectionRegistry
         .filter((section) => section.id !== 'specialists')
         .map((section) => ({
@@ -62,7 +63,7 @@ export default function StudyLayout() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 px-4 pb-28 pt-6 md:pb-6">
+      <div className="space-y-4 px-4 pb-40 pt-6 md:pb-6">
         <div>
           <div className="flex items-start justify-between gap-3">
             <Link

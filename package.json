@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.1.32",
+  "version": "0.1.33",
   "type": "module",
   "engines": {
     "node": ">=22.13.0",
@@ -32,6 +32,11 @@
     "db:apply-remote-migration": "bash scripts/db/apply-remote-migration.sh",
     "db:apply-remote:federation-distribution": "bash scripts/db/apply-remote-federation-distribution-migrations.sh",
     "db:vps-install-agent-key": "bash scripts/db/vps-install-agent-ssh-key.sh",
+    "verify:agent-context": "node scripts/verify-agent-context.mjs",
+    "verify:dev-load": "node scripts/verify-dev-app-load.mjs",
+    "verify:arc-carousel-layout": "npx tsx scripts/verify-arc-carousel-layout.mjs",
+    "verify:arc-carousel-visible": "node scripts/verify-arc-carousel-visible.mjs",
+    "verify:post-dev": "npm run verify:agent-context && npm run verify:dev-load && npm run verify:arc-carousel-layout && npm run verify:arc-carousel-visible",
     "release:guard": "node scripts/verify-release-lifecycle.mjs",
     "release:testing": "LEVELA_UPDATE_CHANNEL=testing npm run update:application",
     "release:production:promote": "npm run promote:android-testing-to-release && npm run build"
