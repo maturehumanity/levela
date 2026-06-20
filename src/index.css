@@ -122,15 +122,23 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    height: 100%;
     overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
+    min-height: 100%;
     padding-top: var(--safe-area-top);
     padding-bottom: var(--safe-area-bottom);
-    overscroll-behavior-y: contain;
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+  }
+
+  #root {
+    min-height: 100%;
   }
 }
 

@@ -36,7 +36,7 @@ Market uses the **same arc component** as Home/Study (not the horizontal strip),
 ## Behavior
 
 1. **Reveal:** Double-tap active primary tab, or pointer enter on active tab, shows carousel (`carouselVisible`).
-2. **Drag:** Horizontal drag spins `wheelPosition`; spring snap on release.
+2. **Drag:** Horizontal drag spins `wheelPosition`; spring snap on release. Vertical swipes on the arc track pass through to page scroll (axis lock — do not use `touch-none` or `preventDefault` on pointer down).
 3. **Loop (Market):** `loop: true` — infinite wheel through all categories.
 4. **Focus label (Market, icons):** Centered item shows full label with **· icon Name ·**; side items may truncate.
 5. **Persistence (Market):** Arc stays visible on the Market page (`persistCarousel: true`) — no 3s auto-hide.

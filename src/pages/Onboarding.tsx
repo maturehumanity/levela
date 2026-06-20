@@ -140,7 +140,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background flex flex-col safe-top safe-bottom">
+    <div className="relative min-h-screen bg-background safe-top">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-gradient-to-b from-primary/14 via-primary/5 to-transparent"
@@ -154,7 +154,7 @@ export default function Onboarding() {
         <PublicLanguageSelect />
       </div>
 
-      <div className="relative flex-1 overflow-x-hidden overflow-y-auto px-6 py-6 pb-28 sm:px-8 sm:pb-12">
+      <div className="relative px-6 py-6 pb-28 sm:px-8 sm:pb-12">
         <motion.div
           initial={reducedMotion ? false : { opacity: 0, y: 24 }}
           animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}

@@ -401,8 +401,11 @@ export function NavSecondaryCarousel() {
     active: false,
     pointerId: -1,
     startX: 0,
+    startY: 0,
     startPosition: 0,
     moved: false,
+    dragAxis: null as 'horizontal' | null,
+    captured: false,
   });
 
   useEffect(() => {
@@ -467,18 +470,15 @@ export function NavSecondaryCarousel() {
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       cancelCarouselHide();
-      event.preventDefault();
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        // Ignore unsupported capture in some touch webviews.
-      }
       dragRef.current = {
         active: true,
         pointerId: event.pointerId,
         startX: event.clientX,
+        startY: event.clientY,
         startPosition: wheelPosition.get(),
         moved: false,
+        dragAxis: null,
+        captured: false,
       };
     },
     [cancelCarouselHide, wheelPosition],
@@ -488,8 +488,28 @@ export function NavSecondaryCarousel() {
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!dragRef.current.active) return;
       if (event.pointerId !== dragRef.current.pointerId) return;
-      event.preventDefault();
+
       const deltaX = event.clientX - dragRef.current.startX;
+      const deltaY = event.clientY - dragRef.current.startY;
+
+      if (!dragRef.current.dragAxis) {
+        if (Math.abs(deltaX) < TAP_SLOP_PX && Math.abs(deltaY) < TAP_SLOP_PX) return;
+        if (Math.abs(deltaY) > Math.abs(deltaX)) {
+          dragRef.current.active = false;
+          dragRef.current.pointerId = -1;
+          return;
+        }
+
+        dragRef.current.dragAxis = 'horizontal';
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          dragRef.current.captured = true;
+        } catch {
+          // Ignore unsupported capture in some touch webviews.
+        }
+      }
+
+      event.preventDefault();
       if (Math.abs(deltaX) > TAP_SLOP_PX) {
         dragRef.current.moved = true;
       }
@@ -512,13 +532,15 @@ export function NavSecondaryCarousel() {
       dragRef.current.active = false;
       dragRef.current.pointerId = -1;
 
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      if (dragRef.current.captured && event.currentTarget.hasPointerCapture(event.pointerId)) {
         try {
           event.currentTarget.releasePointerCapture(event.pointerId);
         } catch {
           // Ignore capture release errors.
         }
       }
+      dragRef.current.captured = false;
+      dragRef.current.dragAxis = null;
 
       const current = wheelPosition.get();
       const targetIndex = loop
@@ -585,7 +607,7 @@ export function NavSecondaryCarousel() {
               role="listbox"
               aria-label="Section navigation"
               aria-activedescendant={items[activeIndex]?.id}
-              className="relative mx-auto w-full touch-none select-none"
+              className="relative mx-auto w-full touch-pan-y select-none"
               style={{ height: geometry.wheelHeight }}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
