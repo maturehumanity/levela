@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Mail, Lock, User, ArrowRight, Globe, Phone } from 'lucide-react';
+import { PublicAuthHeader } from '@/components/public/PublicAuthHeader';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -143,17 +144,7 @@ export default function SignUp() {
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto w-full max-w-sm"
         >
-          {/* Logo & Title */}
-          <div className="text-center mb-8">
-            <motion.h1
-              className="text-4xl font-display font-bold text-primary mb-2"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-            >
-              {t('auth.signupTitle')}
-            </motion.h1>
-            <p className="text-muted-foreground">{t('auth.signupSubtitle')}</p>
-          </div>
+          <PublicAuthHeader title={t('auth.signupTitle')} subtitle={t('auth.signupSubtitle')} />
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">

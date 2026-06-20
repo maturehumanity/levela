@@ -1,35 +1,63 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
   <defs>
-    <linearGradient id="levelaIconBg" x1="120" y1="96" x2="900" y2="950" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#344384" />
-      <stop offset="1" stop-color="#1B275F" />
+    <linearGradient id="levelaIconBg" x1="112" y1="88" x2="912" y2="936" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12312C" />
+      <stop offset="0.55" stop-color="#0C1A18" />
+      <stop offset="1" stop-color="#081412" />
     </linearGradient>
-    <linearGradient id="levelaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#14B8A6" />
-      <stop offset="55%" stop-color="#1D4ED8" />
-      <stop offset="100%" stop-color="#1E3A8A" />
+    <linearGradient id="levelaGlobeGradient" x1="280" y1="720" x2="744" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EEAD4" />
+      <stop offset="0.5" stop-color="#14B8A6" />
+      <stop offset="1" stop-color="#0F766E" />
     </linearGradient>
-    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFD95A" />
-      <stop offset="100%" stop-color="#F4C542" />
+    <linearGradient id="levelaRingGradient" x1="160" y1="512" x2="864" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#99F6E4" stop-opacity="0.35" />
+      <stop offset="0.5" stop-color="#2DD4BF" />
+      <stop offset="1" stop-color="#99F6E4" stop-opacity="0.35" />
+    </linearGradient>
+    <linearGradient id="levelaIconRing" x1="512" y1="96" x2="512" y2="928" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14B8A6" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#14B8A6" stop-opacity="0" />
     </linearGradient>
   </defs>
 
-  <rect x="40" y="40" width="944" height="944" rx="188" fill="url(#levelaIconBg)" />
-  <g transform="translate(150 120) scale(2)">
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#levelaIconBg)" />
+  <rect x="88" y="88" width="848" height="848" rx="188" stroke="url(#levelaIconRing)" stroke-width="3" />
+
+  <g transform="translate(224 210)">
+    <ellipse
+      cx="288"
+      cy="302"
+      rx="252"
+      ry="98"
+      stroke="url(#levelaRingGradient)"
+      stroke-width="14"
+      fill="none"
+      transform="rotate(-18 288 302)"
+    />
+
+    <circle cx="98" cy="252" r="30" fill="#CCFBF1" />
+    <circle cx="478" cy="218" r="30" fill="#CCFBF1" />
+    <circle cx="288" cy="162" r="34" fill="#FDE68A" />
+    <circle cx="510" cy="338" r="26" fill="#99F6E4" opacity="0.9" />
+
+    <circle cx="288" cy="342" r="144" fill="url(#levelaGlobeGradient)" />
+    <ellipse cx="288" cy="342" rx="144" ry="46" stroke="#FFFFFF" stroke-opacity="0.34" stroke-width="7" fill="none" />
+    <path d="M288 198 V486" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="7" stroke-linecap="round" />
+    <path d="M144 342 H432" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="7" stroke-linecap="round" />
     <path
-      d="M180 60L250 130L250 280Q250 360 180 420Q110 360 110 280L110 130Z"
-      fill="url(#levelaGradient)"
+      d="M206 238 C252 342 252 446 206 550"
+      stroke="#FFFFFF"
+      stroke-opacity="0.16"
+      stroke-width="6"
+      fill="none"
     />
     <path
-      d="M155 120L205 145L185 185L150 170L138 285L180 320L225 285L238 315L180 365L120 315L135 165Z"
-      fill="#FFFFFF"
-    />
-    <path d="M170 190L245 160L250 205L175 240Z" fill="#FFFFFF" />
-    <path d="M165 250L248 215L252 258L172 295Z" fill="#FFFFFF" />
-    <path
-      d="M180 18Q210 45 205 75Q202 100 180 108Q158 100 155 75Q150 45 180 18Z"
-      fill="url(#goldGradient)"
+      d="M370 238 C324 342 324 446 370 550"
+      stroke="#FFFFFF"
+      stroke-opacity="0.16"
+      stroke-width="6"
+      fill="none"
     />
   </g>
 </svg>

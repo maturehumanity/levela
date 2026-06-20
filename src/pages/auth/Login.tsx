@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserRound, Lock, ArrowRight } from 'lucide-react';
+import { PublicAuthHeader } from '@/components/public/PublicAuthHeader';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -41,16 +42,7 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto w-full max-w-sm"
         >
-          <div className="text-center mb-8">
-            <motion.h1
-              className="text-4xl font-display font-bold text-primary mb-2"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-            >
-              {t('auth.loginTitle')}
-            </motion.h1>
-            <p className="text-muted-foreground">{t('auth.loginSubtitle')}</p>
-          </div>
+          <PublicAuthHeader title={t('auth.loginTitle')} subtitle={t('auth.loginSubtitle')} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">

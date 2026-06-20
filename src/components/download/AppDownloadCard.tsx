@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Download, Smartphone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { DeferredQrCode } from '@/components/ui/DeferredQrCode';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ANDROID_DOWNLOAD_URL } from '@/lib/downloads';
@@ -11,15 +12,31 @@ type AppDownloadCardProps = {
   variant?: 'stacked' | 'inline';
   className?: string;
   qrSize?: number;
+  showTestingBadge?: boolean;
 };
 
 export function AppDownloadCard({
   variant = 'inline',
   className,
   qrSize = variant === 'stacked' ? 84 : 88,
+  showTestingBadge = false,
 }: AppDownloadCardProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  const titleBlock = (
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="font-semibold text-foreground">{t('home.downloadApp')}</h3>
+        {showTestingBadge ? (
+          <Badge variant="secondary" className="rounded-full text-[10px] font-medium uppercase tracking-wide">
+            {t('onboarding.earlyAccessBadge')}
+          </Badge>
+        ) : null}
+      </div>
+      <p className="text-sm text-muted-foreground">{t('home.downloadAppDescription')}</p>
+    </div>
+  );
 
   if (variant === 'stacked') {
     return (
@@ -29,10 +46,7 @@ export function AppDownloadCard({
             <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Smartphone className="h-5 w-5" />
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">{t('home.downloadApp')}</h3>
-              <p className="text-sm text-muted-foreground">{t('home.downloadAppDescription')}</p>
-            </div>
+            {titleBlock}
           </div>
           <div className="rounded-2xl border border-border/50 bg-background p-2">
             <DeferredQrCode value={ANDROID_DOWNLOAD_URL} size={qrSize} includeMargin />
@@ -69,10 +83,7 @@ export function AppDownloadCard({
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Smartphone className="h-6 w-6" />
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">{t('home.downloadApp')}</h3>
-              <p className="text-sm text-muted-foreground">{t('home.downloadAppDescription')}</p>
-            </div>
+            {titleBlock}
           </div>
 
           <div className="flex flex-wrap gap-2">

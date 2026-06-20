@@ -1,36 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
   <defs>
-    <linearGradient id="levelaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#14B8A6" />
-      <stop offset="55%" stop-color="#1D4ED8" />
-      <stop offset="100%" stop-color="#1E3A8A" />
+    <linearGradient id="levelaGlobeGradient" x1="52" y1="188" x2="188" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EEAD4" />
+      <stop offset="0.5" stop-color="#14B8A6" />
+      <stop offset="1" stop-color="#0F766E" />
     </linearGradient>
-    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFD95A" />
-      <stop offset="100%" stop-color="#F4C542" />
+    <linearGradient id="levelaRingGradient" x1="32" y1="128" x2="224" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#99F6E4" stop-opacity="0.35" />
+      <stop offset="0.5" stop-color="#2DD4BF" />
+      <stop offset="1" stop-color="#99F6E4" stop-opacity="0.35" />
     </linearGradient>
   </defs>
 
-  <g transform="translate(150 120) scale(2)">
+  <g transform="translate(28 30)">
+    <!-- Unified orbit: one continuous ring around the planet (shared system) -->
+    <ellipse
+      cx="100"
+      cy="104"
+      rx="88"
+      ry="34"
+      stroke="url(#levelaRingGradient)"
+      stroke-width="5"
+      fill="none"
+      transform="rotate(-18 100 104)"
+    />
+
+    <!-- Federation nodes on the ring — decentralized, but one network -->
+    <circle cx="34" cy="88" r="6" fill="#CCFBF1" />
+    <circle cx="166" cy="72" r="6" fill="#CCFBF1" />
+    <circle cx="100" cy="56" r="7" fill="#FDE68A" />
+    <circle cx="178" cy="118" r="5.5" fill="#99F6E4" opacity="0.9" />
+
+    <!-- One planet -->
+    <circle cx="100" cy="118" r="50" fill="url(#levelaGlobeGradient)" />
+    <ellipse cx="100" cy="118" rx="50" ry="16" stroke="#FFFFFF" stroke-opacity="0.34" stroke-width="2.5" fill="none" />
+    <path d="M100 68 V168" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M50 118 H150" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Meridians suggesting one woven surface, not separate parts -->
     <path
-      d="M180 60L250 130L250 280Q250 360 180 420Q110 360 110 280L110 130Z"
-      fill="url(#levelaGradient)"
+      d="M72 82 C88 118 88 154 72 190"
+      stroke="#FFFFFF"
+      stroke-opacity="0.16"
+      stroke-width="2"
+      fill="none"
     />
     <path
-      d="M155 120L205 145L185 185L150 170L138 285L180 320L225 285L238 315L180 365L120 315L135 165Z"
-      fill="#FFFFFF"
-    />
-    <path
-      d="M170 190L245 160L250 205L175 240Z"
-      fill="#FFFFFF"
-    />
-    <path
-      d="M165 250L248 215L252 258L172 295Z"
-      fill="#FFFFFF"
-    />
-    <path
-      d="M180 18Q210 45 205 75Q202 100 180 108Q158 100 155 75Q150 45 180 18Z"
-      fill="url(#goldGradient)"
+      d="M128 82 C112 118 112 154 128 190"
+      stroke="#FFFFFF"
+      stroke-opacity="0.16"
+      stroke-width="2"
+      fill="none"
     />
   </g>
 </svg>

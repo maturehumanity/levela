@@ -199,18 +199,14 @@ Optional after scripts pass: open `http://localhost:8080/market` and compare to 
 - **Hidden flank items:** on a bottom-pivot arc, pitch spacing drops flank pills **below** the wheel track and behind the bottom nav (`z-40` &lt; nav `z-50`). Cap vertical drop with **`maxFlankDropPx`**, compute **`wheelHeight`** from placements, and keep carousel chrome at **`z-[56]`** (below FAB `z-[70]`).
 - **Stacking:** do not clamp multiple offsets to the same `arcEndpointAngle`.
 
-### Recurring agent reminder (local loop)
+### When to run verification (event-driven — no background loop)
 
-After arming a dev session or finishing UI work, run a background check every **10 minutes**:
+Run `npm run verify:post-dev` **once** at these times only:
 
-```bash
-while true; do
-  sleep 600
-  echo 'AGENT_LOOP_TICK_POST_DEV {"prompt":"Run npm run verify:post-dev (dev-load + arc-carousel-layout + arc-carousel-visible). If verify:dev-load fails, clear node_modules/.vite, restart dev on port 8080, and retry. If arc checks fail, fix nav-secondary-carousel geometry/visibility. Report only when blocked."}'
-done
-```
+1. **After starting or restarting the dev server** on port 8080 (confirm the app loads before continuing UI work).
+2. **After completing a front-end fix or UI change** — mandatory before telling the user the task is done (see §8 above).
 
-- Do not start a second identical `AGENT_LOOP_TICK_POST_DEV` loop if one is already running in the terminals folder.
+Do **not** start a Cursor `/loop` or `while true; sleep …; echo AGENT_LOOP_TICK_*` background monitor unless the user explicitly asks for recurring checks. Periodic 10-minute loops spam the chat and are not the default workflow.
 
 ## 9. Local Dev Port Policy
 
