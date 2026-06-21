@@ -5,12 +5,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ANDROID_DOWNLOAD_URL } from '@/lib/downloads';
+import { PublicPageShell } from '@/components/public/PublicPageShell';
 
 export default function DownloadPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background px-6 py-12">
+    <PublicPageShell contentClassName="px-6 py-8 sm:py-12">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -84,6 +85,6 @@ export default function DownloadPage() {
           </Button>
         </div>
       </motion.div>
-    </div>
+    </PublicPageShell>
   );
 }

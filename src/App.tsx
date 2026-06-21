@@ -180,7 +180,7 @@ function BuildOverlayLoader() {
 const App = () => (
   <AppCrashBoundary>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="levela-theme-v1">
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="levela-theme-v1">
         <ThemeStorageSync />
         <TooltipProvider>
           <AuthProvider>

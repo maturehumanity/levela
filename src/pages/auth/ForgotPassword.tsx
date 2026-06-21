@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PublicPageShell } from '@/components/public/PublicPageShell';
 
 export default function ForgotPassword() {
   const { t } = useLanguage();
@@ -37,35 +38,32 @@ export default function ForgotPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+      <PublicPageShell contentClassName="flex flex-col items-center justify-center px-6 py-12" maxWidthClass="max-w-sm">
         <motion.div
-          className="text-center w-full max-w-sm"
+          className="w-full max-w-sm text-center"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
         >
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-primary" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+            <CheckCircle className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground mb-2">{t('auth.checkEmailTitle')}</h1>
-          <p className="text-muted-foreground mb-6">
-            {t('auth.passwordRecoveryMessage', { email })}
-          </p>
+          <h1 className="mb-2 font-display text-2xl font-bold text-foreground">{t('auth.checkEmailTitle')}</h1>
+          <p className="mb-6 text-muted-foreground">{t('auth.passwordRecoveryMessage', { email })}</p>
           <Button asChild variant="outline">
             <Link to="/login">{t('auth.backToLogin')}</Link>
           </Button>
         </motion.div>
-      </div>
+      </PublicPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col safe-top">
-      <div className="flex-1 flex flex-col justify-center px-6 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-auto w-full max-w-sm"
-        >
+    <PublicPageShell contentClassName="flex flex-col justify-center px-6 py-12" maxWidthClass="max-w-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto w-full max-w-sm"
+      >
           <div className="text-center mb-8">
             <motion.h1
               className="text-4xl font-display font-bold text-primary mb-2"
@@ -117,7 +115,6 @@ export default function ForgotPassword() {
             </Link>
           </p>
         </motion.div>
-      </div>
-    </div>
+    </PublicPageShell>
   );
 }

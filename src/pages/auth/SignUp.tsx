@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Mail, Lock, User, ArrowRight, Globe, Phone } from 'lucide-react';
 import { PublicAuthHeader } from '@/components/public/PublicAuthHeader';
+import { PublicPageShell } from '@/components/public/PublicPageShell';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -127,23 +128,24 @@ export default function SignUp() {
     const successMessage = successWasPhone ? t('auth.accountReadyMessage', { phone: successContactLabel }) : t('auth.checkEmailMessage', { email: successContactLabel });
 
     return (
-      <SignUpSuccessState
-        backToLoginLabel={t('auth.backToLogin')}
-        message={successMessage}
-        onBackToLogin={() => navigate('/login')}
-        title={successTitle}
-      />
+      <PublicPageShell contentClassName="flex flex-col justify-center px-6 py-12" maxWidthClass="max-w-sm">
+        <SignUpSuccessState
+          backToLoginLabel={t('auth.backToLogin')}
+          message={successMessage}
+          onBackToLogin={() => navigate('/login')}
+          title={successTitle}
+        />
+      </PublicPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col safe-top">
-      <div className="flex-1 flex flex-col justify-center px-6 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-auto w-full max-w-sm"
-        >
+    <PublicPageShell contentClassName="flex flex-col justify-center px-6 py-12" maxWidthClass="max-w-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto w-full max-w-sm"
+      >
           <PublicAuthHeader title={t('auth.signupTitle')} subtitle={t('auth.signupSubtitle')} />
 
           {/* Form */}
@@ -328,7 +330,6 @@ export default function SignUp() {
             </Link>
           </p>
         </motion.div>
-      </div>
-    </div>
+    </PublicPageShell>
   );
 }

@@ -19,7 +19,7 @@ import { OnboardingHero } from '@/components/public/OnboardingHero';
 import { OnboardingOutcomes, OnboardingProductModules } from '@/components/public/OnboardingProductOverview';
 import { OnboardingLearnMore, OnboardingSystemMap } from '@/components/public/OnboardingSystemAndTrust';
 import { OnboardingFaq } from '@/components/public/OnboardingVisitorFaq';
-import { PublicLanguageSelect } from '@/components/public/PublicLanguageSelect';
+import { PublicPageToolbar } from '@/components/public/PublicPageToolbar';
 import { PublicPageFooter } from '@/components/public/PublicPageFooter';
 import { OnboardingCardHeader } from '@/components/public/OnboardingCardHeader';
 import {
@@ -144,15 +144,15 @@ export default function Onboarding() {
     <div className="relative min-h-screen bg-background safe-top">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-gradient-to-b from-primary/14 via-primary/5 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-gradient-to-b from-primary/8 via-primary/5 to-transparent dark:from-primary/14 dark:via-primary/5"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-32 h-72 w-[36rem] max-w-[120vw] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl"
+        className="pointer-events-none absolute left-1/2 top-32 h-72 w-[36rem] max-w-[120vw] -translate-x-1/2 rounded-full bg-primary/8 blur-3xl dark:bg-primary/10"
       />
 
       <div className="relative mx-auto flex w-full max-w-3xl items-center justify-end px-6 pt-4 sm:px-8">
-        <PublicLanguageSelect />
+        <PublicPageToolbar />
       </div>
 
       <div className="relative px-6 py-6 pb-28 sm:px-8 sm:pb-12">
@@ -304,7 +304,7 @@ export default function Onboarding() {
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-md sm:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex w-full max-w-3xl gap-2">
-          <Button onClick={() => navigate('/signup')} className="h-12 flex-1 gap-2 shadow-glow" size="lg">
+          <Button onClick={() => navigate('/signup')} className="h-12 flex-1 gap-2 dark:shadow-glow" size="lg">
             {t('onboarding.joinNetwork')}
             <ArrowRight className="h-4 w-4" />
           </Button>

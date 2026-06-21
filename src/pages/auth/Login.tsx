@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserRound, Lock, ArrowRight } from 'lucide-react';
 import { PublicAuthHeader } from '@/components/public/PublicAuthHeader';
+import { PublicPageShell } from '@/components/public/PublicPageShell';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -35,13 +36,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col safe-top">
-      <div className="flex-1 flex flex-col justify-center px-6 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-auto w-full max-w-sm"
-        >
+    <PublicPageShell contentClassName="flex flex-col justify-center px-6 py-12" maxWidthClass="max-w-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto w-full max-w-sm"
+      >
           <PublicAuthHeader title={t('auth.loginTitle')} subtitle={t('auth.loginSubtitle')} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -123,7 +123,6 @@ export default function Login() {
             </Link>
           </p>
         </motion.div>
-      </div>
-    </div>
+    </PublicPageShell>
   );
 }
