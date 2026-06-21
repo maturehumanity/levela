@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { APP_VERSION } from '@/lib/app-release';
+import { OnboardingCardHeader } from '@/components/public/OnboardingCardHeader';
 import { onboardingSectionTitleClass } from '@/components/public/onboarding-styles';
 
 const visitorPaths = [
@@ -70,8 +71,7 @@ export function OnboardingGetStartedHub({
               onClick={() => handlePathAction(path.action)}
               className="group rounded-2xl border border-transparent bg-background/50 p-4 text-left transition-all hover:border-primary/25 hover:bg-primary/5"
             >
-              <path.icon className="mb-3 h-5 w-5 text-primary transition-transform group-hover:scale-110" />
-              <h3 className="text-sm font-semibold text-foreground">{t(path.titleKey)}</h3>
+              <OnboardingCardHeader icon={path.icon} title={t(path.titleKey)} className="mb-2" />
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t(path.descriptionKey)}</p>
             </button>
           ))}

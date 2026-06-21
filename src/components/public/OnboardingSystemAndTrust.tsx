@@ -1,6 +1,18 @@
-import { ArrowRight, ExternalLink, FileText, GitBranch, Landmark, Scale } from 'lucide-react';
+import {
+  ArrowRight,
+  ExternalLink,
+  FileText,
+  GitBranch,
+  Landmark,
+  Layers,
+  Leaf,
+  Scale,
+  Store,
+  UserRound,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { OnboardingCardHeader } from '@/components/public/OnboardingCardHeader';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   onboardingSectionLeadClass,
@@ -15,29 +27,39 @@ import { cn } from '@/lib/utils';
 
 const systemLayers = [
   {
+    icon: UserRound,
     titleKey: 'onboarding.systemMapIdentity',
     descriptionKey: 'onboarding.systemMapIdentityDescription',
-    tone: 'from-primary/30 to-primary/5',
+    tone: 'bg-primary/12 text-primary',
+    cardTone: 'from-primary/30 to-primary/5',
   },
   {
+    icon: Landmark,
     titleKey: 'onboarding.systemMapGovernance',
     descriptionKey: 'onboarding.systemMapGovernanceDescription',
-    tone: 'from-pillar-culture/40 to-pillar-culture/10',
+    tone: 'bg-pillar-culture text-white',
+    cardTone: 'from-pillar-culture/40 to-pillar-culture/10',
   },
   {
+    icon: Store,
     titleKey: 'onboarding.systemMapEconomy',
     descriptionKey: 'onboarding.systemMapEconomyDescription',
-    tone: 'from-pillar-economy/40 to-pillar-economy/10',
+    tone: 'bg-pillar-economy text-white',
+    cardTone: 'from-pillar-economy/40 to-pillar-economy/10',
   },
   {
+    icon: Leaf,
     titleKey: 'onboarding.systemMapStewardship',
     descriptionKey: 'onboarding.systemMapStewardshipDescription',
-    tone: 'from-pillar-environment/40 to-pillar-environment/10',
+    tone: 'bg-pillar-environment text-white',
+    cardTone: 'from-pillar-environment/40 to-pillar-environment/10',
   },
   {
+    icon: Layers,
     titleKey: 'onboarding.systemMapStandards',
     descriptionKey: 'onboarding.systemMapStandardsDescription',
-    tone: 'from-accent/30 to-accent/5',
+    tone: 'bg-accent text-accent-foreground',
+    cardTone: 'from-accent/30 to-accent/5',
   },
 ] as const;
 
@@ -64,14 +86,17 @@ export function OnboardingSystemMap() {
             <div key={layer.titleKey} className="flex flex-1 items-center gap-2 md:flex-col md:gap-1">
               <div
                 className={cn(
-                  'w-full flex-1 rounded-2xl border border-white/5 bg-gradient-to-br px-4 py-4 text-center',
-                  layer.tone,
+                  'w-full flex-1 rounded-2xl border border-white/5 bg-gradient-to-br px-4 py-4',
+                  layer.cardTone,
                 )}
               >
-                <p className="text-sm font-semibold text-foreground">{t(layer.titleKey)}</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                  {t(layer.descriptionKey)}
-                </p>
+                <OnboardingCardHeader
+                  icon={layer.icon}
+                  title={t(layer.titleKey)}
+                  tone={layer.tone}
+                  className="mb-2"
+                />
+                <p className="text-xs leading-relaxed text-muted-foreground">{t(layer.descriptionKey)}</p>
               </div>
               {index < systemLayers.length - 1 ? (
                 <ArrowRight
@@ -103,14 +128,11 @@ export function OnboardingLearnMore() {
             'flex items-center justify-between rounded-2xl border border-border/40 bg-background/30 px-4 py-3.5 text-sm font-medium text-foreground transition-all hover:border-primary/30 hover:bg-primary/5 hover:shadow-soft';
           const content = (
             <>
-              <span className="flex items-center gap-3">
-                <link.icon className="h-4 w-4 text-primary" />
-                {t(link.labelKey)}
-              </span>
+              <OnboardingCardHeader icon={link.icon} title={t(link.labelKey)} className="min-w-0 flex-1" />
               {link.external ? (
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
               ) : (
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               )}
             </>
           );

@@ -30,17 +30,21 @@ export function OnboardingHero({ reducedMotion }: OnboardingHeroProps) {
         animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <img
-          src="/brand/levela-icon-full.svg"
-          alt=""
-          aria-hidden
-          className="mx-auto mb-6 h-20 w-20 rounded-2xl shadow-elevated sm:h-24 sm:w-24"
-        />
-        <h1 className="font-display text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          {t('onboarding.title')}
-        </h1>
-        <p className="mt-3 text-xl font-semibold text-accent sm:text-2xl">{t('onboarding.slogan')}</p>
-        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+        <div className="mb-6 flex items-center justify-center gap-4 sm:gap-5">
+          <img
+            src="/brand/levela-icon-full.svg"
+            alt=""
+            aria-hidden
+            className="h-16 w-16 shrink-0 rounded-2xl shadow-elevated sm:h-20 sm:w-20"
+          />
+          <div className="text-left">
+            <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              {t('onboarding.title')}
+            </h1>
+            <p className="mt-1 text-lg font-semibold text-accent sm:text-xl">{t('onboarding.slogan')}</p>
+          </div>
+        </div>
+        <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           {t('onboarding.summary')}
         </p>
 

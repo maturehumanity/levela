@@ -21,6 +21,7 @@ import { OnboardingLearnMore, OnboardingSystemMap } from '@/components/public/On
 import { OnboardingFaq } from '@/components/public/OnboardingVisitorFaq';
 import { PublicLanguageSelect } from '@/components/public/PublicLanguageSelect';
 import { PublicPageFooter } from '@/components/public/PublicPageFooter';
+import { OnboardingCardHeader } from '@/components/public/OnboardingCardHeader';
 import {
   onboardingContainerClass,
   onboardingSectionLeadClass,
@@ -219,10 +220,14 @@ export default function Onboarding() {
                   transition={{ delay: 0.28 + index * 0.05 }}
                   className="rounded-[1.75rem] border border-border/40 bg-gradient-to-br from-card/80 to-background/20 p-5 shadow-soft"
                 >
-                  <div className={cn('mb-4 flex h-11 w-11 items-center justify-center rounded-2xl', pillar.tone)}>
-                    <pillar.icon className="h-5 w-5" />
+                  <div className="mb-3">
+                    <OnboardingCardHeader
+                      icon={pillar.icon}
+                      title={t(pillar.titleKey)}
+                      tone={pillar.tone}
+                      size="md"
+                    />
                   </div>
-                  <h3 className="mb-2 text-base font-semibold text-foreground">{t(pillar.titleKey)}</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">{t(pillar.descriptionKey)}</p>
                   <p className="mt-3 text-sm font-medium leading-relaxed text-primary/90">{t(pillar.exampleKey)}</p>
                 </motion.div>

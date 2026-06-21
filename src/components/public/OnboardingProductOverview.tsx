@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { OnboardingCardHeader } from '@/components/public/OnboardingCardHeader';
 import {
   onboardingSectionLeadClass,
   onboardingSectionTitleClass,
@@ -81,7 +82,7 @@ export function OnboardingOutcomes() {
             key={item.key}
             className="flex items-start gap-3 rounded-2xl border border-accent/15 bg-background/40 px-4 py-3 backdrop-blur-sm"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
               <item.icon className="h-4 w-4" />
             </div>
             <span className="text-sm leading-relaxed text-foreground/90">{t(item.key)}</span>
@@ -107,10 +108,9 @@ export function OnboardingProductModules() {
             key={module.titleKey}
             className="group rounded-2xl border border-border/40 bg-background/30 p-4 transition-colors hover:border-primary/20 hover:bg-card/80"
           >
-            <div className={cn('mb-3 flex h-10 w-10 items-center justify-center rounded-xl', module.tone)}>
-              <module.icon className="h-5 w-5" />
+            <div className="mb-2">
+              <OnboardingCardHeader icon={module.icon} title={t(module.titleKey)} tone={module.tone} />
             </div>
-            <h3 className="mb-1 text-sm font-semibold text-foreground">{t(module.titleKey)}</h3>
             <p className="text-xs leading-relaxed text-muted-foreground">{t(module.descriptionKey)}</p>
           </div>
         ))}
