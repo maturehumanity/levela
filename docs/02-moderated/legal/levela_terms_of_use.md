@@ -20,42 +20,56 @@ These Terms of Use govern participation in Levela as a digital platform, civic e
 
 Levela exists to support trust-building, contribution, study, civic participation, and structured internal governance inside the Levela ecosystem. Levela may maintain internal rules, constitutional structures, moderation systems, and participation requirements that govern behavior and rights inside the platform.
 
-## 3. Accounts and Truthfulness
+## 3. Code of Conduct
+
+When you use or join Levela, you explicitly agree to participate in a community built on honesty and mutual respect. Levela is a place free from lies, fraud, impersonation, misleading activity, and disrespect toward others.
+
+By joining, you accept this standard—not only for what you will not do, but for how you will treat others: with the same care, honesty, and fairness you expect for yourself. This code of conduct applies across messaging, profiles, marketplace activity, endorsements, governance participation, and every other part of the Levela ecosystem.
+
+## 4. Accounts and Truthfulness
 
 Users must provide truthful, accurate, and non-deceptive information. Users are responsible for protecting their account credentials and for activity taken through their accounts unless and until compromise is reported through Levela procedures.
 
-## 4. Verification
+## 5. Verification
 
 Certain rights and features require identity and contact verification. Verification may include structured profile completion, live in-app digital verification, discrepancy review, and anti-duplication checks. Verification may be suspended, denied, or revoked where legitimacy cannot be safely established.
 
-## 5. Citizenship and Civic Participation
+## 6. Citizenship and Civic Participation
 
 Levela may recognize internal civic statuses such as citizen, active citizen, and governance-eligible citizen under separate constitutional and policy rules. Acceptance of such status governs participation within Levela's internal civic framework. These terms govern platform participation and consent to Levela's internal procedures; they do not by themselves claim to replace all external law.
 
-## 6. Governance Eligibility
+## 7. Governance Eligibility
 
 Governance rights are conditional. Levela may require verified identity, citizenship status, active status, minimum Levela score, time in good standing, role-specific training, certification, or trusted device requirements before governance permissions are granted or exercised.
 
-## 7. Content and Conduct
+## 8. Contributions, Recognition, and Compensation
 
-Users must act honestly, avoid abuse, and refrain from deception, exploitation, harassment, fraud, or manipulation. Users remain responsible for the accuracy and integrity of what they contribute. Levela may review, limit, organize, remove, or restrict content and conduct to preserve safety, legitimacy, and institutional integrity.
+Everyone is invited to contribute in their own capacity — through skills, knowledge, civic participation, verification, moderation, development, or other meaningful work inside the Levela ecosystem.
 
-## 8. Privacy and Sensitive Data
+The more useful and impactful a member's contribution, the greater the recognition they should receive within the community. When Levela generates proceeds, responsible parties should evaluate the size and impact of each contribution and distribute compensation from those proceeds to all useful and meaningful contributors, according to transparent governance and policy procedures Levela adopts.
+
+Users remain responsible for the accuracy and integrity of the information, endorsements, comments, legal suggestions, and other content they contribute.
+
+## 9. Content and Conduct
+
+Users must act honestly, avoid abuse, and refrain from deception, exploitation, harassment, fraud, or manipulation, consistent with the Code of Conduct in Section 3. Levela may review, limit, organize, remove, or restrict content and conduct to preserve safety, legitimacy, and institutional integrity.
+
+## 10. Privacy and Sensitive Data
 
 Levela must protect personal and verification data through strict access controls, encryption, segmentation, and auditable handling. Sensitive verification records should be stored off-chain, while public proofs, hashes, attestations, and revocation states may be anchored in more transparent systems where appropriate. Raw identity documents must not be placed on-chain.
 
-## 9. Authorized Access
+## 11. Authorized Access
 
 Founder, staff, reviewers, and later civic stewards may access only what is necessary to fulfill authorized duties. Private communications, detailed personal information, and financial privacy data are private by default and may only be accessed where consent, incident procedure, or defined authority permits. Sensitive access should be logged wherever possible.
 
-## 10. Enforcement and Appeals
+## 12. Enforcement and Appeals
 
 Levela may limit visibility, restrict actions, suspend privileges, remove content, revoke rights, or restrict accounts where conduct or contribution conflicts with Levela's rules, safety requirements, or civic integrity standards. Levela should also maintain appeal and review pathways appropriate to the severity and type of action taken.
 
-## 11. Internal Constitutional Order
+## 13. Internal Constitutional Order
 
 Levela may maintain a constitution, citizenship policy, verification policy, governance permission model, activation framework, and role maturity framework. Those materials govern specific classes of internal rights and duties inside Levela and should be interpreted consistently with these Terms of Use.
 
-## 12. Changes
+## 14. Changes
 
 These terms may evolve through the lawful and internal governance processes Levela adopts. Continued use of the platform after such changes may constitute acceptance where Levela's procedures provide for that result.

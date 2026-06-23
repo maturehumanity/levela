@@ -66,7 +66,7 @@ export const baseTranslations = {
     "pageTitle": "Levela — Live Next Level",
     "pageDescription": "Join a unified, open, decentralized global network built to prevent harm and war, advance world citizenship, and help humanity live at the next level.",
     "missionTitle": "Our mission",
-    "missionLead": "Prevent division, war, and every source of harm that diminishes humanity.",
+    "missionLead": "Our ultimate goal is happy, healthy, peaceful, friendly living for everyone. Levela works to prevent division, war, and every source of harm that diminishes humanity — and to build the open, fair systems that make that life possible.",
     "evilsTitle": "Harm we work to end",
     "harmGroupConflict": "Conflict",
     "harmGroupIntegrity": "Integrity",
@@ -137,11 +137,12 @@ export const baseTranslations = {
     "afterJoinTitle": "What you can do after joining",
     "afterJoinLead": "Create a free account to unlock the full network and start as a World Citizen.",
     "outcomesTitle": "Outcomes we pursue",
-    "outcomesLead": "Levela exists to replace division with verified cooperation and shared progress.",
+    "outcomesLead": "Efficient, responsible use of natural and human resources is a cornerstone of the project. Levela exists to replace division with verified cooperation and shared progress toward lives that are happy, healthy, peaceful, and friendly.",
+    "outcomeWellbeing": "Happy, healthy, peaceful, friendly living as humanity's north star",
     "outcomePeace": "Peaceful coordination instead of war and rivalry",
     "outcomeIntegrity": "Verified truth instead of fraud and impersonation",
     "outcomeFairness": "Fair opportunity instead of poverty and double standards",
-    "outcomeStewardship": "Responsible stewardship of people and planet",
+    "outcomeStewardship": "Efficient, responsible use of natural and human resources",
     "outcomeStandards": "Universal standards with meaningful privacy",
     "systemMapTitle": "How the system fits together",
     "systemMapLead": "Each layer supports the next — from identity to shared standards.",
@@ -180,7 +181,49 @@ export const baseTranslations = {
     "faqWhoQuestion": "Who is Levela for?",
     "faqWhoAnswer": "Anyone who wants verified identity, fair participation, civic learning, and a decentralized path toward global cooperation — citizens, contributors, builders, and auditors.",
     "faqNowQuestion": "What works today versus what is still expanding?",
-    "faqNowAnswer": "Study, profiles, governance tooling, market features, messaging, and Android testing builds are live. iPhone distribution, fuller federation rollout, and comprehensive insurance modules are still expanding."
+    "faqNowAnswer": "Study, profiles, governance tooling, market features, messaging, and Android testing builds are live. iPhone distribution, fuller federation rollout, and comprehensive insurance modules are still expanding.",
+    "footerWhy": "Why this exists",
+    "learnMoreWhy": "Why this exists"
+  },
+  "whyThisExists": {
+    "title": "Why This Exists",
+    "pageTitle": "Levela — Why This Exists",
+    "pageDescription": "Why Levela exists: one planet, the cost of division, and an invitation to build open, decentralized civic cooperation together.",
+    "openingParagraphs": [
+      "We all live on the same planet, yet we continue creating and relying on tools capable of destroying one another. Nuclear weapons are only the most obvious example. When one country builds such weapons, others feel forced to build their own, either to respond, to compete, or to maintain balance.",
+      "But where does this path lead?",
+      "Have we not already created enough destructive power to destroy civilization as we know it? Are we trying to make sure humanity has no chance left if one day someone makes the wrong decision? If one button is pushed, others may follow. And we do not have another planet waiting for us.",
+      "So while we still can, we need to pause and ask a simple question:"
+    ],
+    "centralQuestion": "Where are we moving, and where should we be moving?",
+    "divisionParagraphs": [
+      "Today, humanity is still living as separate nations, religions, cultures, and competing groups, often as if we have not yet grown beyond tribal thinking. Because of this, we repeatedly find ourselves in conflict, divided by borders, identities, beliefs, interests, and fears.",
+      "Even when we win wars, we lose. We lose family members, friends, resources, years of work, trust, and wealth that could have been used to improve human life. We call these victories, but in truth, humanity pays the price on all sides.",
+      "In many ways, we still act like adolescent children. We often unite only when disaster forces us to, during wars, pandemics, natural catastrophes, and moments of existential threat. In those moments, we remember that race, nationality, citizenship, religion, and belief are not more important than survival.",
+      "We instinctively unite because we know we are stronger together."
+    ],
+    "whyWaitLead": "But why should we wait for disaster to remember this?",
+    "whyWaitQuestions": [
+      "Why should we continue losing lives, resources, time, and trust before choosing to cooperate?",
+      "Why should humanity remain divided by incompatible legal, cultural, and economic systems when we have the ability to build something better together?"
+    ],
+    "maturityLead": "This project exists because humanity needs a more mature way to live.",
+    "proposalIntro": "The proposal is to develop, together, a single open-source, decentralized, constantly audited, supervised, and improved civic governance system. Not a system controlled by one person, one group, one corporation, or one country. Not a system imposed from above. A system created, reviewed, corrected, and governed by people collectively.",
+    "purposeLead": "Its purpose is to help humanity move toward a unified civic environment, with shared standards, shared rights, shared responsibilities, and a higher level of cooperation.",
+    "systemPrinciples": [
+      "A system with one human-oriented citizenship.",
+      "A system with a more unified cultural, economic, and legal foundation.",
+      "A system that cannot be captured by its creator, by any political group, or by any single nation once it is ready to be deployed.",
+      "A system we unite to create, and a system that helps us unite."
+    ],
+    "beyondTechnologyParagraphs": [
+      "This is not only about technology. It is about maturity. It is about recognizing that we need each other more than we often realize. It is about building a future where humanity does not wait for destruction before choosing cooperation.",
+      "We can continue living separately, reacting to crises after enough damage has been done.",
+      "Or we can begin building a better civic structure now, while we still can."
+    ],
+    "closingInvitation": "This project is an invitation to choose the second path.",
+    "backToHome": "Back to the front page",
+    "joinCta": "Join the network"
   },
   "auth": {
     "loginTitle": "Levela",
@@ -1290,13 +1333,17 @@ export const baseTranslations = {
     "acceptanceDescription": "By creating an account, remaining signed up, or continuing to use Levela, you agree to these terms and to the internal rules, policies, and procedures they reference.",
     "acceptanceBullets": [
       "You agree to use Levela in good faith and contribute truthful, responsible information.",
-      "You accept the platform’s code of conduct, moderation model, verification procedures, and community standards.",
+      "You accept Levela’s code of conduct: a community free from lies, fraud, impersonation, and misleading or disrespectful behavior—and you agree to treat others as you wish to be treated.",
       "You understand that Levela may maintain its own internal civic and governance framework for participation inside the Levela system."
     ],
     "sections": {
       "serviceScope": {
         "title": "Nature of the service",
         "body": "Levela is a digital platform for trust-building, contribution, study, civic participation, and internal governance inside the Levela ecosystem. These terms govern participation in Levela as a platform and internal civic environment."
+      },
+      "codeOfConduct": {
+        "title": "Code of conduct",
+        "body": "When you use or join Levela, you explicitly agree to participate in a community built on honesty and mutual respect. Levela is a place free from lies, fraud, impersonation, misleading activity, and disrespect toward others. By joining, you accept this standard—not only for what you will not do, but for how you will treat others: with the same care, honesty, and fairness you expect for yourself. This code applies across messaging, profiles, marketplace activity, endorsements, governance participation, and every other part of the Levela ecosystem."
       },
       "accounts": {
         "title": "Accounts and truthfulness",
@@ -1320,7 +1367,7 @@ export const baseTranslations = {
       },
       "contributions": {
         "title": "Contributions and content",
-        "body": "Users are responsible for the accuracy and integrity of the information, endorsements, comments, legal suggestions, and other content they contribute. Levela may review, organize, restrict, or remove contributions to protect safety, legitimacy, and institutional integrity."
+        "body": "Everyone should contribute in their own capacity — through skills, civic participation, content, verification, or other meaningful work inside Levela. Users remain responsible for the accuracy and integrity of what they contribute. The more useful and impactful your contribution, the greater your recognition within the community. When Levela generates proceeds, the system and responsible parties will evaluate the size and impact of each contribution and provide compensation from those proceeds to all useful and meaningful contributors, under transparent governance procedures. Levela may review, organize, restrict, or remove contributions to protect safety, legitimacy, and institutional integrity."
       },
       "enforcement": {
         "title": "Enforcement and moderation",

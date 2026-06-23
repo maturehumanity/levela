@@ -18,7 +18,7 @@ export const bootstrapTranslations = {
 
 const FALLBACK_LANGUAGE = 'en' as LanguageCode;
 const LANGUAGE_PACK_PREFIX = 'levela-i18n-pack';
-const LANGUAGE_PACK_VERSION = '42';
+const LANGUAGE_PACK_VERSION = '43';
 const rtlLanguages = new Set<LanguageCode | string>([
   'ar',
   'fa',

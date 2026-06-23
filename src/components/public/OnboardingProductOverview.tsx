@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Globe2,
+  Heart,
   Landmark,
   Layers,
   Leaf,
@@ -60,6 +61,7 @@ const productModules = [
 ] as const;
 
 const outcomeItems = [
+  { key: 'onboarding.outcomeWellbeing', icon: Heart },
   { key: 'onboarding.outcomePeace', icon: Globe2 },
   { key: 'onboarding.outcomeIntegrity', icon: ShieldCheck },
   { key: 'onboarding.outcomeFairness', icon: Scale },

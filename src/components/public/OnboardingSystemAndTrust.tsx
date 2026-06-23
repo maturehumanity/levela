@@ -3,6 +3,7 @@ import {
   ExternalLink,
   FileText,
   GitBranch,
+  Globe2,
   Landmark,
   Layers,
   Leaf,
@@ -64,6 +65,7 @@ const systemLayers = [
 ] as const;
 
 const learnMoreLinks = [
+  { icon: Globe2, labelKey: 'onboarding.learnMoreWhy', href: '/why-this-exists', external: false },
   { icon: GitBranch, labelKey: 'onboarding.learnMoreRepo', href: LEVELA_REPO_URL, external: true },
   { icon: FileText, labelKey: 'onboarding.learnMoreCharter', href: LEVELA_CHARTER_URL, external: true },
   { icon: Scale, labelKey: 'onboarding.learnMoreTerms', href: '/terms', external: false },

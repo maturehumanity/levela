@@ -110,7 +110,7 @@ export default function SignUp() {
       phone_country_code: latestPhoneCountry.dialCode || undefined,
       phone_number: trimmedPhone || undefined,
       terms_accepted_at: new Date().toISOString(),
-      terms_version: '2026-03-28',
+      terms_version: '2026-06-22',
     });
 
     if (error) {

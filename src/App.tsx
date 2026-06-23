@@ -24,6 +24,7 @@ const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword'));
 const Contribute = lazy(() => import('@/pages/Contribute'));
 const Messaging = lazy(() => import('@/pages/Messaging'));
 const DownloadPage = lazy(() => import('@/pages/Download'));
+const WhyThisExists = lazy(() => import('@/pages/WhyThisExists'));
 const Features = lazy(() => import('@/pages/Features'));
 const StudyLayout = lazy(() => import('@/pages/StudyLayout'));
 const StudyCivicLearning = lazy(() => import('@/pages/study/StudyCivicLearning'));
@@ -196,6 +197,7 @@ const App = () => (
                   <Route path="/login" element={<AuthRedirect><Login /></AuthRedirect>} />
                   <Route path="/signup" element={<AuthRedirect><SignUp /></AuthRedirect>} />
                   <Route path="/download" element={<DownloadPage />} />
+                  <Route path="/why-this-exists" element={<WhyThisExists />} />
                   <Route path="/terms" element={<TermsOfUse />} />
                   <Route path="/forgot-password" element={<AuthRedirect><ForgotPassword /></AuthRedirect>} />
                   {/* Do NOT wrap recovery route with AuthRedirect (recovery link may create a session) */}

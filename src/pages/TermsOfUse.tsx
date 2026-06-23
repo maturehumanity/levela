@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const sectionKeys = [
   'serviceScope',
+  'codeOfConduct',
   'accounts',
   'verification',
   'citizenship',
@@ -74,7 +75,13 @@ export default function TermsOfUse() {
               <Card className="rounded-3xl border-border/70 bg-card/95 p-5 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    {sectionKey === 'governance' || sectionKey === 'citizenship' ? <Scale className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
+                    {sectionKey === 'governance' || sectionKey === 'citizenship' ? (
+                      <Scale className="h-5 w-5" />
+                    ) : sectionKey === 'codeOfConduct' ? (
+                      <FileText className="h-5 w-5" />
+                    ) : (
+                      <Shield className="h-5 w-5" />
+                    )}
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">{t(`terms.sections.${sectionKey}.title`)}</h2>
